@@ -455,6 +455,7 @@ class WandToolbar extends ToolbarBase{
         this.floodInput=$('<input>',{type:'checkbox',checked:true,'data-size':"small",'data-action':'flood'}).appendTo(toggles).on('change',function(e){
             wandTool.setFloodMode($(this).prop('checked'));
             console.log('Wand flood set:',$(this).prop('checked'),e);
+            e.stopImmediatePropagation();
         }).bootstrapToggle({
             on:'Flood<br>fill',
             off:'Full<br>viewport',
