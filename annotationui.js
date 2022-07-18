@@ -9,7 +9,7 @@ $('head').append('<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax
 $('head').append('<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-toggle/2.2.2/css/bootstrap-toggle.min.css">');
 $('head').append('<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">');
 // $('head').append('<link rel="stylesheet" href="./annotationui.css">');
-
+console.log('Location of annotationui.js module',import.meta);
 // - ui-added
 function AnnotationUI(openSeadragon, opts={}){
     let defaultOpts = {
