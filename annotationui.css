@@ -1,0 +1,392 @@
+.ui-dialog{
+    z-index:1001; /* Position it above the bootstrap navbar */
+}
+.ui-dialog, .ui-dialog-content {
+    box-sizing: content-box;
+}
+.flex-row{
+    display:flex;
+    flex-direction:row;
+}
+.annotation-ui-mainwindow .templates{
+    display:none;
+}
+.annotation-ui-mainwindow{
+    color:black;
+    /* display:flex; */
+    /* flex-direction:column; */
+    overflow:hidden;
+    display:grid;
+    grid-template-rows:auto auto auto minmax(4em, 1fr) auto;
+}
+.annotation-visibility-controls{
+    display:flex;
+    flex-grow:0;
+    flex-shrink:0;
+    border-bottom:thin gray solid;
+    padding-bottom:2px;
+    margin-bottom:2px;
+}
+.annotation-visibility-controls .visibility-buttons{
+    flex-grow:0;
+    display:flex;
+    margin-right:5px;
+}
+.annotation-ui-mainwindow button.btn{
+    padding:0 3px;
+}
+.file-button{
+    padding:0.1em 0.5em;
+    margin-right:0.3em;
+}
+/* .annotation-visibility-controls .annotation-opacity-container{
+    flex-grow:1;
+} */
+/* .annotation-ui-feature-collections{
+    flex-grow:1;
+    overflow:auto;
+} */
+.annotation-ui label{
+    margin:0;
+}
+.annotation-ui-feature-collections{
+    overflow:auto;
+    border-bottom:thin gray solid;
+}
+.annotation-ui-feature-collections:empty::before {
+    content: 'Click below to begin a new feature collection';
+    color: gray;
+}
+.feature-collection{
+    border: thin transparent solid;
+    padding:2px;
+    opacity:0.1;
+}
+.annotation-ui-feature-collections .feature-collection{
+    transition: opacity 1s;
+}
+.annotation-ui-feature-collections .feature-collection.inserted:not(.trashed){
+    opacity:1;
+}
+.annotation-ui-feature-collections .feature-collection:not(.trashed).selected{
+    border:thin black solid;
+    background-color:azure;
+} 
+.annotation-ui-feature-collections
+    .feature-collection:not(.trashed,.annotation-hidden,.selected):hover, 
+    .feature-collection.svg-hovered:not(.trashed):not(.annotation-hidden){
+    background-color:lightgoldenrodyellow;
+    border:thin black solid;
+}
+.feature-collection.annotation-hidden .glyphicon-eye-open{
+    display:none;
+}
+.feature-collection:not(.annotation-hidden) .glyphicon-eye-close{
+    display:none;
+}
+.annotation-ui-feature-collections .name{
+    font-weight:bold;
+}
+.feature-item{
+    margin-left:1em;
+}
+.editablecontent:not(.editing){
+    cursor:default;
+}
+.editablecontent>.glyphicon{
+    margin-left:0.2em;
+    font-weight:lighter;
+    cursor:pointer;
+}
+/* .editablecontent.editing>.glyphicon-edit, .editablecontent:not(:hover) .glyphicon-edit{
+    display:none;
+} */
+.editablecontent.editing>.onhover, .editablecontent:not(:hover) .onhover{
+    /* display:none; */
+    visibility:hidden;
+}
+.editablecontent.editing .edit{
+    border:thin gray solid;
+    background-color:lightblue;
+    padding:0 0.3em;
+}
+.feature-collection.trashed{
+    background-color:darkred;
+    opacity:0.3;
+    pointer-events:none;
+}
+.feature-collection.trashed .annotation-header .glyphicon-trash{
+    pointer-events:all;
+    visibility:visible;
+}
+.feature-collection .toggle-list{
+    flex-grow:0
+}
+.feature-collection .features{
+    flex-grow:1;
+}
+.features.collapsed .features-list{
+    display:none;
+}
+.features:not(.collapsed) .features-summary{
+    display:none;
+}
+.features.collapsed .glyphicon-collapse-up{
+    display:none;
+}
+.features:not(.collapsed) .glyphicon-collapse-down{
+    display:none;
+}
+.features-summary:not([data-num-elements="1"]) .pluralize::before{
+    content:'s';
+}
+.feature.selected{
+    background-color:green;
+}
+.feature{
+    cursor:default;
+}
+.annotation-ui-mainwindow.disabled .disable-when-annotations-hidden{
+    opacity:0.5;
+    pointer-events:none;
+    cursor:not-allowed;
+}
+.annotation-ui-mainwindow.deactivated .disable-when-deactivated{
+    opacity:0.5;
+    pointer-events:none;
+    cursor:not-allowed;
+}
+/* .annotation-ui-drawing-toolbar.mode-noselection{
+    visibility:hidden;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+} */
+
+.annotation-ui-drawing-toolbar .pseudohidden, .annotation-ui-drawing-toolbar .invisible{
+    visibility:hidden;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+    padding:0;
+    border:none;
+}
+.annotation-ui-drawing-toolbar{
+    background-color:lightgray;
+    display: grid;
+}
+.annotation-ui-drawing-toolbar button[disabled]{
+    pointer-events:none;
+}
+.annotation-ui-drawing-toolbar .dropdowns>*:not(.active){
+    display:none;
+}
+.dropdowns{
+    color:black;
+}
+.dropdown{
+    width:100%;
+    display:grid;
+    vertical-align: middle;
+    column-gap:1em;
+    grid-template-columns:auto;
+}
+.dropdown.brush-toolbar{
+    grid-template-columns: auto 1fr auto auto;    
+}
+.dropdown.wand-toolbar{
+    grid-template-columns: 5em 1fr auto auto;
+}
+.dropdown.polygon-toolbar{
+    grid-template-columns: 1fr auto auto auto auto auto;    
+}
+.dropdown.linestring-toolbar{
+    grid-template-columns: auto 1fr auto auto;
+}
+canvas.selectable-layer{
+    cursor:pointer;
+}
+
+.tool-action[data-tool-action="segment"]{
+    cursor:move;
+}
+.tool-action[data-tool-action="stroke"]{
+    cursor:copy;
+}
+.tool-action[data-tool-action="segment-erase"]{
+    cursor:not-allowed;
+}
+.tool-action[data-tool-action="colorpicker"]{
+    cursor:none;
+}
+
+.wand-toolbar .threshold-container{
+    display:flex;
+    flex-direction:column;
+}
+.wand-toolbar .threshold-container label{
+    margin-bottom:0;
+    font-size:0.8em;
+}
+.wand-toolbar .toggle .btn{
+    padding:auto 4px;
+    line-height:1;
+    /* display:flex; */
+    /* align-items:center; */
+}
+.wand-toolbar .toggle.btn-primary{
+    margin-bottom:0;
+}
+.wand-toolbar .toggles{
+    display:grid;
+    column-gap:2px;
+    grid-template-columns:5em 5em 6em;
+}
+.viewer-controls-topleft{
+    display:flex;
+}
+
+
+.style-toolbar{
+    display:grid;
+    grid-template-rows:auto;
+    align-items: center;
+}
+.style-toolbar .toprow{
+    display:grid;
+    grid-template-columns:auto auto auto auto;
+    padding-left:1px;
+}
+.style-toolbar .colorpicker-bar{
+    display:grid;
+    grid-template-columns:auto auto auto;
+    gap:0.2em;
+    padding:0.2em;
+    /* padding-left:1px; */
+}
+.style-toolbar .btn{
+    border:thin black solid;
+    padding:2px 0.4em;
+    display:grid;
+    align-items:center;
+    grid-template-columns:auto;
+    column-gap:0.3em;
+}
+.style-toolbar .toprow .btn{
+    grid-template-columns:auto 1fr;
+}
+.style-toolbar .toprow .done{
+    grid-template-columns:auto;
+}
+.style-toolbar .preview{
+    display:inline-block;
+    height:100%;
+    width:100%;
+}
+.style-toolbar .fill .preview{
+    border:thin transparent solid;
+}
+/* .colorpicker-bar:not(.stroke-active):not(.fill-active){
+    display:none;
+} */
+.style-toolbar .stroke-width{
+    padding-left:0.4em;
+}
+.style-toolbar .stroke-width input{
+    width:3.5em;
+}
+/* .style-toolbar:not(.colorpicker-active):not(.colorpicker-active-locked) .colorpicker-bar{
+    display:none;
+} */
+.style-toolbar .default-action{
+    box-shadow: 0px 0px 4px 3px gray;
+}
+.style-toolbar .toprow .active-button{
+    border-bottom-color:transparent;
+}
+.style-toolbar .toprow>*:not(.active-button){
+    border-color:transparent;
+    border-bottom-color:black;
+}
+.style-toolbar .toprow>*{
+    border-bottom: thin black solid;
+}
+.style-toolbar .style-active-item .collection-label::before{
+    content:'Style: ';
+    font-size:0.8em;
+    font-weight:bold;
+    color:darkgray;
+}
+.style-toolbar .style-active-item .collection-label:empty::after{
+    content:'Style for new items';
+}
+.style-toolbar .style-active-item .feature-label:not(:empty)::before{
+    content:', ';
+}
+.new-feature,.new-feature-collection{
+    cursor:pointer;
+}
+.new-feature:hover,.new-feature-collection:hover{
+    background-color:antiquewhite;
+    outline:thin gray solid;
+}
+/* Annotation UI File Dialog Styles*/
+.annotation-ui-filedialog{
+    display:grid;
+    grid-template-columns: 10fr 15fr 10fr;
+}
+.annotation-ui-filedialog>div{
+    padding: 0 0.3em;
+}
+.annotation-ui-filedialog .featurecollection-selection{
+    border-right:thin gray solid;
+    border-left:thin gray solid;
+}
+.annotation-ui-filedialog .header{
+    white-space: nowrap;
+}
+.annotation-ui-filedialog button{
+    display:block;
+}
+
+.annotation-ui-filedialog .file-actions{
+    display:flex;
+    flex-direction:column;
+}
+.annotation-ui-filedialog .file-actions hr{
+    margin: 5px 0;
+}
+.transform-dropdown .mode-buttons [data-active]{
+    display:none;
+}
+.transform-dropdown .mode-buttons[data-mode='select'] [data-active='select'], 
+.transform-dropdown .mode-buttons[data-mode='transform'] [data-active='transform']{
+    display:unset;
+}
+.transform-dropdown .mode-buttons [data-active]>button{
+    float:right;
+}
+button[disabled]{
+    opacity:0.3;
+}
+.dropdown.polygon-toolbar button[data-action="simplify"]{
+    margin-right:0.2em;
+}
+.dropdown button[data-action="erase"].active{
+    background-color:rgb(187, 86, 86);
+
+}
+.feature .bounding-element{
+    margin-right:-1.2em;
+}
+.feature .bounding-element:not(.active){
+    visibility:visible;
+    color:lightgray;
+}
+.feature .bounding-element.active{
+    visibility:visible;
+    color:black;
+}
+.feature:not(:hover) .bounding-element:not(.active){
+    display:none;
+}
