@@ -4,83 +4,34 @@ export class TransformTool extends ToolBase{
         super(project);
         let self=this;
         this.ps = this.project.paperScope;
-        this._mode = 'select';
+        this._mode = 'transform';
         this._moving = [];
         this.setToolbarControl(new TransformToolbar(this));
         this.makeTransformToolObject(project.getZoom());
         
         this.extensions.onActivate=function(){ 
             self.project.viewer.addHandler('canvas-click',self.clickHandler) 
-            self.tool.onMouseMove = (ev)=>self.onMouseMove(ev);
+            // self.tool.onMouseMove = (ev)=>self.onMouseMove(ev);
+            self.enableTransformToolObject();
         }    
         this.extensions.onDeactivate=function(shouldFinish){
             self.project.viewer.removeHandler('canvas-click',self.clickHandler);
-            self.project.paperScope.view.removeClass('selectable-layer');
+            // self.project.paperScope.view.removeClass('selectable-layer');
             self.tool.onMouseMove = null;
             if(shouldFinish){
                 self.disableTransformToolObject();
             }
         }
-        this.tool.extensions.onKeyUp=function(ev){
-            //console.log(`Key up on ${ev.key} key`)
-            if(ev.key=='escape'){
-                let item=self.project.findSelectedItem();
-                item && item.deselect();
-            }
-        }
-        // this.clickHandler = (ev)=>self.onClick(ev);
-        // this.tool.onMouseDown=function(ev){
-        //     if(self._mode !== 'transform') return;
-
-        //     let hitResult = self.hitTest(ev.point);
-        //     if(!hitResult) return;
-
-        //     let currentItems = self.getSelectedItems();
-        //     if(currentItems.indexOf(hitResult.item)>-1){
-        //         // self._moving=currentItems;
-        //         // console.log(self._moving)
-        //     }
-        // }
-        this.tool.onMouseUp=function(ev){
-            if(self._mode !== 'select') return;
-            if(ev.downPoint.subtract(ev.point).length>0) return;
-            //not a click-and-drag, do element selection
-            let hitResult = self.hitTest(ev.point);
-            if(!hitResult) return;
-            self.toggleItemSelection(hitResult.item,(ev.modifiers.control || ev.modifiers.meta))
-        }
     }
     getSelectedItems(){
         return this.ps.project.selectedItems.filter(i=>i.isAnnotationFeature);
     }
-    toggleItemSelection(item,keepCurrent){
-        let itemIsSelected = item.selected;
-        if(itemIsSelected && (keepCurrent || this.getSelectedItems().length==1)){
-            item.selected=false;
-            item.deselect();
-        }
-        else{
-            !keepCurrent && this.getSelectedItems().forEach(item=>item.deselect());
-            item.select();
-        }
-    }
-    toggleLayerSelection(layer,keepCurrent){
-        if(layer.layerSelected){
-            layer.layerSelected=false;
-            layer.deselect(false);
-            console.log('called layer.deselect()')
-        }
-        else{
-            layer.layerSelected=true;
-            layer.select(false);
-            console.log('called layer.select()')
-        }
-    }
-    setMode(mode){
-        this._mode = mode;
-        this.toolbarControl.setMode(mode);
-        mode=='transform' ? this.enableTransformToolObject() : this.disableTransformToolObject();
-    }
+    
+    // setMode(mode){
+    //     this._mode = mode;
+    //     this.toolbarControl.setMode(mode);
+    //     mode=='transform' ? this.enableTransformToolObject() : this.disableTransformToolObject();
+    // }
     makeTransformToolObject(currentZoom){
         let self=this;
         let cSize=12;//control size
@@ -238,11 +189,11 @@ export class TransformTool extends ToolBase{
         this._transformTool.transformItems([]);
         this._transformTool.visible=false;
     }
-    selectionChanged(){
-        if(this._mode=='transform'){
-            this.enableTransformToolObject();
-        }
-    }
+    // selectionChanged(){
+    //     if(this._mode=='transform'){
+    //         this.enableTransformToolObject();
+    //     }
+    // }
     // onClick(ev){
     //     // this function handles OSD click events when handling is enabled on the viewer
     //     let coords = this.project.viewer.viewport.viewerElementToImageCoordinates(ev.position);
@@ -253,25 +204,25 @@ export class TransformTool extends ToolBase{
     //         // console.log('Selecting',hitResult.item)
     //     // }
     // }
-    onMouseMove(ev){
-        if(this._mode == 'transform'){
-            // this._moving.forEach(i=>i.position=i.position.add(ev.delta));
-        }
-        else if(ev.item){
-            if(this.item != ev.item) (ev.item.emit('selection:mouseenter')||true) 
-            if(this.layer != ev.item.layer) ev.item.layer.emit('selection:mouseenter');
-            this.item = ev.item;
-            this.layer = this.item.layer;
-            this.ps.view.addClass('selectable-layer')
-        }
-        else{
-            this.item && (this.item.emit('selection:mouseleave',ev)||true) 
-            this.layer && this.layer.emit('selection:mouseleave',ev);
-            this.ps.view.removeClass('selectable-layer')
-            this.item = null;
-            this.layer = null;
-        }   
-    }
+    // onMouseMove(ev){
+    //     if(this._mode == 'transform'){
+    //         // this._moving.forEach(i=>i.position=i.position.add(ev.delta));
+    //     }
+    //     else if(ev.item){
+    //         if(this.item != ev.item) (ev.item.emit('selection:mouseenter')||true) 
+    //         if(this.layer != ev.item.layer) ev.item.layer.emit('selection:mouseenter');
+    //         this.item = ev.item;
+    //         this.layer = this.item.layer;
+    //         this.ps.view.addClass('selectable-layer')
+    //     }
+    //     else{
+    //         this.item && (this.item.emit('selection:mouseleave',ev)||true) 
+    //         this.layer && this.layer.emit('selection:mouseleave',ev);
+    //         this.ps.view.removeClass('selectable-layer')
+    //         this.item = null;
+    //         this.layer = null;
+    //     }   
+    // }
     hitTest(coords){
         let hitResult = this.ps.project.hitTest(coords,{
             fill:true,
@@ -291,26 +242,12 @@ class TransformToolbar extends ToolbarBase{
     constructor(tool){
         super(tool);
         this.dropdown.addClass('transform-dropdown');
-        this.button.configure('Pick and transform','Transform Tool');
-        this.modeRow = $('<div>',{class:'mode-buttons','data-mode':'select'}).appendTo(this.dropdown);
-
-        let s = $('<div>',{'data-active':'select'}).appendTo(this.modeRow)
-        $('<span>').text('(Ctrl)click to select items.').appendTo(s);
-        $('<button>').text('Enable transform mode').appendTo(s).on('click',function(){
-            tool.setMode('transform');
-        });
-
-        let t = $('<div>',{'data-active':'transform'}).appendTo(this.modeRow)
-        $('<span>').text('Move, scale, or rotate').appendTo(t);
-        $('<button>').text('Enable selection mode').appendTo(t).on('click',function(){
-            tool.setMode('select');
-        });
+        let html = $('<i>',{class:'fa-solid fa-up-down-left-right'});
+        this.button.configure(html,'Transform Tool');
         
     }
-    isActiveForMode(mode){
-        return ['transform','Polygon','Polygon:Rectangle','Point','LineString','Polygon:Raster'].includes(mode);
+    isEnabledForMode(mode){
+        return this.tool.getSelectedItems().length>0 && ['select','Polygon','Polygon:Rectangle','Point','LineString','Polygon:Raster'].includes(mode);
     }
-    setMode(mode){
-        this.modeRow.attr('data-mode',mode);
-    }
+    
 }

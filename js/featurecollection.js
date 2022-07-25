@@ -33,8 +33,8 @@ export class FeatureCollection{
                 })
             },
         });
-        this.paperGroup = Paper.createFeatureCollection();
-        this.paperGroup.layer.on({
+        this.paperObjects = Paper.createFeatureCollectionLayer(this);//previously called paperGroup
+        this.paperObjects.layer.on({
             'selection:mouseenter':function(){_this.element.addClass('svg-hovered').trigger('mouseover')},
             'selection:mouseleave':function(){_this.element.removeClass('svg-hovered').trigger('mouseout')},
             'selected':function(){_this.element.addClass('selected').trigger('selected')},
@@ -58,20 +58,20 @@ export class FeatureCollection{
             return _this._geoJson;
         }
         this.remove = function(){
-            _this.paperGroup.layer.remove();
+            _this.paperObjects.layer.remove();
             _this.element.remove();
         }
-        
+        this.numFeatures = function(){
+            return _this.features().length;
+        }
 
         this.setLabel = function(label){
             this._geoJson.properties.label = label;
         }
         this.label = function(){return _this._geoJson.properties.label};
-        // this.style = function(){return _this._geoJson.properties.style;}
         
         this.addFeature=function(feature){
             let props=_this._geoJson.properties;
-            // let styleProps=['fillColor','strokeColor','strokeWidth','rescale'].reduce(function(a,k){a[k]=props[k]; return a;},{})
             let styleProps = {
                 fillColor:new paper.Color(props.hasOwnProperty('fillColor') ? props.fillColor : defaultStyle.fillColor),
                 strokeColor:new paper.Color(props.hasOwnProperty('strokeColor') ? props.strokeColor : defaultStyle.strokeColor),
@@ -80,8 +80,8 @@ export class FeatureCollection{
             }
             feature && (feature.properties=Object.assign((feature.properties || {}),Object.assign({},styleProps,feature.properties||{})));
             let f = new Feature({AnnotationPaper:Paper,properties:styleProps, geoJSON:feature});
-            _this.paperGroup.group.addChild(f.paperItem);
-            // Object.keys(_this._style).forEach(function(k){f[k]=_this._style[k]});
+            _this.paperObjects.group.addChild(f.paperItem);
+            f.paperItem.deselect();//insert the item as deselected
             _this._featurelist.append(f.element);
             _this._featurelist.sortable('refresh');
             return f.element; 
@@ -123,29 +123,43 @@ export class FeatureCollection{
 
         _this.element.on('click',function(ev){
             ev.stopPropagation();
-            Paper.toggleLayerSelection(_this.paperGroup.layer);
+            Paper.toggleLayerSelection(_this.paperObjects.layer);
         })
         _this.element.find('.visibility-toggle').on('click',function(ev){
             ev.stopPropagation();
             ev.preventDefault();
             _this.element.toggleClass('annotation-hidden');
-            _this.paperGroup.layer.visible = !_this.element.hasClass('annotation-hidden');
+            _this.paperObjects.layer.visible = !_this.element.hasClass('annotation-hidden');
+        });
+        _this.element.find('.toggle-list').on('click',function(ev){
+            let numFeatures = _this._featurelist.children().length;
+            _this.element.find('.num-annotations').text(numFeatures);
+            _this.element.find('.features-summary').attr('data-num-elements',numFeatures);
+            _this.element.find('.features').toggleClass('collapsed');
+            ev.stopPropagation();
+            ev.preventDefault();
         });
 
-        _this.element.find('.annotation-header .glyphicon-trash').on('click',function(ev){
+        _this.element.find('.annotation-header [data-action="trash"]').on('click',function(ev){
             //don't bubble up
             ev.stopPropagation();
             ev.preventDefault();
             //if previously trashed, restore the paperItems
+            // To Do: add option for user to choose whether to restore or permanently remove
             if(_this.element.hasClass('trashed')){
                 _this.element.removeClass('trashed');
-                _this.features().map(function(f){_this.paperGroup.addChild(f.paperItem)});
+                _this.features().map(function(f){
+                    _this.paperObjects.group.addChild(f.paperItem);
+                    f.paperItem.deselect();//insert objects as deselected
+                });
             }
             else{
                 _this.element.addClass('trashed');
-                _this.features().map(function(f){f.paperItem.remove()});
-            }            
-            //_this.element.remove();
+                _this.features().map(function(f){
+                    f.paperItem.remove();
+                    f.paperItem.deselect();//ensure items are deselected
+                });
+            }   
             
         });
         _this.element.find('.new-feature').on('click',function(ev){
@@ -155,7 +169,7 @@ export class FeatureCollection{
             el.trigger('click');
         });
 
-        _this.element.find('.editablecontent .glyphicon-edit').on('click', function(ev){
+        _this.element.find('.editablecontent [data-action="edit"]').on('click', function(ev){
             let parent = $(this).closest('.editablecontent');
             parent.addClass('editing');
             let ce = parent.find('.edit').attr('contenteditable',true).focus();
@@ -192,17 +206,17 @@ function makeFeatureCollectionElement(){
     let html = `
     <div class='feature-collection'>
         <div class='editablecontent annotation-header'>
-            <span class="visibility-toggle"><span class="glyphicon glyphicon-eye-open"></span><span class="glyphicon glyphicon-eye-close"></span></span>
-            <span class='annotation-name name edit'>Unnamed collection</span><span class='onhover glyphicon glyphicon-edit'></span><span class='onhover glyphicon glyphicon-trash'></span>
+            <span class="visibility-toggle"><span class="fa fa-eye" data-action="hide"></span><span class="fa fa-eye-slash" data-action="show"></span></span>
+            <span class='annotation-name name edit'>Unnamed collection</span><span class='onhover fa fa-edit' data-action="edit"></span><span class='onhover fa-solid fa-trash-can' data-action='trash'></span>
         </div>
         <div class="flex-row features">
-            <div class="toggle-list btn-group btn-group-sm"><button class="btn btn-default"><span class='glyphicon glyphicon-collapse-down'></span><span class='glyphicon glyphicon-collapse-up'></span></button></div>
+            <div class="toggle-list btn-group btn-group-sm"><button class="btn btn-default"><span class='fa-solid fa-caret-down' data-action="collapse-down"></span><span class='fa-solid fa-caret-up' data-action="collapse-up"></span></button></div>
             <div class="annotation-details">
                 <div>
                     <div class='features-summary feature-item name'><span class='num-annotations'></span> annotation element<span class='pluralize'></span></div>
                     <div class='features-list'></div>
                 </div>
-                <div class='new-feature feature'><span class='glyphicon glyphicon-plus'></span>Add feature</div>
+                <div class='new-feature feature'><span class='fa fa-plus' data-action="add-feature"></span>Add feature</div>
             </div>
         </div>
     </div>

@@ -38,17 +38,18 @@ export class Feature{
         this.label = function(){ return _this._geoJson.properties.label; }
 
         el.data({feature:_this});
-        el.find('.glyphicon-trash').on('click', function(ev){
+        el.find('[data-action="trash"]').on('click', function(ev){
             //do not let the event bubble up to change selected FeatureCollection
             ev.stopPropagation();
             ev.preventDefault();
             //clean up UI element
             let parent=el.parent();
             el.remove();
-            parent.trigger('child-feature-removed');
+            
             //clean up paperItem
-            _this.paperItem.deselect();
             _this.paperItem.remove();
+            _this.paperItem.deselect();
+            parent.trigger('child-feature-removed');
         });
         el.find('.bounding-element').on('click', function(ev){
             ev.stopPropagation();
@@ -63,7 +64,7 @@ export class Feature{
             ev.stopPropagation();
             Paper.toggleItemSelection(_this.paperItem,(ev.metaKey || ev.ctrlKey));
         })
-        el.find('.editablecontent .glyphicon-edit').on('click', function(ev){
+        el.find('.editablecontent [data-action="edit"]').on('click', function(ev){
             ev.stopPropagation();
             let parent = $(this).closest('.editablecontent');
             parent.addClass('editing');
@@ -113,9 +114,8 @@ export class Feature{
                 //replace in the paper hierarchy
                 _this.paperItem.replaceWith(newItem)
                 // newItem.style = style;
-                // ps.view.update();
                 _this.paperItem.remove();
-                ps.view.update();
+                _this.paperItem.project.view.update();
                 _this.paperItem = newItem;
                 
                 let geomType = (_this._geoJson.geometry.properties && _this._geoJson.geometry.properties.subtype) ||
@@ -161,8 +161,9 @@ export class Feature{
         function setStrokeWidth(w){
             _this.paperItem.strokeWidth = Paper.scaleByCurrentZoom(w);
             _this._geoJson.properties.strokeWidth = w;
-            _this.paperItem.rescale && (_this.paperItem.rescale.strokeWidth = w)
+            _this.paperItem.rescale && (_this.paperItem.rescale.strokeWidth = w);
             _this.paperItem.rescale && (_this._geoJson.properties.rescale.strokeWidth=w);
+            _this.paperItem.rescale && _this.paperItem.applyRescale();
         }
     }
 
@@ -175,10 +176,10 @@ function makeFeatureElement(){
     let html = `
     <div class='feature'>
         <div class='editablecontent'>
-            <span class='onhover glyphicon glyphicon-star bounding-element' title='Bounding element'></span>
+            <span class='onhover fa fa-star bounding-element' title='Bounding element'></span>
             <span class='feature-item name edit'>Creating...</span>
-            <span class='onhover glyphicon glyphicon-edit' title='Edit name'></span>
-            <span class='onhover glyphicon glyphicon-trash' title='Remove'></span>
+            <span class='onhover fa fa-edit' data-action='edit' title='Edit name'></span>
+            <span class='onhover fa-solid fa-trash-can' data-action='trash' title='Remove'></span>
         </div>
     </div>
     `;

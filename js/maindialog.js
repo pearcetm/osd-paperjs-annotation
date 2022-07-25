@@ -4,7 +4,7 @@ import {FileDialog} from './filedialog.js';
 
 export class MainDialog{
 
-    constructor(opts={AnnotationPaper:null,filename:'',positioningElement:null,}){
+    constructor(opts={AnnotationPaper:null,filename:'',positioningElement:null,appendTo:'body'}){
         let _this=this;
         if(!opts.AnnotationPaper){
             error('Instance of AnnotationPaper must be passed to the constructor in the options')
@@ -103,7 +103,9 @@ export class MainDialog{
             resize:limitHeight,
             autoOpen:false,
             height:'auto',
+            appendTo:opts.appendTo,
         });
+        _this.element.closest('.ui-dialog').draggable('option','containment','window')
         let fb=$('<button>',{class:'file-button'}).text('File').prependTo(_this.element.dialog('instance').classesElementLookup['ui-dialog-title'])
         .on('click',function(){
             fileDialog.dialog('open');
@@ -254,11 +256,11 @@ function makeMainDialogElement(){
             <div class='annotation-ui-toolbar annotation-visibility-controls'>                
                 <div class="visibility-buttons btn-group btn-group-sm disable-when-deactivated" role="group">
                     <button class="btn btn-default show-all-annotations" type="button" title="Show all annotations">
-                        <span class="glyphicon glyphicon-eye-open"></span>
+                        <span class="glyphicon glyphicon-eye-open fa fa-eye"></span>
                     </button><button class="btn btn-default hide-all-annotations" type="button" title="Hide all annotations">
-                        <span class="glyphicon glyphicon-eye-close"></span>
+                        <span class="glyphicon glyphicon-eye-close fa fa-eye-slash"></span>
                     </button><button class="btn btn-default toggle-annotations" type="button" title="Toggle annotations">
-                        <span class="glyphicon glyphicon-eye-open"></span><span class="glyphicon glyphicon-eye-close"></span>
+                        <span class="glyphicon glyphicon-eye-open fa fa-eye"></span><span class="glyphicon glyphicon-eye-close fa fa-eye-slash"></span>
                     </button>
                 </div>
                 <span class="annotation-opacity-container disable-when-annotations-hidden" title="Change total opacity">
@@ -272,7 +274,7 @@ function makeMainDialogElement(){
                 <label>Feature Collections:</label>
             </div>
             <div class='annotation-ui-feature-collections disable-when-annotations-hidden disable-when-deactivated'></div>
-            <div class='new-feature-collection disable-when-deactivated'><span class='glyphicon glyphicon-plus'></span>Add Feature Collection</div>
+            <div class='new-feature-collection disable-when-deactivated'><span class='glyphicon glyphicon-plus fa fa-plus'></span>Add Feature Collection</div>
         </div>`;
     return $(html);
 }

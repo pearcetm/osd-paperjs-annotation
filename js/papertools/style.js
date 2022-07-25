@@ -9,39 +9,9 @@ export class StyleTool extends ToolBase{
         let item;
         let cursorGridSize=9;//this must be an odd number so the grid is symmetric around a center cell
         let cursorCellSize=12;
-        let cursor = makeCursor();
+        let cursor = ColorpickerCursor(cursorCellSize,cursorGridSize);
         self.project.toolLayer.addChild(cursor);
-        
-
-        function makeCursor(){
-            let cursor = new paper.Group({visible:false});
-            let s = cursorCellSize;
-            let min=-((cursorGridSize-1)/2);
-            let max=min+cursorGridSize;
-            for(var y=min;y<max;y++){
-                for(var x=min;x<max;x++){
-                    let r = new paper.Shape.Rectangle({point:[x*s,y*s],size:[s,s],strokeWidth:0.5,strokeColor:'white',fillColor:'white',
-                    rescale:{position:[x*s,y*s],size:[s,s],strokeWidth:0.5}});
-                    cursor.addChild(r);
-                    if(x==0 && y==0) cursor.centerCell = r;
-                }
-            }
-            //add darker thicker border for central "selected" spot
-            var x = 0, y = 0;
-            let c = new paper.Shape.Rectangle({point:[x*s,y*s],size:[s,s],strokeWidth:1,strokeColor:'black',fillColor:null,
-            rescale:{position:[x*s,y*s],size:[s,s],strokeWidth:1}});
-            cursor.addChild(c);
-
-            //add a background rectangle surrounding the whole cursor to show the selected color
-            var x = 0, y = 0;
-            let sz=cursorCellSize*(cursorGridSize+2);//border= 1 cell thick
-            let b = new paper.Shape.Rectangle({point:[x*s,y*s],size:[sz,sz],strokeWidth:1,strokeColor:'black',fillColor:null,
-            rescale:{position:[x*s,y*s],size:[sz,sz],strokeWidth:1}});
-            cursor.addChild(b);
-            cursor.borderElement=b;
-            b.sendToBack();//this sets b as the first child, requiring 1-based indexing of grid in mousemove handler
-            return cursor;
-        }
+        cursor.applyRescale();
 
         this.extensions.onActivate = function(){
             if(mode=='colorPicker') self.project.paperScope.view.addClass('tool-action').setAttribute('data-tool-action','colorpicker');
@@ -64,7 +34,7 @@ export class StyleTool extends ToolBase{
             let h = Math.ceil(Math.min(viewrect.y+viewrect.height, imgrect.y+imgrect.height))-y+2;
             
             //Deal with pixel ratio other than one
-            let r = ps.view.pixelRatio;
+            let r = this.project.paperScope.view.pixelRatio;
             let newcanvas = $('<canvas>').attr({width:w,height:h})[0];
             newcanvas.getContext('2d').drawImage(self.project.viewer.drawer.canvas,x*r,y*r,w*r,h*r,0,0,w,h);
             let dataurl = newcanvas.toDataURL();
@@ -73,7 +43,7 @@ export class StyleTool extends ToolBase{
                 $('<img>',{style:'position:absolute;top:60px;left:10px;visibility:hidden;'}).appendTo('body').on('load',function(){
                     let raster = new paper.Raster(this);
                     let rasterSize=new paper.Size(w,h);
-                    raster.position = ps.view.viewToProject(new paper.Point(x,y)).add(rasterSize.divide(2)); 
+                    raster.position = self.project.paperScope.view.viewToProject(new paper.Point(x,y)).add(rasterSize.divide(2)); 
                     raster.scale(1/self.project.getZoom(),raster.bounds.topLeft)
                     // raster.selected=true;
                     let color = raster.getAverageColor(itemToAverage);
@@ -107,7 +77,7 @@ export class StyleTool extends ToolBase{
             let mh = mask.bounds.height * this.project.getZoom();
             
             //Deal with pixel ratio other than one
-            let r = ps.view.pixelRatio;
+            let r = this.project.paperScope.view.pixelRatio;
             let newcanvas = $('<canvas>').attr({width:mw*r,height:mh*r})[0];
             newcanvas.getContext('2d').drawImage(self.project.viewer.drawer.canvas,mx*r,my*r,mw*r,mh*r,0,0,mw*r,mh*r);
             let dataurl = newcanvas.toDataURL();
@@ -117,22 +87,6 @@ export class StyleTool extends ToolBase{
             grp.clipped=true;
             grp.position.x = grp.position.x+500;
             return grp;
-
-
-            // return new Promise(function(resolve,reject){
-            //     $('<img>',{style:'position:absolute;top:60px;left:10px;'}).appendTo('body').on('load',function(){
-            //         // let raster = new paper.Raster(this);
-            //         // let rasterSize=new paper.Size(w,h);
-            //         // raster.position = ps.view.viewToProject(new paper.Point(x,y)).add(rasterSize.divide(2)); 
-            //         // raster.scale(1/self.project.getZoom(),raster.bounds.topLeft)
-            //         // // raster.selected=true;
-            //         // // let color = raster.getAverageColor(itemToAverage);
-            //         // grp.insertChild(raster,0);
-            //         // $(this).remove();
-                    
-            //         resolve(grp);
-            //     }).attr('src',dataurl)
-            // })
             
             
         };
@@ -145,7 +99,8 @@ export class StyleTool extends ToolBase{
                 self.activate();
                 mode = 'colorPicker';
                 cursor.visible=true;
-                cursor.addTo(ps.project.activeLayer);
+                cursor.addTo(self.project.paperScope.project.activeLayer);
+                self.tool.onMouseMove({point:cursor.view.center});
                 self.project.paperScope.view.addClass('tool-action').setAttribute('data-tool-action','colorpicker');
             })
 
@@ -160,11 +115,15 @@ export class StyleTool extends ToolBase{
             if(mode=='colorPicker'){
                 cursor.position=ev.point;
                 let o = self.project.viewer.viewport.imageToViewerElementCoordinates(new OpenSeadragon.Point(ev.point.x,ev.point.y));
-                let x = Math.round(o.x)-4;
-                let y = Math.round(o.y)-4;
-                let w = 9;
-                let h = 9;
-                let r = ps.view.pixelRatio            
+                //let x = Math.round(o.x)-4;
+                //let y = Math.round(o.y)-4;
+                // let w = 9;
+                // let h = 9;
+                let x = Math.round(o.x)-Math.floor(cursor.numColumns/2);
+                let y = Math.round(o.y)-Math.floor(cursor.numRows/2);
+                let w = cursor.numColumns;
+                let h = cursor.numRows;
+                let r = self.project.paperScope.view.pixelRatio            
                 let imdata = self.project.viewer.drawer.canvas.getContext('2d').getImageData(x*r,y*r,w*r,h*r);
                 //downsample if needed
                 function getval(i){
@@ -215,3 +174,72 @@ export class StyleTool extends ToolBase{
         }
     }
 }
+
+export function ColorpickerCursor(cursorCellSize,cursorGridSize){
+    let cursor = new paper.Group({visible:false});
+    cursor.numRows=cursorGridSize;
+    cursor.numColumns=cursorGridSize;
+    let s = cursorCellSize;
+    let min=-((cursorGridSize-1)/2);
+    let max=min+cursorGridSize;
+    for(var y=min;y<max;y++){
+        for(var x=min;x<max;x++){
+            let r = new paper.Shape.Rectangle({point:[x*s,y*s],size:[s,s],strokeWidth:0.5,strokeColor:'white',fillColor:'white',
+            rescale:{position:[x*s,y*s],size:[s,s],strokeWidth:0.5}});
+            cursor.addChild(r);
+            if(x==0 && y==0) cursor.centerCell = r;
+        }
+    }
+    //add darker thicker border for central "selected" spot
+    var x = 0, y = 0;
+    let c = new paper.Shape.Rectangle({point:[x*s,y*s],size:[s,s],strokeWidth:1,strokeColor:'black',fillColor:null,
+    rescale:{position:[x*s,y*s],size:[s,s],strokeWidth:1}});
+    cursor.addChild(c);
+
+    //add a background rectangle surrounding the whole cursor to show the selected color
+    var x = 0, y = 0;
+    let sz=cursorCellSize*(cursorGridSize+2);//border= 1 cell thick
+    let b = new paper.Shape.Rectangle({point:[x*s,y*s],size:[sz,sz],strokeWidth:1,strokeColor:'black',fillColor:null,
+    rescale:{position:[x*s,y*s],size:[sz,sz],strokeWidth:1}});
+    cursor.addChild(b);
+    cursor.borderElement=b;
+    b.sendToBack();//this sets b as the first child, requiring 1-based indexing of grid in mousemove handler
+    cursor.applyRescale = function(){cursor.children.forEach(child=>child.applyRescale());}
+    return cursor;
+}
+
+export async function getAverageColor(project,itemToAverage){
+    // console.log('itemToAverage',itemToAverage);
+    let imgrect=project.viewer.viewport.viewportToViewerElementRectangle(project.viewer.world.getItemAt(0).getBounds());
+    let viewrect=project.viewer.viewport.viewportToViewerElementRectangle(project.viewer.viewport.getBounds());
+    let x = Math.floor(Math.max(imgrect.x, viewrect.x))-1;
+    let y = Math.floor(Math.max(imgrect.y, viewrect.y))-1;
+    let w = Math.ceil(Math.min(viewrect.x+viewrect.width, imgrect.x+imgrect.width))-x+2;
+    let h = Math.ceil(Math.min(viewrect.y+viewrect.height, imgrect.y+imgrect.height))-y+2;
+    
+    //Deal with pixel ratio other than one
+    let r = project.paperScope.view.pixelRatio;
+    let newcanvas = $('<canvas>').attr({width:w,height:h})[0];
+    newcanvas.getContext('2d').drawImage(project.viewer.drawer.canvas,x*r,y*r,w*r,h*r,0,0,w,h);
+    let dataurl = newcanvas.toDataURL();
+
+    return new Promise(function(resolve,reject){
+        return $('<img>',{style:'position:absolute;top:60px;left:10px;visibility:hidden;'}).appendTo('body').on('load',function(){
+            let raster = new paper.Raster(this);
+            let rasterSize=new paper.Size(w,h);
+            raster.position = project.paperScope.view.viewToProject(new paper.Point(x,y)).add(rasterSize.divide(2)); 
+            raster.scale(1/project.getZoom(),raster.bounds.topLeft)
+            // raster.selected=true;
+            let color = raster.getAverageColor(itemToAverage);
+            // broadcast('color-picked',{color:color});
+            raster.remove();
+            $(this).remove();
+            if(!color){
+                reject('Error: The item must be visible on the screen to pick the average color of visible pixels. Please navigate and retry.')
+            } 
+            resolve(color);
+        }).attr('src',dataurl)
+    })
+    
+    
+};

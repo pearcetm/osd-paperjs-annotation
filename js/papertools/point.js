@@ -19,10 +19,11 @@ export class PointTool extends ToolBase{
 class PointToolbar extends ToolbarBase{
     constructor(tool){
         super(tool);
-        this.button.configure('Point','Point Tool');
+        let html = $('<i>',{class:'fa-solid fa-map-pin'});
+        this.button.configure(html,'Point Tool');
         $('<span>').text('Click to create a point or drag to modify existing point').appendTo(this.dropdown);
     }
-    isActiveForMode(mode){
+    isEnabledForMode(mode){
         return ['new','Point'].includes(mode);
     }
 }

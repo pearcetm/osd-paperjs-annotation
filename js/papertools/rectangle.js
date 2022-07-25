@@ -30,10 +30,11 @@ export class RectangleTool extends ToolBase{
 class RectToolbar extends ToolbarBase{
     constructor(tool){
         super(tool);
-        this.button.configure('Rect','Rectangle Tool');
+        let html = $('<i>',{class:'fa-solid fa-vector-square'});
+        this.button.configure(html,'Rectangle Tool');
         $('<span>').text('Click and drag to create a rectangle').appendTo(this.dropdown);
     }
-    isActiveForMode(mode){
+    isEnabledForMode(mode){
         return ['new','Polygon:Rectangle'].includes(mode);
     }
 }

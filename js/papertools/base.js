@@ -32,21 +32,22 @@ export class ToolBase{
     }
     isActive(){return this._active; }
     activate(){
-        if(this._active) return;
+        if(this._active) return;//breaks possible infinite loops of tools activating/deactivating each other
         this._active=true;
-        let activeTool=this.project.getActiveTool();
-        activeTool && activeTool != this && activeTool.deactivate(true);
+        let previousTool=this.project.getActiveTool();
         this.tool.activate();
-        this.toolbarControl.activate();
+        this.toolbarControl.activate();//console.log('toolbar control activated')
+        previousTool && previousTool != this && previousTool.deactivate(true);
         this.onActivate();
-        this.broadcast('activated',{target:this}); 
+        this.broadcast('activated',{target:this});
     }
     deactivate(finishToolAction){
-        if(!this._active) return;
+        if(!this._active) return;//breaks possible infinite loops of tools activating/deactivating each other
         this._active=false;
         this.toolbarControl.deactivate();
         this.onDeactivate(finishToolAction);
-        this.broadcast('deactivated',{target:this,finished:finishToolAction}); 
+        // console.log('Broadcasting deactivated signal',this)
+        this.broadcast('deactivated',{target:this}); 
     }
     onActivate(){
         this.project.viewer.disableMouseHandling();
@@ -80,35 +81,35 @@ export class ToolBase{
 
 export class ToolbarBase{
     constructor(tool){
-        let self=this;
+        // let self=this;
         this._active=false;
         this.button=new OpenSeadragon.Button({
             tooltip:'Generic Tool',
             element:$('<button>',{class:'btn invisible'}).text('Generic Tool')[0],
-            onClick:()=>self._active?self.deactivate(true):self.activate(),
+            onClick:function(ev){if(!ev.eventSource.element.disabled) tool._active?tool.deactivate(true):tool.activate()},
         });
-        this.button.configure=function(display,tooltip){
-            $(this.element).attr('title',tooltip).html(display).removeClass('invisible');
+        this.button.configure=function(html,tooltip){
+            $(this.element).attr('title',tooltip).html(html).removeClass('invisible');
             this.tooltip=tooltip;
         }
         this.dropdown=$('<div>',{class:'dropdown'});
         this.tool = tool;
     }
-    isActiveForMode(mode){
+    isEnabledForMode(mode){
         return false;
     }
     activate(){
         if(this._active) return;
         this._active=true;
-        this.tool.activate();
-        $(this.button.element).addClass('active');
+        //this.tool.activate();
+        $(this.button.element).addClass('active'); console.log('Added active class',this);
         this.dropdown.addClass('active');
     }
     deactivate(shouldFinish){
         if(!this._active) return;
         this._active=false;
-        this.tool.deactivate(shouldFinish);
-        $(this.button.element).removeClass('active');
+        //this.tool.deactivate(shouldFinish);
+        $(this.button.element).removeClass('active');console.log('Removed active class',this);
         this.dropdown.removeClass('active');
     }
 }

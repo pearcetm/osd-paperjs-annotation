@@ -1,4 +1,6 @@
 //requires paper.js and openseadragon-paperjs-overlay.js
+import './paperjs-overlay.js';
+
 import {DefaultTool} from './papertools/default.js';
 import {WandTool} from './papertools/wand.js';
 import {BrushTool} from './papertools/brush.js';
@@ -7,6 +9,7 @@ import {RectangleTool} from './papertools/rectangle.js';
 import {StyleTool} from './papertools/style.js';
 import {LinestringTool} from './papertools/linestring.js';
 import {PolygonTool} from './papertools/polygon.js';
+import {SelectTool} from './papertools/select.js';
 import {TransformTool} from './papertools/transform.js';
 import {RasterTool} from './papertools/raster.js';
 
@@ -40,40 +43,22 @@ function AnnotationPaper(openSeadragonViewer){
     }
 
     //extend paper prototypes
-    // paper.Path.prototype.toCompoundPath = toCompoundPath;
-    // paper.CompoundPath.prototype.toCompoundPath=toCompoundPath;
     paper.PathItem.prototype.toCompoundPath = toCompoundPath;
     paper.PathItem.prototype.applyBounds = applyBounds;
     paper.Item.prototype.select = function(setProperty=true){this.selected=true&&setProperty;this.emit('selected');}
     paper.Item.prototype.deselect = function(unsetProperty=true){unsetProperty&&(this.selected=false);this.emit('deselected');}
 
-    // _this.viewer.addHandler('resize',function(){_this.overlay.resize();});
-    
-    // _this.viewer.addHandler('AnnotationUI',AnnotationUIHandlers);
     _this.viewer.addOnceHandler('close', close)
-    // _this.viewer.addOnceHandler('open', ()=>_this.overlay.rescale());
-    
-    // _this.overlay = _this.viewer.paperjsOverlay();
-    // _this.canvas = _this.overlay._paperCanvas;
-    // _this.canvas.addClass=function(c){;
-    //     this.element.classList.add(c);
-    //     return this.element;
-    // }
-    // _this.canvas.removeClass=function(c){
-    //     this.element.classList.remove(c);
-    //     return this.element;
-    // }
-
     
     ps = _this.overlay._paperScope;
-    window.ps=ps;
-    window._canvas = _this.canvas;
+    // window.ps=ps;
+    // window._canvas = _this.canvas;
     _this.overlay.rescale();
     _this.overlay.handleRescale(true);
     _this.overlay.resizeCanvas();
     
     const api = _this.api = {
-        createFeatureCollection:function(){
+        createFeatureCollectionLayer:function(fc){
             let layer= new paper.Layer();
             layer.isAnnotationLayer=true;
             layer.name='AnnotationLayer';
@@ -81,7 +66,8 @@ function AnnotationPaper(openSeadragonViewer){
             let group= new paper.Group();
             group.name = 'elements';
             layer.addChild(group);
-            layer.bringToFront = function(){layer.addTo(ps.project)}
+            layer.bringToFront = function(){layer.addTo(ps.project)};
+            layer.numFeatures = ()=>fc.numFeatures();
             return {layer:layer,group:group};
         },
         close:close,
@@ -102,10 +88,10 @@ function AnnotationPaper(openSeadragonViewer){
 
         //SelectionTool interface accessors
         toggleItemSelection:function(item,keepCurrent){
-            return _this.tools.transform.toggleItemSelection(item,keepCurrent);
+            return _this.tools.select.toggleItemSelection(item,keepCurrent);
         },
         toggleLayerSelection:function(layer,keepCurrent){
-            return _this.tools.transform.toggleLayerSelection(layer,keepCurrent);
+            return _this.tools.select.toggleLayerSelection(layer,keepCurrent);
         },
 
         //Why are we scaling in the API?
@@ -123,10 +109,9 @@ function AnnotationPaper(openSeadragonViewer){
     toolbar.hide();//start as hidden; when the AnnotationUI dialog opens, the toolbar will be shown.
     
     function close(){
-        console.log('cleaning up paper by setting annotationPaper to null');
+        // console.log('cleaning up paper by setting annotationPaper to null');
         _this.viewer.annotationPaper = null;
         _this.toolbar.destroy();
-        // ps.remove();
     }
     function makeObject(geoJSONFeature){
         let type = (geoJSONFeature.geometry && geoJSONFeature.geometry.type) || 'null'; 
@@ -140,24 +125,24 @@ function AnnotationPaper(openSeadragonViewer){
                 toolbar.setMode(this);
             },
             'selected':function(){
-                _this.tools.transform.getSelectedItems().length==1 ? toolbar.setMode(this) : toTransformMode();
+                _this.tools.select.getSelectedItems().length==1 ? toolbar.setMode(this) : toSelectMode();
                 let activeTool = getActiveTool();
                 activeTool && activeTool.selectionChanged();
             },
             'deselected':function(){
-                let selected=_this.tools.transform.getSelectedItems();
-                selected.length==1? toolbar.setMode(selected[0]) : toTransformMode();
+                let selected=_this.tools.select.getSelectedItems();
+                selected.length==1? toolbar.setMode(selected[0]) : toSelectMode();
+                selected.length==1? toolbar.setMode(selected[0]) : toSelectMode();
                 let activeTool = getActiveTool();
                 activeTool && activeTool.selectionChanged();
             },
             
         });
         return obj;
-        function toTransformMode(){
+        function toSelectMode(){
             let activeTool = getActiveTool();
-            // activeTool==_this.tools.transform? activeTool.selectionChanged() : activeTool.deactivate(true);
-            activeTool && activeTool !== _this.tools.transform && (activeTool.deactivate(true), _this.tools.default.activate());
-            toolbar.setMode('transform'); 
+            activeTool && activeTool !== _this.tools.select && (activeTool.deactivate(true), _this.tools.default.activate());
+            toolbar.setMode('select'); 
         }
     }
 
@@ -178,11 +163,11 @@ function AnnotationPaper(openSeadragonViewer){
 
         let projectInterface={
             findSelectedItem:findSelectedItem,
+            findSelectedItems:findSelectedItems,
             findSelectedPolygon:findSelectedPolygon,
             initializeItem:initializeItem,
             getZoom:()=>ps.view.getZoom(),
             getActiveTool:getActiveTool, 
-            // broadcast:broadcast,
             toolLayer:toolLayer,
             viewer:_this.viewer,
             paperScope:_this.overlay._paperScope,
@@ -192,6 +177,7 @@ function AnnotationPaper(openSeadragonViewer){
         
         let tools = {
             default:new DefaultTool(projectInterface),
+            select: new SelectTool(projectInterface),
             transform:new TransformTool(projectInterface),
             rectangle:new RectangleTool(projectInterface),
             point: new PointTool(projectInterface),
@@ -209,15 +195,17 @@ function AnnotationPaper(openSeadragonViewer){
             let toolbarControl = toolObj.getToolbarControl();
             if(toolbarControl) toolbar.addTool(toolbarControl);
 
-            if(toolObj !== tools.default){
-                toolObj.addEventListener('deactivated',function(ev){
-                    if(ev.finished){
-                        tools.default.activate();
-                    }
-                })
-            }
+            // if(toolObj !== tools.default){
+            toolObj.addEventListener('deactivated',function(ev){
+                //If deactivation is triggered by another tool being activated, this condition will fail
+                if(ev.target == getActiveTool()){
+                    console.log('Activating default tool due to other tool deactivation')
+                    tools.default.activate();
+                }
+            })
             
         })
+        tools.default.activate();
         return tools;
     }
 
@@ -226,7 +214,8 @@ function AnnotationPaper(openSeadragonViewer){
     
 
     function getActiveTool(){
-        return ps.tool ? ps.tool._toolObject._active && ps.tool._toolObject : null;
+        //return ps.tool ? ps.tool._toolObject._active && ps.tool._toolObject : null;
+        return ps.tool ? ps.tool._toolObject : null;
     }
     
     function toCompoundPath(){
@@ -259,8 +248,7 @@ function AnnotationPaper(openSeadragonViewer){
             //simple path
             this.segments = intersection.segments ? intersection.segments : intersection.firstChild.segments;
         }   
-        // let replaced=shape.replaceWith(intersection);
-        // replaced && (shape=intersection);            
+                 
     }
     
     function findNewItem(){
@@ -269,8 +257,11 @@ function AnnotationPaper(openSeadragonViewer){
     function findSelectedPolygon(){
         return ps.project.getItems({selected:true,class:paper.CompoundPath})[0];
     }
+    function findSelectedItems(){
+        return ps.project.getItems({selected:true,match:function(i){return i.isAnnotationFeature} });
+    }
     function findSelectedItem(){
-        return ps.project.getItems({selected:true,match:function(i){return i.isAnnotationFeature} })[0];
+        return findSelectedItems[0];
     }
     function applyProperties(item){
         let input = item.config.properties || _this.defaultStyle();
@@ -278,9 +269,9 @@ function AnnotationPaper(openSeadragonViewer){
         let overrides={strokeWidth:sw, }
         let style = Object.assign({},input,overrides );
 
-        console.log('applying properties',style);
+        // console.log('applying properties',style);
         item.set(style);
-        console.log('after apply',item.fillColor,item.strokeColor);
+        // console.log('after apply',item.fillColor,item.strokeColor);
     }  
     
     function makePolygon(geoJSON){
@@ -327,7 +318,6 @@ function AnnotationPaper(openSeadragonViewer){
 
         let grp = new paper.Group([]);
         grp.isAnnotationFeature=true;
-        // raster.isAnnotationFeature=true;
         poly.isAnnotationFeature=false;
         grp.config = Object.assign({},poly.config);
         grp.config.geometry.properties.subtype='Raster';
@@ -365,7 +355,6 @@ function AnnotationPaper(openSeadragonViewer){
         })
         grp.config=geoJSON;
         grp.config.properties.rescale && (delete grp.config.properties.rescale.strokeWidth);
-        // console.log(grp.config);
         applyProperties(grp);
         grp.fillColor = null;
         grp.isLineString=true;
@@ -382,36 +371,67 @@ function AnnotationPaper(openSeadragonViewer){
     function makePoint(geoJSON){ 
         if(geoJSON.geometry.type!=='Point'){
             error('Bad geoJSON object: type !=="Point"');
-        }       
+        }
+        let radius = 8.0;       
         let coords = geoJSON.geometry.coordinates.length==2 ? geoJSON.geometry.coordinates : [0,0];
-        // let point = new paper.Shape.Circle(new paper.Point(...coords), _this.api.scaleByCurrentZoom(8.0));
-        let point = new paper.Path.Circle(new paper.Point(...coords), _this.api.scaleByCurrentZoom(8.0));
-        point.config = geoJSON;
+        let point = new paper.Group({pivot:new paper.Point(0,0), applyMatrix:true, });
+        // let circle= new paper.Path.Circle(new paper.Point(...coords), _this.api.scaleByCurrentZoom(radius));
+        let circle= new paper.Path.Circle(new paper.Point(...coords), radius);
+        
+        point.addChild(circle);
 
+        let domText = $('<i>',{class:'fa-solid fa-map-pin',style:'visibility:hidden;'}).appendTo('body');
+        let computedStyle=window.getComputedStyle(domText[0],':before');
+        let text = computedStyle.content.substring(1,2);
+        let fontFamily=computedStyle.fontFamily;
+        let fontWeight=computedStyle.fontWeight;
+        // console.log(text,fontFamily,fontWeight)
+        domText.remove();
+
+        let textitem = new paper.PointText({
+            point: new paper.Point(0,0),
+            pivot: new paper.Point(0,0),
+            content:text,
+            fontFamily:fontFamily,
+            fontWeight:fontWeight,
+            fontSize:18,
+            strokeWidth:1,//keep this constant
+        });
+        point.addChild(textitem);
+        textitem.translate(new paper.Point(-6, 2));
+
+        point.config = geoJSON;
         applyProperties(point);
+        
+
+        point.scaleFactor = _this.api.scaleByCurrentZoom(1);
+        point.scale(point.scaleFactor,circle.bounds.center)
+        circle.scale(new paper.Point(1,0.5),circle.bounds.bottom);
+        textitem.strokeWidth = point.strokeWidth/point.scaleFactor;
+        console.log('init sw:',textitem.strokeWidth)
+        
         point.rescale = point.rescale || {};
-        point.rescale.radius = function(z){
-            let temp = new paper.Path.Circle(point.matrix.inverseTransform(point.position),8.0/z);
-            point.segments = temp.segments;
-            temp.remove();
+
+        point.rescale.size = function(z){
+            point.scale(1/(point.scaleFactor*z));
+            point.scaleFactor=1/z;
+            textitem.strokeWidth=1;//keep constant; reset after strokewidth is set on overall item
         };
         
         point.toGeoJSONGeometry=function(){
             let g = this.config.geometry;
-            g.coordinates=[this.position.x,this.position.y];
+            g.coordinates=[circle.bounds.center.x,circle.bounds.center.y];
             return g;
         }
         
+        point.applyRescale();
         return point;
     }
     
-
     
     function initializeItem(geoJSONGeometryType, geometrySubtype=null){
         let item = findNewItem() || findSelectedPolygon();
-        // console.log('Init item if needed:',item)
         if(item&&item.instructions){
-            // console.log('Init instructions',item.instructions)
             let geoJSON=item.instructions;
             geoJSON.geometry ={
                 type:geoJSONGeometryType,
@@ -436,16 +456,6 @@ function AnnotationPaper(openSeadragonViewer){
         data.eventName=eventname;
         _this.viewer.raiseEvent('AnnotationPaper',data);
     }
-    
-    //modified from https://stackoverflow.com/a/32922084/1214731
-    // function deepEqual(x, y) {
-    //     const ok = Object.keys, tx = typeof x, ty = typeof y;
-    //     return x && y && tx === 'object' && tx === ty? (
-    //         ok(x).length === ok(y).length &&
-    //         ok(x).every(function(key){return deepEqual(x[key], y[key])})
-    //     ) : (x === y);
-    // }
-    
     
 
     broadcast('paper-created',{AnnotationPaper:api});

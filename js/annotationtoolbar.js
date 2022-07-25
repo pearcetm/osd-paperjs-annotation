@@ -25,14 +25,14 @@ export class AnnotationToolbar{
                     arg.config.geometry.type +(arg.config.geometry.properties&&arg.config.geometry.properties.subtype? ':'+arg.config.geometry.properties.subtype: '') 
                     : arg;
             this.currentMode = mode;
-            console.log('setToolbarMode to',mode);
-            console.log('finding active tools for',mode);
+            
             this.tools.forEach(t=>{
-                $(t.button.element).prop('disabled',!t.isActiveForMode(mode))
+                //$(t.button.element).prop('disabled',!t.isEnabledForMode(mode))
+                t.isEnabledForMode(mode) ? t.button.enable() : t.button.disable();
             })
         }
 
-        this.setMode('noselection');
+        this.setMode('initial');
     }
     addTool(toolbarControl){
         // console.log('addTool',toolbarControl)
@@ -41,13 +41,9 @@ export class AnnotationToolbar{
             toolbarControl.button && toolbarControl.button.element && this.ui.buttongroup.buttons.push(toolbarControl.button)
             toolbarControl.dropdown && this.ui.dropdowns.append(toolbarControl.dropdown);
 
-            // toolbarControl.tool.addEventListener('activated',(ev)=>{
-            //     console.log('activated dropdown=',ev.target.toolbarControl.dropdown)
-            // })
-            // toolbarControl.tool.addEventListener('deactivated',(ev)=>{
-            //     console.log('deactivated dropdown=',ev.target.toolbarControl.dropdown)
-            // })
-            $(toolbarControl.button.element).prop('disabled',!toolbarControl.isActiveForMode(this.currentMode))
+            // $(toolbarControl.button.element).prop('disabled',!toolbarControl.isEnabledForMode(this.currentMode))
+            toolbarControl.isEnabledForMode(this.currentMode) ? toolbarControl.button.enable() : toolbarControl.button.disable();
+            // console.log('Button disabled?',toolbarControl.button.element.disabled)
         }
     }
     show(){

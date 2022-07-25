@@ -44,7 +44,7 @@ export class BrushTool extends ToolBase{
         this.finish = function(){
             item=dragging=null;
             // this.broadcast('finished');
-            this.toolbarControl.deactivate();
+            this.deactivate();
         }
         
         this.setRadius=function(r){
@@ -165,7 +165,8 @@ export class BrushTool extends ToolBase{
 class BrushToolbar extends ToolbarBase{
     constructor(brushTool){
         super(brushTool);
-        this.button.configure('Brush','Brush Tool');
+        let html = $('<i>',{class:'fa fa-brush fa-rotate-by',style:'--fa-rotate-angle: 225deg;'});
+        this.button.configure(html,'Brush Tool');
         
         let fdd = $('<div>',{'data-tool':'brush',class:'dropdown brush-toolbar'}).appendTo(this.dropdown);
         let defaultRadius = 20;
@@ -183,8 +184,8 @@ class BrushToolbar extends ToolbarBase{
         });
         setTimeout(()=>brushTool.setRadius(defaultRadius), 0);
     }
-    isActiveForMode(mode){
-        return ['new','Polygon','Polygon:Rectangle'].includes(mode);
+    isEnabledForMode(mode){
+        return ['new','Polygon','Polygon:Rectangle','Polygon:Raster'].includes(mode);
     }
     updateBrushRadius(update){
         if(update.larger){

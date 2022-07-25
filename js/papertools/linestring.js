@@ -54,29 +54,29 @@ export class LinestringTool extends PolygonTool{
             }
             
             // self.simplifying && self.cancelSimplify();  
-            
-            let hitResult = (self.drawing&&self.drawing.path ||self.item).hitTest(ev.point,{fill:false,stroke:true,segments:true,tolerance:(5/self.project.getZoom())})
+            let dr = self.drawing();
+            let hitResult = (dr&&dr.path ||self.item).hitTest(ev.point,{fill:false,stroke:true,segments:true,tolerance:(5/self.project.getZoom())})
             if(hitResult){
                 //if erasing and hitResult is a segment, hitResult.segment.remove()
                 if(hitResult.type=='segment' && self.eraseMode){
                     hitResult.segment.remove();
                 }
                 //if hitResult is the last segment and NOT erasing, finish the current path
-                else if(hitResult.type=='segment' && self.drawing && hitResult.segment==self.drawing.path.lastSegment){
+                else if(hitResult.type=='segment' && dr && hitResult.segment==dr.path.lastSegment){
                     self.finishCurrentPath();
                 }
                 //if hitResult is a segment and NOT erasing, save reference to hitResult.segment for dragging it
                 else if(hitResult.type=='segment'){
                     self.draggingSegment = hitResult.segment;
                 }
-                //if hitResult is a stroke, add a point:
-                else if(hitResult.type=='stroke'){
+                //if hitResult is a stroke, add a point (unless in erase mode):
+                else if(hitResult.type=='stroke' && !self.eraseMode){
                     let insertIndex = hitResult.location.index +1;
                     let ns = hitResult.item.insert(insertIndex, ev.point);
                 }
             }
             else{ //not drawing yet, but start now!
-                self.startNewPath(ev);
+                if(!self.eraseMode) self.startNewPath(ev);
             }
             
         }
@@ -90,8 +90,8 @@ export class LinestringTool extends PolygonTool{
         tool.onMouseDrag=function(ev){
             self.cursor.position=ev.point;
             superOnMouseDrag(ev);
-            //console.log('dragged',self.drawing) 
-            self.drawing && (self.drawing.path.segments = self.simplifier.simplify(self.drawing.path.segments.map(s=>s.point)));
+            let dr = self.drawing();
+            dr && (dr.path.segments = self.simplifier.simplify(dr.path.segments.map(s=>s.point)));
         }
         tool.onMouseUp=function(ev){
             self.finishCurrentPath();
@@ -110,16 +110,16 @@ export class LinestringTool extends PolygonTool{
         this.finishCurrentPath();
         this.drawingGroup.removeChildren();
         this.drawingGroup.addChild(new paper.Path([ev.point]));
-        this.drawing = {path:this.drawingGroup.lastChild, index: 1};
+        // this.drawing = {path:this.drawingGroup.lastChild, index: 1};
         this.drawingGroup.visible=true;
         this.drawingGroup.selected=true;
         this.drawingGroup.selectedColor= this.eraseMode ? 'red' : null;
-        this.drawing.path.set({strokeWidth:this.cursor.radius*2, strokeColor:this.item.strokeColor})
+        this.drawing().path.set({strokeWidth:this.cursor.radius*2, strokeColor:this.item.strokeColor})
         console.log('started new path')
     }
     //override finishCurrentPath so it doesn't close the path
     finishCurrentPath(){
-        if(!this.drawing || !this.item) return;
+        if(!this.drawing() || !this.item) return;
         console.log('finished current path')
         // this.drawing.path.closed=true;
         // if(this.drawing.path.parent==this.drawingGroup){
@@ -137,16 +137,17 @@ export class LinestringTool extends PolygonTool{
         //     this.drawingGroup.removeChildren();
         //     this.drawing=null;
         // }
-        this.item.addChild(this.drawing.path);
+        this.item.addChild(this.drawing().path);
         this.drawingGroup.removeChildren();
-        this.drawing=null;
+        // this.drawing=null;
     }
 }
 
 class LinestringToolbar extends ToolbarBase{
     constructor(linestringTool){
         super(linestringTool);
-        this.button.configure('Draw','Linestring Tool');
+        let html = $('<i>',{class:'fa-solid fa-pen-nib'});
+        this.button.configure(html,'Linestring Tool');
         
         let fdd = $('<div>',{'data-tool':'linestring',class:'dropdown linestring-toolbar'}).prependTo(this.dropdown);
         let defaultRadius=4;
@@ -171,7 +172,7 @@ class LinestringToolbar extends ToolbarBase{
             this.rangeInput.val(parseFloat(this.rangeInput.val())-parseFloat(this.rangeInput.attr('step'))).trigger('change');
         }
     }
-    isActiveForMode(mode){
+    isEnabledForMode(mode){
         return ['new','LineString'].includes(mode);
     }
     setEraseMode(erasing){

@@ -1,14 +1,19 @@
 //requires jquery, jqueryui
 //styles in annotationui.css
 //events: raises AnnotationUI events on the OpenSeadragon viewer. The data object contains an eventName field.
+import 'https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js';
 import 'https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js';
 import 'https://cdnjs.cloudflare.com/ajax/libs/bootstrap-toggle/2.2.2/js/bootstrap-toggle.min.js';
+import {addCSS} from './addcss.js';
+import './annotationpaper.js';
 import { MainDialog } from './maindialog.js';
 
-$('head').append('<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.css">');
-$('head').append('<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-toggle/2.2.2/css/bootstrap-toggle.min.css">');
-$('head').append('<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">');
-// $('head').append('<link rel="stylesheet" href="./annotationui.css">');
+addCSS('https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.css','jquery-ui');
+// if(window.location.hash == '#bs') addCSS('https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css','bootstrap');
+addCSS('https://cdnjs.cloudflare.com/ajax/libs/bootstrap-toggle/2.2.2/css/bootstrap-toggle.min.css','bootstrap-toggle');
+addCSS('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css','font-awesome/6.1.1/css/all');
+addCSS(`${import.meta.url.match(/(.*?)js\/[^\/]*$/)[1]}css/annotationui.css`,'annotationui');
+
 console.log('Location of annotationui.js module',import.meta);
 // - ui-added
 function AnnotationUI(openSeadragon, opts={}){
@@ -21,26 +26,29 @@ function AnnotationUI(openSeadragon, opts={}){
 
     let _viewer = openSeadragon;
     _viewer.addOnceHandler('close',remove);
-    // _viewer.addHandler('AnnotationPaper',handlePaperEvent);
-
+    
     let button = new OpenSeadragon.Button({
-        tooltip: 'AnnotationUI',
-        srcRest: _viewer.prefixUrl+`annotationui_rest.png`,
-        srcGroup: _viewer.prefixUrl+`annotationui_grouphover.png`,
-        srcHover: _viewer.prefixUrl+`annotationui_hover.png`,
-        srcDown: _viewer.prefixUrl+`annotationui_pressed.png`,
+        tooltip: 'Annotation interface (i)',
+        srcRest: openSeadragon.prefixUrl+`button_rest.png`,
+        srcGroup: openSeadragon.prefixUrl+`button_grouphover.png`,
+        srcHover: openSeadragon.prefixUrl+`button_hover.png`,
+        srcDown: openSeadragon.prefixUrl+`button_pressed.png`,
         onClick: function(){
             dialog.toggle()
         }
     });
-    _viewer.addControl(button.element, { anchor: OpenSeadragon.ControlAnchor.TOP_LEFT });
+    $(button.element).append($('<i>', {class:"fa-solid fa-pencil button-icon"}));
+    openSeadragon.buttonGroup.buttons.push(button);
+    openSeadragon.buttonGroup.element.appendChild(button.element);
 
     let Paper = _viewer.annotationPaper || _viewer.addAnnotationPaper();//make this create annotationPaper if it doesn't exist
 
     let dialog = new MainDialog({
         AnnotationPaper:Paper,
         filename:_viewer.world.getItemAt(_viewer.currentPage()).source.name,
-        positioningElement:_viewer.navigator.element});
+        positioningElement:(_viewer.navigator || _viewer).element,
+        appendTo:_viewer.element,
+    });
     opts.autoOpen ? dialog.open() : dialog.close();
     
     if(opts.featureCollections){
