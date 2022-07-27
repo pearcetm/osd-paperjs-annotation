@@ -159,9 +159,6 @@ class LinestringToolbar extends ToolbarBase{
             let erasing = $(this).toggleClass('active').hasClass('active');
             linestringTool.setEraseMode(erasing);
         });
-        this.doneButton=$('<button>',{'data-action':'done'}).text('Done').appendTo(fdd).on('click',function(){
-            linestringTool.finish();
-        });
         setTimeout(()=>linestringTool.setRadius(defaultRadius));
     }
     updateBrushRadius(update){

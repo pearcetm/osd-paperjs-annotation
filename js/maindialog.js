@@ -13,9 +13,15 @@ export class MainDialog{
 
         let Paper = opts.AnnotationPaper;
         let styleui = new StyleUI(Paper);
-        let fileDialog = new FileDialog(this);
+        let fileDialog = new FileDialog(this,opts);
         
         _this.element = makeMainDialogElement();
+        let guid= 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(c) {
+            let r = Math.random() * 16|0;
+            let v = c == 'x' ? r : (r&0x3|0x8);
+            return v.toString(16);
+        });
+        _this.element.attr('data-ui-id',guid);
         _this.element.find('.annotation-ui-style-tools').empty().append(styleui.element);
 
         _this.filename = opts.filename || 'Unnamed File';
@@ -35,7 +41,7 @@ export class MainDialog{
         }
         _this.addFeatureCollection = function(geoJSON){
             let baseStyle = Object.assign({}, styleui.getBaseStyle(), (geoJSON && geoJSON.properties)? geoJSON.properties : {})
-            let fc=new FeatureCollection({geoJSON:geoJSON, AnnotationPaper:Paper, baseStyle:baseStyle});
+            let fc=new FeatureCollection({geoJSON:geoJSON, AnnotationPaper:Paper, baseStyle:baseStyle, guiSelector:`[data-ui-id="${guid}"]`});
             _this.element.find('.annotation-ui-feature-collections').append(fc.element).sortable('refresh');
             fc.element.trigger('element-added');
             setTimeout(function(){fc.element.addClass('inserted'); }, 30);//this allows opacity fade-in to be triggered
@@ -92,7 +98,7 @@ export class MainDialog{
         _this.element.find('.annotation-ui-feature-collections').sortable({contain:'parent',update:function(){
             _this.element.find('.annotation-ui-feature-collections .feature-collection').each(function(idx,g){
                 let fg = $(g).data('featureCollection');
-                fg.paperGroup.layer.bringToFront();
+                fg.paperObjects.layer.bringToFront();
             })
         }})
 
@@ -105,7 +111,7 @@ export class MainDialog{
             height:'auto',
             appendTo:opts.appendTo,
         });
-        _this.element.closest('.ui-dialog').draggable('option','containment','window')
+        _this.element.closest('.ui-dialog').draggable('option','containment','parent')
         let fb=$('<button>',{class:'file-button'}).text('File').prependTo(_this.element.dialog('instance').classesElementLookup['ui-dialog-title'])
         .on('click',function(){
             fileDialog.dialog('open');
@@ -223,7 +229,8 @@ export class MainDialog{
             let pos = _this.element.dialog('option','position');
             positionDialog(pos);
             scrolltoelement && setTimeout(()=>{
-                scrolltoelement[0].scrollIntoView(false)
+                //scrolltoelement[0].scrollIntoView(false)
+                scrolltoelement[0].scrollIntoView({block: "nearest", inline: "nearest"})
             }, 0);
         }
         function onOpen(){positionDialog();Paper.showToolbar();}

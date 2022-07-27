@@ -102,14 +102,14 @@ export class ToolbarBase{
         if(this._active) return;
         this._active=true;
         //this.tool.activate();
-        $(this.button.element).addClass('active'); console.log('Added active class',this);
+        $(this.button.element).addClass('active');
         this.dropdown.addClass('active');
     }
     deactivate(shouldFinish){
         if(!this._active) return;
         this._active=false;
         //this.tool.deactivate(shouldFinish);
-        $(this.button.element).removeClass('active');console.log('Removed active class',this);
+        $(this.button.element).removeClass('active');
         this.dropdown.removeClass('active');
     }
 }

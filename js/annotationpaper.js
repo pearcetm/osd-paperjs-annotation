@@ -30,7 +30,6 @@ function AnnotationPaper(openSeadragonViewer){
     _this.defaultStyle = function(){ return _this._defaultStyle; }
     let ps;
     _this.viewer = openSeadragonViewer;
-    // _this.overlay = _this.viewer.paperjsOverlay({scale:_this.viewer.tileSources.width || 1});
     _this.overlay = _this.viewer.paperjsOverlay();
     _this.canvas = _this.overlay._paperCanvas;
     _this.canvas.addClass=function(c){;
@@ -132,7 +131,7 @@ function AnnotationPaper(openSeadragonViewer){
             'deselected':function(){
                 let selected=_this.tools.select.getSelectedItems();
                 selected.length==1? toolbar.setMode(selected[0]) : toSelectMode();
-                selected.length==1? toolbar.setMode(selected[0]) : toSelectMode();
+                // selected.length==1? toolbar.setMode(selected[0]) : toSelectMode();
                 let activeTool = getActiveTool();
                 activeTool && activeTool.selectionChanged();
             },
@@ -268,7 +267,7 @@ function AnnotationPaper(openSeadragonViewer){
         let sw = input.rescale&&input.rescale.hasOwnProperty('strokeWidth') ? _this.api.scaleByCurrentZoom(input.rescale.strokeWidth) : input.strokeWidth;
         let overrides={strokeWidth:sw, }
         let style = Object.assign({},input,overrides );
-
+        delete style.label;//remove label data since it won't update when the UI changes it and isn't needed by paperjs
         // console.log('applying properties',style);
         item.set(style);
         // console.log('after apply',item.fillColor,item.strokeColor);
@@ -293,6 +292,8 @@ function AnnotationPaper(openSeadragonViewer){
         })
         poly.config=geoJSON;
         applyProperties(poly);
+
+        poly.canBeBoundingElement=true;
         
         
         poly.toGeoJSONGeometry=function(){
@@ -374,18 +375,22 @@ function AnnotationPaper(openSeadragonViewer){
         }
         let radius = 8.0;       
         let coords = geoJSON.geometry.coordinates.length==2 ? geoJSON.geometry.coordinates : [0,0];
-        let point = new paper.Group({pivot:new paper.Point(0,0), applyMatrix:true, });
-        // let circle= new paper.Path.Circle(new paper.Point(...coords), _this.api.scaleByCurrentZoom(radius));
-        let circle= new paper.Path.Circle(new paper.Point(...coords), radius);
+        let point = new paper.Group({
+            pivot:new paper.Point(0,0),
+            applyMatrix:true,
+        });
+        let circle= new paper.Path.Circle(new paper.Point(0,0), radius);
+        circle.scale(new paper.Point(1,0.5),new paper.Point(0,0));
+        // let circle= new paper.Path.Circle(new paper.Point(...coords), radius);
         
         point.addChild(circle);
 
+        //to-do: make the class(es) used to select a fontawesome icon a configurable option
         let domText = $('<i>',{class:'fa-solid fa-map-pin',style:'visibility:hidden;'}).appendTo('body');
         let computedStyle=window.getComputedStyle(domText[0],':before');
         let text = computedStyle.content.substring(1,2);
         let fontFamily=computedStyle.fontFamily;
         let fontWeight=computedStyle.fontWeight;
-        // console.log(text,fontFamily,fontWeight)
         domText.remove();
 
         let textitem = new paper.PointText({
@@ -398,17 +403,16 @@ function AnnotationPaper(openSeadragonViewer){
             strokeWidth:1,//keep this constant
         });
         point.addChild(textitem);
-        textitem.translate(new paper.Point(-6, 2));
+        textitem.translate(new paper.Point(-6, -2));//to-do: make this automatic somehow, instead of hard-coded...
 
         point.config = geoJSON;
         applyProperties(point);
         
-
+        point.position = new paper.Point(...coords);
         point.scaleFactor = _this.api.scaleByCurrentZoom(1);
         point.scale(point.scaleFactor,circle.bounds.center)
-        circle.scale(new paper.Point(1,0.5),circle.bounds.bottom);
         textitem.strokeWidth = point.strokeWidth/point.scaleFactor;
-        console.log('init sw:',textitem.strokeWidth)
+        // console.log('init sw:',textitem.strokeWidth)
         
         point.rescale = point.rescale || {};
 

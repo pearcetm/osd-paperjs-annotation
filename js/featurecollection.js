@@ -26,10 +26,12 @@ export class FeatureCollection{
         this._featurelist=this.element.find('.features-list');
         this._featurelist.sortable({
             contain:'parent',
+            connectWith:`${init.guiSelector} .features-list`,
             update:function(){
                 _this._featurelist.children().each(function(idx,c){
-                    let paperitem = $(c).data('feature').paperItem;
-                    paperitem.parent.addChild(paperitem);
+                    // let paperitem = $(c).data('feature').paperItem;
+                    // paperitem.parent.addChild(paperitem);
+                    _this.paperObjects.group.addChild($(c).data('feature').paperItem);
                 })
             },
         });

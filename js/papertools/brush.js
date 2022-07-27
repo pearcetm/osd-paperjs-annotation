@@ -179,9 +179,6 @@ class BrushToolbar extends ToolbarBase{
             let erasing = $(this).toggleClass('active').hasClass('active');
             brushTool.setEraseMode(erasing);
         });
-        $('<button>',{'data-action':'done'}).appendTo(fdd).text('Done').on('click',function(){
-            brushTool.finish();
-        });
         setTimeout(()=>brushTool.setRadius(defaultRadius), 0);
     }
     isEnabledForMode(mode){

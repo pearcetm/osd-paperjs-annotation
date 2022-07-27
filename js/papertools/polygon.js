@@ -158,72 +158,53 @@ export class PolygonTool extends ToolBase{
     finish(){
         this.finishCurrentPath();
         this.setEraseMode(false);
-        this.cancelSimplify();     
         this.item=this.draggingSegment=null;
         this.project.paperScope.view.removeClass('tool-action').setAttribute('data-tool-action','');
         this.deactivate();
-        this.broadcast('finished')  
+        // this.broadcast('finished')  
         this.drawingGroup.selected=false;      
         this.drawingGroup.visible=false;  
     }
     doSimplify(){
-        // console.log('doSimplify',self.item);
-        if(this.item){
-            let lengthThreshold = 10/this.project.getZoom();
-            let tol = 2.5/this.project.getZoom();
-            this.simplifying = this.simplifying || this.item.clone();
-            // this.item.visible=false;
-            // this.item.selected=false;
-            this.simplifying.item = this.item;
-            this.drawingGroup.insertChild(this.simplifying,0);
-            // this.simplifying.selected=true;
-            // this.simplifying.selectedColor='green';
-            let pathsToRemove=[];
-            this.simplifying.children.forEach(path=>{
-                let pts = path.segments.map(s=>{
-                    if(s.point.subtract(s.previous.point).length < lengthThreshold && s.point.subtract(s.next.point).length < lengthThreshold){
-                        s.point.x = (s.point.x+s.previous.point.x+s.next.point.x)/3;
-                        s.point.y = (s.point.y+s.previous.point.y+s.next.point.y)/3;
-                    }
-                    return s.point;
-                })
-                pts.push(pts[0]);//
-                let newpts = this.simplifier.simplify(pts,tol,true);
-                path.segments=newpts;
-                if(path.segments.length < 3 || Math.abs(path.area) < tol*tol) pathsToRemove.push(path);
-                
+        if(!this.item) return;
+        
+        let lengthThreshold = 10/this.project.getZoom();
+        let tol = 2.5/this.project.getZoom();
+        this.simplifying = this.simplifying || this.item.clone();
+        this.simplifying.item = this.item;
+        this.drawingGroup.insertChild(this.simplifying,0);
+        let pathsToRemove=[];
+        this.simplifying.children.forEach(path=>{
+            let pts = path.segments.map(s=>{
+                if(s.point.subtract(s.previous.point).length < lengthThreshold && s.point.subtract(s.next.point).length < lengthThreshold){
+                    s.point.x = (s.point.x+s.previous.point.x+s.next.point.x)/3;
+                    s.point.y = (s.point.y+s.previous.point.y+s.next.point.y)/3;
+                }
+                return s.point;
             })
-            pathsToRemove.forEach(p=>p.remove());
-            let united = this.simplifying.unite(this.simplifying,{insert:false}).reduce().toCompoundPath();
-            this.simplifying.removeChildren();
-            this.simplifying.addChildren(united.children);
-            if(!this.item.isBoundingElement){
-                let boundingItems = this.item.parent.children.filter(i=>i.isBoundingElement);
-                this.simplifying.applyBounds(boundingItems);
-            }
-            united.remove();
-            this.applySimplify();
+            pts.push(pts[0]);//
+            let newpts = this.simplifier.simplify(pts,tol,true);
+            path.segments=newpts;
+            if(path.segments.length < 3 || Math.abs(path.area) < tol*tol) pathsToRemove.push(path);
+            
+        })
+        pathsToRemove.forEach(p=>p.remove());
+        let united = this.simplifying.unite(this.simplifying,{insert:false}).reduce().toCompoundPath();
+        this.simplifying.removeChildren();
+        this.simplifying.addChildren(united.children);
+        if(!this.item.isBoundingElement){
+            let boundingItems = this.item.parent.children.filter(i=>i.isBoundingElement);
+            this.simplifying.applyBounds(boundingItems);
         }
+        united.remove();
+        this.simplifying.item.removeChildren();
+        this.simplifying.item.addChildren(this.simplifying.children);
+        this.simplifying.remove();
+        this.simplifying = null;
+        this.saveHistory()
+        
     }
-    applySimplify(){
-        if(this.simplifying){
-            this.simplifying.item.removeChildren();
-            this.simplifying.item.addChildren(this.simplifying.children);
-            this.simplifying.remove();
-            // this.simplifying.item.visible=true;
-            // this.simplifying.item.selected=true;
-            this.simplifying = null;
-            this.saveHistory()
-        }
-        // this.cancelSimplify();
-    }
-    // cancelSimplify(){
-    //     if(!this.simplifying) return;
-    //     this.simplifying && this.simplifying.remove();
-    //     this.simplifying.item.visible=true;
-    //     this.simplifying.item.selected=true;
-    //     this.simplifying = null;
-    // }
+    
     
     setEraseMode(erase){
         this.eraseMode=erase;
@@ -245,6 +226,7 @@ export class PolygonTool extends ToolBase{
                 }
                 this.item.removeChildren();
                 this.item.addChildren(result.children);
+                this.item.children.forEach(child=>child.selected=false);//only have the parent set selected status
                 result.remove();
             }
             this.drawingGroup.removeChildren();
@@ -257,11 +239,7 @@ export class PolygonTool extends ToolBase{
         this.item.history=[{
             children:this.item.children.map(x=>x.clone({insert:false,deep:true})),
             drawingGroup:this.drawingGroup.children.map(x=>x.clone({insert:false,deep:true})),
-        }].concat((this.item.history||[]).slice(idx,historyLength))
-        // console.log('history',this.item.history)
-        // console.log('children',this.item.children)
-
-        // window.pgon = this;
+        }].concat((this.item.history||[]).slice(idx,historyLength));
     }
     undo(){
         console.log('undoing');
@@ -302,32 +280,11 @@ export class PolygonToolbar extends ToolbarBase{
         let simplifyDiv=$('<div>').appendTo(fdd);
         this.simplifyButton=$('<button>',{'data-action':'simplify'}).text('Simplify').appendTo(simplifyDiv).on('click',function(){
             polyTool.doSimplify();
-            // self.simplifyApply.prop('disabled',false);
-            // self.simplifyCancel.prop('disabled',false);
-            // self.eraseButton.prop('disabled',true);
-            // self.doneButton.prop('disabled',true);
         });
-        // this.simplifyApply=$('<button>',{'data-action':'simplify-apply',disabled:true}).text('Apply').appendTo(simplifyDiv).on('click',function(){
-        //     polyTool.applySimplify();
-        //     self.simplifyApply.prop('disabled',true);
-        //     self.simplifyCancel.prop('disabled',true);
-        //     self.eraseButton.prop('disabled',false);
-        //     // self.doneButton.prop('disabled',false);
-        // });
-        // this.simplifyCancel=$('<button>',{'data-action':'simplify-cancel',disabled:true}).text('Cancel').appendTo(simplifyDiv).on('click',function(){
-        //     polyTool.cancelSimplify();
-        //     self.simplifyApply.prop('disabled',true);
-        //     self.simplifyCancel.prop('disabled',true);
-        //     self.eraseButton.prop('disabled',false);
-        //     // self.doneButton.prop('disabled',false);
-        // });
         this.eraseButton=$('<button>',{'data-action':'erase'}).text('Eraser').appendTo(fdd).on('click',function(){
             let erasing = $(this).toggleClass('active').hasClass('active');
             polyTool.setEraseMode(erasing);
         });
-        // this.doneButton=$('<button>',{'data-action':'done'}).text('Done').appendTo(fdd).on('click',function(){
-        //     polyTool.finish();
-        // });
         let span = $('<span>').appendTo(fdd);
         this.undoButton=$('<button>',{title:'Undo (ctrl-Z)', 'data-action':'undo'}).text('<').appendTo(span).on('click',function(){
             polyTool.undo();

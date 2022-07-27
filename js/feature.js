@@ -53,6 +53,7 @@ export class Feature{
         });
         el.find('.bounding-element').on('click', function(ev){
             ev.stopPropagation();
+            if(!_this.paperItem.canBeBoundingElement) return;
             $(this).toggleClass('active');
             let isActive = $(this).hasClass('active');
             _this.paperItem.isBoundingElement = isActive;
@@ -176,9 +177,10 @@ function makeFeatureElement(){
     let html = `
     <div class='feature'>
         <div class='editablecontent'>
-            <span class='onhover fa fa-star bounding-element' title='Bounding element'></span>
+            <span class='onhover fa-solid fa-crop-simple bounding-element' title='Bounding element'></span>
             <span class='feature-item name edit'>Creating...</span>
             <span class='onhover fa fa-edit' data-action='edit' title='Edit name'></span>
+            <span class='onhover fa-solid fa-magnifier' data-action='zoom-to' title='View this feature'></span>
             <span class='onhover fa-solid fa-trash-can' data-action='trash' title='Remove'></span>
         </div>
     </div>

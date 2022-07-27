@@ -1,11 +1,11 @@
 export class FileDialog{
 
 
-    constructor(maindialog){
+    constructor(maindialog,opts){
         let _this=this;
         this._mainwindow = maindialog;
         this.element = $(fileDialogHtml()).appendTo('body');
-        this.element.dialog({autoOpen:false,modal:true,open:initDlg,width:'auto'});
+        this.element.dialog({autoOpen:false,modal:true,open:initDlg,width:'auto','appendTo':opts.appendTo});
         this.dialog = function(...args){ this.element.dialog(...args) }
 
         this.element.find('button[data-action="geojson-load"]').on('click',loadGeoJSON)
@@ -127,7 +127,7 @@ export class FileDialog{
                     let p = new paper.PaperScope();
                     p.setup();
                     toSave.forEach(function(s){
-                        p.project.addLayer(s.paperGroup.layer.clone({insert:false,deep:true}));
+                        p.project.addLayer(s.paperObjects.layer.clone({insert:false,deep:true}));
                     })
                     let blob = new Blob([p.project.exportSVG({asString:true,bounds:'content'})],{type:'text/svg'});
                     let filename=_this._mainwindow.filename+'-FeatureCollections.svg';
@@ -148,7 +148,7 @@ export class FileDialog{
                     let p = new paper.PaperScope();
                     p.setup();
                     toSave.forEach(function(s){
-                        p.project.activeLayer.addChildren(s.paperGroup.layer.clone({insert:false,deep:true}).children);
+                        p.project.activeLayer.addChildren(s.paperObjects.layer.clone({insert:false,deep:true}).children);
                     })
                     // let blob = new Blob([p.project.activeLayer.rasterize({insert:false}).toDataURL()],{type:'image/png'});
                     let filename=_this._mainwindow.filename+'-raster.png';

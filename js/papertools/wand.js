@@ -6,8 +6,8 @@ export class WandTool extends ToolBase{
         let self = this;
         let tool = this.tool;   
         this.paperScope = project.paperScope;
-        let item, start, dragging, visibleArea, viewarea, preview;
-        let dragStartMask, currentMask, eraseMask, initMask;
+        let item, itemLayer, start, dragging, visibleArea, viewarea, preview;
+        let dragStartMask, currentMask, eraseMask, initMask, boundingMask;
         let reduceMode = false;
         let replaceMode = true;
         let floodMode = true;
@@ -30,8 +30,20 @@ export class WandTool extends ToolBase{
         this.toolbarControl.setThreshold(threshold);
         
         this.extensions.onActivate = function(){ 
-            if(!item) {
+            if(item){
+                itemLayer = item.layer;
+            }
+            else{
                 item=self.project.findSelectedPolygon(); //do not init-if-needed because we don't necessarily want to create a new polygon yet
+                if(item){
+                    itemLayer = item.layer;
+                }
+                else{
+                    let initItem = self.project.paperScope.project.getItems({match:i=>i.selected&&i.instructions});
+                    if(initItem.length>0){
+                        itemLayer=initItem[0].layer;
+                    }
+                }
             }
             getImageData();
             self.project.viewer.addHandler('animation-finish',getImageData); 
@@ -47,9 +59,9 @@ export class WandTool extends ToolBase{
         };
         this.finish = function(){
             // if(item) smoothAndSimplify(item);
-            item=dragging=null;
+            item=itemLayer=dragging=null;
             preview && preview.remove();
-            dragStartMask=currentMask=eraseMask=initMask=null;
+            dragStartMask=currentMask=eraseMask=initMask=boundingMask=null;
             self.deactivate();
             // this.broadcast('finished');      
         }
@@ -166,10 +178,10 @@ export class WandTool extends ToolBase{
             }
             let success =  newPath !== n1;
             if(success){
-                if(!item.isBoundingElement){
-                    let boundingItems = item.parent.children.filter(i=>i.isBoundingElement);
-                    newPath.applyBounds(boundingItems);
-                }
+                // if(!item.isBoundingElement){
+                //     let boundingItems = itemLayer.getItems({match:i=>i.isBoundingElement})
+                //     newPath.applyBounds(boundingItems);
+                // }
                 item.removeChildren();
                 item.addChildren(newPath.children);
             }
@@ -251,26 +263,67 @@ export class WandTool extends ToolBase{
             viewarea.fillColor='black';
 
             // console.log('vis',visibleArea,'view',viewarea)
-            
+            let boundingItems = itemLayer && itemLayer.getItems({match:i=>i.isBoundingElement});
+            if(boundingItems.length>0){
+                let mask = new paper.Group();
+                mask.addChild(viewarea);    //viewarea is a black rectangle
+                
+                let boundingGroup = new paper.Group();
+                boundingGroup.addChildren(boundingItems.map(i=>{let c = i.clone(); c.set({fillColor:'black',strokeColor:'black'});return c; }))
+                self.paperScope.project.activeLayer.addChild(boundingGroup);
+                boundingGroup.set({fillColor:'black',strokeColor:'black'});
+                let background = viewarea.subtract(boundingGroup,{insert:false}); //everywhere except where the current item is will be white
+                background.fillColor=new paper.Color(255,0,0);//'Red';
+                boundingGroup.remove();
+                mask.addChild(background); //this background image is added to the mask group
+                
+                
+                //The current selection will be black (r=g=b=0); pixels to be excluded by the boundingItem(s) will be red (r=255 g=b=0)
+                            
+                
+                let rasterizedMask = mask.rasterize({resolution:self.paperScope.view.resolution*self.project.getZoom(), insert:false});
+                let id = rasterizedMask.getImageData();
+                
+                boundingMask = {
+                    width:w*r,
+                    height:h*r,
+                    data:new Uint8ClampedArray(w*r * h*r),
+                    sampleColor:null,
+                };
+                
+                let m=0;
+                let idx=0;
+                for(let col=0; col < w*r; col++){
+                    for(let row=0; row < h*r; row++){
+                        idx = 4*(col+row*id.width);
+                        m=col+row*w*r;
+                        //The current selection will be black (r=g=b=0); pixels to be excluded by the boundingItem(s) will be red (r=255 g=b=0)
+                        //for the mask, set pixels to 1 for excluded by boundingItem, 0 for allowed by boundingItem
+                        boundingMask.data[m] = (id.data[idx]+id.data[idx+1]+id.data[idx+2]) == 0 ? 0 : 1;
+                    }
+                }
+                mask.remove();
+                rasterizedMask.remove();
+            }
             if(item){
                 let mask = new paper.Group();
+                mask.addChild(viewarea);    //viewarea is a black rectangle
+
                 
                 let clone=item.clone();
                 self.paperScope.project.activeLayer.addChild(clone);
                 clone.set({fillColor:'black',strokeColor:'black'});
-                let background = viewarea.subtract(clone,{insert:false});
-                background.fillColor='white';
+                let background = viewarea.subtract(clone,{insert:false}); //everywhere except where the current item is will be white
+                background.fillColor=new paper.Color(255,255,255);//'white';
                 clone.name='getImageDataClone';
                 clone.remove();
-                //selection.fillColor='black';
-                mask.addChild(viewarea);                
-                mask.addChild(background);
-                // let mask = viewarea.subtract(item,{insert:false});
-                let raster = mask.rasterize({resolution:self.paperScope.view.resolution*self.project.getZoom(), insert:false});
-                // imgPreview.attr('src',r.toDataURL());
-                let id = raster.getImageData();
-                // console.log(`visArea (${w}, ${h}); id (${id.width}, ${id.height})`)
-                // initMask=currentMask=new ImageData(id.width, id.height);
+                mask.addChild(background); //this background image is added to the mask group
+                
+                //The current selection will be black (r=g=b=0)
+                            
+                
+                let rasterizedMask = mask.rasterize({resolution:self.paperScope.view.resolution*self.project.getZoom(), insert:false});
+                let id = rasterizedMask.getImageData();
                 initMask = {
                     width:w*r,
                     height:h*r,
@@ -290,24 +343,29 @@ export class WandTool extends ToolBase{
                     for(let row=0; row < h*r; row++){
                         idx = 4*(col+row*id.width);
                         m=col+row*w*r;
-                        initMask.data[m] = currentMask.data[m] = (id.data[idx]+id.data[idx+1]+id.data[idx+2])==0 ? 1 : 0;
+                        //The current selection will be black (r=g=b=0); 
+                        //for the mask, set pixels to 0 for unselected, 1 for selected
+                        initMask.data[m] = currentMask.data[m] = (id.data[idx]+id.data[idx+1]+id.data[idx+2]) == 0 ? 1 : 0;
                     }
                 }
                 // console.log('initialized current mask',currentMask.data.length,visibleArea.data.data.length/4)
                 mask.remove();
-                raster.remove();
+                rasterizedMask.remove();
+                if(boundingMask) currentMask = concatMasks(currentMask,boundingMask,true);
                 rasterPreview(currentMask,new paper.Point(x,y),true);
 
-                console.log('Before await getAverageColor')
+                // console.log('Before await getAverageColor')
                 await getAverageColor(self.project,item).then(sampleColor=>{
-                    console.log('sampleColor computed',sampleColor)
+                    // console.log('sampleColor computed',sampleColor)
                     let c = [sampleColor.red*255,sampleColor.green*255,sampleColor.blue*255];
                     initMask.sampleColor = c;
                     currentMask.sampleColor = c;
                     rasterPreview(currentMask,new paper.Point(x,y),true);
                 });
-                console.log('After await getAverageColor')
+                // console.log('After await getAverageColor')
+
             }
+            
             viewarea.visible=false;
                 
         }
@@ -355,7 +413,7 @@ export class WandTool extends ToolBase{
                 }
             }
             
-            
+            if(boundingMask) currentMask = concatMasks(currentMask,boundingMask,true);
             rasterPreview(currentMask, offset,false);
             
         }
@@ -378,7 +436,7 @@ export class WandTool extends ToolBase{
             if(mask.sampleColor){
                 cmap[1] = new paper.Color(mask.sampleColor[0],mask.sampleColor[1],mask.sampleColor[2]);
                 cmap[1].hue+=180;
-                cmap[1].brightness=360-cmap[1].brightness;
+                cmap[1].brightness=(180+cmap[1].brightness)%360;
             }
             
             let c;
@@ -432,7 +490,8 @@ export class WandTool extends ToolBase{
                 let s=Math.round((delta.x+delta.y*-1)/2);
                 threshold=Math.min(Math.max(startThreshold+s, minThreshold), maxThreshold);
                 if(Number.isNaN(threshold)){
-                    console.log('wft nan??');
+                    // console.log('wft nan??');
+                    console.warn('NaN value for threshold')
                 }
                 self.toolbarControl.setThreshold(threshold);
                 applyMagicWand(start);
@@ -508,41 +567,11 @@ class WandToolbar extends ToolbarBase{
         let thr = $('<div>',{class:'threshold-container'}).appendTo(fdd);
         $('<label>').text('Threshold').appendTo(thr)
         this.thresholdInput=$('<input>',{type:'range',min:-1,max:100,value:20}).appendTo(thr).on('change',function(){
-            //console.log('Range input changed',$(this).val());
             wandTool.setThreshold($(this).val());
         });
         
         let toggles=$('<div>',{class:'toggles'}).appendTo(fdd);
-        // this.floodInput=$('<input>',{type:'checkbox',checked:true,'data-size':"small",'data-action':'flood'}).appendTo(toggles).on('change',function(e){
-        //     wandTool.setFloodMode($(this).prop('checked'));
-        //     console.log('Wand flood set:',$(this).prop('checked'),e);
-        //     e.stopImmediatePropagation();
-        // }).bootstrapToggle({
-        //     on:'Flood<br>fill',
-        //     off:'Full<br>viewport',
-        //     width:'100%',
-        //     height:'100%'
-        // });
-        // this.reduceInput=$('<input>',{type:'checkbox',checked:true,'data-size':"small",'data-action':'erase'}).appendTo(toggles).on('change',function(){
-        //     wandTool.setReduceMode(!$(this).prop('checked'));
-        //     // console.log('Wand erase set:',!$(this).prop('checked'));
-        // }).bootstrapToggle({
-        //     off:'Reduce<br>area',
-        //     on:'Expand<br>area',
-        //     width:'100%',
-        //     height:'100%'
-        // });
-        // this.replaceInput=$('<input>',{type:'checkbox',checked:true,'data-size':"small",'data-action':'replace'}).appendTo(toggles).on('change',function(){
-        //     wandTool.setReplaceMode($(this).prop('checked'));
-        //     // console.log('Wand replace set:',!$(this).prop('checked'));
-        // }).bootstrapToggle({
-        //     on:'Replace<br>mask',
-        //     off:'Keep<br>mask',
-        //     width:'100%',
-        //     height:'100%'
-        // });
         
-        //this.replaceInput=
         $('<span>',{class:'option-toggle'}).appendTo(toggles)
             .data({
                 prefix:'On click:',
@@ -551,7 +580,6 @@ class WandToolbar extends ToolbarBase{
                     wandTool.setReplaceMode(action=='replace');
                 }
             })
-        //this.floodInput=
         $('<span>',{class:'option-toggle'}).appendTo(toggles)
             .data({
                 prefix:'Fill rule:',
@@ -560,7 +588,6 @@ class WandToolbar extends ToolbarBase{
                     wandTool.setFloodMode(action=='flood')
                 }
             });
-        //this.reduceInput=
         $('<span>',{class:'option-toggle'}).appendTo(toggles)
             .data({
                 prefix:'Use to:',
@@ -575,17 +602,7 @@ class WandToolbar extends ToolbarBase{
             item=$(item);
             let data=item.data();
             $('<span>',{class:'prefix label'}).text(data.prefix).appendTo(item);
-            // let current=data.actions[0]
-            // let option = $('<span>',{class:'action'}).text(Object.values(current)[0]).appendTo(item).data({key:Object.keys(current)[0],index:0});
-            // option.on('click',function(){
-            //     let optionToggle=$(this).closest('.option-toggle')
-            //     let actions=optionToggle.data('actions');
-            //     let currentIndex=$(this).data('index');
-            //     let actionIndex = (++currentIndex) % actions.length;
-            //     let action = actions[actionIndex];
-            //     $(this).text(Object.values(action)[0]).data({key:Object.keys(action)[0],index:actionIndex});
-            //     optionToggle.data('onclick')(Object.keys(action)[0]);
-            // })
+            
             data.actions.forEach((action,actionIndex)=>{
                 let text=Object.values(action)[0];
                 let key = Object.keys(action)[0];
