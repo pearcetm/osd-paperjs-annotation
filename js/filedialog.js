@@ -22,7 +22,7 @@ export class FileDialog{
         function setupFeatureCollectionList(fcarray){
             let list = _this.element.find('.featurecollection-list').empty();
             let els = fcarray.map(function(fc){
-                let label = fc.label && fc.label instanceof Function ? fc.label() : ((fc.properties&&fc.properties.label) || 'Unnamed feature collection'); 
+                let label = fc.label; 
                 let d = $('<div>');
                 $('<input>',{type:'checkbox',checked:true}).appendTo(d).data('fc',fc);
                 $('<label>').text(label).appendTo(d);

@@ -8,7 +8,6 @@ export class PolygonTool extends ToolBase{
         this.drawingGroup = new paper.Group();
         self.project.toolLayer.addChild(self.drawingGroup);
         self.drawingGroup.visible=false;  
-        this.item = null;
         this.draggingSegment = null;
         this.eraseMode=false;
         this.simplifying=null;
@@ -18,7 +17,6 @@ export class PolygonTool extends ToolBase{
         this.extensions.onActivate = function(){
             tool.minDistance=4/self.project.getZoom();
             tool.maxDistance=20/self.project.getZoom();
-            self.item = self.item || self.project.findSelectedPolygon();
             self.drawingGroup.visible=true;
             self.drawingGroup.selected=true;
         }
@@ -37,8 +35,9 @@ export class PolygonTool extends ToolBase{
 
             self.simplifying && self.cancelSimplify();  
             
-            if(!self.item){
-                self.item = self.project.initializeItem('Polygon');
+            if(self.itemToCreate){
+                self.project.paperScope.initializeItem('Polygon');
+                self.selectionChanged();
                 self.saveHistory();        
             }
 
@@ -63,21 +62,15 @@ export class PolygonTool extends ToolBase{
                 else if(hitResult.type=='stroke'){
                     let insertIndex = hitResult.location.index +1;
                     let ns = hitResult.item.insert(insertIndex, ev.point);
-                    // console.log('inserting at index',insertIndex, 'ns',ns)
-                    // drawing = {path:hitResult.item, index:insertIndex+1};
                 }
             }
             else if(dr){ //already drawing, add point to the current path object
                 if(ev.point.subtract(dr.path.lastSegment).length<(5/self.project.getZoom())) return;
                 dr.path.add(ev.point);
-                // dr.path.insert_index += 1;
             }
             else{ //not drawing yet, but start now!
-                // item.addChild(new paper.Path([ev.point]));
                 self.drawingGroup.removeChildren();
                 self.drawingGroup.addChild(new paper.Path([ev.point]));
-                // self.drawingGroup.lastChild.insert_index=1;
-                // self.drawing = {path:self.drawingGroup.lastChild, index: 1};
                 self.drawingGroup.visible=true;
                 self.drawingGroup.selected=true;
                 self.drawingGroup.selectedColor= self.eraseMode ? 'red' : null;
@@ -89,8 +82,6 @@ export class PolygonTool extends ToolBase{
             let dr = self.drawing();
             if(dr){
                 dr.path.add(ev.point)
-                // dr.path.insert(dr.path.insert_index,ev.point);
-                // dr.path.insert_index += 1;
             }
             else if (self.draggingSegment){
                 self.draggingSegment.point = self.draggingSegment.point.add(ev.delta);
@@ -101,10 +92,10 @@ export class PolygonTool extends ToolBase{
             let hitResult = self.item && (dr&&dr.path ||self.item).hitTest(ev.point,{fill:false,stroke:true,segments:true,tolerance:(5/self.project.getZoom())})
             if(hitResult){
                 let action = hitResult.type + (self.eraseMode ? '-erase' : '');
-                self.project.paperScope.view.addClass('tool-action').setAttribute('data-tool-action',action);
+                self.project.overlay.addClass('tool-action').setAttribute('data-tool-action',action);
             }
             else{
-                self.project.paperScope.view.removeClass('tool-action').setAttribute('data-tool-action','');
+                self.project.overlay.removeClass('tool-action').setAttribute('data-tool-action','');
             }  
         }
         tool.onMouseUp=function(ev){
@@ -158,10 +149,9 @@ export class PolygonTool extends ToolBase{
     finish(){
         this.finishCurrentPath();
         this.setEraseMode(false);
-        this.item=this.draggingSegment=null;
-        this.project.paperScope.view.removeClass('tool-action').setAttribute('data-tool-action','');
+        this.draggingSegment=null;
+        this.project.overlay.removeClass('tool-action').setAttribute('data-tool-action','');
         this.deactivate();
-        // this.broadcast('finished')  
         this.drawingGroup.selected=false;      
         this.drawingGroup.visible=false;  
     }
@@ -294,7 +284,7 @@ export class PolygonToolbar extends ToolbarBase{
         });
     }
     isEnabledForMode(mode){
-        return ['new','Polygon','Polygon:Rectangle','Polygon:Raster'].includes(mode);
+        return ['new','Polygon','Polygon:Rectangle'].includes(mode);
     }
     setEraseMode(erasing){
         erasing ? this.eraseButton.addClass('active') : this.eraseButton.removeClass('active');

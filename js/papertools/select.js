@@ -6,8 +6,8 @@ export class SelectTool extends ToolBase{
         this.ps = this.project.paperScope;
         this.setToolbarControl(new SelectToolbar(this));
 
-        let selectionRectangle = new paper.Path.Rectangle({strokeWidth:2,rescale:{strokeWidth:2},strokeColor:'black'});
-        let sr2 = new paper.Path.Rectangle({strokeWidth:2,dashArray:[10,10],rescale:{strokeWidth:2,dashArray:[10,10]},strokeColor:'white'});
+        let selectionRectangle = new paper.Path.Rectangle({strokeWidth:1,rescale:{strokeWidth:1},strokeColor:'black'});
+        let sr2 = new paper.Path.Rectangle({strokeWidth:1,dashArray:[10,10],rescale:{strokeWidth:1,dashArray:[10,10]},strokeColor:'white'});
         this.ps.project.layers.toolLayer.addChild(selectionRectangle);
         this.ps.project.layers.toolLayer.addChild(sr2);
         selectionRectangle.applyRescale();
@@ -16,17 +16,15 @@ export class SelectTool extends ToolBase{
         sr2.visible=false;
         
         this.extensions.onActivate=function(){ 
-            self.project.viewer.addHandler('canvas-click',self.clickHandler) 
             self.tool.onMouseMove = (ev)=>self.onMouseMove(ev);
         }    
         this.extensions.onDeactivate=function(shouldFinish){
-            self.project.viewer.removeHandler('canvas-click',self.clickHandler);
-            self.project.paperScope.view.removeClass('selectable-layer');
+            self.project.overlay.removeClass('selectable-layer');
             self.tool.onMouseMove = null;
         }
         this.tool.extensions.onKeyUp=function(ev){
             if(ev.key=='escape'){
-                self.project.findSelectedItems().forEach(item=>item.deselect());
+                self.project.paperScope.findSelectedItems().forEach(item=>item.deselect());
             }
         }
        
@@ -36,15 +34,15 @@ export class SelectTool extends ToolBase{
             if(ev.downPoint.subtract(ev.point).length==0){
                 //not a click-and-drag, do element selection
                 let hitResult = self.hitTestPoint(ev);
-                if(!hitResult) return;
-                self.toggleItemSelection(hitResult.item,(ev.modifiers.control || ev.modifiers.meta))
+                hitResult && hitResult.item.toggle((ev.modifiers.control || ev.modifiers.meta));
+                
             }
             else{
                 //click and drag, do area-based selection
                 let hitResults = self.hitTestArea(ev);
                 let keepExistingSelection = (ev.modifiers.control || ev.modifiers.meta);
                 if(!keepExistingSelection){
-                    self.project.findSelectedItems().forEach(item=>item.deselect());
+                    self.project.paperScope.findSelectedItems().forEach(item=>item.deselect());
                 }
                 hitResults.forEach(item=>item.select())
             }
@@ -55,7 +53,7 @@ export class SelectTool extends ToolBase{
             let r=new paper.Rectangle(ev.downPoint,ev.point);
             selectionRectangle.set({segments:[r.topLeft, r.topRight, r.bottomRight, r.bottomLeft]});
             sr2.set({segments:[r.topLeft, r.topRight, r.bottomRight, r.bottomLeft]});
-            console.log(selectionRectangle.visible, selectionRectangle.segments)
+            // console.log(selectionRectangle.visible, selectionRectangle.segments)
         }
     }
     getSelectedItems(){
@@ -63,17 +61,6 @@ export class SelectTool extends ToolBase{
     }
     doAnnotationItemsExist(){
         return this.ps.project.getItems({match:i=>i.isAnnotationFeature}).length>0; 
-    }
-    toggleItemSelection(item,keepCurrent){
-        let itemIsSelected = item.selected;
-        if(itemIsSelected && (keepCurrent || this.getSelectedItems().length==1)){
-            item.selected=false;
-            item.deselect();
-        }
-        else{
-            !keepCurrent && this.getSelectedItems().forEach(item=>item.deselect());
-            item.select();
-        }
     }
     toggleLayerSelection(layer,keepCurrent){
         if(layer.layerSelected){
@@ -90,18 +77,18 @@ export class SelectTool extends ToolBase{
     
     onMouseMove(ev){
         if(ev.item){
-            if(this.item != ev.item) (ev.item.emit('selection:mouseenter')||true) 
-            if(this.layer != ev.item.layer) ev.item.layer.emit('selection:mouseenter');
-            this.item = ev.item;
-            this.layer = this.item.layer;
-            this.ps.view.addClass('selectable-layer')
+            if(this.currentItem != ev.item) (ev.item.emit('selection:mouseenter')||true) 
+            if(this.currentLayer != ev.item.layer) ev.item.layer.emit('selection:mouseenter');
+            this.currentItem = ev.item;
+            this.currentLayer = this.currentItem.layer;
+            this.project.overlay.addClass('selectable-layer')
         }
         else{
-            this.item && (this.item.emit('selection:mouseleave',ev)||true) 
-            this.layer && this.layer.emit('selection:mouseleave',ev);
-            this.ps.view.removeClass('selectable-layer')
-            this.item = null;
-            this.layer = null;
+            this.currenItem && (this.currentItem.emit('selection:mouseleave',ev)||true) 
+            this.currentLayer && this.currentLayer.emit('selection:mouseleave',ev);
+            this.project.overlay.removeClass('selectable-layer')
+            this.currentItem = null;
+            this.currentLayer = null;
         }   
     }
     hitTestPoint(ev){
@@ -119,7 +106,7 @@ export class SelectTool extends ToolBase{
     }
     hitTestArea(ev,onlyFullyContained){
         let options = {
-            match:item=>item.isAnnotationFeature,// || i.item.parent.isAnnotationFeature,
+            match:item=>item.isAnnotationFeature,
         }
         let testRectangle=new paper.Rectangle(ev.point,ev.downPoint);
         if(onlyFullyContained){
@@ -146,7 +133,7 @@ class SelectToolbar extends ToolbarBase{
     }
     isEnabledForMode(mode){
         let itemsExist = this.tool.doAnnotationItemsExist();
-        return itemsExist && ['default','select','Polygon','Polygon:Rectangle','Point','LineString','Polygon:Raster'].includes(mode);
+        return itemsExist && ['default','select','multiselection','Polygon','Polygon:Rectangle','Point','LineString','Polygon:Raster'].includes(mode);
     }
     
 }

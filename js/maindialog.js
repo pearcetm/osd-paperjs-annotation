@@ -1,186 +1,174 @@
-import {StyleUI} from './styleui.js';
+import { Feature } from './feature.js';
 import { FeatureCollection } from './featurecollection.js';
 import {FileDialog} from './filedialog.js';
 
 export class MainDialog{
 
-    constructor(opts={AnnotationPaper:null,filename:'',positioningElement:null,appendTo:'body'}){
-        let _this=this;
-        if(!opts.AnnotationPaper){
-            error('Instance of AnnotationPaper must be passed to the constructor in the options')
-        }
+    constructor(paperScope, opts={filename:'',positioningElement:null,appendTo:'body',toolbar:null,}){
+        let self=this;
+        
+        this.paperScope = paperScope;
+
         let positioningElement=opts.positioningElement? $(opts.positioningElement) : $('body');
 
-        let Paper = opts.AnnotationPaper;
-        let styleui = new StyleUI(Paper);
         let fileDialog = new FileDialog(this,opts);
         
-        _this.element = makeMainDialogElement();
+        self.element = makeMainDialogElement();
         let guid= 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(c) {
             let r = Math.random() * 16|0;
             let v = c == 'x' ? r : (r&0x3|0x8);
             return v.toString(16);
         });
-        _this.element.attr('data-ui-id',guid);
-        _this.element.find('.annotation-ui-style-tools').empty().append(styleui.element);
-
-        _this.filename = opts.filename || 'Unnamed File';
-        _this.element.attr('title',_this.filename);
-
-        _this.refresh=refreshDialogPosition;
+        self.element.attr('data-ui-id',guid);
         
-        _this.close = function(){_this.element.dialog('close');}
-        _this.open = function(){_this.element.dialog('open');}
-        _this.toggle=function(){_this.element.dialog('isOpen') ? _this.element.dialog('close') : _this.element.dialog('open');}
-        _this.deactivate = function(){_this.element.addClass('deactivated')}
-        _this.activate = function(){_this.element.removeClass('deactivated')}
+        self.filename = opts.filename || 'Unnamed File';
+        self.element.attr('title',self.filename);
+
+        self.refresh=refreshDialogPosition;
         
-        _this.destroy = function(){
-            _this.element.dialog('destroy');
-            _this.element.remove();
+        self.close = function(){self.element.dialog('close');}
+        self.open = function(){self.element.dialog('open');}
+        self.isOpen = function(){return self.element.dialog('isOpen');}
+        self.toggle=function(){self.isOpen() ? self.close() : self.open();}
+        self.deactivate = function(){self.element.addClass('deactivated')}
+        self.activate = function(){self.element.removeClass('deactivated')}
+        
+        self.destroy = function(){
+            self.element.dialog('destroy');
+            self.element.remove();
         }
-        _this.addFeatureCollection = function(geoJSON){
-            let baseStyle = Object.assign({}, styleui.getBaseStyle(), (geoJSON && geoJSON.properties)? geoJSON.properties : {})
-            let fc=new FeatureCollection({geoJSON:geoJSON, AnnotationPaper:Paper, baseStyle:baseStyle, guiSelector:`[data-ui-id="${guid}"]`});
-            _this.element.find('.annotation-ui-feature-collections').append(fc.element).sortable('refresh');
-            fc.element.trigger('element-added');
+        self.addFeatureCollection = function(geoJSON={features:[]}){
+            let paperObjects=self.paperScope.createFeatureCollectionLayer()
+            geoJSON.properties && paperObjects.layer.defaultStyle.set(geoJSON.properties);
+
+            let fc=new FeatureCollection(paperObjects, {guiSelector:`[data-ui-id="${guid}"]`,toolbar:opts.toolbar});
+            self.element.find('.annotation-ui-feature-collections').append(fc.element).sortable('refresh');
+            // fc.element.trigger('element-added');
             setTimeout(function(){fc.element.addClass('inserted'); }, 30);//this allows opacity fade-in to be triggered
+
+            geoJSON.features && geoJSON.features.forEach(feature=>{
+                let paperItem = paper.Item.fromGeoJSON(feature);
+                let f = new Feature(paperItem,{toolbar:opts.toolbar});
+                fc.addFeature(f);
+            })
             return fc;
         }
         
-        _this.getFeatureCollections = function(includeTrashed=false){
+        self.getFeatureCollections = function(includeTrashed=false){
             let selector = includeTrashed ? '.annotation-ui-feature-collections .feature-collection' :
                                             '.annotation-ui-feature-collections .feature-collection:not(.trashed)';
 
-            return _this.element.find(selector).toArray().map(function(e){
+            return self.element.find(selector).toArray().map(function(e){
                 return $(e).data('featureCollection');
             })
         }
-        _this.toGeoJSON = function(opts={asString:true,includeTrashed:false}){ 
-            let collections = _this.getFeatureCollections(opts.includeTrashed).map(function(fc){
-                return fc.toGeoJSON();
-            });
+        self.toGeoJSON = function(opts={asString:true,includeTrashed:false}){ 
+            // let collections = self.getFeatureCollections(opts.includeTrashed).map(function(fc){
+            //     return fc.toGeoJSON();
+            // });
+            let collections = self.paperScope.project.toGeoJSON()
             return opts.asString ? JSON.stringify(collections) : collections;
         };
-        _this.loadGeoJSON = function(geoJSON,opts={replace:false}){
+        self.loadGeoJSON = function(geoJSON,opts={replace:false}){
             if(opts.replace){
-                _this.getFeatureCollections(true).forEach(fc=>fc.remove())
+                self.getFeatureCollections(true).forEach(fc=>fc.remove())
             }
             geoJSON.forEach(function(fc){
-                let f = _this.addFeatureCollection(fc);
-                f.ui.setOpacity(styleui._totalOpacity);
-                f.ui.setFillOpacity(styleui._fillOpacity);
+                let f = self.addFeatureCollection(fc);
             })
+            // self.setOpacity();
         }
         
         //add UI handlers
-        _this.element.find('.show-all-annotations').on('click',function(){
-            Paper.setGlobalVisibility(true);
-            _this.element.removeClass('disabled');
-        });
-        _this.element.find('.hide-all-annotations').on('click',function(){
-            Paper.setGlobalVisibility(false);
-            _this.element.addClass('disabled');
-        });
-        _this.element.find('.new-feature-collection').on('click',function(ev){
+        // self.element.find('.show-all-annotations').on('click',function(){
+        //     console.warn('setGlobalVisibility function not implemented yet')
+        //     // annotationToolkit.setGlobalVisibility(true);
+        //     //self.element.removeClass('disabled');
+        // });
+        // self.element.find('.hide-all-annotations').on('click',function(){
+        //     console.warn('setGlobalVisibility function not implemented yet')
+        //     // annotationToolkit.setGlobalVisibility(false);
+        //     //self.element.addClass('disabled');
+        // });
+        self.element.find('.new-feature-collection').on('click',function(ev){
             ev.stopPropagation();
             ev.preventDefault();
-            _this.addFeatureCollection();
+            self.addFeatureCollection();
         });
-        _this.element.find('.toggle-annotations').on('click',function(ev){
-            let hidden = _this.element.find('.annotation-ui-feature-collections .feature-collection.annotation-hidden');
-            if(hidden.length > 0) hidden.find('.visibility-toggle').trigger('click');
-            else _this.element.find('.annotation-ui-feature-collections .feature-collection:not(.hidden) .visibility-toggle').trigger('click');
+        self.element.find('.toggle-annotations').on('click',function(ev){
+            let hidden = self.element.find('.annotation-ui-feature-collections .feature-collection.annotation-hidden');
+            // if(hidden.length > 0) hidden.find('.visibility-toggle').trigger('click');
+            // else self.element.find('.annotation-ui-feature-collections .feature-collection:not(.hidden) .visibility-toggle').trigger('click');
+            if(hidden.length > 0) hidden.find('[data-action="show"]').trigger('click');
+            else self.element.find('.annotation-ui-feature-collections .feature-collection:not(.hidden) [data-action="hide"]').trigger('click');
         });
 
 
         //setup sortable featurecollection interface
-        _this.element.find('.annotation-ui-feature-collections').sortable({contain:'parent',update:function(){
-            _this.element.find('.annotation-ui-feature-collections .feature-collection').each(function(idx,g){
+        self.element.find('.annotation-ui-feature-collections').sortable({contain:'parent',update:function(){
+            self.element.find('.annotation-ui-feature-collections .feature-collection').each(function(idx,g){
                 let fg = $(g).data('featureCollection');
                 fg.paperObjects.layer.bringToFront();
             })
         }})
 
         //setup jqueryUI dialog object
-        _this.element.dialog({
+        self.element.dialog({
             open:onOpen,
-            close:onClose,
             resize:limitHeight,
             autoOpen:false,
             height:'auto',
             appendTo:opts.appendTo,
         });
-        _this.element.closest('.ui-dialog').draggable('option','containment','parent')
-        let fb=$('<button>',{class:'file-button'}).text('File').prependTo(_this.element.dialog('instance').classesElementLookup['ui-dialog-title'])
+        self.element.closest('.ui-dialog').draggable('option','containment','parent')
+        let fb=$('<button>',{class:'file-button'}).text('File').prependTo(self.element.dialog('instance').classesElementLookup['ui-dialog-title'])
         .on('click',function(){
             fileDialog.dialog('open');
-            _this.saveHandler && _this.saveHandler();       
+            self.saveHandler && self.saveHandler();       
         });
         fb.button({
             showLabel:true,
         })
 
-        _this.element.on('element-added',function(ev){
+        self.element.on('element-added',function(ev){
             let el = $(ev.target);
-            _this.refresh(el);
+            self.refresh(el);
         })
         
         //set up delegated events
 
-        _this.element.on('selected','.feature',function(ev){
+        self.element.on('selected','.feature',function(ev){
             ev.stopPropagation();
             let feature = $(this).addClass('selected').data('feature');
-            styleui.addActiveFeature(feature);           
         });
-        _this.element.on('deselected','.feature',function(ev){
+        self.element.on('deselected','.feature',function(ev){
             ev.stopPropagation();
             let feature = $(this).removeClass('selected').data('feature');
-            styleui.removeActiveFeature(feature);
-        });
-        _this.element.on('selected','.feature-collection',function(ev){
-            let fc = $(this).data('featureCollection');
-            styleui.addActiveCollection(fc);
-            setOpacity(styleui._totalOpacity);
-        });
-        
-        _this.element.on('deselected','.feature-collection',function(ev){
-            let fc = $(this).data('featureCollection');
-            styleui.removeActiveCollection(fc);
-            setOpacity(styleui._totalOpacity);
         });
 
         
-        _this.element.on('click','.toggle-list',function(ev){
+        self.element.on('click','.toggle-list',function(ev){
             $(this).closest('.features').toggleClass('collapsed');
             ev.stopPropagation();
         });
         
-        _this.element.on('value-changed',function(){
+        self.element.on('value-changed',function(){
             let el = $(this);
             console.log('value-changed',el);
-            _this.element.find('.feature.selected').trigger('selected');
-            _this.element.find('.feature-collection.active').trigger('selected');
+            self.element.find('.feature.selected').trigger('selected');
+            self.element.find('.feature-collection.active').trigger('selected');
         });
 
-        _this.element.find('input.annotation-total-opacity').on('input',function(){
-            let opacity = this.value;
-            styleui._totalOpacity=opacity;
-            setOpacity(opacity);
+        self.element.find('input.annotation-total-opacity').on('input',function(){
+            setOpacity(this.value);
         }).trigger('input');
 
-        _this.element.find('input.annotation-fill-opacity').on('input',function(){
-            let opacity = this.value;
-            styleui.setFillOpacity(opacity);
-            //apply opacity directly to all elements here
-            _this.element.find('.feature-collection').each(function(_,el){
-                let fc=$(el).data('featureCollection');
-                fc&&fc.ui.setFillOpacity(opacity);
-            })
+        self.element.find('input.annotation-fill-opacity').on('input',function(){
+            self.paperScope.project.fillOpacity = this.value;
         }).trigger('input');
 
         function setOpacity(o){
-            let status = _this.element.find('.feature-collection').toArray().reduce(function(ac,el){
+            let status = self.element.find('.feature-collection').toArray().reduce(function(ac,el){
                 el = $(el)
                 if( el.hasClass('selected') ){
                     ac.selected.push(el);
@@ -226,15 +214,17 @@ export class MainDialog{
             }
         }
         function refreshDialogPosition(scrolltoelement){
-            let pos = _this.element.dialog('option','position');
+            let pos = self.element.dialog('option','position');
             positionDialog(pos);
             scrolltoelement && setTimeout(()=>{
                 //scrolltoelement[0].scrollIntoView(false)
                 scrolltoelement[0].scrollIntoView({block: "nearest", inline: "nearest"})
             }, 0);
         }
-        function onOpen(){positionDialog();Paper.showToolbar();}
-        function onClose(){Paper.hideToolbar();}
+        function onOpen(){
+            positionDialog();
+        }
+        
         function positionDialog(pos){
             let defaultPos={my:'right top', at:'right top', of:positioningElement}
             if(positioningElement.hasClass('navigator')){
@@ -243,14 +233,14 @@ export class MainDialog{
             
             pos = pos || defaultPos;
 
-            _this.element.dialog('option','position',pos);
+            self.element.dialog('option','position',pos);
             window.setTimeout(limitHeight,0)        
         }
         function limitHeight(){
-            let topOfFCList = _this.element.offset().top;
+            let topOfFCList = self.element.offset().top;
             let bottomOfVisibleWindow = $(window).height();
-            let maxheight = bottomOfVisibleWindow - topOfFCList - (_this.element.outerHeight()-_this.element.height())-5;
-            _this.element.css({maxHeight:maxheight})
+            let maxheight = bottomOfVisibleWindow - topOfFCList - (self.element.outerHeight()-self.element.height())-5;
+            self.element.css({maxHeight:maxheight})
         }
 
     }
@@ -262,11 +252,7 @@ function makeMainDialogElement(){
             <div class='annotation-ui-style-tools'></div>
             <div class='annotation-ui-toolbar annotation-visibility-controls'>                
                 <div class="visibility-buttons btn-group btn-group-sm disable-when-deactivated" role="group">
-                    <button class="btn btn-default show-all-annotations" type="button" title="Show all annotations">
-                        <span class="glyphicon glyphicon-eye-open fa fa-eye"></span>
-                    </button><button class="btn btn-default hide-all-annotations" type="button" title="Hide all annotations">
-                        <span class="glyphicon glyphicon-eye-close fa fa-eye-slash"></span>
-                    </button><button class="btn btn-default toggle-annotations" type="button" title="Toggle annotations">
+                    <button class="btn btn-default toggle-annotations" type="button" title="Toggle annotations">
                         <span class="glyphicon glyphicon-eye-open fa fa-eye"></span><span class="glyphicon glyphicon-eye-close fa fa-eye-slash"></span>
                     </button>
                 </div>

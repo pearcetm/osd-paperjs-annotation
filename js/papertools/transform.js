@@ -10,13 +10,11 @@ export class TransformTool extends ToolBase{
         this.makeTransformToolObject(project.getZoom());
         
         this.extensions.onActivate=function(){ 
-            self.project.viewer.addHandler('canvas-click',self.clickHandler) 
-            // self.tool.onMouseMove = (ev)=>self.onMouseMove(ev);
+            // self.project.viewer.addHandler('canvas-click',self.clickHandler) 
             self.enableTransformToolObject();
         }    
         this.extensions.onDeactivate=function(shouldFinish){
-            self.project.viewer.removeHandler('canvas-click',self.clickHandler);
-            // self.project.paperScope.view.removeClass('selectable-layer');
+            // self.project.viewer.removeHandler('canvas-click',self.clickHandler);
             self.tool.onMouseMove = null;
             if(shouldFinish){
                 self.disableTransformToolObject();
@@ -27,11 +25,6 @@ export class TransformTool extends ToolBase{
         return this.ps.project.selectedItems.filter(i=>i.isAnnotationFeature);
     }
     
-    // setMode(mode){
-    //     this._mode = mode;
-    //     this.toolbarControl.setMode(mode);
-    //     mode=='transform' ? this.enableTransformToolObject() : this.disableTransformToolObject();
-    // }
     makeTransformToolObject(currentZoom){
         let self=this;
         let cSize=12;//control size
@@ -189,40 +182,6 @@ export class TransformTool extends ToolBase{
         this._transformTool.transformItems([]);
         this._transformTool.visible=false;
     }
-    // selectionChanged(){
-    //     if(this._mode=='transform'){
-    //         this.enableTransformToolObject();
-    //     }
-    // }
-    // onClick(ev){
-    //     // this function handles OSD click events when handling is enabled on the viewer
-    //     let coords = this.project.viewer.viewport.viewerElementToImageCoordinates(ev.position);
-    //     let hitResult = this.hitTest(coords);
-    //     if(!hitResult) return;
-    //     // if( hitResult.item.select && !hitResult.item.selected){
-    //         // this.toggleItemSelection(hitResult.item,(ev.originalEvent.metaKey || ev.originalEvent.ctrlKey))//.select();
-    //         // console.log('Selecting',hitResult.item)
-    //     // }
-    // }
-    // onMouseMove(ev){
-    //     if(this._mode == 'transform'){
-    //         // this._moving.forEach(i=>i.position=i.position.add(ev.delta));
-    //     }
-    //     else if(ev.item){
-    //         if(this.item != ev.item) (ev.item.emit('selection:mouseenter')||true) 
-    //         if(this.layer != ev.item.layer) ev.item.layer.emit('selection:mouseenter');
-    //         this.item = ev.item;
-    //         this.layer = this.item.layer;
-    //         this.ps.view.addClass('selectable-layer')
-    //     }
-    //     else{
-    //         this.item && (this.item.emit('selection:mouseleave',ev)||true) 
-    //         this.layer && this.layer.emit('selection:mouseleave',ev);
-    //         this.ps.view.removeClass('selectable-layer')
-    //         this.item = null;
-    //         this.layer = null;
-    //     }   
-    // }
     hitTest(coords){
         let hitResult = this.ps.project.hitTest(coords,{
             fill:true,

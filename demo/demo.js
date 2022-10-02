@@ -1,7 +1,21 @@
-// import '../js/annotationui.js';
-import { AnnotationUI } from '../js/annotationui.js';
 
-let v1 = OpenSeadragon({
+import { AnnotationToolkit } from '../js/annotationtoolkit.js';
+OpenSeadragon.Button.prototype.disable = function(){
+    this.notifyGroupExit();
+    this.element.disabled = true;
+    this.tracker.setTracking(false);
+    OpenSeadragon.setElementOpacity( this.element, 0.2, true );
+}
+
+OpenSeadragon.Button.prototype.enable = function(){
+    this.element.disabled = false;
+    this.tracker.setTracking(true);
+    OpenSeadragon.setElementOpacity( this.element, 1.0, true );
+    this.notifyGroupEnter();
+}
+
+
+let v1 =window.v1 = OpenSeadragon({
     element:'basic-viewer',
     prefixUrl: "https://openseadragon.github.io/openseadragon/images/",
     tileSources: {
@@ -14,7 +28,11 @@ let v1 = OpenSeadragon({
     crossOriginPolicy: 'Anonymous',
     ajaxWithCredentials: false
 });
-v1.addHandler('open',()=>new AnnotationUI(v1,{autoOpen:true}));
+v1.addHandler('open',()=>{
+    let tk = new AnnotationToolkit(v1,{autoOpen:true});
+    tk.addAnnotationUI();
+    window.tk = tk;
+});
 
 
 let v2 = OpenSeadragon({
@@ -35,7 +53,10 @@ let v2 = OpenSeadragon({
     crossOriginPolicy: 'Anonymous',
     ajaxWithCredentials: false
 })
-v2.addHandler('open',()=>new AnnotationUI(v2,{autoOpen:false}))
+v2.addHandler('open',()=>{
+    let tk = new AnnotationToolkit(v2,{autoOpen:false});
+    tk.addAnnotationUI();
+});
 
 let v3 = OpenSeadragon({
     element:'local-viewer',
@@ -50,7 +71,10 @@ let v3 = OpenSeadragon({
     crossOriginPolicy: 'Anonymous',
     ajaxWithCredentials: false
 });
-v3.addHandler('open',()=>{new AnnotationUI(v3,{autoOpen:true});window.ps=v3._paperjsOverlayInfo.ps});
+v3.addHandler('open',()=>{
+    let tk = new AnnotationToolkit(v3,{createUI:{autoOpen:true}});
+    window.ps=v3.paperjsOverlay.ps
+});
 $(v3.element).closest('.demo').find('input[type="file"]').on('change',function(ev){
     // console.log('File input change',this,ev);
     let fr = new FileReader();
@@ -74,3 +98,4 @@ $(v3.element).closest('.demo').find('input[type="file"]').on('change',function(e
 })
 
 window.v3 = v3;
+

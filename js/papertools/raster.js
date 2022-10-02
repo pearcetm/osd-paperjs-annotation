@@ -6,21 +6,37 @@ export class RasterTool extends ToolBase{
         this.setToolbarControl(new RasterToolbar(this));
     }
     rasterize(){
-        let poly = this.project.findSelectedPolygon();
-        let mb = this.project.paperScope.view.projectToView(poly.bounds)
-        let mx = mb.x;
-        let my = mb.y;
-        let mw = poly.bounds.width * this.project.getZoom();
-        let mh = poly.bounds.height * this.project.getZoom();
-        
-        //Deal with pixel ratio other than one
-        let r = this.project.paperScope.view.pixelRatio;
-        let newcanvas = $('<canvas>').attr({width:mw*r,height:mh*r})[0];
-        newcanvas.getContext('2d').drawImage(this.project.viewer.drawer.canvas,mx*r,my*r,mw*r,mh*r,0,0,mw*r,mh*r);
-        let dataurl = newcanvas.toDataURL();
-        let raster = new paper.Raster({source:dataurl,position:poly.bounds.center});
-        raster.scale(1/(r*this.project.getZoom()));
-        poly && poly.makeRaster(raster);
+        let poly = this.item;
+        if(poly && poly.makeRaster){
+            let raster = this.project.overlay.osdViewer.getViewportRaster();
+            poly.layer.addChild(raster);
+            raster.selectedColor = 'green';
+            raster.selected = true;
+            
+            raster.onLoad = function(){
+                //get the subregion in pixel coordinates of the large raster by inverse transforming the bounding rect of the item
+                let offset = new paper.Point(this.width/2,this.height/2);
+                // let corners = [poly.bounds.topLeft, poly.bounds.topRight, poly.bounds.bottomRight, poly.bounds.bottomLeft];
+                // console.log('Original bounds',corners);
+                let corners = (poly.segments || poly.children.map(c=>c.segments).flat()).map(s=>s.point);
+                let transformed = corners.map(point=>this.getMatrix().inverseTransform(point));
+                // console.log('Transformed',transformed);
+                let x = transformed.map(p=>p.x)
+                let y = transformed.map(p=>p.y)
+                let topLeft = new paper.Point(Math.min(...x), Math.min(...y));
+                let bottomRight = new paper.Point(Math.max(...x), Math.max(...y));
+                let tl = offset.add(topLeft);
+                let br = offset.add(bottomRight);
+                let newBounds = new paper.Rectangle(tl,br);
+                console.log('new bounds',newBounds)
+                let subraster = this.getSubRaster(newBounds);
+                subraster.selectedColor = null;
+                
+                poly.makeRaster(subraster);
+                this.remove();
+            }
+        }
+
     }
     
 }

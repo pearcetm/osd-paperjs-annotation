@@ -27,8 +27,8 @@ export class LinestringTool extends PolygonTool{
             self.cursor.visible=true;
             tool.minDistance=4/self.project.getZoom();
             tool.maxDistance=10/self.project.getZoom();
-            self.item = self.item || self.project.findSelectedItem();
-            if(self.item && !self.item.isLineString) self.item = null;
+            // self.item = self.item || self.project.paperScope.findSelectedItem();
+            // if(self.item && !self.item.isLineString) self.item = null;
         }
         this.extensions.onDeactivate = function(finished){
             self.cursor.visible=false;
@@ -46,10 +46,11 @@ export class LinestringTool extends PolygonTool{
         tool.onMouseDown=function(ev){
             self.draggingSegment=null;
 
-            if(!self.item){
-                self.item = self.project.initializeItem('LineString');
+            if(self.itemToCreate){
+                self.project.paperScope.initializeItem('LineString');
+                self.getSelectedItems();
                 self.startNewPath(ev)
-                console.log('initialized item')
+                // console.log('initialized item')
                 return;
             }
             

@@ -1,4 +1,5 @@
 import {ToolBase, ToolbarBase} from './base.js';
+import {PaperOffset} from '../paper-offset.js';
 export class BrushTool extends ToolBase{
     constructor(project){
         super(project);
@@ -6,14 +7,11 @@ export class BrushTool extends ToolBase{
         let tool = this.tool;
         this.setToolbarControl(new BrushToolbar(this));
 
-        let item, dragging;
-        let eraseMode = false;
+        this.eraseMode = false;
         let drawColor = new paper.Color('green');
         let eraseColor= new paper.Color('red');
         drawColor.alpha=0.5;
         eraseColor.alpha=0.5;
-
-        const PaperOffset = paper.PaperOffset;
 
         let radius = 0;
         let cursor=new paper.Shape.Circle(new paper.Point(0,0),radius);
@@ -24,8 +22,8 @@ export class BrushTool extends ToolBase{
             opacity:1,
             visible:false,
         });
-        let pathGroup = new paper.Group([new paper.Path(), new paper.Path()]);
-        self.project.toolLayer.addChild(pathGroup);
+        this.pathGroup = new paper.Group([new paper.Path(), new paper.Path()]);
+        self.project.toolLayer.addChild(this.pathGroup);
         self.project.toolLayer.addChild(cursor);
 
         this.extensions.onActivate = function(){
@@ -42,8 +40,6 @@ export class BrushTool extends ToolBase{
             } 
         }
         this.finish = function(){
-            item=dragging=null;
-            // this.broadcast('finished');
             this.deactivate();
         }
         
@@ -52,114 +48,111 @@ export class BrushTool extends ToolBase{
             cursor.radius=r/self.project.getZoom();
         }
         this.setEraseMode=function(erase){
-            eraseMode=erase;
+            this.eraseMode=erase;
             cursor.fillColor= erase ? eraseColor : drawColor;
-            this.toolbarControl.setEraseMode(eraseMode);
+            this.toolbarControl.setEraseMode(this.eraseMode);
         }
         
-        function modifyArea(){
-            
-            let path = pathGroup.lastChild;
-            // path.simplify();
-            let shape;
-            if(path.segments.length>1){                
-                shape = PaperOffset.offsetStroke(path,path.radius,{join:'round',cap:'round',insert:true})
-                // console.log(shape)                
-            }
-            else{
-                shape = new paper.Path.Circle({center: path.firstSegment.point, radius: path.radius });
-            }
-
-            shape.strokeWidth = 1/self.project.getZoom();
-            shape.strokeColor = 'black'
-            shape.fillColor='yellow'
-            shape.flatten();
-            shape.name='shapeobject';
-            if(!item.isBoundingElement){
-                let boundingItems = item.parent.children.filter(i=>i.isBoundingElement);
-                shape.applyBounds(boundingItems);
-            }
-
-            path.visible=false;
-            let result;
-            if(eraseMode){
-                result = item.subtract(shape,{insert:false});
-            }
-            else{
-                //result = intersect(poly,item) && item.unite(poly,{insert:false});  
-                result = item.unite(shape,{insert:false});    
-            }
-            if(result){
-                result=result.toCompoundPath();
-                item.removeChildren();
-                item.addChildren(result.children);
-                result.remove();
-                // console.log('Item modified',item);             
-            }
-            shape.remove();
-        }        
+              
         tool.onMouseDown=function(ev){
             ev.preventDefault();
             ev.stopPropagation();
             
-            if(!item){
-                item = self.project.initializeItem('Polygon');
+            if(self.itemToCreate){
+                self.project.paperScope.initializeItem('Polygon');
+                self.getSelectedItems();
             }
             
-            dragging=true;
             cursor.position=ev.point;
 
             let path = new paper.Path([ev.point]);
-            path.mode = eraseMode ? 'erase' : 'draw';
+            path.mode = self.eraseMode ? 'erase' : 'draw';
             path.radius = radius/self.project.getZoom();
             
-            pathGroup.lastChild.replaceWith(path);
-            pathGroup.lastChild.set({strokeWidth:cursor.radius*2,fillColor:null,strokeCap:'round'});
+            self.pathGroup.lastChild.replaceWith(path);
+            self.pathGroup.lastChild.set({strokeWidth:cursor.radius*2,fillColor:null,strokeCap:'round'});
             if(path.mode=='erase'){
-                pathGroup.firstChild.fillColor=eraseColor;
-                pathGroup.lastChild.strokeColor=eraseColor;        
+                self.pathGroup.firstChild.fillColor=eraseColor;
+                self.pathGroup.lastChild.strokeColor=eraseColor;        
             }
             else{
-                pathGroup.firstChild.fillColor=drawColor;
-                pathGroup.lastChild.strokeColor=drawColor;
+                self.pathGroup.firstChild.fillColor=drawColor;
+                self.pathGroup.lastChild.strokeColor=drawColor;
             }
         }
         tool.onMouseMove=function(ev){
             cursor.position=ev.point;
-            if(dragging && item){
-                pathGroup.lastChild.add(ev.point);
-                pathGroup.lastChild.smooth({ type: 'continuous' })
+        }
+        tool.onMouseDrag=function(ev){
+            cursor.position=ev.point;
+            if(self.item){
+                self.pathGroup.lastChild.add(ev.point);
+                self.pathGroup.lastChild.smooth({ type: 'continuous' })
             }
         }
         tool.onMouseUp=function(ev){
-            dragging=false;
-            modifyArea();
+            self.modifyArea();
         }
         tool.onMouseWheel = function(ev){
-            console.log('Wheel event',ev);
+            // console.log('Wheel event',ev);
             ev.preventDefault();
             ev.stopPropagation();
             if(ev.deltaY==0) return;//ignore lateral "scrolls"
-            // self.project.broadcast('brush-radius',{larger:ev.deltaY > 0});
             self.toolbarControl.updateBrushRadius({larger:ev.deltaY < 0});
         }
 
         tool.extensions.onKeyDown=function(ev){
             if(ev.key=='e'){
-                if(eraseMode===false){
+                if(self.eraseMode===false){
                     self.setEraseMode(true);
                 }
                 else {
-                    eraseMode='keyhold';
+                    self.eraseMode='keyhold';
                 }
             }
         }
         tool.extensions.onKeyUp=function(ev){
-            if(ev.key=='e' && eraseMode=='keyhold'){
+            if(ev.key=='e' && self.eraseMode=='keyhold'){
                 self.setEraseMode(false);
             }
         }
     } 
+    modifyArea(){
+        let path = this.pathGroup.lastChild;
+        let shape;
+        if(path.segments.length>1){                
+            shape = PaperOffset.offsetStroke(path,path.radius,{join:'round',cap:'round',insert:true})
+        }
+        else{
+            shape = new paper.Path.Circle({center: path.firstSegment.point, radius: path.radius });
+        }
+
+        shape.strokeWidth = 1/this.project.getZoom();
+        shape.strokeColor = 'black'
+        shape.fillColor='yellow'
+        shape.flatten();
+        shape.name='shapeobject';
+        if(!this.item.isBoundingElement){
+            let boundingItems = this.item.parent.children.filter(i=>i.isBoundingElement);
+            shape.applyBounds(boundingItems);
+        }
+
+        path.visible=false;
+        let result;
+        if(this.eraseMode){
+            result = this.item.subtract(shape,{insert:false});
+        }
+        else{
+            result = this.item.unite(shape,{insert:false});    
+        }
+        if(result){
+            result=result.toCompoundPath();
+            this.item.removeChildren();
+            this.item.addChildren(result.children);
+            result.remove();     
+        }
+        shape.remove();
+    }  
 }
 
 class BrushToolbar extends ToolbarBase{
@@ -182,7 +175,7 @@ class BrushToolbar extends ToolbarBase{
         setTimeout(()=>brushTool.setRadius(defaultRadius), 0);
     }
     isEnabledForMode(mode){
-        return ['new','Polygon','Polygon:Rectangle','Polygon:Raster'].includes(mode);
+        return ['new','Polygon','Polygon:Rectangle'].includes(mode);
     }
     updateBrushRadius(update){
         if(update.larger){

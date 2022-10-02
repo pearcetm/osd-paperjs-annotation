@@ -2,6 +2,9 @@ export class ToolBase{
     constructor(project){
         this.project = project;
         this._active=false;
+        this._items=[];
+        this._item=null;
+
         let shiftPressed;
         let self=this;
         this.extensions = {
@@ -34,6 +37,7 @@ export class ToolBase{
     activate(){
         if(this._active) return;//breaks possible infinite loops of tools activating/deactivating each other
         this._active=true;
+        this.getSelectedItems();
         let previousTool=this.project.getActiveTool();
         this.tool.activate();
         this.toolbarControl.activate();//console.log('toolbar control activated')
@@ -50,14 +54,16 @@ export class ToolBase{
         this.broadcast('deactivated',{target:this}); 
     }
     onActivate(){
-        this.project.viewer.disableMouseHandling();
-        this.project.canvasEl.addEventListener('wheel',this.tool.onMouseWheel);
+        //this.project.viewer.disableMouseHandling();
+        this.tool.captureUserInput(true);
+        this.project.overlay.addEventListener('wheel',this.tool.onMouseWheel);
         this.project.toolLayer.bringToFront();
         this.extensions.onActivate();
     }
     onDeactivate(shouldFinish=false){
-        this.project.viewer.enableMouseHandling();
-        this.project.canvasEl.removeEventListener('wheel',this.tool.onMouseWheel);
+        //this.project.viewer.enableMouseHandling();
+        this.tool.captureUserInput(false);
+        this.project.overlay.removeEventListener('wheel',this.tool.onMouseWheel);
         this.project.toolLayer.sendToBack(); 
         this.extensions.onDeactivate(shouldFinish);
     }
@@ -76,7 +82,24 @@ export class ToolBase{
         this.toolbarControl = toolbarControl;
         return this.toolbarControl;
     }
-    selectionChanged(){}
+    getSelectedItems(){
+        this._items = this.project.paperScope.findSelectedItems();
+        this._itemToCreate = this.project.paperScope.findSelectedNewItem();
+    }
+    selectionChanged(){
+        this.getSelectedItems();
+        this.onSelectionChanged();
+    }
+    onSelectionChanged(){}
+    get items(){
+        return this._items;
+    }
+    get item(){
+        return this._items.length==1 ? this._items[0] : null;
+    }
+    get itemToCreate(){
+        return this._itemToCreate;
+    }
 }
 
 export class ToolbarBase{
