@@ -67,9 +67,13 @@ export class FeatureCollection{
             let clonedProperties = {
                 fillColor:new paper.Color(props.fillColor),
                 strokeColor:new paper.Color(props.strokeColor),
-                rescale:$.extend(true,{},props.rescale)
+                rescale:$.extend(true,{},props.rescale),
+                fillOpacity:props.fillOpacity,
+                strokeOpacity:props.strokeOpacity,
+                strokeWidth:props.strokeWidth,
             }
-            let style = new paper.Style(Object.assign({},props,clonedProperties));
+            // let style = new paper.Style(Object.assign({},props,clonedProperties));
+            let style = new paper.Style(clonedProperties);
             let placeholder = new AnnotationItemPlaceholder(style);
             let f = new Feature(placeholder,{toolbar:this.toolbar});
             return this.addFeature(f);

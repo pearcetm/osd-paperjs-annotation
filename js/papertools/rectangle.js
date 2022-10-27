@@ -1,7 +1,7 @@
 import { ToolBase, ToolbarBase } from './base.js';
 export class RectangleTool extends ToolBase{
-    constructor(project){
-        super(project);
+    constructor(paperScope){
+        super(paperScope);
         let self=this;
 
         let crosshairTool = new paper.Group({visible:false});
@@ -10,7 +10,7 @@ export class RectangleTool extends ToolBase{
         let v1 = new paper.Path({segments:[new paper.Point(0,0),new paper.Point(0,0)],strokeScaling:false,strokeWidth:1,strokeColor:'black'});
         let v2 = new paper.Path({segments:[new paper.Point(0,0),new paper.Point(0,0)],strokeScaling:false,strokeWidth:1,strokeColor:'white',dashArray:[6,6]});
         crosshairTool.addChildren([h1,h2,v1,v2]);
-        this.project.paperScope.project.layers.toolLayer.addChild(crosshairTool);
+        this.project.toolLayer.addChild(crosshairTool);
         
         this.mode = null;
         this.creating = null;
@@ -19,7 +19,7 @@ export class RectangleTool extends ToolBase{
 
         this.tool.onMouseDown=function(ev){
             if(self.itemToCreate){
-                project.paperScope.initializeItem('Polygon','Rectangle');
+                self.project.paperScope.initializeItem('Polygon','Rectangle');
                 self.getSelectedItems();
                 let r=new paper.Path.Rectangle(ev.point,ev.point);
                 self.creating = r;

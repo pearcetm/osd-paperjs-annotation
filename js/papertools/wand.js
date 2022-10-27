@@ -5,11 +5,11 @@ import { makeMagicWand } from '../utils/magicwand.js';
 // import { OpenCV } from '../utils/opencv.js';
 
 export class WandTool extends ToolBase{
-    constructor(project){
-        super(project);
+    constructor(paperScope){
+        super(paperScope);
         let self = this;
         let tool = this.tool;   
-        this.paperScope = project.paperScope;
+        this.paperScope = self.project.paperScope;
         
         this.reduceMode = false;
         this.replaceMode = true;
@@ -43,7 +43,7 @@ export class WandTool extends ToolBase{
         let callback=function(){
             self.getImageData();
         }
-        
+        this.onSelectionChanged = callback; 
         this.extensions.onActivate = function(){ 
             let item = (self.item || self.itemToCreate);
             self.itemLayer = item ? item.layer : null;
@@ -52,7 +52,7 @@ export class WandTool extends ToolBase{
             self.project.overlay.osdViewer.addHandler('animation-finish',callback);
             self.project.overlay.osdViewer.addHandler('rotate',callback);  
             colorPicker.visible=true;
-            self.project.paperScope.project.layers.toolLayer.bringToFront();
+            self.project.toolLayer.bringToFront();
         };
         this.extensions.onDeactivate = function(finished){
             self.project.overlay.osdViewer.removeHandler('animation-finish',callback);
@@ -62,7 +62,7 @@ export class WandTool extends ToolBase{
             if(finished){
                 self.finish();
             }
-            self.project.paperScope.project.layers.toolLayer.sendToBack();
+            self.project.toolLayer.sendToBack();
         };
         
         tool.onMouseDown=function(ev){
@@ -271,11 +271,17 @@ export class WandTool extends ToolBase{
         for(let i = 0, m=0; i<self.imageData.data.length; i+= self.imageData.bytes, m+=1){
             self.imageData.binaryMask[m]=self.imageData.colorMask.data[i+1] ? 1 : 0;//green channel is for current item
         }
-        self.item && self.item.isAnnotationFeature && self.item.getArea() && getAverageColor(self.item).then(sampleColor=>{
-            let c = [sampleColor.red*255,sampleColor.green*255,sampleColor.blue*255];
-            self.imageData.sampleColor = c;
-            self.rasterPreview(self.imageData.binaryMask, c);
-        });
+        
+        if(self.item && self.item.isAnnotationFeature && self.item.getArea()){
+            getAverageColor(self.item).then(sampleColor=>{
+                let c = [sampleColor.red*255,sampleColor.green*255,sampleColor.blue*255];
+                self.imageData.sampleColor = c;
+                self.rasterPreview(self.imageData.binaryMask, c);
+            });
+        }
+        else{
+            self.rasterPreview(self.imageData.binaryMask);
+        } 
         // imgPreview(this.getImageDataURL(cm));
         
     }
@@ -339,7 +345,7 @@ export class WandTool extends ToolBase{
         }
 
         this.preview && this.preview.remove();
-        this.preview = this.project.paperScope.overlay.osdViewer.getViewportRaster(false);
+        this.preview = this.project.paperScope.overlay.osdViewer.getViewportRaster(this.project.paperScope.view, false);
         this.project.toolLayer.insertChild(0, this.preview);//add the raster to the bottom of the tool layer
         
         let c;
@@ -358,7 +364,7 @@ export class WandTool extends ToolBase{
         tween1();
     } 
     // getDataURL(binaryMask){
-    //     let raster = this.project.paperScope.overlay.osdViewer.getViewportRaster(false);
+    //     let raster = this.project.paperScope.overlay.osdViewer.getViewportRaster(this.project.paperScope.view, false);
     //     let neg = 0;
     //     let pos = 180;
     //     let imdata=raster.createImageData(raster.size);
@@ -374,7 +380,7 @@ export class WandTool extends ToolBase{
     //     return raster.toDataURL();
     // } 
     // getImageDataURL(imageData){
-    //     let raster = this.project.paperScope.overlay.osdViewer.getViewportRaster(false);
+    //     let raster = this.project.paperScope.overlay.osdViewer.getViewportRaster(this.project.paperScope.view, false);
     //     raster.setImageData(imageData, new paper.Point(0,0));
     //     return raster.toDataURL();
     // } 

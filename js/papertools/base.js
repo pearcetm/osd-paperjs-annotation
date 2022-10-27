@@ -1,6 +1,17 @@
 export class ToolBase{
-    constructor(project){
-        this.project = project;
+    constructor(paperScope){
+        //If a layer in the current project exists that is named "toolLayer" it will be used by the tool for graphical display
+        //Otherwise, the current active layer will be used as the tool layer.
+        
+        let projectInterface={
+            getZoom:()=>paperScope.view.getZoom(),
+            toolLayer:paperScope.project.layers.toolLayer || paperScope.project.activeLayer,
+            paperScope:paperScope,
+            overlay:paperScope.overlay,
+        }
+
+
+        this.project = projectInterface;
         this._active=false;
         this._items=[];
         this._item=null;
@@ -12,6 +23,8 @@ export class ToolBase{
             onDeactivate:()=>{}
         }
         this.tool = new paper.Tool();
+        this.tool._toolObject=this;
+            
         this.tool.extensions = {
             onKeyUp:()=>{},
             onKeyDown:()=>{},
@@ -38,7 +51,7 @@ export class ToolBase{
         if(this._active) return;//breaks possible infinite loops of tools activating/deactivating each other
         this._active=true;
         this.getSelectedItems();
-        let previousTool=this.project.getActiveTool();
+        let previousTool=this.project.paperScope.getActiveTool();
         this.tool.activate();
         this.toolbarControl.activate();//console.log('toolbar control activated')
         previousTool && previousTool != this && previousTool.deactivate(true);
@@ -55,14 +68,16 @@ export class ToolBase{
     }
     onActivate(){
         //this.project.viewer.disableMouseHandling();
-        this.tool.captureUserInput(true);
+        //this.tool.captureUserInput(true);
+        this.captureUserInput(true);
         this.project.overlay.addEventListener('wheel',this.tool.onMouseWheel);
         this.project.toolLayer.bringToFront();
         this.extensions.onActivate();
     }
     onDeactivate(shouldFinish=false){
         //this.project.viewer.enableMouseHandling();
-        this.tool.captureUserInput(false);
+        // this.tool.captureUserInput(false);
+        this.captureUserInput(false);
         this.project.overlay.removeEventListener('wheel',this.tool.onMouseWheel);
         this.project.toolLayer.sendToBack(); 
         this.extensions.onDeactivate(shouldFinish);
@@ -100,6 +115,10 @@ export class ToolBase{
     get itemToCreate(){
         return this._itemToCreate;
     }
+    captureUserInput(capture = true) { 
+        this.project.overlay.setOSDMouseNavEnabled(!capture);
+    };
+        
 }
 
 export class ToolbarBase{

@@ -1,15 +1,15 @@
 import {ToolBase, ToolbarBase} from './base.js';
 export class SelectTool extends ToolBase{
-    constructor(project){
-        super(project);
+    constructor(paperScope){
+        super(paperScope);
         let self=this;
         this.ps = this.project.paperScope;
         this.setToolbarControl(new SelectToolbar(this));
 
         let selectionRectangle = new paper.Path.Rectangle({strokeWidth:1,rescale:{strokeWidth:1},strokeColor:'black'});
         let sr2 = new paper.Path.Rectangle({strokeWidth:1,dashArray:[10,10],rescale:{strokeWidth:1,dashArray:[10,10]},strokeColor:'white'});
-        this.ps.project.layers.toolLayer.addChild(selectionRectangle);
-        this.ps.project.layers.toolLayer.addChild(sr2);
+        this.project.toolLayer.addChild(selectionRectangle);
+        this.project.toolLayer.addChild(sr2);
         selectionRectangle.applyRescale();
         sr2.applyRescale();
         selectionRectangle.visible=false;

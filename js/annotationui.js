@@ -23,26 +23,15 @@ function AnnotationUI(annotationToolkit, opts={}){
     opts = Object.assign(defaultOpts,opts);
 
     let _viewer = annotationToolkit.viewer;//shorter alias
-    
 
-    //Add button to OpenSeadragon viewer to show/hide AnnotationUI
-    const prefixUrl=_viewer.prefixUrl;
-    let button = new OpenSeadragon.Button({
-        tooltip: 'Annotation interface (i)',
-        srcRest: prefixUrl+`button_rest.png`,
-        srcGroup: prefixUrl+`button_grouphover.png`,
-        srcHover: prefixUrl+`button_hover.png`,
-        srcDown: prefixUrl+`button_pressed.png`,
-        onClick: function(){
+    _viewer.addButton({
+        onClick:function(){
             dialog.toggle();
             dialog.isOpen() ? toolbar.show() : toolbar.hide();
-        }
-    });
-    $(button.element).append($('<i>', {class:"fa-solid fa-pencil button-icon"}));
-    _viewer.buttonGroup.buttons.push(button);
-    _viewer.buttonGroup.element.appendChild(button.element);
-
-
+        },
+        faIconClasses:'fa-solid fa-pencil',
+        tooltip:'Annotation Interface',
+    })
     
     //AnnotationToolbar: UI for interactive tools
     let toolbar = new AnnotationToolbar(annotationToolkit.overlay.paperScope);

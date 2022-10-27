@@ -1,7 +1,7 @@
 import {ToolBase, ToolbarBase} from './base.js';
 export class DefaultTool extends ToolBase{
-    constructor(project){
-        super(project);
+    constructor(paperScope){
+        super(paperScope);
         this.setToolbarControl(new DefaultToolbar(this));
     }
     // getToolbarControl(){}//override this so no button gets added

@@ -1,7 +1,7 @@
 import {ToolBase, ToolbarBase} from './base.js';
 export class PolygonTool extends ToolBase{
-    constructor(project){
-        super(project);
+    constructor(paperScope){
+        super(paperScope);
         let self = this;
         let tool = this.tool;
         let lastClickTime = 0;

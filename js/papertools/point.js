@@ -1,8 +1,8 @@
 import {ToolBase, ToolbarBase} from './base.js';
 import { AnnotationItemPoint } from '../paperitems/annotationitempoint.js';
 export class PointTool extends ToolBase{
-    constructor(project){
-        super(project);
+    constructor(paperScope){
+        super(paperScope);
         let tool = this.tool;
         let self=this;
         let dragging=false;
@@ -12,14 +12,14 @@ export class PointTool extends ToolBase{
         // cursor.strokeWidth='1';
         // cursor.rescale.strokeWidth=1;
         cursor.visible=false;
-        this.project.paperScope.project.layers.toolLayer.addChild(cursor);
+        this.project.toolLayer.addChild(cursor);
         this.setToolbarControl(new PointToolbar(this));
         this.extensions.onActivate=function(){
             self.project.paperScope.project.activeLayer.addChild(cursor);
             if(self.itemToCreate) cursor.visible = true;
         }
         this.extensions.onDeactivate=function(){
-            self.project.paperScope.project.layers.toolLayer.addChild(cursor);
+            self.project.toolLayer.addChild(cursor);
             cursor.visible=false;
             self.project.overlay.removeClass('point-tool-grab', 'point-tool-grabbing');
         }

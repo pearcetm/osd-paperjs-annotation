@@ -1,7 +1,7 @@
 import {ToolBase, ToolbarBase} from './base.js';
 export class StyleTool extends ToolBase{
-    constructor(project){
-        super(project);
+    constructor(paperScope){
+        super(paperScope);
         let self =  this;
         let tool = this.tool;
         this._ignoreNextSelectionChange=false;
@@ -20,7 +20,8 @@ export class StyleTool extends ToolBase{
                 self.cursor.visible=true;
             }
             self.selectionChanged();//set initial list of selected items
-            self.tool.captureUserInput(!!self.pickingColor);
+            // self.tool.captureUserInput(!!self.pickingColor);
+            self.captureUserInput(!!self.pickingColor);
         };
         this.extensions.onDeactivate = function(finished){  console.log('style tool onDeactivate')
             self.project.overlay.removeClass('tool-action').setAttribute('data-tool-action','');
@@ -89,12 +90,17 @@ export class StyleTool extends ToolBase{
         this._ignoreNextSelectionChange=true;
         this.activate();
         this.toolbarControl.updateDisplay();
+        this._ignoreNextSelectionChange=false;
+        console.log('finished activateForItem')
     }
     onSelectionChanged(){
         if(!this._ignoreNextSelectionChange){
-            console.log('onSelctionChanged')
+            console.log('onSelctionChanged handled')
             this.targetItems = this.items;
             this.toolbarControl.updateDisplay();
+        }
+        else{
+            console.log('onSelctionChanged ignored')
         }
         this._ignoreNextSelectionChange=false;
     }
@@ -127,9 +133,8 @@ export class StyleTool extends ToolBase{
     
     pickColor(){
         let self=this;
-        this.tool.captureUserInput(true);
+        self.captureUserInput(true);
         return new Promise(function(resolve,reject){
-            // let activeTool = self.project.getActiveTool();
             self._colorpickerPromise && self._colorpickerPromise.reject('Canceled');
             self._colorpickerPromise = {resolve:resolve, reject:reject};
             self.activate();
@@ -139,7 +144,7 @@ export class StyleTool extends ToolBase{
             self.tool.onMouseMove({point:self.cursor.view.center});
             self.project.overlay.addClass('tool-action').setAttribute('data-tool-action','colorpicker');
         }).finally(()=>{
-            self.tool.captureUserInput(false);
+            self.captureUserInput(false);
         })
 
     }
@@ -201,7 +206,11 @@ export class StyleTool extends ToolBase{
     }
     applyOpacity(opacity,property){
         this.targetItems.forEach(item=>{
-            item[property]=opacity;
+            let style = item.defaultStyle || item.style;
+            style[property]=opacity;
+            if(item.isAnnotationFeature){
+                item.updateFillOpacity();
+            }
         });
     }
     applyColor(value,type,item){
@@ -216,7 +225,6 @@ export class StyleTool extends ToolBase{
             style.fillColor = color;
             
             if(item.isAnnotationFeature){
-                // item.config.properties.fillColor = item.fillColor;
                 item.updateFillOpacity();
             }
         })
@@ -226,6 +234,7 @@ export class StyleTool extends ToolBase{
         (item?[item]:this.targetItems).forEach(item=>{
             let color = new paper.Color(value);
             let style = item.defaultStyle || item.style;
+            // style.strokeColor && (color.alpha = style.strokeColor.alpha);
             style.strokeColor = color;
             if(item.isAnnotationFeature){
                 // item.config.properties.strokeColor = item.strokeColor;
@@ -376,7 +385,7 @@ export class StyleToolbar extends ToolbarBase{
     }
     updateTargetDescription(){
         let targetDescription = this.tool.targetDescription;
-        let allSelected = this.tool.targetItems.every(item=>item.selected);
+        let allSelected = this.tool.targetItems.every(item=>item.selected && item.isAnnotationFeature);
         let element = this.dropdown.find('.style-item').text(targetDescription);
         allSelected ? element.addClass('selected') : element.removeClass('selected');
     }
@@ -498,7 +507,7 @@ export function ColorpickerCursor(cursorCellSize,cursorGridSize,parent){
 
 export async function getAverageColor(itemToAverage){
     
-    let raster = ((itemToAverage.project && itemToAverage.project.overlay) || itemToAverage.overlay).osdViewer.getViewportRaster();
+    let raster = ((itemToAverage.project && itemToAverage.project.overlay) || itemToAverage.overlay).osdViewer.getViewportRaster(itemToAverage.view);
     return new Promise(function(resolve,reject){
         raster.onLoad = function(){
             let color = raster.getAverageColor(itemToAverage);

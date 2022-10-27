@@ -1,14 +1,14 @@
 import { ToolBase, ToolbarBase } from './base.js';
 export class RasterTool extends ToolBase{
-    constructor(project){
-        super(project);
+    constructor(paperScope){
+        super(paperScope);
 
         this.setToolbarControl(new RasterToolbar(this));
     }
     rasterize(){
         let poly = this.item;
         if(poly && poly.makeRaster){
-            let raster = this.project.overlay.osdViewer.getViewportRaster();
+            let raster = this.project.overlay.osdViewer.getViewportRaster(poly.view);
             poly.layer.addChild(raster);
             raster.selectedColor = 'green';
             raster.selected = true;
@@ -52,6 +52,6 @@ class RasterToolbar extends ToolbarBase{
         button.on('click',()=>tool.rasterize())
     }
     isEnabledForMode(mode){
-        return ['Polygon','Polygon:Rectangle','Polygon:Raster'].includes(mode);
+        return ['Polygon','Polygon:Rectangle'].includes(mode);
     }
 }

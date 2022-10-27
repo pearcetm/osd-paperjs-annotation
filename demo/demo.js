@@ -15,6 +15,25 @@ OpenSeadragon.Button.prototype.enable = function(){
 }
 
 
+let v0 =window.v0 = OpenSeadragon({
+    element:'rotating-viewer',
+    prefixUrl: "https://openseadragon.github.io/openseadragon/images/",
+    tileSources: {
+        type: 'image',
+        url:  'https://openseadragon.github.io/example-images/grand-canyon-landscape-overlooking.jpg',
+        buildPyramid: false
+    },
+    minZoomImageRatio:0.01,
+    visibilityRatio:0,
+    crossOriginPolicy: 'Anonymous',
+    ajaxWithCredentials: false
+});
+v0.addHandler('open',()=>{
+    let tk = new AnnotationToolkit(v0);
+    window.rcOverlay = tk.addRotationControlOverlay();
+});
+
+
 let v1 =window.v1 = OpenSeadragon({
     element:'basic-viewer',
     prefixUrl: "https://openseadragon.github.io/openseadragon/images/",
@@ -29,73 +48,74 @@ let v1 =window.v1 = OpenSeadragon({
     ajaxWithCredentials: false
 });
 v1.addHandler('open',()=>{
-    let tk = new AnnotationToolkit(v1,{autoOpen:true});
-    tk.addAnnotationUI();
+    let tk = new AnnotationToolkit(v1);
+    tk.addAnnotationUI({autoOpen:true});
     window.tk = tk;
 });
 
 
-let v2 = OpenSeadragon({
-    element:'demo-viewer',
-    prefixUrl:"https://openseadragon.github.io/openseadragon/images/",
-    tileSources: [{
-        //required	
-        type:       "zoomifytileservice",
-        width:      7026,
-        height:     9221,
-        tilesUrl:   "https://openseadragon.github.io/example-images/highsmith/highsmith_zdata/",
-        //optional
-        tileSize: 256,
-        fileFormat: 'jpg'	
-    }],
-    minZoomImageRatio:0.01,
-    visibilityRatio:0,
-    crossOriginPolicy: 'Anonymous',
-    ajaxWithCredentials: false
-})
-v2.addHandler('open',()=>{
-    let tk = new AnnotationToolkit(v2,{autoOpen:false});
-    tk.addAnnotationUI();
-});
+// let v2 = OpenSeadragon({
+//     element:'demo-viewer',
+//     prefixUrl:"https://openseadragon.github.io/openseadragon/images/",
+//     tileSources: [{
+//         //required	
+//         type:       "zoomifytileservice",
+//         width:      7026,
+//         height:     9221,
+//         tilesUrl:   "https://openseadragon.github.io/example-images/highsmith/highsmith_zdata/",
+//         //optional
+//         tileSize: 256,
+//         fileFormat: 'jpg'	
+//     }],
+//     minZoomImageRatio:0.01,
+//     visibilityRatio:0,
+//     crossOriginPolicy: 'Anonymous',
+//     ajaxWithCredentials: false
+// })
+// v2.addHandler('open',()=>{
+//     let tk = new AnnotationToolkit(v2);
+//     tk.addAnnotationUI({autoOpen:false});
+// });
 
-let v3 = OpenSeadragon({
-    element:'local-viewer',
-    prefixUrl: "https://openseadragon.github.io/openseadragon/images/",
-    // tileSources: {
-    //     type: 'image',
-    //     url:  'https://openseadragon.github.io/example-images/grand-canyon-landscape-overlooking.jpg',
-    //     buildPyramid: false
-    // },
-    minZoomImageRatio:0.01,
-    visibilityRatio:0,
-    crossOriginPolicy: 'Anonymous',
-    ajaxWithCredentials: false
-});
-v3.addHandler('open',()=>{
-    let tk = new AnnotationToolkit(v3,{createUI:{autoOpen:true}});
-    window.ps=v3.paperjsOverlay.ps
-});
-$(v3.element).closest('.demo').find('input[type="file"]').on('change',function(ev){
-    // console.log('File input change',this,ev);
-    let fr = new FileReader();
-    let image = new Image(); 
-    let filename=this.files[0].name;
-    image.onload = function(){
-        let ts={
-            name:filename,
-            width:this.naturalWidth,
-            height:this.naturalHeight,
-            type: 'image',
-            url:  this.src,
-            buildPyramid: false,
-        }
-        v3.open(ts);
-    };    
-    fr.onload = function(){
-        image.src = this.result; 
-    };
-    fr.readAsDataURL(this.files[0]);
-})
+// let v3 = OpenSeadragon({
+//     element:'local-viewer',
+//     prefixUrl: "https://openseadragon.github.io/openseadragon/images/",
+//     // tileSources: {
+//     //     type: 'image',
+//     //     url:  'https://openseadragon.github.io/example-images/grand-canyon-landscape-overlooking.jpg',
+//     //     buildPyramid: false
+//     // },
+//     minZoomImageRatio:0.01,
+//     visibilityRatio:0,
+//     crossOriginPolicy: 'Anonymous',
+//     ajaxWithCredentials: false
+// });
+// v3.addHandler('open',()=>{
+//     let tk = new AnnotationToolkit(v3);
+//     tk.addAnnotationUI({autoOpen:true});
+//     window.ps=v3.paperjsOverlay.ps
+// });
+// $(v3.element).closest('.demo').find('input[type="file"]').on('change',function(ev){
+//     // console.log('File input change',this,ev);
+//     let fr = new FileReader();
+//     let image = new Image(); 
+//     let filename=this.files[0].name;
+//     image.onload = function(){
+//         let ts={
+//             name:filename,
+//             width:this.naturalWidth,
+//             height:this.naturalHeight,
+//             type: 'image',
+//             url:  this.src,
+//             buildPyramid: false,
+//         }
+//         v3.open(ts);
+//     };    
+//     fr.onload = function(){
+//         image.src = this.result; 
+//     };
+//     fr.readAsDataURL(this.files[0]);
+// })
 
-window.v3 = v3;
+// window.v3 = v3;
 

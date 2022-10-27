@@ -164,7 +164,7 @@ export class MainDialog{
         }).trigger('input');
 
         self.element.find('input.annotation-fill-opacity').on('input',function(){
-            self.paperScope.project.fillOpacity = this.value;
+            self.paperScope.view.fillOpacity = this.value;
         }).trigger('input');
 
         function setOpacity(o){

@@ -25,39 +25,31 @@ export class AnnotationToolbar{
         let toolLayer=new paper.Layer();
         toolLayer.isAnnotationLayer=false;
         toolLayer.name = 'toolLayer';
+        paperScope.project.addLayer(toolLayer);
 
-        let projectInterface={
-            getZoom:()=>paperScope.view.getZoom(),
-            getActiveTool:this.getActiveTool, 
-            toolLayer:toolLayer,
-            paperScope:paperScope,
-            overlay:paperScope.overlay,
-        }
         
         this.tools = {
-            default:new DefaultTool(projectInterface),
-            select: new SelectTool(projectInterface),
-            transform:new TransformTool(projectInterface),
-            style: new StyleTool(projectInterface),
-            rectangle:new RectangleTool(projectInterface),
-            point: new PointTool(projectInterface),
-            polygon: new PolygonTool(projectInterface),
-            brush: new BrushTool(projectInterface),
-            wand: new WandTool(projectInterface),
-            linestring : new LinestringTool(projectInterface),
-            raster: new RasterTool(projectInterface),
+            default:new DefaultTool(paperScope),
+            select: new SelectTool(paperScope),
+            transform:new TransformTool(paperScope),
+            style: new StyleTool(paperScope),
+            rectangle:new RectangleTool(paperScope),
+            point: new PointTool(paperScope),
+            polygon: new PolygonTool(paperScope),
+            brush: new BrushTool(paperScope),
+            wand: new WandTool(paperScope),
+            linestring : new LinestringTool(paperScope),
+            raster: new RasterTool(paperScope),
         }
         Object.keys(this.tools).forEach(function(toolname){
             let toolObj = self.tools[toolname];
-            toolObj.tool._toolObject=toolObj;
-            toolObj.toolname=toolname;
             let toolbarControl = toolObj.getToolbarControl();
             if(toolbarControl) self.addToolbarControl(toolbarControl);
 
             // if(toolObj !== tools.default){
             toolObj.addEventListener('deactivated',function(ev){
                 //If deactivation is triggered by another tool being activated, this condition will fail
-                if(ev.target == self.getActiveTool()){
+                if(ev.target == self.paperScope.getActiveTool()){
                     self.tools.default.activate();
                 }
             })
@@ -70,30 +62,25 @@ export class AnnotationToolbar{
         //items emit events on the paper project; add listeners to update the toolbar status as needed
         paperScope.project.on({
             'item-replaced':function(ev){
-                // console.log('project updated', ev)
                 self.setMode();
             },
             'item-selected':function(ev){
                 self.setMode()
-                // let activeTool = self.getActiveTool() && activeTool.selectionChanged();
             },
             'item-deselected':function(ev){
                 self.setMode()
-                // let activeTool = self.getActiveTool() && activeTool.selectionChanged();
             },
         });
 
     }
-    getActiveTool(){
-        return this.paperScope.tool ? this.paperScope.tool._toolObject : null;
-    }
+    
     setMode(){
         let self=this;
         this.setModeTimeout && clearTimeout(this.setModeTimeout);
         this.setModeTimeout = setTimeout(()=>{
             this.setModeTimeout=null;
             let selection = this.paperScope.findSelectedItems();
-            let activeTool = this.getActiveTool();
+            let activeTool = this.paperScope.getActiveTool();
             
             if(selection.length==0){
                 this.currentMode='select';
@@ -136,6 +123,7 @@ export class AnnotationToolbar{
     addToOpenSeadragon(viewer){
         let bg = new OpenSeadragon.ButtonGroup({buttons:this.ui.buttongroup.buttons,element:this.ui.buttongroup.element});
         viewer.addControl(bg.element,{anchor:OpenSeadragon.ControlAnchor.TOP_LEFT});
+        this.viewer = viewer;//save reference so we can remove/destroy this toolbar
         $(this.ui.buttongroup.element).append(this.ui.dropdowns);
         $(viewer.controls.topleft).addClass('viewer-controls-topleft');
         $('.toggles .btn').attr('style','');

@@ -1,8 +1,8 @@
 import {ToolBase, ToolbarBase} from './base.js';
 import {PaperOffset} from '../paper-offset.js';
 export class BrushTool extends ToolBase{
-    constructor(project){
-        super(project);
+    constructor(paperScope){
+        super(paperScope);
         let self = this;
         let tool = this.tool;
         this.setToolbarControl(new BrushToolbar(this));

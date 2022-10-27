@@ -1,8 +1,8 @@
 import { ToolbarBase } from './base.js';
 import {PolygonTool,PolygonToolbar} from './polygon.js';
 export class LinestringTool extends PolygonTool{
-    constructor(project){
-        super(project);
+    constructor(paperScope){
+        super(paperScope);
         let self = this;
         let tool = this.tool;   
         

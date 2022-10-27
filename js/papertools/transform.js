@@ -1,13 +1,13 @@
 import {ToolBase, ToolbarBase} from './base.js';
 export class TransformTool extends ToolBase{
-    constructor(project){
-        super(project);
+    constructor(paperScope){
+        super(paperScope);
         let self=this;
         this.ps = this.project.paperScope;
         this._mode = 'transform';
         this._moving = [];
         this.setToolbarControl(new TransformToolbar(this));
-        this.makeTransformToolObject(project.getZoom());
+        this.makeTransformToolObject(self.project.getZoom());
         
         this.extensions.onActivate=function(){ 
             // self.project.viewer.addHandler('canvas-click',self.clickHandler) 
@@ -21,9 +21,9 @@ export class TransformTool extends ToolBase{
             }
         }
     }
-    getSelectedItems(){
-        return this.ps.project.selectedItems.filter(i=>i.isAnnotationFeature);
-    }
+    // getSelectedItems(){
+    //     return this.ps.project.selectedItems.filter(i=>i.isAnnotationFeature);
+    // }
     
     makeTransformToolObject(currentZoom){
         let self=this;
@@ -174,7 +174,8 @@ export class TransformTool extends ToolBase{
     enableTransformToolObject(){
         this.project.toolLayer.bringToFront();
         this._transformTool.visible=true;
-        this._transformTool.transformItems(this.getSelectedItems());
+        this._transformTool.transformItems(this.items);
+        // this._transformTool.transformItems(this.getSelectedItems());
         
     }
     disableTransformToolObject(){
@@ -206,7 +207,7 @@ class TransformToolbar extends ToolbarBase{
         
     }
     isEnabledForMode(mode){
-        return this.tool.getSelectedItems().length>0 && ['select','Polygon','Polygon:Rectangle','Point','LineString','Polygon:Raster'].includes(mode);
+        return this.tool.project.paperScope.findSelectedItems().length>0 && ['select','multiselection','Polygon','Polygon:Rectangle','Point','LineString','Polygon:Raster'].includes(mode);
     }
     
 }
