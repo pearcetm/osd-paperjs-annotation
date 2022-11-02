@@ -17,7 +17,7 @@ export class ToolBase{
             onDeactivate:()=>{}
         }
         this.tool = new paperScope.Tool();
-        console.log('tool created at index',paperScope.tools.indexOf(this.tool),paperScope)
+        // console.log('tool created at index',paperScope.tools.indexOf(this.tool),paperScope)
         this.tool._toolObject=this;
             
         this.tool.extensions = {

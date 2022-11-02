@@ -55,7 +55,7 @@ function AnnotationUI(annotationToolkit, opts={}){
     opts.autoOpen ? (dialog.open(),toolbar.show()) : (dialog.close(),toolbar.hide());
 
     if(opts.featureCollections){
-        opts.featureCollections.forEach(function(f){dialog.addFeatureCollection(f)});
+        addFeatureCollections(opts.featureCollections)
         // dialog.refresh();
     }
     
@@ -68,9 +68,12 @@ function AnnotationUI(annotationToolkit, opts={}){
         loadGeoJSON:function(geoJSON,opts){ return dialog.loadGeoJSON(geoJSON,opts) },
         onSave:function(callback){
             dialog.saveHandler = callback;
-        }
+        },
+        addFeatureCollections:addFeatureCollections,
     }
-
+    function addFeatureCollections(fcs){
+        fcs.forEach(function(f){dialog.addFeatureCollection(f)});
+    }
     function destroy(){
         dialog.destroy();
         toolbar.destroy();

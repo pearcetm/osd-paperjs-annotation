@@ -94,6 +94,7 @@ class AnnotationToolkit {
                 _this.overlay.paperScope.view._element.setAttribute('style', 'visibility:' + (show ? 'visible;' : 'hidden;'));
             },
             _overlay:_this.overlay,
+            addFeatureCollections: function(featureCollections){ _this._annotationUI.addFeatureCollections(featureCollections)}
         };
 
         function remove() {

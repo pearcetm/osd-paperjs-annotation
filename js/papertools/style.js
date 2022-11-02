@@ -257,13 +257,13 @@ export class StyleToolbar extends AnnotationUIToolbarBase{
 
         $(this.dropdown).find('[data-action="pick-color"]').on('click',function(){
             let type = $(this).data('type');
-            let colorinput = self.dropdown.find(`input[type="color"][data-type="${type}"]`);
-            self.dropdown.find('[data-action="pick-color"]').removeClass('active');
+            let colorinput = $(self.dropdown).find(`input[type="color"][data-type="${type}"]`);
+            $(self.dropdown).find('[data-action="pick-color"]').removeClass('active');
             if(colorinput.is(':visible')){
-                self.dropdown.find('.colorpicker-row').addClass('hidden');
+                $(self.dropdown).find('.colorpicker-row').addClass('hidden');
             }
             else{
-                self.dropdown.find('.colorpicker-row').addClass('hidden');
+                $(self.dropdown).find('.colorpicker-row').addClass('hidden');
                 colorinput.closest('.colorpicker-row').removeClass('hidden');
                 $(this).addClass('active');
             }
