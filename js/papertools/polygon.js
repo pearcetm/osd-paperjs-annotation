@@ -1,5 +1,5 @@
-import {ToolBase, ToolbarBase} from './base.js';
-export class PolygonTool extends ToolBase{
+import {AnnotationUITool, AnnotationUIToolbarBase} from './annotationUITool.js';
+export class PolygonTool extends AnnotationUITool{
     constructor(paperScope){
         super(paperScope);
         let self = this;
@@ -257,11 +257,11 @@ export class PolygonTool extends ToolBase{
     }
 }
 
-export class PolygonToolbar extends ToolbarBase{
+export class PolygonToolbar extends AnnotationUIToolbarBase{
     constructor(polyTool){
         super(polyTool);
         let self=this;
-        let html = $('<i>',{class:'fa-solid fa-draw-polygon'})
+        let html = $('<i>',{class:'fa-solid fa-draw-polygon'})[0];
         this.button.configure(html,'Polygon Tool');
         
         let fdd=$('<div>',{'data-tool':'polygon',class:'dropdown polygon-toolbar'}).appendTo(this.dropdown);

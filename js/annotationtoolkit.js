@@ -3,7 +3,6 @@ import {AnnotationItemPoint} from './paperitems/annotationitempoint.js';
 import {AnnotationItemPolygon} from './paperitems/annotationitempolygon.js';
 import {AnnotationItemLinestring} from './paperitems/annotationitemlinestring.js';
 import {PaperOverlay} from './paper-overlay.js';
-import {RotationControlTool} from './papertools/rotationcontrol.js';
 
 //to do:
 // - Refactor code to be an actual class rather than just a gigantic constructor function
@@ -55,9 +54,13 @@ paper.PaperScope.prototype.getActiveTool = function(){ return this.tool ? this.t
 
 class AnnotationToolkit {
     constructor(openSeadragonViewer, opts) {
+        // TO DO: make the options object actually do something
+        if(opts){
+            console.warn('Configuration options for AnnotationToolkit are not yet supported')
+        }
 
         var _this = this;
-        _this._defaultStyle = {
+        this._defaultStyle = {
             fillColor: new paper.Color('white'),
             strokeColor: new paper.Color('black'),
             fillOpacity:1,
@@ -67,38 +70,24 @@ class AnnotationToolkit {
                 strokeWidth: 1
             }
         };
-        _this.viewer = openSeadragonViewer;
-        _this.overlay = _this.viewer.addPaperOverlay();
-        _this.overlay.paperScope.project.defaultStyle = new paper.Style();
-        _this.overlay.paperScope.project.defaultStyle.set(_this._defaultStyle);
+        this.viewer = openSeadragonViewer;
+        this.overlay = new PaperOverlay(this.viewer);
+
+        this.overlay.paperScope.project.defaultStyle = new paper.Style();
+        this.overlay.paperScope.project.defaultStyle.set(_this._defaultStyle);
 
 
         
         
 
-        _this.viewer.addOnceHandler('close', close); //TO DO: make this an option, not a hard-coded default
+        this.viewer.addOnceHandler('close', remove); //TO DO: make this an option, not a hard-coded default
 
-        // _this.overlay.rescaleItems();
-        _this.overlay.autoRescaleItems(true);
+        this.overlay.autoRescaleItems(true);
 
         const api = _this.api = {
             addAnnotationUI: function (opts={}) {
                 if (!_this._annotationUI) _this._annotationUI = new AnnotationUI(_this, opts);
                 return _this._annotationUI;
-            },
-            addRotationControlOverlay:function(){
-                let rcOverlay = new PaperOverlay(_this.viewer,{overlayType:'viewport'})
-                let rcTool = new RotationControlTool(rcOverlay.paperScope);
-                _this.viewer.addButton({
-                    faIconClasses:'fa-solid fa-rotate',
-                    tooltip:'Rotate image',
-                    onClick:()=>{
-                        console.log('Mwahahaha');
-                        rcTool.active ? rcTool.deactivate(true) : rcTool.activate();
-                        rcTool.active = !!!rcTool.active;
-                    }
-                });
-                return rcOverlay;
             },
             remove: remove,
             setGlobalVisibility: function (show = false) {
@@ -285,17 +274,7 @@ function viewFillOpacityPropertyDef(){
         }
     }
 }
-// function itemFillOpacityPropertyDef(){
-//     return {
-//         set: function opacity(o){
-//             this._fillOpacity = o;
-//             this.descendants.forEach(item=>item.updateFillOpacity())
-//         },
-//         get: function opacity(){
-//             return typeof this._fillOpacity === 'undefined' ? 1 : this._fillOpacity;
-//         }
-//     }
-// }
+
 function itemStrokeOpacityPropertyDef(){
     return {
         set: function opacity(o){
@@ -354,7 +333,7 @@ function hierarchyDef(){
 function descendantsDef(){
     return {
         get: function descendants(){
-            return this.children ? this.children.map(child=>child.descendants).flat() : [this];
+            return this.children && !this.isAnnotationFeature ? this.children.map(child=>child.descendants).flat() : [this];
         }
     }
 }
@@ -424,7 +403,6 @@ function paperItemFromGeoJson(geoJSONFeature) {
 
 }
 function paperItemToGeoJson(){
-    console.log('Creating GeoJSON structure',this)
     let GeoJSON = {
         type:'Feature',
         geometry:this.toGeoJSONGeometry ? this.toGeoJSONGeometry() : null,
@@ -436,10 +414,13 @@ function paperItemToGeoJson(){
     return GeoJSON;
 }
 function paperGroupToGeoJson(){
-    console.log('Creating GeoJSON structure',this);
+    if(this.isAnnotationFeature){
+        return paperItemToGeoJson.call(this);
+    }
     let GeoJSON = {
         type:'FeatureCollection',
         features: this.descendants.filter(d=>d.isAnnotationFeature).map(d=>d.toGeoJSON()),
+        // features: this.descendants.map(d=>d.toGeoJSON()).filter(d=>d.geometry),
         properties:{
             ...this.defaultStyle.toJSON(),
         },

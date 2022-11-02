@@ -1,5 +1,5 @@
-import {ToolBase, ToolbarBase} from './base.js';
-export class DefaultTool extends ToolBase{
+import {AnnotationUITool, AnnotationUIToolbarBase} from './annotationUITool.js';
+export class DefaultTool extends AnnotationUITool{
     constructor(paperScope){
         super(paperScope);
         this.setToolbarControl(new DefaultToolbar(this));
@@ -8,10 +8,10 @@ export class DefaultTool extends ToolBase{
     onDeactivate(){}
     onActivate(){} 
 }
-class DefaultToolbar extends ToolbarBase{
+class DefaultToolbar extends AnnotationUIToolbarBase{
     constructor(tool){
         super(tool);
-        let html = $('<i>',{class:'fa-solid fa-hand'});
+        let html = $('<i>',{class:'fa-solid fa-hand'})[0];
         this.button.configure(html,'Image Navigation Tool');
         
     }

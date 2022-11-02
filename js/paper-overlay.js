@@ -47,22 +47,7 @@
         return;
     }
 
-    /**
-     * Adds paper.js overlay capability to your OpenSeadragon Viewer
-     *
-     * @param {Object} options
-     *     Allows configurable properties to be entirely specified by passing
-     *     an options object to the constructor.
-     *
-     * @param {Number} options.scale
-     *     Paper 'virtual' canvas size, for creating objects
-     *
-     * @returns {PaperOverlay}
-     */
-    OpenSeadragon.Viewer.prototype.addPaperOverlay = function (options) {
-        //TO DO: refactor adding the overlay as a property to the viewer, to support adding multiple paperJS overlays
-        return new PaperOverlay(this, options);
-    };
+    
     Object.defineProperty(OpenSeadragon.Viewer.prototype, 'PaperOverlays',{
         get: function PaperOverlays(){
             return this._PaperOverlays || (this._PaperOverlays = []);
@@ -108,7 +93,12 @@
             srcDown: prefixUrl+`button_pressed.png`,
             onClick: params.onClick,
         });
-        if(params.faIconClasses) $(button.element).append($('<i>', {class:params.faIconClasses + ' button-icon-fa'}));
+        if(params.faIconClasses){
+            let i = document.createElement('i');
+            i.classList.add(...params.faIconClasses.split(/\s/), 'button-icon-fa');
+            button.element.appendChild(i);
+            // $(button.element).append($('<i>', {class:params.faIconClasses + ' button-icon-fa'}));
+        }
         this.buttonGroup.buttons.push(button);
         this.buttonGroup.element.appendChild(button.element);
         return button;
@@ -177,11 +167,10 @@ export class PaperOverlay{
         this._canvasdiv.appendChild(this._canvas);
         
         viewer.canvas.appendChild(this._canvasdiv);
-
-        this._resize();
         
         
         this.paperScope = new paper.PaperScope();
+        
         //monkey-patch canvas willReadFrequently attribute - will not stop the console warning on paper.js load however
         this.paperScope.CanvasProvider.getContext = function(width,height,willReadFrequently=true){
             let canvas = this.getCanvas(width,height);
@@ -193,6 +182,8 @@ export class PaperOverlay{
         this.paperScope.project.overlay = this;
         this.ps = ps;
         this._paperProject=ps.project;
+
+        this._resize();
         
         if(opts.overlayType=='image'){
             self._updatePaperView();
@@ -213,6 +204,7 @@ export class PaperOverlay{
         viewer.addHandler('close', onViewerClose)
         
         function onViewerClose(){
+            // TO DO: remove this overlay from the list of PaperOverlays on the viewer?
             console.log('paper-overlay close')
             self.osdViewer.removeHandler('viewport-change',onViewportChange);
             self.osdViewer.removeHandler('resize',onViewerResize);
@@ -226,6 +218,7 @@ export class PaperOverlay{
         }
         function onViewerResize(){
             self._resize();
+            self.paperScope.view.emit('resize',{size:new paper.Size(self._containerWidth, self._containerHeight)})
             if(opts.overlayType=='image'){
                 self._updatePaperView();
             } 
@@ -241,16 +234,20 @@ export class PaperOverlay{
         this.osdViewer.PaperOverlays.splice(this.osdViewer.PaperOverlays.indexOf(this),1);
         this.osdViewer.PaperOverlays.push(this);
         this.osdViewer.PaperOverlays.forEach(overlay=>this.osdViewer.canvas.appendChild(overlay._canvasdiv));
+        this.paperScope.activate();
     }
     sendToBack(){
         this.osdViewer.PaperOverlays.splice(this.osdViewer.PaperOverlays.indexOf(this),1);
         this.osdViewer.PaperOverlays.splice(0,0,this);
         this.osdViewer.PaperOverlays.forEach(overlay=>this.osdViewer.canvas.appendChild(overlay._canvasdiv));
+        this.osdViewer.PaperOverlays[this.osdViewer.PaperOverlays.length-1].paperScope.activate();
     }
     remove(){
         this.osdViewer.PaperOverlays.splice(this.osdViewer.PaperOverlays.indexOf(this),1);
         this._canvasdiv.remove();
         this.paperScope.project.remove();
+
+        if(this.osdViewer.PaperOverlays.length>0) this.osdViewer.PaperOverlays[this.osdViewer.PaperOverlays.length-1].paperScope.activate();
     }
     clear(){
         this.paperScope.project.clear();
@@ -280,8 +277,11 @@ export class PaperOverlay{
         this._canvas.removeEventListener(event,listener);
         return this;
     }
+    // returns: mouseNavEnabled status BEFORE the call (for reverting)
     setOSDMouseNavEnabled(enabled=true){
+        let wasMouseNavEnabled = this.osdViewer.isMouseNavEnabled();
         this.osdViewer.setMouseNavEnabled(enabled);
+        return wasMouseNavEnabled;
     }
     // ----------
     autoRescaleItems(shouldHandle=false){
@@ -301,21 +301,26 @@ export class PaperOverlay{
     }
     //------------
     _resize() {
+        let update=false;
         if (this._containerWidth !== this.osdViewer.container.clientWidth) {
             this._containerWidth = this.osdViewer.container.clientWidth;
             this._canvasdiv.setAttribute('width', this._containerWidth);
             this._canvas.setAttribute('width', this._containerWidth);
+            update=true;
         }
 
         if (this._containerHeight !== this.osdViewer.container.clientHeight) {
             this._containerHeight = this.osdViewer.container.clientHeight;
             this._canvasdiv.setAttribute('height', this._containerHeight);
             this._canvas.setAttribute('height', this._containerHeight);
+            update=true;
         }
-
+        if(update){
+            this.paperScope.view.viewSize = new paper.Size(this._containerWidth, this._containerHeight);
+            this.paperScope.view.update();
+        }
     }
     _updatePaperView() {
-        this.paperScope.view.viewSize = new paper.Size(this._containerWidth, this._containerHeight);
         var viewportZoom = this.osdViewer.viewport.getZoom(true);
         let oldZoom = this.paperScope.view.zoom;
         this.paperScope.view.zoom = this.osdViewer.viewport._containerInnerSize.x * viewportZoom / this._scale;

@@ -1,14 +1,55 @@
-import { ToolBase } from './base.js';
+import { ToolBase } from './papertools/base.js';
+import {PaperOverlay} from './paper-overlay.js';
+import {addCSS} from './addcss.js';
+addCSS('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css','font-awesome/6.1.1/css/all');
+addCSS(`${import.meta.url.match(/(.*?)js\/[^\/]*$/)[1]}css/osd-button.css`,'osd-button');
+
+export class RotationControlOverlay{
+    constructor(viewer){
+        let overlay=this.overlay = new PaperOverlay(viewer,{overlayType:'viewport'})
+        let tool = this.tool = new RotationControlTool(this.overlay.paperScope, this);
+        this.dummyTool = new this.overlay.paperScope.Tool();//to capture things like mouseMove, keyDown etc (when actual tool is not active)
+        let self=this;
+        
+        viewer.addButton({
+            faIconClasses:'fa-solid fa-rotate',
+            tooltip:'Rotate image',
+            onClick:()=>{
+                tool.active ? self.deactivate() : self.activate();
+            }
+        });
+    }
+    activate(){
+        this._mouseNavEnabledAtActivation=this.overlay.osdViewer.isMouseNavEnabled();
+        this.tool.activate();
+        this.tool.active=true;
+        this.overlay.bringToFront();
+    }
+    deactivate(){
+        this.tool.deactivate(true);
+        this.dummyTool.activate();
+        this.overlay.osdViewer.setMouseNavEnabled(this._mouseNavEnabledAtActivation);
+        this.tool.active=false;
+        this.overlay.sendToBack();
+    }
+    
+}
 export class RotationControlTool extends ToolBase{
-    constructor(paperScope){
+    constructor(paperScope, rotationOverlay){
         super(paperScope);
         let self=this;
-
-        let widget = new RotationControlWidget(paperScope.view.bounds, setAngle);
+        let bounds = paperScope.view.bounds;
+        let widget = new RotationControlWidget(paperScope.view.bounds.center, setAngle);
 
         let viewer = paperScope.overlay.osdViewer;
         viewer.addHandler('rotate', (ev)=>widget.setCurrentRotation(ev.degrees));
-
+        paperScope.view.on('resize',function(ev){
+            let pos = widget.item.position;
+            let w = pos.x / bounds.width;
+            let h = pos.y / bounds.height;
+            bounds = paperScope.view.bounds;//new bounds after the resize
+            widget.item.position = new paper.Point(w * bounds.width, h * bounds.height);
+        })
         widget.item.visible = false;
         self.project.toolLayer.addChild(widget.item);
         
@@ -26,28 +67,45 @@ export class RotationControlTool extends ToolBase{
         this.tool.onMouseUp = function(){
             
         }
+        this.tool.extensions.onKeyDown=function(ev){
+            if(ev.key=='escape'){
+                rotationOverlay.deactivate();
+            }
+        }
         this.extensions.onActivate = function(){
+            if(widget.item.visible==false){
+                widget.item.position=paperScope.view.bounds.center;//reset to center when activated, so that if it gets lost off screen it's easy to recover
+            }
             widget.item.visible=true;
             widget.item.opacity = 1;
         }
         this.extensions.onDeactivate = function(finished){
-            if(finished) widget.item.visible=false;
+            if(finished){
+                widget.item.visible=false;
+            }
             widget.item.opacity = 0.3;
         }
 
-        // function setCursorPosition(tool,ev){
-            
-        // }
         function setAngle(angle){
+            //Here's where we need to translate the point at the cursor to the center of the viewport
+            let widgetCenter = new OpenSeadragon.Point(widget.item.position.x, widget.item.position.y)
+            let pivot = viewer.viewport.pointFromPixel(widgetCenter);
+            viewer.viewport.panTo(pivot,true);//pivot becomes the new center point of the viewport
             viewer.viewport.setRotation(angle);
+            let newWidgetPosition=viewer.viewport.pointFromPixel(widgetCenter);//compute location to move pivot back to
+            let delta = pivot.minus(newWidgetPosition);
+            viewer.viewport.panBy(delta,true);
+            //And translate the center point back to where the cursor is.
+
         }
     }
     
 }
 
-function RotationControlWidget(bounds, setAngle){
-
-    let radius = Math.min(bounds.width/5, bounds.height/5, 50);
+function RotationControlWidget(center, setAngle){
+    let width = center.x*2;
+    let height= center.y*2;
+    let radius = Math.min(width/5, height/5, 50);
     let innerRadius = radius * 0.2;
 
     let baseAngle = new paper.Point(0, -1).angle; //make north the reference direction for 0 degrees (even though normally it would be east)
@@ -100,7 +158,7 @@ function RotationControlWidget(bounds, setAngle){
     
     
     let rcc = new paper.Color(0.3,0.3,0.3,0.8);
-    let lineControl = new paper.Path.Line(new paper.Point(0, -innerRadius), new paper.Point(0, -Math.max(bounds.width, bounds.height)));
+    let lineControl = new paper.Path.Line(new paper.Point(0, -innerRadius), new paper.Point(0, -Math.max(width, height)));
     lineControl.strokeColor = rcc;
     lineControl.strokeWidth = 1;
     lineControl.applyMatrix=false;
@@ -126,7 +184,7 @@ function RotationControlWidget(bounds, setAngle){
 
     group.addChild(rotationLineControl);
     group.pivot = circle.bounds.center;//make the center of the circle the pivot for the entire  controller
-    group.position = bounds.center;//set position after adding all children so it is applied to all
+    group.position = center;//set position after adding all children so it is applied to all
 
     //define API
     let widget={};
@@ -173,9 +231,6 @@ function RotationControlWidget(bounds, setAngle){
             // angle = -hitResults[0].item._angle + arrowControl._angleOffset;
             ev.point = hitResults[0].item.bounds.center;
         }
-        // else{
-        //     angle = ev.point.subtract(circle.bounds.center).angle + arrowControl._angleOffset;
-        // }
         angle = ev.point.subtract(circle.bounds.center).angle + arrowControl._angleOffset;
         
         setAngle(angle);
@@ -185,6 +240,9 @@ function RotationControlWidget(bounds, setAngle){
     //     // console.log('arrow mouseup',ev)
         
     // }
+    circle.onMouseDrag=function(ev){
+        widget.item.position = widget.item.position.add(ev.delta);
+    }
 
     return widget;
 }

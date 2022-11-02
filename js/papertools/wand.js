@@ -1,10 +1,10 @@
-import {ToolBase, ToolbarBase} from './base.js';
+import {AnnotationUITool, AnnotationUIToolbarBase} from './annotationUITool.js';
 import {ColorpickerCursor,getAverageColor} from './style.js';
 import {Morph} from '../utils/morph.js';
 import { makeMagicWand } from '../utils/magicwand.js';
 // import { OpenCV } from '../utils/opencv.js';
 
-export class WandTool extends ToolBase{
+export class WandTool extends AnnotationUITool{
     constructor(paperScope){
         super(paperScope);
         let self = this;
@@ -363,34 +363,14 @@ export class WandTool extends ToolBase{
         function tween2(){self.preview.tweenTo({opacity:1},{duration:800,easing:'easeOutCubic'}).then(tween1);}
         tween1();
     } 
-    // getDataURL(binaryMask){
-    //     let raster = this.project.paperScope.overlay.osdViewer.getViewportRaster(this.project.paperScope.view, false);
-    //     let neg = 0;
-    //     let pos = 180;
-    //     let imdata=raster.createImageData(raster.size);
-    //     let val;
-    //     for(var ix=0, mx=0; ix<imdata.data.length; ix+=4, mx+=1){
-    //         val = binaryMask[mx] ? pos : neg;
-    //         imdata.data[ix]=val;
-    //         imdata.data[ix+1]=val;
-    //         imdata.data[ix+2]=val;
-    //         imdata.data[ix+3]=255;
-    //     }
-    //     raster.setImageData(imdata, new paper.Point(0,0));
-    //     return raster.toDataURL();
-    // } 
-    // getImageDataURL(imageData){
-    //     let raster = this.project.paperScope.overlay.osdViewer.getViewportRaster(this.project.paperScope.view, false);
-    //     raster.setImageData(imageData, new paper.Point(0,0));
-    //     return raster.toDataURL();
-    // } 
+    
     
 }
 
-class WandToolbar extends ToolbarBase{
+class WandToolbar extends AnnotationUIToolbarBase{
     constructor(wandTool){
         super(wandTool);
-        let html = $('<i>',{class:"fa-solid fa-wand-magic-sparkles fa-rotate-270"});
+        let html = $('<i>',{class:"fa-solid fa-wand-magic-sparkles fa-rotate-270"})[0];
         this.button.configure(html,'Magic Wand Tool');
         
         let fdd = $('<div>',{'data-tool':'wand',class:'dropdown wand-toolbar'}).appendTo(this.dropdown);

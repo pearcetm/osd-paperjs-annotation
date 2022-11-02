@@ -1,5 +1,5 @@
-import {ToolBase, ToolbarBase} from './base.js';
-export class StyleTool extends ToolBase{
+import {AnnotationUITool, AnnotationUIToolbarBase} from './annotationUITool.js';
+export class StyleTool extends AnnotationUITool{
     constructor(paperScope){
         super(paperScope);
         let self =  this;
@@ -246,16 +246,16 @@ export class StyleTool extends ToolBase{
 
 }
 
-export class StyleToolbar extends ToolbarBase{
+export class StyleToolbar extends AnnotationUIToolbarBase{
     constructor(tool){
         super(tool);
         let self=this;
-        let html = $('<i>',{class:'fa-solid fa-palette'});
+        let html = $('<i>',{class:'fa-solid fa-palette'})[0];
         this.button.configure(html,'Style Tool');
-        this.dropdown.append(this.uiHTML());
+        $(this.dropdown).append(this.uiHTML());
         this._hierarchy = [];
 
-        this.dropdown.find('[data-action="pick-color"]').on('click',function(){
+        $(this.dropdown).find('[data-action="pick-color"]').on('click',function(){
             let type = $(this).data('type');
             let colorinput = self.dropdown.find(`input[type="color"][data-type="${type}"]`);
             self.dropdown.find('[data-action="pick-color"]').removeClass('active');
@@ -269,33 +269,33 @@ export class StyleToolbar extends ToolbarBase{
             }
         })
 
-        this.dropdown.find('input[type="color"]').on('input',function(){
+        $(this.dropdown).find('input[type="color"]').on('input',function(){
             let type = $(this).data('type');
             self.tool.applyColor(this.value,type);
             type=='fill' && self.setFillButtonColor(new paper.Color(this.value))
             type=='stroke' && self.setStrokeButtonColor(new paper.Color(this.value))
         });
-        this.dropdown.find('input[type="number"]').on('input',function(){
+        $(this.dropdown).find('input[type="number"]').on('input',function(){
             console.log('number input',this.value)
             self.tool.applyStrokeWidth(this.value);
         })
-        this.dropdown.find('input[data-action="opacity"]').on('input',function(){
+        $(this.dropdown).find('input[data-action="opacity"]').on('input',function(){
             let type = $(this).data('type');
             let prop = $(this).data('property');
             self.tool.applyOpacity(this.value,prop);
             type=='fill' && self.setFillButtonOpacity(this.value);
             type=='stroke' && self.setStrokeButtonOpacity(this.value);
         })
-        this.dropdown.find('[data-action="from-image"]').on('click',function(){
+        $(this.dropdown).find('[data-action="from-image"]').on('click',function(){
             self.tool.pickColor().then((color)=>{
                 $(this).siblings('input[type="color"]').val(color.toCSS(true)).trigger('input');
             }).catch(error=>{});
         });
-        this.dropdown.find('[data-action="from-average"]').on('click',function(){
+        $(this.dropdown).find('[data-action="from-average"]').on('click',function(){
             let type = $(this).data('type');
             self.fromAverage(type);
         });
-        this.dropdown.find('.style-item').on('click',function(){
+        $(this.dropdown).find('.style-item').on('click',function(){
             let items = self.tool.targetItems;
             console.log('Style item clicked',items)
             let allSelected = items.every(item=>item.selected);
@@ -307,7 +307,7 @@ export class StyleToolbar extends ToolbarBase{
             }
             self.updateTargetDescription();
         })
-        this.dropdown.find('.hierarchy-up').on('click',function(){
+        $(this.dropdown).find('.hierarchy-up').on('click',function(){
             if(self._hierarchy && self._hierarchy.length>0){
                 self._hierarchy.index = (self._hierarchy.index+1) % self._hierarchy.length;
             }
@@ -386,7 +386,7 @@ export class StyleToolbar extends ToolbarBase{
     updateTargetDescription(){
         let targetDescription = this.tool.targetDescription;
         let allSelected = this.tool.targetItems.every(item=>item.selected && item.isAnnotationFeature);
-        let element = this.dropdown.find('.style-item').text(targetDescription);
+        let element = $(this.dropdown).find('.style-item').text(targetDescription);
         allSelected ? element.addClass('selected') : element.removeClass('selected');
     }
     updateDisplay(){
@@ -431,11 +431,11 @@ export class StyleToolbar extends ToolbarBase{
         }
         let strokeWidth = targets.map(item=>item.rescale ? item.rescale.strokeWidth : item.strokeWidth);
         if(strokeWidth.length==1 || new Set(strokeWidth).size==1){
-            this.dropdown.find('input[type="number"]').val(strokeWidth[0]);
+            $(this.dropdown).find('input[type="number"]').val(strokeWidth[0]);
         }
         else{
             // console.warn('Multiple stroke widths not implemented; clearing input')
-            this.dropdown.find('input[type="number"]').val('');
+            $(this.dropdown).find('input[type="number"]').val('');
         }
     }
     setFillButtonColor(color = new paper.Color('white')){
@@ -444,9 +444,9 @@ export class StyleToolbar extends ToolbarBase{
         if(!color) color = new paper.Color('white');
         let val = color.toCSS(true);
         let textcolor = getContrastYIQ(color.toCSS(true));
-        this.dropdown.find('[data-type="fill"] .preview .text').css({color:textcolor});
-        this.dropdown.find('[data-type="fill"] .preview .color').css({'background-color':val,'outline-color':textcolor});
-        this.dropdown.find('input[type="color"][data-type="fill"]').val(val);
+        $(this.dropdown).find('[data-type="fill"] .preview .text').css({color:textcolor});
+        $(this.dropdown).find('[data-type="fill"] .preview .color').css({'background-color':val,'outline-color':textcolor});
+        $(this.dropdown).find('input[type="color"][data-type="fill"]').val(val);
     }
     setStrokeButtonColor(color = new paper.Color('black')){
         // let val = color ? color.toCSS(true) : 'none';
@@ -454,17 +454,17 @@ export class StyleToolbar extends ToolbarBase{
         if(!color) color = new paper.Color('black');
         let val = color.toCSS(true);
         let textcolor = getContrastYIQ(color.toCSS(true));
-        this.dropdown.find('[data-type="stroke"] .preview .text').css({color:textcolor});
-        this.dropdown.find('[data-type="stroke"] .preview .color').css({'background-color':val,'outline-color':textcolor});
-        this.dropdown.find('input[type="color"][data-type="stroke"]').val(val);
+        $(this.dropdown).find('[data-type="stroke"] .preview .text').css({color:textcolor});
+        $(this.dropdown).find('[data-type="stroke"] .preview .color').css({'background-color':val,'outline-color':textcolor});
+        $(this.dropdown).find('input[type="color"][data-type="stroke"]').val(val);
     }
     setFillButtonOpacity(val){
-        this.dropdown.find('[data-type="fill"] .preview .bg').css({'opacity':val});
-        this.dropdown.find('[data-type="fill"][data-action="opacity"]').val(val);
+        $(this.dropdown).find('[data-type="fill"] .preview .bg').css({'opacity':val});
+        $(this.dropdown).find('[data-type="fill"][data-action="opacity"]').val(val);
     }
     setStrokeButtonOpacity(val){
-        this.dropdown.find('[data-type="stroke"] .preview .bg').css({'opacity':val});
-        this.dropdown.find('[data-type="stroke"][data-action="opacity"]').val(val);
+        $(this.dropdown).find('[data-type="stroke"] .preview .bg').css({'opacity':val});
+        $(this.dropdown).find('[data-type="stroke"][data-action="opacity"]').val(val);
     }
 }
 

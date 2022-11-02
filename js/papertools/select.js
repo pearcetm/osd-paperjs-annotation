@@ -1,5 +1,5 @@
-import {ToolBase, ToolbarBase} from './base.js';
-export class SelectTool extends ToolBase{
+import {AnnotationUITool, AnnotationUIToolbarBase} from './annotationUITool.js';
+export class SelectTool extends AnnotationUITool{
     constructor(paperScope){
         super(paperScope);
         let self=this;
@@ -120,11 +120,11 @@ export class SelectTool extends ToolBase{
     }
 }
 
-class SelectToolbar extends ToolbarBase{
+class SelectToolbar extends AnnotationUIToolbarBase{
     constructor(tool){
         super(tool);
-        this.dropdown.addClass('select-dropdown');
-        let html = $('<i>',{class:'fa-solid fa-arrow-pointer'});
+        $(this.dropdown).addClass('select-dropdown');
+        let html = $('<i>',{class:'fa-solid fa-arrow-pointer'})[0];
         this.button.configure(html,'Selection Tool');
         
         let s = $('<div>',{'data-active':'select'}).appendTo(this.modeRow)

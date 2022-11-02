@@ -1,5 +1,5 @@
-import { ToolBase, ToolbarBase } from './base.js';
-export class RectangleTool extends ToolBase{
+import {AnnotationUITool, AnnotationUIToolbarBase} from './annotationUITool.js';
+export class RectangleTool extends AnnotationUITool{
     constructor(paperScope){
         super(paperScope);
         let self=this;
@@ -132,10 +132,10 @@ export class RectangleTool extends ToolBase{
     }
     
 }
-class RectToolbar extends ToolbarBase{
+class RectToolbar extends AnnotationUIToolbarBase{
     constructor(tool){
         super(tool);
-        let html = $('<i>',{class:'fa-solid fa-vector-square'});
+        let html = $('<i>',{class:'fa-solid fa-vector-square'})[0];
         this.button.configure(html,'Rectangle Tool');
         this.instructions = $('<span>').text('Click and drag to create a rectangle').appendTo(this.dropdown);
     }

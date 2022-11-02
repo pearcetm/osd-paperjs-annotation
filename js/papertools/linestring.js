@@ -1,5 +1,5 @@
-import { ToolbarBase } from './base.js';
-import {PolygonTool,PolygonToolbar} from './polygon.js';
+import { AnnotationUIToolbarBase } from './annotationUITool.js';
+import {PolygonTool} from './polygon.js';
 export class LinestringTool extends PolygonTool{
     constructor(paperScope){
         super(paperScope);
@@ -144,10 +144,10 @@ export class LinestringTool extends PolygonTool{
     }
 }
 
-class LinestringToolbar extends ToolbarBase{
+class LinestringToolbar extends AnnotationUIToolbarBase{
     constructor(linestringTool){
         super(linestringTool);
-        let html = $('<i>',{class:'fa-solid fa-pen-nib'});
+        let html = $('<i>',{class:'fa-solid fa-pen-nib'})[0];
         this.button.configure(html,'Linestring Tool');
         
         let fdd = $('<div>',{'data-tool':'linestring',class:'dropdown linestring-toolbar'}).prependTo(this.dropdown);

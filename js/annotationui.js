@@ -11,6 +11,7 @@ import { MainDialog } from './maindialog.js';
 addCSS('https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.css','jquery-ui');
 addCSS('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css','font-awesome/6.1.1/css/all');
 addCSS(`${import.meta.url.match(/(.*?)js\/[^\/]*$/)[1]}css/annotationui.css`,'annotationui');
+addCSS(`${import.meta.url.match(/(.*?)js\/[^\/]*$/)[1]}css/osd-button.css`,'osd-button');
 
 // console.log('Location of annotationui.js module',import.meta);
 // - ui-added
@@ -24,7 +25,7 @@ function AnnotationUI(annotationToolkit, opts={}){
 
     let _viewer = annotationToolkit.viewer;//shorter alias
 
-    _viewer.addButton({
+    let button = _viewer.addButton({
         onClick:function(){
             dialog.toggle();
             dialog.isOpen() ? toolbar.show() : toolbar.hide();

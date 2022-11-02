@@ -34,18 +34,7 @@ export class FeatureCollection{
                 return $(el).data('feature');
             }).toArray();
         }
-        // this.toGeoJSON = function(){
-        //     console.log('FeatureCollection.toGeoJSON',self.label);
-        //     // self._geoJson.properties = self.paperObjects.layer.defaultStyle;
-        //     self._geoJson.features = this.features().map(function(f){
-        //         let gj = f._geoJson;
-        //         gj.geometry = f.paperItem.toGeoJSONGeometry();
-        //         gj.properties.fillColor && gj.properties.fillColor.toCSS &&(gj.properties.fillColor = gj.properties.fillColor.toCSS());
-        //         gj.properties.strokeColor && gj.properties.strokeColor.toCSS && (gj.properties.strokeColor = gj.properties.strokeColor.toCSS());
-        //         return gj;
-        //     });
-        //     return self._geoJson;
-        // }
+        
         this.remove = function(){
             self.paperObjects.layer.remove();
             self.element.remove();

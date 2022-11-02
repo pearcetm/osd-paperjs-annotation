@@ -22,7 +22,7 @@ export class AnnotationToolbar{
         this.currentMode = null;
         this.setModeTimeout = null;
 
-        let toolLayer=new paper.Layer();
+        let toolLayer=new paperScope.Layer();
         toolLayer.isAnnotationLayer=false;
         toolLayer.name = 'toolLayer';
         paperScope.project.addLayer(toolLayer);

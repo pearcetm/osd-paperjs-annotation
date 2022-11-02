@@ -1,6 +1,6 @@
-import {ToolBase, ToolbarBase} from './base.js';
+import {AnnotationUITool, AnnotationUIToolbarBase} from './annotationUITool.js';
 import {PaperOffset} from '../paper-offset.js';
-export class BrushTool extends ToolBase{
+export class BrushTool extends AnnotationUITool{
     constructor(paperScope){
         super(paperScope);
         let self = this;
@@ -155,10 +155,10 @@ export class BrushTool extends ToolBase{
     }  
 }
 
-class BrushToolbar extends ToolbarBase{
+class BrushToolbar extends AnnotationUIToolbarBase{
     constructor(brushTool){
         super(brushTool);
-        let html = $('<i>',{class:'fa fa-brush fa-rotate-by',style:'--fa-rotate-angle: 225deg;'});
+        let html = $('<i>',{class:'fa fa-brush fa-rotate-by',style:'--fa-rotate-angle: 225deg;'})[0];
         this.button.configure(html,'Brush Tool');
         
         let fdd = $('<div>',{'data-tool':'brush',class:'dropdown brush-toolbar'}).appendTo(this.dropdown);

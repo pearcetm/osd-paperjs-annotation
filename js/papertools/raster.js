@@ -1,5 +1,5 @@
-import { ToolBase, ToolbarBase } from './base.js';
-export class RasterTool extends ToolBase{
+import {AnnotationUITool, AnnotationUIToolbarBase} from './annotationUITool.js';
+export class RasterTool extends AnnotationUITool{
     constructor(paperScope){
         super(paperScope);
 
@@ -40,10 +40,10 @@ export class RasterTool extends ToolBase{
     }
     
 }
-class RasterToolbar extends ToolbarBase{
+class RasterToolbar extends AnnotationUIToolbarBase{
     constructor(tool){
         super(tool);
-        let html=$('<i>',{class:'fa fa-image'});
+        let html=$('<i>',{class:'fa fa-image'})[0];
         this.button.configure(html,'Raster Tool');
         let d = $('<div>').appendTo(this.dropdown);
         let button = $('<button>').text('Convert to raster').appendTo(d);

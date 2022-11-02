@@ -381,7 +381,7 @@ function offsetStroke(path, offset, join, cap, limit) {
     result.shadowOffset = nonSIPath.shadowOffset;
     return result;
 }
-
+// TO DO: does this need to be modified to work with multiple paperScopes?
 var PaperOffset = /** @class */ (function () {
     function PaperOffset() {
     }

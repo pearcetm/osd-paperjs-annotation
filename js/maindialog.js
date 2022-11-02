@@ -47,7 +47,7 @@ export class MainDialog{
             setTimeout(function(){fc.element.addClass('inserted'); }, 30);//this allows opacity fade-in to be triggered
 
             geoJSON.features && geoJSON.features.forEach(feature=>{
-                let paperItem = paper.Item.fromGeoJSON(feature);
+                let paperItem = paperScope.Item.fromGeoJSON(feature);
                 let f = new Feature(paperItem,{toolbar:opts.toolbar});
                 fc.addFeature(f);
             })
@@ -62,10 +62,10 @@ export class MainDialog{
                 return $(e).data('featureCollection');
             })
         }
-        self.toGeoJSON = function(opts={asString:true,includeTrashed:false}){ 
-            // let collections = self.getFeatureCollections(opts.includeTrashed).map(function(fc){
-            //     return fc.toGeoJSON();
-            // });
+        self.toGeoJSON = function(opts={asString:true,includeTrashed:false}){
+            if(opts.includeTrashed){
+                console.warn('includeTrashed is not currently supported')
+            } 
             let collections = self.paperScope.project.toGeoJSON()
             return opts.asString ? JSON.stringify(collections) : collections;
         };

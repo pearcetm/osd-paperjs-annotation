@@ -1,13 +1,3 @@
-.fa, .fa-solid{
-    font-weight:900;
-}
-.button-icon-fa{
-    position:absolute;
-    top:calc(50% - 2px);
-    left:50%;
-    transform:translate(-50%, -50%);
-    color:#01010187;
-}
 .ui-dialog{
     z-index:1001; /* Position it above the bootstrap navbar */
     font-size:14px;

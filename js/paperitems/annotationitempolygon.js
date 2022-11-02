@@ -1,7 +1,6 @@
 
 class AnnotationItemPolygon{
     constructor(geoJSON){
-        this._rasterColor
         if (geoJSON.geometry.type !== 'Polygon') {
             error('Bad geoJSON object: type !=="Polygon"');
         }
@@ -23,9 +22,11 @@ class AnnotationItemPolygon{
         // poly.applyProperties();
 
         poly.canBeBoundingElement = true;
-
+        // console.log('creating polygon',poly._id)
 
         poly.toGeoJSONGeometry = function () {
+            console.log('Polygon toGeoJSONGeometry',this._id)
+            
             let g = this.config.geometry;
             g.coordinates = this.children.map(function (c) { return c.segments.map(function (s) { return [s.point.x, s.point.y]; }); });
             return g;
@@ -49,10 +50,13 @@ class AnnotationItemPolygon{
     }
     makeRaster(raster) {
         let poly = this;
+        // console.log('converting poly to raster',poly._id)
         raster.selectedColor = rasterColor;
         let grp = new paper.Group([]);
         grp.isAnnotationFeature = true;
         poly.isAnnotationFeature = false;
+        // let polyToGeoJSONGeometry = poly.toGeoJSONGeometry;
+        // delete poly.toGeoJSONGeometry;
         grp.config = Object.assign({}, poly.config);
         grp.config.geometry.properties.subtype = 'Raster';
         poly.replace(grp);
@@ -61,13 +65,16 @@ class AnnotationItemPolygon{
         grp.clipped = true;
         poly.deselect();
         grp.select();
+        //the leaf node (raster) not the group must have toGeoJSONGeometry implemented
         grp.toGeoJSONGeometry = function () {
+            console.log('Raster toGeoJSONGeometry, poly id=',poly._id)
+            // let g = polyToGeoJSONGeometry.call(poly);
             let g = poly.toGeoJSONGeometry();
-            this.config.geometry.coordinates = g.coordinates;
-            this.config.geometry.properties.matrix = this.matrix.values;
-            this.config.geometry.properties.rasterdata = raster.toDataURL();
-            this.config.geometry.properties.rastermatrix = raster.matrix.values;
-            return this.config.geometry;
+            grp.config.geometry.coordinates = g.coordinates;
+            grp.config.geometry.properties.matrix = this.matrix.values;
+            grp.config.geometry.properties.rasterdata = raster.toDataURL();
+            grp.config.geometry.properties.rastermatrix = raster.matrix.values;
+            return grp.config.geometry;
         };
         
         grp.displayName = ['Raster','geometry-type'];

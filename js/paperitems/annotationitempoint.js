@@ -1,5 +1,5 @@
 class AnnotationItemPoint{
-    constructor(geoJSON){
+    constructor(geoJSON, allowExportToGeoJSON = true){
         //TO DO: Add configuration options for
         // - base radius
         // - fontawesome icon class (or others...?)
@@ -57,12 +57,14 @@ class AnnotationItemPoint{
             point.scaleFactor = 1 / z;
             textitem.strokeWidth = 1; //keep constant; reset after strokewidth is set on overall item
         };
-    
-        point.toGeoJSONGeometry = function () {
-            let g = this.config.geometry;
-            g.coordinates = [circle.bounds.center.x, circle.bounds.center.y];
-            return g;
-        };
+        
+        if(allowExportToGeoJSON){
+            point.toGeoJSONGeometry = function () {
+                let g = point.config.geometry;
+                g.coordinates = [circle.bounds.center.x, circle.bounds.center.y];
+                return g;
+            };
+        }
         point.rotate(-point.view.getRotation());
         point.view.on('rotate',function(ev){point.rotate(-ev.rotatedBy)});
         point.applyRescale();

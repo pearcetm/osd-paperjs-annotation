@@ -1,12 +1,12 @@
-import {ToolBase, ToolbarBase} from './base.js';
+import {AnnotationUITool, AnnotationUIToolbarBase} from './annotationUITool.js';
 import { AnnotationItemPoint } from '../paperitems/annotationitempoint.js';
-export class PointTool extends ToolBase{
+export class PointTool extends AnnotationUITool{
     constructor(paperScope){
         super(paperScope);
         let tool = this.tool;
         let self=this;
         let dragging=false;
-        let cursor = new AnnotationItemPoint({geometry:{type:'Point',coordinates:[0,0]}});
+        let cursor = new AnnotationItemPoint({geometry:{type:'Point',coordinates:[0,0]}}, false);
         cursor.fillColor=null;
         cursor.strokeColor='grey';
         // cursor.strokeWidth='1';
@@ -62,10 +62,10 @@ export class PointTool extends ToolBase{
     } 
 }
 
-class PointToolbar extends ToolbarBase{
+class PointToolbar extends AnnotationUIToolbarBase{
     constructor(tool){
         super(tool);
-        let html = $('<i>',{class:'fa-solid fa-map-pin'});
+        let html = $('<i>',{class:'fa-solid fa-map-pin'})[0];
         this.button.configure(html,'Point Tool');
         this.instructions=$('<span>').text('').appendTo(this.dropdown);
     }

@@ -1,5 +1,5 @@
-import {ToolBase, ToolbarBase} from './base.js';
-export class TransformTool extends ToolBase{
+import {AnnotationUITool, AnnotationUIToolbarBase} from './annotationUITool.js';
+export class TransformTool extends AnnotationUITool{
     constructor(paperScope){
         super(paperScope);
         let self=this;
@@ -198,11 +198,11 @@ export class TransformTool extends ToolBase{
     }
 }
 
-class TransformToolbar extends ToolbarBase{
+class TransformToolbar extends AnnotationUIToolbarBase{
     constructor(tool){
         super(tool);
-        this.dropdown.addClass('transform-dropdown');
-        let html = $('<i>',{class:'fa-solid fa-up-down-left-right'});
+        $(this.dropdown).addClass('transform-dropdown');
+        let html = $('<i>',{class:'fa-solid fa-up-down-left-right'})[0];
         this.button.configure(html,'Transform Tool');
         
     }
