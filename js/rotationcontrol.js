@@ -105,8 +105,8 @@ export class RotationControlTool extends ToolBase{
 function RotationControlWidget(center, setAngle){
     let width = center.x*2;
     let height= center.y*2;
-    let radius = Math.min(width/5, height/5, 50);
-    let innerRadius = radius * 0.2;
+    let radius = Math.min(width/5, height/5, 30);
+    let innerRadius = radius * 0.3;
 
     let baseAngle = new paper.Point(0, -1).angle; //make north the reference direction for 0 degrees (even though normally it would be east)
 
