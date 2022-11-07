@@ -117,6 +117,7 @@ export class MainDialog{
             open:onOpen,
             resize:limitHeight,
             autoOpen:false,
+            closeOnEscape:false,
             height:'auto',
             appendTo:opts.appendTo,
         });
