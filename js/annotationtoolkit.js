@@ -184,10 +184,10 @@ function findSelectedItems() {
 function findSelectedItem() {
     return this.findSelectedItems()[0];
 }
-function createFeatureCollectionLayer() {
+function createFeatureCollectionLayer(displayLabel=null) {
     let layer = new paper.Layer();
     layer.isAnnotationLayer = true;
-    layer.name = layer.displayName = 'AnnotationLayer';
+    layer.name = layer.displayName = displayLabel!==null ? displayLabel : 'AnnotationLayer';
     this.project.addLayer(layer);
     let group = new paper.Group();
     group.name = 'elements';
@@ -212,13 +212,16 @@ function updateStrokeOpacity(){
 
 function initializeItem(geoJSONGeometryType, geometrySubtype) {
     let item = this.findSelectedNewItem();
-    let geoJSON = item.instructions;
-    geoJSON.geometry = {
-        type: geoJSONGeometryType,
-        coordinates: [],
-        properties: {
-            subtype:geometrySubtype,
+    // let geoJSON = item.instructions;
+    let geoJSON = {
+        geometry:{
+            type: geoJSONGeometryType,
+            coordinates: [],
+            properties: {
+                subtype:geometrySubtype,
+            },
         },
+        properties: item.instructions,
     };
     
     let newItem = paper.Item.fromGeoJSON(geoJSON);
@@ -386,15 +389,19 @@ function replaceItem(newItem){
 }
 
 function paperItemFromGeoJson(geoJSONFeature) {
+    if(!(geoJSONFeature.geometry && geoJSONFeature.properties)){
+        console.warn('Invalid GeoJSON Feature object. Returning undefined.');
+        return;
+    }
     let factory = {
         Point: geoJSON=>new AnnotationItemPoint(geoJSON),
         LineString: geoJSON=>new AnnotationItemLinestring(geoJSON),
         Polygon: geoJSON=>new AnnotationItemPolygon(geoJSON),
     };
 
-    let type = (geoJSONFeature.geometry && geoJSONFeature.geometry.type) || 'null';
+    let type = geoJSONFeature.geometry.type;
     if (factory.hasOwnProperty(type) === false) {
-        error(`No method defined for type ${type}`);
+        error(`No method defined for GeoJSON Geometry type ${type}`);
     }
     var obj = factory[type](geoJSONFeature);
     obj.style.set(geoJSONFeature.properties);

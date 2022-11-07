@@ -68,7 +68,7 @@ class AnnotationItemPoint{
         point.rotate(-point.view.getRotation());
         point.view.on('rotate',function(ev){point.rotate(-ev.rotatedBy)});
         point.applyRescale();
-        point.displayName = ['Point','geometry-type'];
+        point.displayName = geoJSON.properties.label ? [geoJSON.properties.label,'label-property'] : ['Point','geometry-type'];
         return point;
     }
 }

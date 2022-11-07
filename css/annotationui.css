@@ -307,6 +307,7 @@ canvas.rectangle-tool-resize{
 .style-toolbar .style-item{
     display:inline-block;
     width:7em;
+    white-space: nowrap;
     overflow:hidden;
     text-overflow:ellipsis;
     padding-left:0.5em;

@@ -5,7 +5,7 @@ export class FileDialog{
         let _this=this;
         this._mainwindow = maindialog;
         this.element = $(fileDialogHtml()).appendTo('body');
-        this.element.dialog({autoOpen:false,modal:true,open:initDlg,width:'auto','appendTo':opts.appendTo});
+        this.element.dialog({closeOnEscape:false,autoOpen:false,modal:true,open:initDlg,width:'auto','appendTo':opts.appendTo});
         this.dialog = function(...args){ this.element.dialog(...args) }
 
         this.element.find('button[data-action="geojson-load"]').on('click',loadGeoJSON)

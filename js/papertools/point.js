@@ -6,7 +6,7 @@ export class PointTool extends AnnotationUITool{
         let tool = this.tool;
         let self=this;
         let dragging=false;
-        let cursor = new AnnotationItemPoint({geometry:{type:'Point',coordinates:[0,0]}}, false);
+        let cursor = new AnnotationItemPoint({geometry:{type:'Point',coordinates:[0,0]},properties:{label:'Point Tool'}}, false);
         cursor.fillColor=null;
         cursor.strokeColor='grey';
         // cursor.strokeWidth='1';

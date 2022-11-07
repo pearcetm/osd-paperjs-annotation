@@ -18,6 +18,51 @@ export class RotationControlOverlay{
                 tool.active ? self.deactivate() : self.activate();
             }
         });
+
+        //TO DO: move this temporary monkey patch into OpenSeadragon project
+        let $=OpenSeadragon;
+        OpenSeadragon.Viewport.prototype.setRotation = function(degrees, rotationAxisInViewportCoordinates){
+            if (!this.viewer || !this.viewer.drawer.canRotate()) {
+                return this;
+            }
+            let refViewerElementCoordinates;
+            if(rotationAxisInViewportCoordinates){
+                //save reference in viewer coordinate frame
+                refViewerElementCoordinates = this.viewportToViewerElementCoordinates(rotationAxisInViewportCoordinates);
+                //pan the image so the desired center of rotation is in the center of the viewport
+                this.panTo(rotationAxisInViewportCoordinates,true);//pivot becomes the new center point of the viewport
+            }
+            
+
+            this.degrees = $.positiveModulo(degrees, 360);
+            this._setContentBounds(
+                this.viewer.world.getHomeBounds(),
+                this.viewer.world.getContentFactor());
+            this.viewer.forceRedraw();
+    
+            /**
+             * Raised when rotation has been changed.
+             *
+             * @event rotate
+             * @memberof OpenSeadragon.Viewer
+             * @type {object}
+             * @property {OpenSeadragon.Viewer} eventSource - A reference to the Viewer which raised the event.
+             * @property {Number} degrees - The number of degrees the rotation was set to.
+             * @property {?Object} userData - Arbitrary subscriber-defined object.
+             */
+            this.viewer.raiseEvent('rotate', {degrees: degrees});
+
+            if(rotationAxisInViewportCoordinates){
+                //Translate the center point back to where the cursor is.
+                let refPoint=this.viewerElementToViewportCoordinates(refViewerElementCoordinates);//compute location to move pivot back to
+                let delta = rotationAxisInViewportCoordinates.minus(refPoint);
+                this.panBy(delta,true);
+            }
+        
+            return this;
+        }
+    
+     
     }
     activate(){
         this._mouseNavEnabledAtActivation=this.overlay.osdViewer.isMouseNavEnabled();
@@ -87,16 +132,9 @@ export class RotationControlTool extends ToolBase{
         }
 
         function setAngle(angle){
-            //Here's where we need to translate the point at the cursor to the center of the viewport
             let widgetCenter = new OpenSeadragon.Point(widget.item.position.x, widget.item.position.y)
             let pivot = viewer.viewport.pointFromPixel(widgetCenter);
-            viewer.viewport.panTo(pivot,true);//pivot becomes the new center point of the viewport
-            viewer.viewport.setRotation(angle);
-            let newWidgetPosition=viewer.viewport.pointFromPixel(widgetCenter);//compute location to move pivot back to
-            let delta = pivot.minus(newWidgetPosition);
-            viewer.viewport.panBy(delta,true);
-            //And translate the center point back to where the cursor is.
-
+            viewer.viewport.setRotation(angle,pivot);
         }
     }
     

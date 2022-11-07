@@ -28,7 +28,7 @@ class AnnotationItemLinestring{
             return g;
         };
 
-        grp.displayName = ['LineString','geometry-type'];
+        grp.displayName = geoJSON.properties.label ? [geoJSON.properties.label,'label-property'] : ['LineString','geometry-type'];
         
         return grp;
     }

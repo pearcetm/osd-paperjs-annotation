@@ -42,8 +42,8 @@ class AnnotationItemPolygon{
                 grp.set({ matrix: geoJSON.geometry.properties.matrix });
             }, 0);
         }
-        let displayname = (geoJSON.geometry.properties && geoJSON.geometry.properties.subtype) || 'Polygon';
-        poly.displayName = [displayname,'geometry-type'];
+        let geomtype = (geoJSON.geometry.properties && geoJSON.geometry.properties.subtype) || 'Polygon';
+        poly.displayName = geoJSON.properties.label ? [geoJSON.properties.label,'label-property'] : [geomtype,'geometry-type'];
 
         poly.makeRaster = this.makeRaster;
         return poly;

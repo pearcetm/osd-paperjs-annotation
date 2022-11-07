@@ -38,11 +38,12 @@ export class MainDialog{
             self.element.remove();
         }
         self.addFeatureCollection = function(geoJSON={features:[]}){
-            let paperObjects=self.paperScope.createFeatureCollectionLayer()
+            let paperObjects=self.paperScope.createFeatureCollectionLayer(geoJSON.label)
             geoJSON.properties && paperObjects.layer.defaultStyle.set(geoJSON.properties);
 
             let fc=new FeatureCollection(paperObjects, {guiSelector:`[data-ui-id="${guid}"]`,toolbar:opts.toolbar});
             self.element.find('.annotation-ui-feature-collections').append(fc.element).sortable('refresh');
+            
             // fc.element.trigger('element-added');
             setTimeout(function(){fc.element.addClass('inserted'); }, 30);//this allows opacity fade-in to be triggered
 
