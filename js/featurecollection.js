@@ -4,7 +4,7 @@ import { AnnotationItemPlaceholder } from './paperitems/annotationitemplaceholde
 export class FeatureCollection{
     constructor(paperObjects,init){
         let self=this;
-        this.toolbar = init.toolbar;
+        // this.toolbar = init.toolbar;
         this.element = makeFeatureCollectionElement();
         
         this._featurelist=this.element.find('.features-list');
@@ -155,13 +155,6 @@ export class FeatureCollection{
     get label(){
         return this.paperObjects.layer.displayName;
     }
-    // set label(label){
-    //     this.element.find('.annotation-header .annotation-name.edit').text(label);
-    //     this.paperObjects.group.displayName = this.paperObjects.layer.displayName = label;
-    // }
-    // get label(){
-    //     return this.paperItem.displayName;
-    // }
     set label(l){
         return this.setLabel(l)
     }
@@ -182,20 +175,30 @@ export class FeatureCollection{
     trashClicked(){
         //if previously trashed, restore the paperItems
         // To Do: add option for user to choose whether to restore or permanently remove
-        if(this.element.hasClass('trashed')){
-            this.element.removeClass('trashed');
-            this.features().map(function(f){
-                this.paperObjects.group.addChild(f.paperItem);
-                f.paperItem.deselect();//insert objects as deselected
-            });
+        // if(this.element.hasClass('trashed')){
+        //     this.element.removeClass('trashed');
+        //     this.features().map(function(f){
+        //         this.paperObjects.group.addChild(f.paperItem);
+        //         f.paperItem.deselect();//insert objects as deselected
+        //     });
+        // }
+        // else{
+        //     this.element.addClass('trashed');
+        //     this.features().map(function(f){
+        //         f.paperItem.remove();
+        //         f.paperItem.deselect();//ensure items are deselected
+        //     });
+        // }   
+        if(window.confirm('Remove this layer?')==true){
+                // this.element.addClass('trashed');
+                this.features().map(function(f){
+                    f.paperItem.remove();
+                    f.paperItem.deselect();//ensure items are deselected
+                });
+                this.element.remove();
+        } else {
+
         }
-        else{
-            this.element.addClass('trashed');
-            this.features().map(function(f){
-                f.paperItem.remove();
-                f.paperItem.deselect();//ensure items are deselected
-            });
-        }   
     }
     editClicked(){
         let header = this.element.find('.annotation-header');
@@ -209,7 +212,10 @@ export class FeatureCollection{
         selection.addRange(range);  
     }
     styleClicked(ev){
-        this.toolbar && this.toolbar.tools.style.activateForItem(this.paperObjects.layer);
+        let heard = this.paperObjects.layer.project.emit('edit-style',{item:this.paperObjects.layer});
+        if(!heard){
+            console.warn('No event listeners are registered for paperScope.project for event \'edit-style\'');
+        }
     }
 }
 

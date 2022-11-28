@@ -83,26 +83,6 @@
        
         return raster;
     }
-    OpenSeadragon.Viewer.prototype.addButton = function(params={}){
-        const prefixUrl=this.prefixUrl;
-        let button = new OpenSeadragon.Button({
-            tooltip: params.tooltip,
-            srcRest: prefixUrl+`button_rest.png`,
-            srcGroup: prefixUrl+`button_grouphover.png`,
-            srcHover: prefixUrl+`button_hover.png`,
-            srcDown: prefixUrl+`button_pressed.png`,
-            onClick: params.onClick,
-        });
-        if(params.faIconClasses){
-            let i = document.createElement('i');
-            i.classList.add(...params.faIconClasses.split(/\s/), 'button-icon-fa');
-            button.element.appendChild(i);
-            // $(button.element).append($('<i>', {class:params.faIconClasses + ' button-icon-fa'}));
-        }
-        this.buttonGroup.buttons.push(button);
-        this.buttonGroup.element.appendChild(button.element);
-        return button;
-    }
 
     paper.View.prototype.setRotation = function(degrees, center){
         // console.log('Setting View rotation',degrees,center);
@@ -128,20 +108,23 @@
 
 export class PaperOverlay{
 
-    //TO DO: make the options object choose between an overlay synced to the image vs the viewport
-    //      - e.g. for annotations in image coordinates vs controls (like rotation) in the viewport coordinates
+    // @param opts Object
+    //  overlayType: 'image' to sync to the zoomable image, 'viewport' to stay fixed to the viewer
 
     constructor(viewer,opts={overlayType:'image'}){
-        let self=this;
+        let defaultOpts = {
+            overlayType: 'image',
+        }
+        opts=OpenSeadragon.extend(true,defaultOpts,opts);
 
         // let overlayType = opts.overlayType == 'viewport' ? 'viewport':'image'; 
 
-        this._scale = opts.overlayType=='image' ? viewer.world.getItemAt(viewer.currentPage()).source.width : 1;
+        this._scale = opts.overlayType=='image' ? getViewerContentWidth(viewer) : 1;
 
-        if(!this._scale){
-            console.error('tile source must contain width parameter');
-            throw('viewer.world.getItemAt(viewer.currentPage()).source.width must have a (truthy) value');
-        }
+        // if(!this._scale){
+        //     console.error('tile source must contain width parameter');
+        //     throw('viewer.source.width must have a (truthy numeric) value');
+        // }
 
         this.osdViewer = viewer;
         
@@ -186,48 +169,64 @@ export class PaperOverlay{
         this._resize();
         
         if(opts.overlayType=='image'){
-            self._updatePaperView();
+            this._updatePaperView();
         } 
 
-        /**
-         * Update viewport
-         */
-        viewer.addHandler('resize',onViewerResize)
-        if(opts.overlayType=='image'){
-            viewer.addHandler('viewport-change', onViewportChange)
-            viewer.addHandler('rotate',onViewerRotate)
-        }  
         
-        /**
-         * Clean up on viewer close
-         */
-        viewer.addHandler('close', onViewerClose)
         
-        function onViewerClose(){
-            // TO DO: remove this overlay from the list of PaperOverlays on the viewer?
-            console.log('paper-overlay close')
-            self.osdViewer.removeHandler('viewport-change',onViewportChange);
-            self.osdViewer.removeHandler('resize',onViewerResize);
-            self.osdViewer.removeHandler('close',onViewerClose);
-            self._canvasdiv.remove();
-            self.ps.remove();
-        }
-        function onViewportChange(){
-            // self._resize();
+        this.onViewerDestroy=(self=>function(){
+            self.destroy(true);
+        })(this);
+        this.onViewportChange=(self=>function(){
             self._updatePaperView();
-        }
-        function onViewerResize(){
+        })(this);
+        this.onViewerResetSize=(self=>function(ev){
+            self._scale = getViewerContentWidth(ev);
+            //need to setTimeout to wait for some value (viewport.getZoom()?) to actually be updated before doing our update
+            //need to check for destroyed because this will get called as part of the viewer destroy chain, and we've set the timeout
+            setTimeout(()=>!self.destroyed && (self._resize(), self._updatePaperView(true)));
+        })(this);
+        this.onViewerResize=(self=>function(){
             self._resize();
             self.paperScope.view.emit('resize',{size:new paper.Size(self._containerWidth, self._containerHeight)})
             if(opts.overlayType=='image'){
                 self._updatePaperView();
             } 
-        }
-        function onViewerRotate(ev){
+        })(this);
+        this.onViewerRotate=(self=>function(ev){
             // console.log('Viewer rotate',ev)
             let center = self.osdViewer.viewport.viewportToImageCoordinates(self.osdViewer.viewport.getCenter());
             self.paperScope.view.setRotation(ev.degrees, center)
+        })(this);
+
+        viewer.addHandler('resize',this.onViewerResize);
+        viewer.addHandler('reset-size',this.onViewerResetSize)
+        if(opts.overlayType=='image'){
+            viewer.addHandler('viewport-change', this.onViewportChange)
+            viewer.addHandler('rotate',this.onViewerRotate)
         }
+        viewer.addOnceHandler('destroy', this.onViewerDestroy)
+          
+    }
+    addViewerButton(params={}){
+        const prefixUrl=this.osdViewer.prefixUrl;
+        let button = new OpenSeadragon.Button({
+            tooltip: params.tooltip,
+            srcRest: prefixUrl+`button_rest.png`,
+            srcGroup: prefixUrl+`button_grouphover.png`,
+            srcHover: prefixUrl+`button_hover.png`,
+            srcDown: prefixUrl+`button_pressed.png`,
+            onClick: params.onClick,
+        });
+        if(params.faIconClasses){
+            let i = document.createElement('i');
+            i.classList.add(...params.faIconClasses.split(/\s/), 'button-icon-fa');
+            button.element.appendChild(i);
+            // $(button.element).append($('<i>', {class:params.faIconClasses + ' button-icon-fa'}));
+        }
+        this.osdViewer.buttonGroup.buttons.push(button);
+        this.osdViewer.buttonGroup.element.appendChild(button.element);
+        return button;
     }
 
     bringToFront(){
@@ -242,12 +241,26 @@ export class PaperOverlay{
         this.osdViewer.PaperOverlays.forEach(overlay=>this.osdViewer.canvas.appendChild(overlay._canvasdiv));
         this.osdViewer.PaperOverlays[this.osdViewer.PaperOverlays.length-1].paperScope.activate();
     }
-    remove(){
-        this.osdViewer.PaperOverlays.splice(this.osdViewer.PaperOverlays.indexOf(this),1);
+    destroy(viewerDestroyed){
+        this.destroyed = true;
         this._canvasdiv.remove();
         this.paperScope.project.remove();
+        this._canvasdiv.remove();
+        this.ps.remove();  
+        if(!viewerDestroyed){
+            this.osdViewer.removeHandler('viewport-change',this.onViewportChange);
+            this.osdViewer.removeHandler('resize',this.onViewerResize);
+            this.osdViewer.removeHandler('close',this.onViewerDestroy);
+            this.osdViewer.removeHandler('reset-size',this.onViewerResetSize);
+            this.osdViewer.removeHandler('rotate',this.onViewerRotate);
+            this.setOSDMouseNavEnabled(true);
 
-        if(this.osdViewer.PaperOverlays.length>0) this.osdViewer.PaperOverlays[this.osdViewer.PaperOverlays.length-1].paperScope.activate();
+            this.osdViewer.PaperOverlays.splice(this.osdViewer.PaperOverlays.indexOf(this),1);
+            if(this.osdViewer.PaperOverlays.length>0){
+                this.osdViewer.PaperOverlays[this.osdViewer.PaperOverlays.length-1].paperScope.activate();
+            }
+        }
+         
     }
     clear(){
         this.paperScope.project.clear();
@@ -321,13 +334,16 @@ export class PaperOverlay{
         }
     }
     _updatePaperView() {
-        var viewportZoom = this.osdViewer.viewport.getZoom(true);
+        let viewportZoom = this.osdViewer.viewport.getZoom(true);
         let oldZoom = this.paperScope.view.zoom;
         this.paperScope.view.zoom = this.osdViewer.viewport._containerInnerSize.x * viewportZoom / this._scale;
-        var center = this.osdViewer.viewport.viewportToImageCoordinates(this.osdViewer.viewport.getCenter(true));
+        let center = this.osdViewer.viewport.viewportToImageCoordinates(this.osdViewer.viewport.getCenter(true));
         this.osdViewer.drawer.canvas.pixelRatio = window.devicePixelRatio;
         this.paperScope.view.center = new paper.Point(center.x, center.y);
-        if(Math.abs(this.paperScope.view.zoom - oldZoom)>0.0000001) this.paperScope.view.emit('zoom-changed',{zoom:this.paperScope.view.zoom});
+        // console.log('updatePaperView',center,this._scale)
+        if(Math.abs(this.paperScope.view.zoom - oldZoom)>0.0000001){
+            this.paperScope.view.emit('zoom-changed',{zoom:this.paperScope.view.zoom});
+        }
         this.paperScope.view.update();
     }
 
@@ -342,4 +358,15 @@ let counter = (function () {
     }
 })();
 
+function getViewerContentWidth(input){
+    if(input.contentSize){
+        return input.contentSize.x;
+    }
+    let viewer = input.eventSource || input;
+    let item = viewer.world.getItemAt(0);
+    return item && item.getContentSize().x || 1;
+    // let viewer = input.eventSource || input;
+    // let item = viewer.world.getItemAt(0);
+    // return (item && item.source && item.source.width) || 1;
+}
   

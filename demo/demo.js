@@ -55,7 +55,7 @@ let v3 = OpenSeadragon({
 });
 v3.addHandler('open',()=>{
     if(v3.annotationToolkit){
-        v3.annotationToolkit.remove();
+        v3.annotationToolkit.destroy();
     }
     let tk = new AnnotationToolkit(v3);
     tk.addAnnotationUI({autoOpen:true});
@@ -84,3 +84,4 @@ $(v3.element).closest('.demo').find('input[type="file"]').on('change',function(e
 
 window.v3 = v3;
 
+"https://oin-hotosm.s3.amazonaws.com/59c66c5223c8440011d7b1e4/0/7ad397c0-bba2-4f98-a08a-931ec3a6e943.tif"

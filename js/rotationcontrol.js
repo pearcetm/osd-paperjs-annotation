@@ -11,7 +11,7 @@ export class RotationControlOverlay{
         this.dummyTool = new this.overlay.paperScope.Tool();//to capture things like mouseMove, keyDown etc (when actual tool is not active)
         let self=this;
         
-        viewer.addButton({
+        overlay.addViewerButton({
             faIconClasses:'fa-solid fa-rotate',
             tooltip:'Rotate image',
             onClick:()=>{
@@ -21,20 +21,46 @@ export class RotationControlOverlay{
 
         //TO DO: move this temporary monkey patch into OpenSeadragon project
         let $=OpenSeadragon;
-        OpenSeadragon.Viewport.prototype.setRotation = function(degrees, rotationAxisInViewportCoordinates){
+        OpenSeadragon.Viewport.prototype.setRotation = function(degrees, pivot, immediately){
             if (!this.viewer || !this.viewer.drawer.canRotate()) {
                 return this;
             }
-            let refViewerElementCoordinates;
-            if(rotationAxisInViewportCoordinates){
-                //save reference in viewer coordinate frame
-                refViewerElementCoordinates = this.viewportToViewerElementCoordinates(rotationAxisInViewportCoordinates);
-                //pan the image so the desired center of rotation is in the center of the viewport
-                this.panTo(rotationAxisInViewportCoordinates,true);//pivot becomes the new center point of the viewport
+    
+            if (this.degreesSpring.target.value === degrees &&
+                this.degreesSpring.isAtTargetValue()) {
+                return this;
             }
-            
-
-            this.degrees = $.positiveModulo(degrees, 360);
+            this.rotationPivot = pivot instanceof $.Point &&
+                !isNaN(pivot.x) &&
+                !isNaN(pivot.y) ?
+                pivot :
+                null;
+            if (immediately) {
+                if(this.rotationPivot){
+                    var changeInDegrees = degrees - this._oldDegrees;
+                    if(!changeInDegrees){
+                        this.rotationPivot = null;
+                        return this;
+                    }
+                    this._rotateAboutPivot(degrees);
+                } else{
+                    this.degreesSpring.resetTo(degrees);
+                }
+            } else {
+                var normalizedFrom = $.positiveModulo(this.degreesSpring.current.value, 360);
+                var normalizedTo = $.positiveModulo(degrees, 360);
+                var diff = normalizedTo - normalizedFrom;
+                if (diff > 180) {
+                    normalizedTo -= 360;
+                } else if (diff < -180) {
+                    normalizedTo += 360;
+                }
+    
+                var reverseDiff = normalizedFrom - normalizedTo;
+                this.degreesSpring.resetTo(degrees + reverseDiff);
+                this.degreesSpring.springTo(degrees);
+            }
+    
             this._setContentBounds(
                 this.viewer.world.getHomeBounds(),
                 this.viewer.world.getContentFactor());
@@ -48,18 +74,30 @@ export class RotationControlOverlay{
              * @type {object}
              * @property {OpenSeadragon.Viewer} eventSource - A reference to the Viewer which raised the event.
              * @property {Number} degrees - The number of degrees the rotation was set to.
+             * @property {Boolean} immediately - Whether the rotation happened immediately or was animated
+             * @property {OpenSeadragon.Point} pivot - The point in viewport coordinates around which the rotation (if any) happened
              * @property {?Object} userData - Arbitrary subscriber-defined object.
              */
-            this.viewer.raiseEvent('rotate', {degrees: degrees});
-
-            if(rotationAxisInViewportCoordinates){
-                //Translate the center point back to where the cursor is.
-                let refPoint=this.viewerElementToViewportCoordinates(refViewerElementCoordinates);//compute location to move pivot back to
-                let delta = rotationAxisInViewportCoordinates.minus(refPoint);
-                this.panBy(delta,true);
-            }
-        
+            this.viewer.raiseEvent('rotate', {degrees: degrees, immediately: !!immediately, pivot: this.rotationPivot || this.getCenter()});
             return this;
+        }
+        OpenSeadragon.Viewport.prototype._rotateAboutPivot = function(degreesOrUseSpring){
+            var useSpring = degreesOrUseSpring === true;
+    
+            var delta = this.rotationPivot.minus(this.getCenter());
+            this.centerSpringX.shiftBy(delta.x);
+            this.centerSpringY.shiftBy(delta.y);
+    
+            if(useSpring){
+                this.degreesSpring.update();
+            } else {
+                this.degreesSpring.resetTo(degreesOrUseSpring);
+            }
+    
+            var changeInDegrees = this.degreesSpring.current.value - this._oldDegrees;
+            var rdelta = delta.rotate(changeInDegrees * -1).times(-1);
+            this.centerSpringX.shiftBy(rdelta.x);
+            this.centerSpringY.shiftBy(rdelta.y);
         }
     
      
@@ -134,7 +172,18 @@ export class RotationControlTool extends ToolBase{
         function setAngle(angle){
             let widgetCenter = new OpenSeadragon.Point(widget.item.position.x, widget.item.position.y)
             let pivot = viewer.viewport.pointFromPixel(widgetCenter);
-            viewer.viewport.setRotation(angle,pivot);
+            
+            //save reference in viewer coordinate frame
+            let refViewerElementCoordinates = this.viewportToViewerElementCoordinates(pivot);
+            //pan the image so the desired center of rotation is in the center of the viewport
+            this.panTo(pivot,true);//pivot becomes the new center point of the viewport
+            
+
+            viewer.viewport.setRotation(angle, null, true);
+
+            let refPoint=this.viewerElementToViewportCoordinates(refViewerElementCoordinates);//compute location to move pivot back to
+            let delta = pivot.minus(refPoint);
+            this.panBy(delta,true);
         }
     }
     

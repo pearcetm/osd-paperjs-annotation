@@ -1,16 +1,15 @@
 export class Feature{
-    constructor(paperItem,opts={toolbar:null}){
+    constructor(paperItem){
         
         let self=this;
         this.paperItem=paperItem;
         let el = this._element = makeFeatureElement();
-        this.toolbar = opts.toolbar;
         
-        let guid= 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(c) {
-            let r = Math.random() * 16|0;
-            let v = c == 'x' ? r : (r&0x3|0x8);
-            return v.toString(16);
-        });
+        // let guid= 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(c) {
+        //     let r = Math.random() * 16|0;
+        //     let v = c == 'x' ? r : (r&0x3|0x8);
+        //     return v.toString(16);
+        // });
 
         
         el.data({feature:self});
@@ -76,6 +75,10 @@ export class Feature{
             },
         });
 
+        if(this.paperItem.selected){
+            this.paperItem.emit('selected');
+        }
+
         this.label || this.setLabel('Creating...', 'initializing');
         
     }
@@ -122,7 +125,10 @@ export class Feature{
         this.paperItem.isBoundingElement = isActive;
     }    
     styleClicked(){
-        this.toolbar && this.toolbar.tools.style.activateForItem(this.paperItem);
+        let heard = this.paperItem.project.emit('edit-style',{item:this.paperItem});
+        if(!heard){
+            console.warn('No event listeners are registered for paperScope.project for event \'edit-style\'');
+        }
     }
     zoomClicked(){
         let viewport = this.paperItem.project.overlay.osdViewer.viewport;

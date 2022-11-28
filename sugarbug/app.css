@@ -1,0 +1,49 @@
+body{
+    background-color:rgb(65, 64, 64);
+}
+.content{
+    text-align:left;
+    position:fixed;
+    top:0;
+    left:0;
+    width:100vw;
+    height:100vh;
+    display:grid;
+    grid-template-rows:auto 1fr;
+    grid-template-columns:1fr auto;
+    background-color:white;
+}
+.content>div{
+    border:thin black solid;
+}
+#header{
+    grid-column:span 2;
+    display:grid;
+    grid-template-columns:auto 1fr auto;
+    padding:2px 5px;
+}
+#current-file:empty::after{
+    content:'No file selected';
+    color:lightgray;
+}
+#gui-container{
+    overflow:hidden;
+}
+.annotation-ui-mainwindow{
+    height:100%;
+}
+.annotation-ui-feature-collections{
+    overflow:auto;
+}
+/* div{
+    outline:black dashed thin;
+} */
+
+/* .viewer{
+    position:relative;
+    width:100%;
+    height:80%;
+    border:thin black solid;
+    border-radius:3px;
+    box-shadow:0 5px 5px 5px gray;
+} */

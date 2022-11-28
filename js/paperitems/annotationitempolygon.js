@@ -25,7 +25,7 @@ class AnnotationItemPolygon{
         // console.log('creating polygon',poly._id)
 
         poly.toGeoJSONGeometry = function () {
-            console.log('Polygon toGeoJSONGeometry',this._id)
+            // console.log('Polygon toGeoJSONGeometry',this._id)
             
             let g = this.config.geometry;
             g.coordinates = this.children.map(function (c) { return c.segments.map(function (s) { return [s.point.x, s.point.y]; }); });
@@ -63,8 +63,10 @@ class AnnotationItemPolygon{
         grp.addChild(poly);
         grp.addChild(raster);
         grp.clipped = true;
-        poly.deselect();
-        grp.select();
+        if(poly.selected){
+            poly.deselect();
+            grp.select();
+        }
         //the leaf node (raster) not the group must have toGeoJSONGeometry implemented
         grp.toGeoJSONGeometry = function () {
             console.log('Raster toGeoJSONGeometry, poly id=',poly._id)

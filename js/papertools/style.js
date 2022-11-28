@@ -84,6 +84,10 @@ export class StyleTool extends AnnotationUITool{
                 self.cancelColorpicker();
             }
         }
+
+        this.project.paperScope.project.on('edit-style',ev=>{
+            this.activateForItem(ev.item);
+        })
     }
     activateForItem(item){
         this.targetItems = item;

@@ -3,9 +3,9 @@ import {AnnotationItemPoint} from './paperitems/annotationitempoint.js';
 import {AnnotationItemPolygon} from './paperitems/annotationitempolygon.js';
 import {AnnotationItemLinestring} from './paperitems/annotationitemlinestring.js';
 import {PaperOverlay} from './paper-overlay.js';
+import { AnnotationItemPlaceholder } from './paperitems/annotationitemplaceholder.js';
 
 //to do:
-// - Refactor code to be an actual class rather than just a gigantic constructor function
 // - Add configuration options (as a class, modeled after OpenSeadragon??)
 // --- Document configuration options. JSDocs?
 
@@ -59,7 +59,6 @@ class AnnotationToolkit {
             console.warn('Configuration options for AnnotationToolkit are not yet supported')
         }
 
-        var _this = this;
         this._defaultStyle = {
             fillColor: new paper.Color('white'),
             strokeColor: new paper.Color('black'),
@@ -71,45 +70,50 @@ class AnnotationToolkit {
             }
         };
         this.viewer = openSeadragonViewer;
+
+        this.viewer.addOnceHandler('close', ()=>this.destroy()); //TO DO: make this an option, not a hard-coded default
+
         this.overlay = new PaperOverlay(this.viewer);
 
         this.overlay.paperScope.project.defaultStyle = new paper.Style();
-        this.overlay.paperScope.project.defaultStyle.set(_this._defaultStyle);
-
-
-        
-        
-
-        this.viewer.addOnceHandler('close', remove); //TO DO: make this an option, not a hard-coded default
-
+        this.overlay.paperScope.project.defaultStyle.set(this.defaultStyle);
         this.overlay.autoRescaleItems(true);
 
-        const api = _this.api = {
-            addAnnotationUI: function (opts={}) {
-                if (!_this._annotationUI) _this._annotationUI = new AnnotationUI(_this, opts);
-                return _this._annotationUI;
-            },
-            remove: remove,
-            setGlobalVisibility: function (show = false) {
-                _this.overlay.paperScope.view._element.setAttribute('style', 'visibility:' + (show ? 'visible;' : 'hidden;'));
-            },
-            _overlay:_this.overlay,
-            addFeatureCollections: function(featureCollections){ _this._annotationUI.addFeatureCollections(featureCollections)}
-        };
-
-        function remove() {
-            _this.viewer.annotationToolkit = null;
-            _this._annotationUI && _this._annotationUI.destroy();
-        }
+        OpenSeadragon.extend(AnnotationToolkit.prototype, OpenSeadragon.EventSource.prototype);
+        OpenSeadragon.EventSource.call(this);
         
-        
-        
-        _this.viewer.annotationToolkit = api;
-        return api;
+        this.viewer.annotationToolkit = this;
     }
+
+
     get defaultStyle(){
         return this._defaultStyle;
     }
+
+    addAnnotationUI(opts = {}){
+        if (!this._annotationUI) this._annotationUI = new AnnotationUI(this, opts);
+        return this._annotationUI;
+    }
+    destroy() {
+        this.raiseEvent('before-destroy');
+        let tool=this.overlay.paperScope && this.overlay.paperScope.getActiveTool();
+        if(tool) tool.deactivate(true);
+
+        this.viewer.annotationToolkit = null;
+        this._annotationUI && this._annotationUI.destroy();
+        this.overlay.destroy();
+    }
+    setGlobalVisibility(show = false){
+        this.overlay.paperScope.view._element.setAttribute('style', 'visibility:' + (show ? 'visible;' : 'hidden;'));
+    }
+    addFeatureCollections(featureCollections){
+        this._annotationUI.addFeatureCollections(featureCollections);
+    }
+    getGeoJSON(asString = true){
+        let collections = this.overlay.paperScope.project.toGeoJSON();
+        return asString ? JSON.stringify(collections) : collections;
+    }
+    
 };
 
 export {AnnotationToolkit as AnnotationToolkit};
@@ -389,7 +393,7 @@ function replaceItem(newItem){
 }
 
 function paperItemFromGeoJson(geoJSONFeature) {
-    if(!(geoJSONFeature.geometry && geoJSONFeature.properties)){
+    if(!('geometry' in geoJSONFeature && 'properties' in geoJSONFeature)){
         console.warn('Invalid GeoJSON Feature object. Returning undefined.');
         return;
     }
@@ -397,15 +401,22 @@ function paperItemFromGeoJson(geoJSONFeature) {
         Point: geoJSON=>new AnnotationItemPoint(geoJSON),
         LineString: geoJSON=>new AnnotationItemLinestring(geoJSON),
         Polygon: geoJSON=>new AnnotationItemPolygon(geoJSON),
+        Placeholder: geoJSON=>new AnnotationItemPlaceholder(geoJSON),
     };
 
-    let type = geoJSONFeature.geometry.type;
+    let type = geoJSONFeature.geometry ? geoJSONFeature.geometry.type : 'Placeholder';
     if (factory.hasOwnProperty(type) === false) {
         error(`No method defined for GeoJSON Geometry type ${type}`);
     }
     var obj = factory[type](geoJSONFeature);
     obj.style.set(geoJSONFeature.properties);
     obj.isAnnotationFeature = true;
+    if(obj.displayName === undefined){
+        obj.displayName = geoJSONFeature.properties.label;
+    }
+    if('selected' in geoJSONFeature.properties){
+        obj.selected = geoJSONFeature.properties.selected;
+    }
 
     return obj;
 
@@ -413,10 +424,11 @@ function paperItemFromGeoJson(geoJSONFeature) {
 function paperItemToGeoJson(){
     let GeoJSON = {
         type:'Feature',
-        geometry:this.toGeoJSONGeometry ? this.toGeoJSONGeometry() : null,
+        geometry:this.toGeoJSONGeometry(),
         properties:{
             label:this.displayName,
             ...this.style.toJSON(),
+            selected:this.selected,
         }
     }
     return GeoJSON;

@@ -14,11 +14,9 @@
 }
 .annotation-ui-mainwindow{
     color:black;
-    /* display:flex; */
-    /* flex-direction:column; */
     overflow:hidden;
     display:grid;
-    grid-template-rows:auto auto auto minmax(4em, 1fr) auto;
+    grid-template-rows: auto auto minmax(4em, 1fr) auto;
 }
 .annotation-visibility-controls{
     display:flex;
@@ -40,13 +38,6 @@
     padding:0.1em 0.5em;
     margin-right:0.3em;
 }
-/* .annotation-visibility-controls .annotation-opacity-container{
-    flex-grow:1;
-} */
-/* .annotation-ui-feature-collections{
-    flex-grow:1;
-    overflow:auto;
-} */
 .annotation-ui label{
     margin:0;
 }
@@ -360,86 +351,6 @@ canvas.rectangle-tool-resize{
 }
 
 /* end style-toolbar styles */
-
-
-/* Old style-toolbar styles */
-/* .style-toolbar{
-    display:grid;
-    grid-template-rows:auto;
-    align-items: center;
-}
-.style-toolbar .toprow{
-    display:grid;
-    grid-template-columns:auto auto auto auto;
-    padding-left:1px;
-}
-.style-toolbar .colorpicker-bar{
-    display:grid;
-    grid-template-columns:auto auto auto;
-    gap:0.2em;
-    padding:0.2em;
-    
-}
-.style-toolbar .btn{
-    border:thin black solid;
-    padding:2px 0.4em;
-    display:grid;
-    align-items:center;
-    grid-template-columns:auto;
-    column-gap:0.3em;
-}
-.style-toolbar .toprow .btn{
-    grid-template-columns:auto 1fr;
-}
-.style-toolbar .toprow .done{
-    grid-template-columns:auto;
-}
-.style-toolbar .preview{
-    display:inline-block;
-    height:100%;
-    width:100%;
-}
-.style-toolbar .fill .preview{
-    border:thin transparent solid;
-}
-
-.style-toolbar .stroke-width{
-    padding-left:0.4em;
-}
-.style-toolbar .stroke-width input{
-    width:3.5em;
-}
-
-.style-toolbar .default-action{
-    box-shadow: 0px 0px 4px 3px gray;
-}
-.style-toolbar .toprow .active-button{
-    border-bottom-color:transparent;
-}
-.style-toolbar .toprow>*:not(.active-button){
-    border-color:transparent;
-    border-bottom-color:black;
-}
-.style-toolbar .toprow>*{
-    border-bottom: thin black solid;
-}
-.style-toolbar .style-active-item .collection-label::before{
-    content:'Style: ';
-    font-size:0.8em;
-    font-weight:bold;
-    color:darkgray;
-}
-.style-toolbar .style-active-item .collection-label:empty::after{
-    content:'Style for new items';
-}
-.style-toolbar .style-active-item .feature-label:not(:empty)::before{
-    content:', ';
-} */
-
-/* End old style-toolbar styles */
-
-
-
 
 
 .new-feature,.new-feature-collection{
