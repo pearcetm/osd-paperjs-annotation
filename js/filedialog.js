@@ -182,6 +182,9 @@ export class FileDialog{
         }
 
         function setupFinalize(buttonText,editableLabel,editableContent,localstorage){
+            function testLocalstorage(localstorage, text, div){
+                if(localstorage) Object.keys(localStorage).includes(text) ? div.addClass('key-exists') : div.removeClass('key-exists');
+            }
             let finalize=_this.element.find('.finalize');
             let finishbutton = $('<button>').text(buttonText);
             let ec;
@@ -193,10 +196,11 @@ export class FileDialog{
                 if(localstorage) div.addClass('localstorage-key-test');
                 ec.onChanged= (text)=>{
                     finishbutton.data('label',text);
-                    if(localstorage) Object.keys(localStorage).includes(text) ? div.addClass('key-exists') : div.removeClass('key-exists');
+                    testLocalstorage(localstorage, text, div);
                 }
+                testLocalstorage(localstorage, editableContent, div);
             }
-            finishbutton.appendTo(finalize).data({label:'editableContent',ec:ec});
+            finishbutton.appendTo(finalize).data({label:editableContent,ec:ec});
             return finishbutton;
         }
 
