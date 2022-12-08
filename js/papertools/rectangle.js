@@ -19,7 +19,7 @@ export class RectangleTool extends AnnotationUITool{
 
         this.tool.onMouseDown=function(ev){
             if(self.itemToCreate){
-                self.project.paperScope.initializeItem('Point','Rectangle');
+                self.project.paperScope.initializeItem('Polygon','Rectangle');
                 self.getSelectedItems();
                 let r=new paper.Path.Rectangle(ev.point,ev.point);
                 self.creating = r;

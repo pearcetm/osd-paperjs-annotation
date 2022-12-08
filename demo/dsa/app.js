@@ -1,9 +1,9 @@
 
 import { AnnotationToolkit } from '../../js/annotationtoolkit.js';
 let styledef;
-// $.get('./init.geoJSON').then(x=>{
-//     styledef=x;
-// })
+$.get('./init.geoJSON').then(x=>{
+    styledef=x;
+})
 $('.dsa-link').val('https://localhost:3001/dsa');
 let v1 = createViewer();
 v1.addOnceHandler('open',()=>{
@@ -135,7 +135,7 @@ function createViewer(){
         });
         ui._layerUI.element.find('input.annotation-fill-opacity').val('0.5').trigger('input');
         
-        let json = ts.annotationStore;
+        let json = ts.annotationStore || styledef;
         if(json){
             tk.addFeatureCollections(json);
         } else {
