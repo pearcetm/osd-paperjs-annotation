@@ -1,24 +1,30 @@
-import { Feature } from './feature.js';
-import { AnnotationItemPlaceholder } from './paperitems/annotationitemplaceholder.js';
+import { FeatureUI } from './featureui.js';
+import { EditableContent } from './utils/editablecontent.js';
+// import { AnnotationItemPlaceholder } from './paperitems/annotationitemplaceholder.js';
 
-export class FeatureCollection{
-    constructor(paperObjects,init){
+export class FeatureCollectionUI{
+    constructor(layer,init){
         let self=this;
         // this.toolbar = init.toolbar;
         this.element = makeFeatureCollectionElement();
-        
+        this._editableName = new EditableContent();
+        this.element.find('.annotation-name.name').empty().append(this._editableName.element);
+        this._editableName.onChanged=function(text){
+            self.label = text;
+        }
+
         this._featurelist=this.element.find('.features-list');
         this._featurelist.sortable({
             contain:'parent',
             connectWith:`${init.guiSelector} .features-list`,
             update:function(){
                 self._featurelist.children().each(function(idx,c){
-                    self.paperObjects.group.addChild($(c).data('feature').paperItem);
+                    self.layer.addChild($(c).data('feature').paperItem);
                 })
             },
         });
-        this.paperObjects = paperObjects;
-        this.paperObjects.layer.on({
+        this.layer = layer;
+        this.layer.on({
             'selection:mouseenter':function(){self.element.addClass('svg-hovered').trigger('mouseover')},
             'selection:mouseleave':function(){self.element.removeClass('svg-hovered').trigger('mouseout')},
             'selected':function(){self.element.addClass('selected').trigger('selected')},
@@ -26,6 +32,13 @@ export class FeatureCollection{
             'display-name-changed':function(ev){
                 self.updateLabel();
             },
+            'removed':function(){
+                self.remove();
+            },
+            'child-added':function(ev){
+                let featureUI = ev.item._FeatureUI || new FeatureUI(ev.item);
+                self._addFeature(featureUI);
+            }
         });
 
 
@@ -36,23 +49,21 @@ export class FeatureCollection{
         }
         
         this.remove = function(){
-            self.paperObjects.layer.remove();
             self.element.remove();
         }
         this.numFeatures = function(){
             return self.features().length;
         }
 
-        this.addFeature=function(f){
-            self.paperObjects.group.addChild(f.paperItem);
+        this._addFeature=function(f){
             f.paperItem.updateFillOpacity();
             self._featurelist.append(f.element);
             self._featurelist.sortable('refresh');
             return f.element; 
         }
         this.createFeature=function(){
-            //create a new feature
-            let props = this.paperObjects.layer.defaultStyle;
+            //define a new feature
+            let props = this.layer.defaultStyle;
             let clonedProperties = {
                 fillColor:new paper.Color(props.fillColor),
                 strokeColor:new paper.Color(props.strokeColor),
@@ -61,11 +72,15 @@ export class FeatureCollection{
                 strokeOpacity:props.strokeOpacity,
                 strokeWidth:props.strokeWidth,
             }
-            // let style = new paper.Style(Object.assign({},props,clonedProperties));
             let style = new paper.Style(clonedProperties);
-            let placeholder = new AnnotationItemPlaceholder(style);
-            let f = new Feature(placeholder,{toolbar:this.toolbar});
-            return this.addFeature(f);
+            let geoJSON = {
+                type:'Feature',
+                geometry:null,
+                properties:style,
+            }
+            let placeholder = paper.Item.fromGeoJSON(geoJSON);
+            this.layer.addChild(placeholder);
+            return placeholder;
         }
 
         this.ui={
@@ -74,33 +89,22 @@ export class FeatureCollection{
         }
 
         function setOpacity(o){
-            self.paperObjects.layer.opacity = o;
+            self.layer.opacity = o;
         }
         function setFillOpacity(o){
-            self.paperObjects.layer.fillOpacity = o;
+            self.layer.fillOpacity = o;
         }
         
-        //action handling and data binding
-        self.element.data({featureCollection:self});
-        self.element.find('.annotation-header .annotation-name.edit').on('value-changed',function(ev,val){
-            self.label = val;
-        });
-        self.label = this.paperObjects.layer.displayName;
+        
+        self.element.data({featureCollection:self});//bind reference to self to the element, for use with rearranging/sorting layers
 
-
+        self.label = this.layer.displayName;
 
         self._featurelist.sortable('refresh');
 
         self.element.on('click',function(ev){
             ev.stopPropagation();
-            // Toolkit.toggleLayerSelection(_this.paperObjects.layer);
         })
-        // self.element.find('.visibility-toggle').on('click',function(ev){
-        //     ev.stopPropagation();
-        //     ev.preventDefault();
-        //     self.element.toggleClass('annotation-hidden');
-        //     self.paperObjects.layer.visible = !self.element.hasClass('annotation-hidden');
-        // });
         self.element.find('.toggle-list').on('click',function(ev){
             let numFeatures = self._featurelist.children().length;
             self.element.find('.num-annotations').text(numFeatures);
@@ -117,7 +121,7 @@ export class FeatureCollection{
             let action = $(ev.target).data('action');
             switch(action){
                 case 'trash': self.trashClicked(); break;
-                case 'edit': self.editClicked(); break;
+                // case 'edit': self.editClicked(); break;
                 case 'style': self.styleClicked(ev); break;
                 case 'show': self.toggleVisibility(); break;
                 case 'hide': self.toggleVisibility(); break;
@@ -127,33 +131,14 @@ export class FeatureCollection{
         });
         self.element.find('.new-feature').on('click',function(ev){
             ev.stopPropagation();
-            let el = self.createFeature();
-            $(this).trigger('element-added');
-            el.trigger('click');
+            let item = self.createFeature();
+            item.select();
         });
-
-        self.element.on('focusout','.editablecontent.editing .edit', function(){
-            let parent=$(this).closest('.editablecontent');
-            let oldtext = $(this).data('previous-text');
-            let newtext = $(this).text().trim();
-            if(newtext !== oldtext) $(this).trigger('value-changed',newtext);
-            parent.removeClass('editing');
-            $(this).removeAttr('contenteditable').text(newtext);
-        });
-        self.element.on('keypress','.editablecontent.editing .edit', function(ev){
-            ev.stopPropagation();
-            if(ev.which==13){
-                ev.preventDefault();
-                $(this).blur();
-            }
-        });
-        self.element.on('keydown keyup','.editablecontent.editing .edit',function(ev){ev.stopPropagation()})
-
 
         return this;
     }
     get label(){
-        return this.paperObjects.layer.displayName;
+        return this.layer.displayName;
     }
     set label(l){
         return this.setLabel(l)
@@ -161,16 +146,17 @@ export class FeatureCollection{
     setLabel(text,source){
         let l = new String(text);
         l.source=source;
-        this.paperObjects.group.displayName = this.paperObjects.layer.displayName = l;
+        this.layer.displayName = l;
         this.updateLabel();
         return l;
     }
     updateLabel(){
-        this.element.find('.annotation-header .annotation-name.edit').text(this.label);
+        // this.element.find('.annotation-header .annotation-name.edit').text(this.label);
+        this._editableName.setText(this.label);
     }
     toggleVisibility(){
         this.element.toggleClass('annotation-hidden');
-        this.paperObjects.layer.visible = !this.element.hasClass('annotation-hidden');
+        this.layer.visible = !this.element.hasClass('annotation-hidden');
     }
     trashClicked(){
         //if previously trashed, restore the paperItems
@@ -178,7 +164,7 @@ export class FeatureCollection{
         // if(this.element.hasClass('trashed')){
         //     this.element.removeClass('trashed');
         //     this.features().map(function(f){
-        //         this.paperObjects.group.addChild(f.paperItem);
+        //         this.layer.addChild(f.paperItem);
         //         f.paperItem.deselect();//insert objects as deselected
         //     });
         // }
@@ -190,12 +176,7 @@ export class FeatureCollection{
         //     });
         // }   
         if(window.confirm('Remove this layer?')==true){
-                // this.element.addClass('trashed');
-                this.features().map(function(f){
-                    f.paperItem.remove();
-                    f.paperItem.deselect();//ensure items are deselected
-                });
-                this.element.remove();
+            this.layer.remove();
         } else {
 
         }
@@ -212,7 +193,7 @@ export class FeatureCollection{
         selection.addRange(range);  
     }
     styleClicked(ev){
-        let heard = this.paperObjects.layer.project.emit('edit-style',{item:this.paperObjects.layer});
+        let heard = this.layer.project.emit('edit-style',{item:this.layer});
         if(!heard){
             console.warn('No event listeners are registered for paperScope.project for event \'edit-style\'');
         }
@@ -222,10 +203,9 @@ export class FeatureCollection{
 function makeFeatureCollectionElement(){
     let html = `
     <div class='feature-collection'>
-        <div class='editablecontent annotation-header'>
+        <div class='annotation-header hoverable-actions'>
             <span class="visibility-toggle"><span class="fa fa-eye" data-action="hide"></span><span class="fa fa-eye-slash" data-action="show"></span></span>
-            <span class='annotation-name name edit'></span>
-            <span class='onhover fa fa-edit' data-action="edit" title='Edit name'></span>
+            <span class='annotation-name name'></span>
             <span class='onhover fa-solid fa-palette' data-action='style' title='Open style editor'></span>
             <span class='onhover fa-solid fa-trash-can' data-action='trash' title='Remove feature collection'></span>
         </div>

@@ -24,6 +24,7 @@ $('#file-picker').on('change',function(){
         let obj = {
             url:'',
             file:file,
+            name:file.name,
         }
         let ts = new OpenSeadragon.ImageTileSource(obj);
         ts.ready=false;
@@ -38,7 +39,7 @@ $('#file-picker').on('change',function(){
 $('#get-results').on('click',function(){
     //get current annotations
     if(!v1.annotationToolkit) return;
-    v1.tileSources[v1.currentPage()].annotationStore = v1.annotationToolkit.getGeoJSON(false);
+    v1.tileSources[v1.currentPage()].annotationStore = v1.annotationToolkit.getGeoJSONObjects();
     let zip = new JSZip();
     let files=v1.tileSources.filter(ts=>ts.annotationStore).map(ts=>{
         let p = new paper.PaperScope();
@@ -88,6 +89,7 @@ function createViewer(){
         crossOriginPolicy: 'Anonymous',
         ajaxWithCredentials: false,
         sequenceMode:true,
+        // constrainDuringPan:true,
     });
     
     viewer.addHandler('page',ev=>{
@@ -102,7 +104,7 @@ function createViewer(){
         let tk = new AnnotationToolkit(v1);
         tk.addOnceHandler('before-destroy',(ev)=>{
             // console.log('before-destroy',this);
-            ts.annotationStore = tk.getGeoJSON(false);
+            ts.annotationStore = tk.getGeoJSONObjects();
         })
         let ui=tk.addAnnotationUI({
             autoOpen:true,
@@ -122,6 +124,8 @@ function createViewer(){
         tk.addFeatureCollections(json);
 
         $('#current-file').text(`${ts.file.name} (${ev.page+1} of ${ev.eventSource.tileSources.length})`)
+
+        // viewer.viewport.setRotation(30)
         // window.view = tk.overlay.paperScope.view;
         // window.project = tk.overlay.paperScope.project;
         // window.view.onClick = (ev)=>console.log('view click',ev.point);

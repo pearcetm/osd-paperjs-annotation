@@ -1,9 +1,16 @@
-export class Feature{
+import {EditableContent} from './utils/editablecontent.js';
+export class FeatureUI{
     constructor(paperItem){
         
         let self=this;
         this.paperItem=paperItem;
         let el = this._element = makeFeatureElement();
+        this.paperItem._FeatureUI = this;
+        this._editableName = new EditableContent();
+        el.find('.feature-item.name').empty().append(this._editableName.element);
+        this._editableName.onChanged = function(text){
+            self.setLabel(text,'user-defined');
+        };
         
         // let guid= 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(c) {
         //     let r = Math.random() * 16|0;
@@ -29,36 +36,37 @@ export class Feature{
             
         });
         
-        el.find('.feature-item.name.edit').text(self.label).on('value-changed',function(ev,val){
-            self.setLabel(val,'user-defined');
-        });
+        // $(this._editableName.element).on('value-changed',function(ev,val){
+        //     self.setLabel(val,'user-defined');
+        // });
         el.on('click',function(ev){
             ev.stopPropagation();
             self.paperItem.toggle((ev.metaKey || ev.ctrlKey));
         })
+
         
-        el.on('focusout','.editablecontent.editing .edit', function(){
-            let parent=$(this).closest('.editablecontent');
-            let oldtext = $(this).data('previous-text');
-            let newtext = $(this).text().trim();
-            if(newtext !== oldtext) parent.find('.edit').trigger('value-changed',newtext);
-            parent.removeClass('editing');
-            $(this).removeAttr('contenteditable').text(newtext);
-        });
-        el.on('keypress','.editablecontent.editing .edit', function(ev){
-            ev.stopPropagation();
-            if(ev.which==13){
-                ev.preventDefault();
-                $(this).blur();
-            }
-        });
-        el.on('keydown keyup','.editablecontent.editing .edit',function(ev){ev.stopPropagation()})
+        
+        // el.on('focusout','.editablecontent.editing .edit', function(){
+        //     let parent=$(this).closest('.editablecontent');
+        //     let oldtext = $(this).data('previous-text');
+        //     let newtext = $(this).text().trim();
+        //     if(newtext !== oldtext) parent.find('.edit').trigger('value-changed',newtext);
+        //     parent.removeClass('editing');
+        //     $(this).removeAttr('contenteditable').text(newtext);
+        // });
+        // el.on('keypress','.editablecontent.editing .edit', function(ev){
+        //     ev.stopPropagation();
+        //     if(ev.which==13){
+        //         ev.preventDefault();
+        //         $(this).blur();
+        //     }
+        // });
+        // el.on('keydown keyup','.editablecontent.editing .edit',function(ev){ev.stopPropagation()})
         
         this.element = el;
-
         this.paperItem.on({
-            'selected':function(ev){ el.addClass('selected').trigger('selected'); },
-            'deselected':function(ev){ el.removeClass('selected').trigger('deselected'); },
+            'selected':function(){ el.addClass('selected').trigger('selected'); },
+            'deselected':function(){ el.removeClass('selected').trigger('deselected'); },
             'selection:mouseenter':function(){el.addClass('item-hovered')},
             'selection:mouseleave':function(){el.removeClass('item-hovered')},
             'item-replaced':function(ev){
@@ -68,18 +76,24 @@ export class Feature{
                     ev.item.displayName = self.label;
                 }
                 self.paperItem = ev.item;
+                self.paperItem._FeatureUI=self;
                 self.updateLabel();
             },
             'display-name-changed':function(ev){
                 self.updateLabel();
             },
+            'removed':function(ev){
+                if(ev.item == self.paperItem){
+                    self.remove();
+                }
+            }
         });
 
         if(this.paperItem.selected){
             this.paperItem.emit('selected');
         }
 
-        this.label || this.setLabel('Creating...', 'initializing');
+        this.label ? this.updateLabel() : this.setLabel('Creating...', 'initializing');
         
     }
     get label(){
@@ -96,17 +110,16 @@ export class Feature{
         return l;
     }
     updateLabel(){
-        this._element.find('.feature-item.name').text(this.label);//.trigger('value-changed',[l]);
+        // this._element.find('.feature-item.name').text(this.label);//.trigger('value-changed',[l]);
+        this._editableName.setText(this.label);
     }
-    trashClicked(){
-        let parent=this._element.parent();
-        this._element.remove();
-        
+    trashClicked(){        
         //clean up paperItem
         this.paperItem.remove();
         this.paperItem.deselect();
-
-        parent.trigger('child-feature-removed');
+    }
+    remove(){
+        this._element.remove().trigger('removed');
     }
     editClicked(){
         let header = this._element.find('.editablecontent');
@@ -153,10 +166,9 @@ export class Feature{
 function makeFeatureElement(){
     let html = `
     <div class='feature'>
-        <div class='editablecontent'>
+        <div class='hoverable-actions'>
             <span class='onhover fa-solid fa-crop-simple bounding-element' data-action="bounds" title='Bounding element'></span>
-            <span class='feature-item name edit'>Creating...</span>
-            <span class='onhover fa fa-edit' data-action='edit' title='Edit name'></span>
+            <span class='feature-item name'></span>
             <span class='onhover fa-solid fa-palette' data-action='style' title='Open style editor'></span>
             <span class='onhover fa-solid fa-binoculars' data-action='zoom-to' title='View this feature'></span>
             <span class='onhover fa-solid fa-trash-can' data-action='trash' title='Remove'></span>

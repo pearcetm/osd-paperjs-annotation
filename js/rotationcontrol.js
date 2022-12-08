@@ -18,87 +18,6 @@ export class RotationControlOverlay{
                 tool.active ? self.deactivate() : self.activate();
             }
         });
-
-        //TO DO: move this temporary monkey patch into OpenSeadragon project
-        let $=OpenSeadragon;
-        OpenSeadragon.Viewport.prototype.setRotation = function(degrees, pivot, immediately){
-            if (!this.viewer || !this.viewer.drawer.canRotate()) {
-                return this;
-            }
-    
-            if (this.degreesSpring.target.value === degrees &&
-                this.degreesSpring.isAtTargetValue()) {
-                return this;
-            }
-            this.rotationPivot = pivot instanceof $.Point &&
-                !isNaN(pivot.x) &&
-                !isNaN(pivot.y) ?
-                pivot :
-                null;
-            if (immediately) {
-                if(this.rotationPivot){
-                    var changeInDegrees = degrees - this._oldDegrees;
-                    if(!changeInDegrees){
-                        this.rotationPivot = null;
-                        return this;
-                    }
-                    this._rotateAboutPivot(degrees);
-                } else{
-                    this.degreesSpring.resetTo(degrees);
-                }
-            } else {
-                var normalizedFrom = $.positiveModulo(this.degreesSpring.current.value, 360);
-                var normalizedTo = $.positiveModulo(degrees, 360);
-                var diff = normalizedTo - normalizedFrom;
-                if (diff > 180) {
-                    normalizedTo -= 360;
-                } else if (diff < -180) {
-                    normalizedTo += 360;
-                }
-    
-                var reverseDiff = normalizedFrom - normalizedTo;
-                this.degreesSpring.resetTo(degrees + reverseDiff);
-                this.degreesSpring.springTo(degrees);
-            }
-    
-            this._setContentBounds(
-                this.viewer.world.getHomeBounds(),
-                this.viewer.world.getContentFactor());
-            this.viewer.forceRedraw();
-    
-            /**
-             * Raised when rotation has been changed.
-             *
-             * @event rotate
-             * @memberof OpenSeadragon.Viewer
-             * @type {object}
-             * @property {OpenSeadragon.Viewer} eventSource - A reference to the Viewer which raised the event.
-             * @property {Number} degrees - The number of degrees the rotation was set to.
-             * @property {Boolean} immediately - Whether the rotation happened immediately or was animated
-             * @property {OpenSeadragon.Point} pivot - The point in viewport coordinates around which the rotation (if any) happened
-             * @property {?Object} userData - Arbitrary subscriber-defined object.
-             */
-            this.viewer.raiseEvent('rotate', {degrees: degrees, immediately: !!immediately, pivot: this.rotationPivot || this.getCenter()});
-            return this;
-        }
-        OpenSeadragon.Viewport.prototype._rotateAboutPivot = function(degreesOrUseSpring){
-            var useSpring = degreesOrUseSpring === true;
-    
-            var delta = this.rotationPivot.minus(this.getCenter());
-            this.centerSpringX.shiftBy(delta.x);
-            this.centerSpringY.shiftBy(delta.y);
-    
-            if(useSpring){
-                this.degreesSpring.update();
-            } else {
-                this.degreesSpring.resetTo(degreesOrUseSpring);
-            }
-    
-            var changeInDegrees = this.degreesSpring.current.value - this._oldDegrees;
-            var rdelta = delta.rotate(changeInDegrees * -1).times(-1);
-            this.centerSpringX.shiftBy(rdelta.x);
-            this.centerSpringY.shiftBy(rdelta.y);
-        }
     
      
     }
@@ -174,16 +93,16 @@ export class RotationControlTool extends ToolBase{
             let pivot = viewer.viewport.pointFromPixel(widgetCenter);
             
             //save reference in viewer coordinate frame
-            let refViewerElementCoordinates = this.viewportToViewerElementCoordinates(pivot);
+            let refViewerElementCoordinates = viewer.viewport.viewportToViewerElementCoordinates(pivot);
             //pan the image so the desired center of rotation is in the center of the viewport
-            this.panTo(pivot,true);//pivot becomes the new center point of the viewport
+            viewer.viewport.panTo(pivot,true);//pivot becomes the new center point of the viewport
             
 
             viewer.viewport.setRotation(angle, null, true);
 
-            let refPoint=this.viewerElementToViewportCoordinates(refViewerElementCoordinates);//compute location to move pivot back to
+            let refPoint=viewer.viewport.viewerElementToViewportCoordinates(refViewerElementCoordinates);//compute location to move pivot back to
             let delta = pivot.minus(refPoint);
-            this.panBy(delta,true);
+            viewer.viewport.panBy(delta,true);
         }
     }
     

@@ -53,8 +53,8 @@ class AnnotationItemPolygon{
         // console.log('converting poly to raster',poly._id)
         raster.selectedColor = rasterColor;
         let grp = new paper.Group([]);
-        grp.isAnnotationFeature = true;
-        poly.isAnnotationFeature = false;
+        grp.isGeoJSONFeature = true;
+        poly.isGeoJSONFeature = false;
         // let polyToGeoJSONGeometry = poly.toGeoJSONGeometry;
         // delete poly.toGeoJSONGeometry;
         grp.config = Object.assign({}, poly.config);

@@ -11,6 +11,7 @@ addCSS('https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.css
 addCSS('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css','font-awesome/6.1.1/css/all');
 addCSS(`${import.meta.url.match(/(.*?)js\/[^\/]*$/)[1]}css/annotationui.css`,'annotationui');
 addCSS(`${import.meta.url.match(/(.*?)js\/[^\/]*$/)[1]}css/osd-button.css`,'osd-button');
+addCSS(`${import.meta.url.match(/(.*?)js\/[^\/]*$/)[1]}css/editablecontent.css`,'editablecontent');
 
 
 class AnnotationUI{
@@ -21,6 +22,7 @@ class AnnotationUI{
             addButton:true,
             addToolbar:true,
             addLayerDialog:true,
+            addFileButton:true,
             buttonTogglesToolbar:true,
             buttonTogglesLayerUI:true,
         }
@@ -29,6 +31,43 @@ class AnnotationUI{
         let _viewer = this._viewer = annotationToolkit.viewer;//shorter alias
         this._isOpen = !!opts.autoOpen;
 
+        
+        //AnnotationToolbar: UI for interactive tools
+        this._toolbar = new AnnotationToolbar(annotationToolkit.overlay.paperScope);
+        if(opts.addToolbar){
+            this._toolbar.addToOpenSeadragon(_viewer);
+        }
+
+
+        //FileDialog: UI for loading/saving data
+        this._fileDialog = new FileDialog(annotationToolkit,{appendTo:_viewer.element});
+        this._filebutton = null;
+        if(opts.addFileButton){
+            this._filebutton = annotationToolkit.overlay.addViewerButton({
+                onClick:()=>{
+                    this._fileDialog.toggle();
+                },
+                faIconClasses:'fa-solid fa-save',
+                tooltip:'Save/Load Annotations',
+            })
+        }       
+
+        //LayerUI: UI for managing collections/features
+        let dialogOpts={
+            filename:_viewer.world.getItemAt(0) && this._viewer.world.getItemAt(0).source.name,
+            positioningElement:(this,_viewer.navigator || this._viewer).element,
+            appendTo:this._viewer.element,
+            toolbar:this._toolbar,
+        }
+        this._layerUI = new LayerUI(annotationToolkit.overlay.paperScope, dialogOpts);
+        if(opts.addLayerDialog){
+            this._createJqueryUIdialog();
+        }
+ 
+
+        opts.autoOpen ? (this._layerUI.show(),this._toolbar.show()) : (this._layerUI.hide(),this._toolbar.hide());
+
+        //Button for controlling LayerUI and/or AnnotationToolbar
         this._button = null;
         if(opts.addButton){
             this._button = annotationToolkit.overlay.addViewerButton({
@@ -46,40 +85,13 @@ class AnnotationUI{
                 tooltip:'Annotation Interface',
             })
         }
-        
-        //AnnotationToolbar: UI for interactive tools
-        this._toolbar = new AnnotationToolbar(annotationToolkit.overlay.paperScope);
-        if(opts.addToolbar){
-            this._toolbar.addToOpenSeadragon(_viewer);
-        }
-
-
-        //FileDialog: UI for loading/saving data
-        this._fileDialog = new FileDialog(this,opts);       
-
-        //LayerUI: UI for managing collections/features
-        let dialogOpts={
-            filename:_viewer.world.getItemAt(0) && this._viewer.world.getItemAt(0).source.name,
-            positioningElement:(this,_viewer.navigator || this._viewer).element,
-            appendTo:this._viewer.element,
-            toolbar:this._toolbar,
-        }
-        this._layerUI = new LayerUI(annotationToolkit.overlay.paperScope, dialogOpts);
-        if(opts.addLayerDialog){
-            this._createJqueryUIdialog();
-        }
- 
-
-        opts.autoOpen ? (this._layerUI.show(),this._toolbar.show()) : (this._layerUI.hide(),this._toolbar.hide());
 
         if(opts.featureCollections){
-            this.addFeatureCollections(opts.featureCollections);
+            // this.addFeatureCollections(opts.featureCollections);
+            annotationToolkit.overlay.paperScope.project.loadGeoJSON(opts.featureCollections);
         }
     }
-    addFeatureCollections(fcs){
-        //to do: remove this from the UI, and instead listen for items added to the paper project
-        fcs.forEach(fc => this._layerUI.addFeatureCollection(fc));
-    }
+    
     destroy(){
         this._layerUI.destroy();
         this._toolbar.destroy();
@@ -90,14 +102,21 @@ class AnnotationUI{
             }
             this._button.element.remove();//should this be "button.destroy()" or "button.remove()"?
         }
+        if(this._filebutton){
+            let idx = this._viewer.buttonGroup.buttons.indexOf(this._filebutton);
+            if(idx>-1){
+                this._viewer.buttonGroup.buttons.splice(idx,1);
+            }
+            this._filebutton.element.remove();//should this be "button.destroy()" or "button.remove()"?
+        }
         
     }
-    toGeoJSON(opts){
-        return this._layerUI.toGeoJSON(opts)
-    }
-    loadGeoJSON(geoJSON,opts){
-        return this._layerUI.loadGeoJSON(geoJSON,opts)
-    }
+    // toGeoJSON(opts){
+    //     return this._layerUI.toGeoJSON(opts)
+    // }
+    // loadGeoJSON(geoJSON,opts){
+    //     return this._layerUI.loadGeoJSON(geoJSON,opts)
+    // }
 
     //private
     _createJqueryUIdialog(){

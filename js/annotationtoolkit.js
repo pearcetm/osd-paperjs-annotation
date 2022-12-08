@@ -25,10 +25,20 @@ Object.defineProperty(paper.Project.prototype, 'descendants', descendantsDefProj
 Object.defineProperty(paper.Project.prototype, 'fillOpacity', itemFillOpacityPropertyDef())
 Object.defineProperty(paper.View.prototype, 'fillOpacity', viewFillOpacityPropertyDef())
 Object.defineProperty(paper.Project.prototype, 'strokeOpacity', itemStrokeOpacityPropertyDef())
+
+let origRemove=paper.Item.prototype.remove;
+paper.Item.prototype.remove=function(){ origRemove.call(this); this.emit('removed',{item:this}); }
+
+
+paper.Group.prototype.insertChildren=getInsertChildrenDef();
 paper.Item.prototype.replace = replaceItem;
 paper.Item.prototype.toGeoJSON = paperItemToGeoJson;
 paper.Group.prototype.toGeoJSON = paperGroupToGeoJson;
 paper.Project.prototype.toGeoJSON = paperProjectToGeoJson;
+paper.Item.fromGeoJSON = paperItemFromGeoJson;
+// paper.Group.fromGeoJSON = paperGroupFromGeoJson;
+// paper.Project.prototype.fromGeoJSON = paperProjectFromGeoJSON;
+paper.Project.prototype.loadGeoJSON = paperProjectLoadGeoJSON;
 paper.Color.prototype.toJSON = paper.Color.prototype.toCSS;//for saving/restoring colors as JSON
 paper.Style.prototype.toJSON = styleToJSON;
 paper.Style.prototype.set= styleSet;
@@ -41,8 +51,8 @@ paper.Item.prototype.deselect = paperItemDeselect;
 paper.Item.prototype.toggle = paperItemToggle;
 paper.Item.prototype.updateFillOpacity = updateFillOpacity;
 paper.Item.prototype.updateStrokeOpacity = updateStrokeOpacity;
-paper.Item.fromGeoJSON = paperItemFromGeoJson;
 paper.Project.prototype.updateFillOpacity = updateFillOpacity;
+//to do: should these all be installed on project instead of scope?
 paper.PaperScope.prototype.findSelectedNewItem = findSelectedNewItem;
 paper.PaperScope.prototype.findSelectedPolygon = findSelectedPolygon;
 paper.PaperScope.prototype.findSelectedItems = findSelectedItems;
@@ -106,12 +116,17 @@ class AnnotationToolkit {
     setGlobalVisibility(show = false){
         this.overlay.paperScope.view._element.setAttribute('style', 'visibility:' + (show ? 'visible;' : 'hidden;'));
     }
-    addFeatureCollections(featureCollections){
-        this._annotationUI.addFeatureCollections(featureCollections);
+    addFeatureCollections(featureCollections,replaceCurrent){
+        this.overlay.paperScope.project.loadGeoJSON(featureCollections,replaceCurrent);
     }
-    getGeoJSON(asString = true){
-        let collections = this.overlay.paperScope.project.toGeoJSON();
-        return asString ? JSON.stringify(collections) : collections;
+    getFeatureCollectionLayers(){
+        return this.overlay.paperScope.project.layers.filter(l=>l.isGeoJSONFeatureCollection);
+    }
+    getGeoJSONObjects(){
+        return this.overlay.paperScope.project.toGeoJSON();
+    }
+    getGeoJSONString(replacer,space){
+        return JSON.stringify(this.getGeoJSONObjects(),replacer,space);
     }
     
 };
@@ -152,54 +167,51 @@ function applyBounds(boundingItems) {
     }
 
 }
-function paperItemSelect(setProperty = true) {
-    (this.selected = true) && setProperty;
-    this.emit('selected', new paper.Event());
+function paperItemSelect(keepOtherSelectedItems) {
+    if(!keepOtherSelectedItems){
+        this.project._scope.findSelectedItems().forEach(item => item.deselect());
+    }
+    this.selected = true;
+    this.emit('selected');
     this.project.emit('item-selected', { item: this });
 }
-function paperItemDeselect(unsetProperty = true) {
-    unsetProperty && (this.selected = false);
-    this.emit('deselected', new paper.Event());
+function paperItemDeselect(keepOtherSelectedItems) {
+    if(!keepOtherSelectedItems){
+        this.project._scope.findSelectedItems().forEach(item => item.deselect(true));
+        return;
+    }
+    this.selected = false;
+    this.emit('deselected');
     this.project.emit('item-deselected', { item: this });
 }
-function paperItemToggle(keepCurrent) {
-    let itemIsSelected = this.selected;
-    if (itemIsSelected && (keepCurrent || this.project._scope.findSelectedItems().length == 1)) {
-        this.selected = false;
-        this.deselect();
-    }
-    else {
-        !keepCurrent && this.project._scope.findSelectedItems().forEach(item => item.deselect());
-        this.select();
-    }
+function paperItemToggle(keepOtherSelectedItems) {
+    this.selected ? this.deselect(keepOtherSelectedItems) : this.select(keepOtherSelectedItems);
 }
 
 function findSelectedNewItem() {
     //relies on the presence of a custom "instructions" property to identify uninitialized items
     //only return selected items
+    //to do: change this to use type=='Feature' and geometry==null to match GeoJSON spec and AnnotationItemPlaceholder definition
     return this.project.getItems({ selected:true, match: function (i) { return i.instructions; } })[0];
 }
 function findSelectedPolygon() {
     return this.project.getItems({ selected: true, class: paper.CompoundPath })[0];
 }
 function findSelectedItems() {
-    return this.project.getItems({ selected: true, match: function (i) { return i.isAnnotationFeature; } });
+    return this.project.getItems({ selected: true, match: function (i) { return i.isGeoJSONFeature; } });
 }
 function findSelectedItem() {
     return this.findSelectedItems()[0];
 }
 function createFeatureCollectionLayer(displayLabel=null) {
     let layer = new paper.Layer();
-    layer.isAnnotationLayer = true;
-    layer.name = layer.displayName = displayLabel!==null ? displayLabel : 'AnnotationLayer';
     this.project.addLayer(layer);
-    let group = new paper.Group();
-    group.name = 'elements';
-    layer.addChild(group);
-    layer.bringToFront = function () { layer.addTo(this.project); };
-    let style = new paper.Style(this.project.defaultStyle);
-    layer.defaultStyle = style;
-    return { layer: layer, group: group, style:style._values };
+    layer.isGeoJSONFeatureCollection = true;
+    let layerNum = this.project.layers.filter(l=>l.isGeoJSONFeatureCollection).length;
+    layer.name = layer.displayName = displayLabel!==null ? displayLabel : `Annotation Layer ${layerNum}`;
+    layer.defaultStyle = new paper.Style(this.project.defaultStyle);
+    this.project.emit('feature-collection-added',{layer:layer});
+    return layer;
 }
 
 function updateFillOpacity(){
@@ -324,6 +336,7 @@ function displayNamePropertyDef(){
             else{
                 this._displayName = input;
             }
+            this.name = this._displayName;
             this.emit('display-name-changed',{displayName:this._displayName});
         },
         get: function displayName(){
@@ -341,7 +354,7 @@ function hierarchyDef(){
 function descendantsDef(){
     return {
         get: function descendants(){
-            return this.children && !this.isAnnotationFeature ? this.children.map(child=>child.descendants).flat() : [this];
+            return this.children && !this.isGeoJSONFeature ? this.children.map(child=>child.descendants).flat() : [this];
         }
     }
 }
@@ -355,7 +368,7 @@ function descendantsDefCompoundPath(){
 function descendantsDefProject(){
     return {
         get: function descendants(){
-            return this.layers ? this.layers.filter(layer=>layer.isAnnotationLayer).map(child=>child.descendants).flat() : [this];
+            return this.layers ? this.layers.filter(layer=>layer.isGeoJSONFeatureCollection).map(child=>child.descendants).flat() : [this];
         }
     }
 }
@@ -381,14 +394,13 @@ function replaceItem(newItem){
     newItem.style = this.style; //to do: make this work with rescale properties, so that rescale.strokeWidth doesn't overwrite other props
     newItem.rescale=rescale;
     //replace in the paper hierarchy
+    this.emit('item-replaced',{item:newItem});
+    newItem.project.emit('item-replaced',{item:newItem});
     this.replaceWith(newItem);
     newItem.selected = this.selected;
-    // console.log('replacing',this,newItem)
-    this.emit('item-replaced',{item:newItem});
     newItem.updateFillOpacity();
     newItem.applyRescale();
     newItem.project.view.update();
-    newItem.project.emit('item-replaced',{item:newItem});
     return newItem;
 }
 
@@ -410,7 +422,7 @@ function paperItemFromGeoJson(geoJSONFeature) {
     }
     var obj = factory[type](geoJSONFeature);
     obj.style.set(geoJSONFeature.properties);
-    obj.isAnnotationFeature = true;
+    obj.isGeoJSONFeature = true;
     if(obj.displayName === undefined){
         obj.displayName = geoJSONFeature.properties.label;
     }
@@ -434,12 +446,12 @@ function paperItemToGeoJson(){
     return GeoJSON;
 }
 function paperGroupToGeoJson(){
-    if(this.isAnnotationFeature){
+    if(this.isGeoJSONFeature){
         return paperItemToGeoJson.call(this);
     }
     let GeoJSON = {
         type:'FeatureCollection',
-        features: this.descendants.filter(d=>d.isAnnotationFeature).map(d=>d.toGeoJSON()),
+        features: this.descendants.filter(d=>d.isGeoJSONFeature).map(d=>d.toGeoJSON()),
         // features: this.descendants.map(d=>d.toGeoJSON()).filter(d=>d.geometry),
         properties:{
             ...this.defaultStyle.toJSON(),
@@ -449,7 +461,7 @@ function paperGroupToGeoJson(){
     return GeoJSON;
 }
 function paperProjectToGeoJson(){
-    return this.getItems({match:i=>i.isAnnotationLayer}).map(l=>l.toGeoJSON())
+    return this.getItems({match:i=>i.isGeoJSONFeatureCollection}).map(l=>l.toGeoJSON())
 }
 function styleToJSON(){
     let output={};
@@ -461,4 +473,40 @@ function styleToJSON(){
 function paperViewGetImageData(){
     //let canvas = this.element;
     return this.element.getContext('2d').getImageData(0,0,this.element.width, this.element.height);
+}
+function paperProjectLoadGeoJSON(geoJSON, replaceCurrent){
+    if(replaceCurrent){
+        this.getItems({match:i=>i.isGeoJSONFeatureCollection}).forEach(layer=>layer.remove());
+    }
+    if(!Array.isArray(geoJSON)){
+        geoJSON = [geoJSON];
+    }
+    geoJSON.forEach(obj=>{
+        if(obj.type=='FeatureCollection'){
+            let layer = this.overlay.paperScope.createFeatureCollectionLayer(obj.label);
+            obj.features.forEach(feature=>{
+                let item = paper.Item.fromGeoJSON(feature);
+                layer.addChild(item);
+            })
+        }
+        else{
+            console.warn('GeoJSON object not loaded: wrong type. Only FeatureCollection objects are currently supported');
+        }
+    })
+}
+function getInsertChildrenDef(){
+    let origInsertChildren = paper.Group.prototype.insertChildren.original || paper.Group.prototype.insertChildren;
+    function insertChildren(){ 
+        let output = origInsertChildren.apply(this,arguments); 
+        let index = arguments[0], children=Array.from(arguments[1]); 
+        children&&children.forEach((child,i)=>{
+            if(child.isGeoJSONFeature){
+                let idx = typeof index !== 'undefined' ? index+1 : -1; 
+                this.emit('child-added',{item:child,index:idx});
+            } 
+        });
+        return output;
+    }
+    insertChildren.original = origInsertChildren;
+    return insertChildren;
 }

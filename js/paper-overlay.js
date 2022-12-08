@@ -182,9 +182,18 @@ export class PaperOverlay{
         })(this);
         this.onViewerResetSize=(self=>function(ev){
             self._scale = getViewerContentWidth(ev);
+            console.log('onViewerResetSize',self._scale);
             //need to setTimeout to wait for some value (viewport.getZoom()?) to actually be updated before doing our update
             //need to check for destroyed because this will get called as part of the viewer destroy chain, and we've set the timeout
-            setTimeout(()=>!self.destroyed && (self._resize(), self._updatePaperView(true)));
+            setTimeout(()=>{
+                if(self.destroyed){
+                    return;
+                }
+                self._resize();
+                if(opts.overlayType=='image'){
+                    self._updatePaperView(true);
+                }
+            });
         })(this);
         this.onViewerResize=(self=>function(){
             self._resize();

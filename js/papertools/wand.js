@@ -250,7 +250,7 @@ export class WandTool extends AnnotationUITool{
         viewportGroup.selected=false;
 
         //hide all annotation layers; add the viewportGroup; render; get image data; remove viewportGroup; restore visibility of layers
-        let annotationLayers = self.project.paperScope.project.layers.filter(l=>l.isAnnotationLayer);
+        let annotationLayers = self.project.paperScope.project.layers.filter(l=>l.isGeoJSONFeatureCollection);
         let visibility = annotationLayers.map(l=>l.visible);
         annotationLayers.forEach(l=>l.visible=false);
         self.project.toolLayer.addChild(viewportGroup);
@@ -272,7 +272,7 @@ export class WandTool extends AnnotationUITool{
             self.imageData.binaryMask[m]=self.imageData.colorMask.data[i+1] ? 1 : 0;//green channel is for current item
         }
         
-        if(self.item && self.item.isAnnotationFeature && self.item.getArea()){
+        if(self.item && self.item.isGeoJSONFeature && self.item.getArea()){
             getAverageColor(self.item).then(sampleColor=>{
                 let c = [sampleColor.red*255,sampleColor.green*255,sampleColor.blue*255];
                 self.imageData.sampleColor = c;

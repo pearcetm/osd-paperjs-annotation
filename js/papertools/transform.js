@@ -22,7 +22,7 @@ export class TransformTool extends AnnotationUITool{
         }
     }
     // getSelectedItems(){
-    //     return this.ps.project.selectedItems.filter(i=>i.isAnnotationFeature);
+    //     return this.ps.project.selectedItems.filter(i=>i.isGeoJSONFeature);
     // }
     
     makeTransformToolObject(currentZoom){
@@ -109,7 +109,7 @@ export class TransformTool extends AnnotationUITool{
         this._transformTool.onMouseDown = function(ev){
             // console.log('mousedown',ev);
             let hitresult=self.hitTest(ev.point) || this.boundingDisplay.hitTest(this.matrix.inverseTransform(ev.point));
-            hitresult = hitresult && (hitresult.item==this.boundingDisplay || (hitresult.item.isAnnotationFeature&&hitresult.item.selected) );
+            hitresult = hitresult && (hitresult.item==this.boundingDisplay || (hitresult.item.isGeoJSONFeature&&hitresult.item.selected) );
             // console.log('hit',hitresult);
             if(hitresult) this._dragging=true;
         }
@@ -189,9 +189,9 @@ export class TransformTool extends AnnotationUITool{
             stroke:true,
             segments:true,
             tolerance:(5/this.project.getZoom()),
-            match:i=>i.item.isAnnotationFeature || i.item.parent.isAnnotationFeature,
+            match:i=>i.item.isGeoJSONFeature || i.item.parent.isGeoJSONFeature,
         })
-        if(hitResult && !hitResult.item.isAnnotationFeature){
+        if(hitResult && !hitResult.item.isGeoJSONFeature){
             hitResult.item = hitResult.item.parent;
         }
         return hitResult;

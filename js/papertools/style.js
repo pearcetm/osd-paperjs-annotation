@@ -200,7 +200,7 @@ export class StyleTool extends AnnotationUITool{
             item.rescale && (item.rescale.strokeWidth = value);
 
             //for annotation items, update the config object and apply rescale
-            if(item.isAnnotationFeature){
+            if(item.isGeoJSONFeature){
                 // item.config.properties.strokeWidth = value;
                 // item.config.properties.rescale && (item.config.properties.rescale.strokeWidth = value);
                 item.applyRescale();
@@ -212,7 +212,7 @@ export class StyleTool extends AnnotationUITool{
         this.targetItems.forEach(item=>{
             let style = item.defaultStyle || item.style;
             style[property]=opacity;
-            if(item.isAnnotationFeature){
+            if(item.isGeoJSONFeature){
                 item.updateFillOpacity();
             }
         });
@@ -228,7 +228,7 @@ export class StyleTool extends AnnotationUITool{
             let style = item.defaultStyle || item.style;
             style.fillColor = color;
             
-            if(item.isAnnotationFeature){
+            if(item.isGeoJSONFeature){
                 item.updateFillOpacity();
             }
         })
@@ -240,7 +240,7 @@ export class StyleTool extends AnnotationUITool{
             let style = item.defaultStyle || item.style;
             // style.strokeColor && (color.alpha = style.strokeColor.alpha);
             style.strokeColor = color;
-            if(item.isAnnotationFeature){
+            if(item.isGeoJSONFeature){
                 // item.config.properties.strokeColor = item.strokeColor;
                 item.updateStrokeOpacity();
             }
@@ -304,7 +304,7 @@ export class StyleToolbar extends AnnotationUIToolbarBase{
             console.log('Style item clicked',items)
             let allSelected = items.every(item=>item.selected);
             // let selectableItems = items.filter(item=>item.select);
-            let selectableItems = items.filter(item=>item.isAnnotationFeature);
+            let selectableItems = items.filter(item=>item.isGeoJSONFeature);
             if(selectableItems.length > 0){
                 self.tool._ignoreNextSelectionChange = true;
                 selectableItems.forEach(item=>allSelected ? item.deselect() : item.select());//select all if not all selected, else unselect all
@@ -317,7 +317,7 @@ export class StyleToolbar extends AnnotationUIToolbarBase{
             }
             else{
                 let items = self.tool.targetItems;
-                let layers = new Set(items.map(item=>item.hierarchy.filter(i=>i.isAnnotationLayer && i!==item)).flat());
+                let layers = new Set(items.map(item=>item.hierarchy.filter(i=>i.isGeoJSONFeatureCollection && i!==item)).flat());
                 if(layers.size==0){
                     //this happens if a layer was directly selected, or if the default target was directly selected
                     if(items.indexOf(self.tool.defaultTarget)>-1){
@@ -389,7 +389,7 @@ export class StyleToolbar extends AnnotationUIToolbarBase{
     }
     updateTargetDescription(){
         let targetDescription = this.tool.targetDescription;
-        let allSelected = this.tool.targetItems.every(item=>item.selected && item.isAnnotationFeature);
+        let allSelected = this.tool.targetItems.every(item=>item.selected && item.isGeoJSONFeature);
         let element = $(this.dropdown).find('.style-item').text(targetDescription);
         allSelected ? element.addClass('selected') : element.removeClass('selected');
     }

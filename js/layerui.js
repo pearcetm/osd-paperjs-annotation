@@ -1,5 +1,5 @@
-import { Feature } from './feature.js';
-import { FeatureCollection } from './featurecollection.js';
+// import { FeatureUI } from './featureui.js';
+import { FeatureCollectionUI } from './featurecollectionui.js';
 
 export class LayerUI{
 
@@ -7,6 +7,7 @@ export class LayerUI{
         let self=this;
         
         this.paperScope = paperScope;
+        this.paperScope.project.on('feature-collection-added',ev=>this._onFeatureCollectionAdded(ev));
         
         self.element = makeHTMLElement();
         
@@ -17,7 +18,8 @@ export class LayerUI{
         self.element.find('.new-feature-collection').on('click',function(ev){
             ev.stopPropagation();
             ev.preventDefault();
-            self.addFeatureCollection();
+            // self.addFeatureCollection();
+            self.paperScope.createFeatureCollectionLayer();
         });
         self.element.find('.toggle-annotations').on('click',function(ev){
             let hidden = self.element.find('.annotation-ui-feature-collections .feature-collection.annotation-hidden');
@@ -30,7 +32,7 @@ export class LayerUI{
         self.element.find('.annotation-ui-feature-collections').sortable({contain:'parent',update:function(){
             self.element.find('.annotation-ui-feature-collections .feature-collection').each(function(idx,g){
                 let fg = $(g).data('featureCollection');
-                fg.paperObjects.layer.bringToFront();
+                fg.layer.bringToFront();
             })
         }})
 
@@ -138,48 +140,18 @@ export class LayerUI{
         this.raiseEvent('destroy');
         this.element.remove();
     }
-    addFeatureCollection(geoJSON={features:[]}){
-        let paperObjects=this.paperScope.createFeatureCollectionLayer(geoJSON.label)
-        geoJSON.properties && paperObjects.layer.defaultStyle.set(geoJSON.properties);
-
-        let fc=new FeatureCollection(paperObjects, {guiSelector:`[data-ui-id="${this.element.data('ui-id')}"]`});
-        this.element.find('.annotation-ui-feature-collections').append(fc.element).sortable('refresh');
+    
+    //private
+    _onFeatureCollectionAdded(ev){
+        let layer = ev.layer;
         
+        let fc=new FeatureCollectionUI(layer, {guiSelector:`[data-ui-id="${this.element.data('ui-id')}"]`});
+        this.element.find('.annotation-ui-feature-collections').append(fc.element).sortable('refresh');
         fc.element.trigger('element-added');
         setTimeout(function(){fc.element.addClass('inserted'); }, 30);//this allows opacity fade-in to be triggered
 
-        geoJSON.features && geoJSON.features.forEach(feature=>{
-            let paperItem = this.paperScope.Item.fromGeoJSON(feature);
-            let f = new Feature(paperItem);
-            fc.addFeature(f);
-        })
-        return fc;
     }
     
-    getFeatureCollections(includeTrashed=false){
-        let selector = includeTrashed ? '.annotation-ui-feature-collections .feature-collection' :
-                                        '.annotation-ui-feature-collections .feature-collection:not(.trashed)';
-
-        return this.element.find(selector).toArray().map(function(e){
-            return $(e).data('featureCollection');
-        })
-    }
-    toGeoJSON(opts={asString:true,includeTrashed:false}){
-        if(opts.includeTrashed){
-            console.warn('includeTrashed is not currently supported')
-        } 
-        let collections = this.paperScope.project.toGeoJSON()
-        return opts.asString ? JSON.stringify(collections) : collections;
-    };
-    loadGeoJSON(geoJSON,opts={replace:false}){
-        if(opts.replace){
-            this.getFeatureCollections(true).forEach(fc=>fc.remove())
-        }
-        geoJSON.forEach(function(fc){
-            let f = self.addFeatureCollection(fc);
-        })
-        // self.setOpacity();
-    }
     
 
 }

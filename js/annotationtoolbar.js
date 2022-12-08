@@ -23,7 +23,7 @@ export class AnnotationToolbar{
         this.setModeTimeout = null;
 
         let toolLayer=new paperScope.Layer();
-        toolLayer.isAnnotationLayer=false;
+        toolLayer.isGeoJSONFeatureCollection=false;
         toolLayer.name = 'toolLayer';
         paperScope.project.addLayer(toolLayer);
 

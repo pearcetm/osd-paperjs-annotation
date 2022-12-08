@@ -86,24 +86,29 @@
 .feature-item{
     margin-left:1em;
 }
-.editablecontent:not(.editing){
+/* .editablecontent:not(.editing){
     cursor:default;
 }
 .editablecontent>[data-action]{
     margin-left:0.2em;
     cursor:pointer;
 }
-/* .editablecontent>[data-action]:not(.fa):not(.fa-solid){
-    font-weight:lighter;
-} */
 .editablecontent.editing>.onhover, .editablecontent:not(:hover) .onhover{
-    /* display:none; */
     visibility:hidden;
 }
 .editablecontent.editing .edit{
     border:thin gray solid;
     background-color:lightblue;
     padding:0 0.3em;
+} */
+.feature-collection [data-action], .feature [data-action]{
+    margin-left:0.2em;
+}
+.hoverable-actions:not(:hover) .onhover{
+    visibility:hidden;
+}
+.hoverable-actions:hover .editablecontent .onhover {
+    visibility:visible;
 }
 .feature-collection.trashed{
     background-color:darkred;
@@ -363,7 +368,7 @@ canvas.rectangle-tool-resize{
 /* Annotation UI File Dialog Styles*/
 .annotation-ui-filedialog{
     display:grid;
-    grid-template-columns: 10fr 15fr 10fr;
+    grid-template-columns: auto auto auto;
 }
 .annotation-ui-filedialog>div{
     padding: 0 0.3em;
@@ -371,9 +376,46 @@ canvas.rectangle-tool-resize{
 .annotation-ui-filedialog .featurecollection-selection{
     border-right:thin gray solid;
     border-left:thin gray solid;
+    width:15em;
+    overflow-x:hidden;
+}
+.annotation-ui-filedialog .featurecollection-list{
+    display:flex;
+    flex-direction:column;
+    overflow:auto;
+}
+.annotation-ui-filedialog .localstorage-key-list::before{
+    content:'Saved in local storage:';
+    display:block;
+    color:gray;
+}
+.annotation-ui-filedialog .localstorage-key-list:empty::after{
+    content:'No items were found in local storage';
+    font-style:italic;
+    color:gray;
+}
+.annotation-ui-filedialog .localstorage-key{
+    cursor:pointer;
+}
+.annotation-ui-filedialog .localstorage-key:hover{
+    background-color:lightgoldenrodyellow;
+}
+.annotation-ui-filedialog .localstorage-key-test.key-exists::after{
+    content: '(overwrite)';
+    font-weight:bold;
+    background-color:rgb(190, 99, 66);
+    color:white;
+    padding:0 0.2em;
+}
+.annotation-ui-filedialog .finalize-panel{
+    width:15em;
+    overflow-x:hidden;
 }
 .annotation-ui-filedialog .header{
     white-space: nowrap;
+    border-bottom:thin gray solid;
+    padding-bottom:2px;
+    margin-bottom:2px;
 }
 .annotation-ui-filedialog button{
     display:block;

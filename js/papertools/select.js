@@ -44,7 +44,7 @@ export class SelectTool extends AnnotationUITool{
                 if(!keepExistingSelection){
                     self.project.paperScope.findSelectedItems().forEach(item=>item.deselect());
                 }
-                hitResults.forEach(item=>item.select())
+                hitResults.forEach(item=>item.select(true))
             }
         }
         this.tool.onMouseDrag = function(ev){
@@ -57,22 +57,10 @@ export class SelectTool extends AnnotationUITool{
         }
     }
     getSelectedItems(){
-        return this.ps.project.selectedItems.filter(i=>i.isAnnotationFeature);
+        return this.ps.project.selectedItems.filter(i=>i.isGeoJSONFeature);
     }
     doAnnotationItemsExist(){
-        return this.ps.project.getItems({match:i=>i.isAnnotationFeature}).length>0; 
-    }
-    toggleLayerSelection(layer,keepCurrent){
-        if(layer.layerSelected){
-            layer.layerSelected=false;
-            layer.deselect(false);
-            console.log('called layer.deselect()')
-        }
-        else{
-            layer.layerSelected=true;
-            layer.select(false);
-            console.log('called layer.select()')
-        }
+        return this.ps.project.getItems({match:i=>i.isGeoJSONFeature}).length>0; 
     }
     
     onMouseMove(ev){
@@ -97,16 +85,16 @@ export class SelectTool extends AnnotationUITool{
             stroke:true,
             segments:true,
             tolerance:(5/this.project.getZoom()),
-            match:i=>i.item.isAnnotationFeature || i.item.parent.isAnnotationFeature,
+            match:i=>i.item.isGeoJSONFeature || i.item.parent.isGeoJSONFeature,
         })
-        if(hitResult && !hitResult.item.isAnnotationFeature){
+        if(hitResult && !hitResult.item.isGeoJSONFeature){
             hitResult.item = hitResult.item.parent;
         }
         return hitResult;
     }
     hitTestArea(ev,onlyFullyContained){
         let options = {
-            match:item=>item.isAnnotationFeature,
+            match:item=>item.isGeoJSONFeature,
         }
         let testRectangle=new paper.Rectangle(ev.point,ev.downPoint);
         if(onlyFullyContained){
