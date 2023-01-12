@@ -121,7 +121,13 @@ function createViewer(){
                             promise = API.post('annotation',{params:{itemId:itemId},data:dsaAnnotation});
                         }
 
-                        return 
+                        return promise.then(()=>{
+                            console.log('Save succeeded');
+                            alert('Save succeeded');
+                        }).catch(result=>{
+                            console.error(result.message);
+                            alert(result.message);
+                        })
                     });
                     // console.log(geoJSON,promises)
                 }))
