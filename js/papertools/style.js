@@ -11,7 +11,8 @@ export class StyleTool extends AnnotationUITool{
 
         let cursorGridSize=9;//this must be an odd number so the grid is symmetric around a center cell
         let cursorCellSize=12;
-        this.cursor = ColorpickerCursor(cursorCellSize,cursorGridSize,this.project.toolLayer);
+        this.colorpicker = new ColorpickerCursor(cursorCellSize,cursorGridSize,this.project.toolLayer);
+        this.cursor = this.colorpicker.element;
         this.cursor.applyRescale();
 
         this.extensions.onActivate = function(){ console.log('style tool onActivate')
@@ -33,53 +34,18 @@ export class StyleTool extends AnnotationUITool{
 
         tool.extensions.onKeyUp=function(ev){
             if(ev.key=='escape'){
-                // console.log('escape key detected')
                 self.cancelColorpicker();
             }
         }
         tool.onMouseMove=function(ev){            
             if(self.pickingColor){
-                self.cursor.position=ev.point;
-
-                // //desired rotation is negative of view rotation value
-                // let delta = -1*self.cursor.view.rotation - self.cursor.rotation;//relies on applyMatrix=false on cursor group ojbect
-                // if(Math.abs(delta)>0.01) self.cursor.rotate(delta);
-
-                let o = self.project.overlay.osdViewer.viewport.imageToViewerElementCoordinates(new OpenSeadragon.Point(ev.point.x,ev.point.y));
-                let x = Math.round(o.x)-Math.floor(self.cursor.numColumns/2);
-                let y = Math.round(o.y)-Math.floor(self.cursor.numRows/2);
-                let w = self.cursor.numColumns;
-                let h = self.cursor.numRows;
-                let r = self.project.paperScope.view.pixelRatio            
-                let imdata = self.project.overlay.osdViewer.drawer.canvas.getContext('2d').getImageData(x*r,y*r,w*r,h*r);
-                //downsample if needed
-                function getval(i){
-                    if(r==1) return imdata.data[i]/255;
-                    let values=Array.from({length:r}).map((_,col)=>{
-                        return Array.from({length:r}).map((_,row)=>{
-                            return imdata.data[i + (col*4) + (row*w*r*4)];
-                        })
-                    }).flat().filter(v=>typeof v !== 'undefined');
-                    return (values.reduce((a,v)=>a+=v,0)/values.length)/255;
-                }
-                
-                let p=1;
-                for(var row=0; row<h*r; row += r){
-                    for(var col=0;col<w*r; col += r, p += 1){
-                        let i = 4*(col + (row*w*r));
-                        self.cursor.children[p].fillColor.red = getval(i);
-                        self.cursor.children[p].fillColor.green = getval(i+1);
-                        self.cursor.children[p].fillColor.blue = getval(i+2);
-                    }
-                }
-                self.cursor.borderElement.fillColor = self.cursor.centerCell.fillColor;
-                self.cursor.selectedColor = self.cursor.centerCell.fillColor;                
+                self.colorpicker.updatePosition(ev.point);
+                              
             }
         }
         tool.onMouseUp=function(ev){
             if(self.pickingColor && self.cursor.visible){
-                //broadcast('color-picked',{color:cursor.selectedColor});
-                self._colorpickerPromise && self._colorpickerPromise.resolve(self.cursor.selectedColor);
+                self._colorpickerPromise && self._colorpickerPromise.resolve(self.colorpicker.selectedColor);
                 self._colorpickerPromise = null;
                 self.cancelColorpicker();
             }
@@ -473,12 +439,18 @@ export class StyleToolbar extends AnnotationUIToolbarBase{
 
 export function ColorpickerCursor(cursorCellSize,cursorGridSize,parent){
     let cursor = new paper.Group({visible:false, applyMatrix:false});
+    this.element = cursor;
     parent.addChild(cursor);
     //desired rotation is negative of view rotation value
     cursor.view.on('rotate',ev=>cursor.rotate(-ev.rotatedBy));
-    
     cursor.numRows=cursorGridSize;
     cursor.numColumns=cursorGridSize;
+
+    let canvas = document.createElement('canvas');
+    canvas.height = cursor.numRows;
+    canvas.width = cursor.numColumns;
+    let ctx = canvas.getContext("2d",{willReadFrequently: true});
+    
     let s = cursorCellSize;
     let min=-((cursorGridSize-1)/2);
     let max=min+cursorGridSize;
@@ -505,7 +477,55 @@ export function ColorpickerCursor(cursorCellSize,cursorGridSize,parent){
     cursor.borderElement=b;
     b.sendToBack();//this sets b as the first child, requiring 1-based indexing of grid in mousemove handler
     cursor.applyRescale = function(){cursor.children.forEach(child=>child.applyRescale());}
-    return cursor;
+
+    this.updatePosition = function(point){
+        cursor.position=point;
+
+        let o = cursor.project.overlay.osdViewer.viewport.imageToViewerElementCoordinates(new OpenSeadragon.Point(point.x, point.y));
+        let x = Math.round(o.x)-Math.floor(cursor.numColumns/2);
+        let y = Math.round(o.y)-Math.floor(cursor.numRows/2);
+        let w = cursor.numColumns;
+        let h = cursor.numRows;
+        let r = cursor.view.pixelRatio            
+        let imdata = cursor.project.overlay.osdViewer.drawer.canvas.getContext('2d').getImageData(x*r,y*r,w*r,h*r);
+        ctx.clearRect(0, 0, w, h);
+        window.createImageBitmap(imdata).then(bitmap=>{
+            ctx.drawImage(bitmap, 0,0, cursor.numColumns, cursor.numRows);
+            let data = ctx.getImageData(0, 0, w, h);
+            // console.log(data);
+            let i, p;
+            for(i=0, p=1; i<data.data.length; i+=4, p+=1){
+                cursor.children[p].fillColor.red = data.data[i]/255;
+                cursor.children[p].fillColor.green = data.data[i+1]/255;
+                cursor.children[p].fillColor.blue = data.data[i+2]/255;
+            }
+            cursor.borderElement.fillColor = cursor.centerCell.fillColor;
+            this.selectedColor = cursor.centerCell.fillColor;  
+        })
+
+        //downsample if needed
+        // function getval(i){
+        //     if(r==1) return imdata.data[i]/255;
+        //     let values=Array.from({length:r}).map((_,col)=>{
+        //         return Array.from({length:r}).map((_,row)=>{
+        //             return imdata.data[i + (col*4) + (row*w*r*4)];
+        //         })
+        //     }).flat().filter(v=>typeof v !== 'undefined');
+        //     return (values.reduce((a,v)=>a+=v,0)/values.length)/255;
+        // }
+        
+        // let p=1;
+        // for(var row=0; row<h*r; row += r){
+        //     for(var col=0;col<w*r; col += r, p += 1){
+        //         let i = 4*(col + (row*w*r));
+        //         self.cursor.children[p].fillColor.red = getval(i);
+        //         self.cursor.children[p].fillColor.green = getval(i+1);
+        //         self.cursor.children[p].fillColor.blue = getval(i+2);
+        //     }
+        // }
+        
+    }
+    return this;
 }
 
 export async function getAverageColor(itemToAverage){

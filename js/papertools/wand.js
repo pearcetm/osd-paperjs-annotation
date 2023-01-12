@@ -31,8 +31,8 @@ export class WandTool extends AnnotationUITool{
         this.startThreshold=10;
 
         //colorpicker
-        let colorPicker = ColorpickerCursor(10,7,self.project.toolLayer);
-        colorPicker.applyRescale();
+        let colorPicker = new ColorpickerCursor(10,7,self.project.toolLayer);
+        colorPicker.element.applyRescale();
 
 
         this.MagicWand = makeMagicWand();
@@ -51,13 +51,13 @@ export class WandTool extends AnnotationUITool{
             self.getImageData();
             self.project.overlay.osdViewer.addHandler('animation-finish',callback);
             self.project.overlay.osdViewer.addHandler('rotate',callback);  
-            colorPicker.visible=true;
+            colorPicker.element.visible=true;
             self.project.toolLayer.bringToFront();
         };
         this.extensions.onDeactivate = function(finished){
             self.project.overlay.osdViewer.removeHandler('animation-finish',callback);
             self.project.overlay.osdViewer.removeHandler('rotate',callback);
-            colorPicker.visible=false;
+            colorPicker.element.visible=false;
             this.preview && this.preview.remove();
             if(finished){
                 self.finish();
@@ -69,7 +69,7 @@ export class WandTool extends AnnotationUITool{
             self.startThreshold=self.threshold;
             self.imageData.dragStartMask = self.imageData.binaryMask;
             self.applyMagicWand(ev.point);
-            colorPicker.visible=false;     
+            colorPicker.element.visible=false;     
         }
         tool.onMouseDrag=function(ev){
             let delta = ev.point.subtract(ev.downPoint).multiply(self.project.getZoom());
@@ -84,43 +84,13 @@ export class WandTool extends AnnotationUITool{
             self.applyMagicWand(ev.downPoint);
         }
         tool.onMouseMove=function(ev){
-            
-            colorPicker.position=ev.point;
-            let o = self.project.overlay.osdViewer.viewport.imageToViewerElementCoordinates(new OpenSeadragon.Point(ev.point.x,ev.point.y));
-            let x = Math.round(o.x)-Math.floor(colorPicker.numColumns/2);
-            let y = Math.round(o.y)-Math.floor(colorPicker.numRows/2);
-            let w = colorPicker.numColumns;
-            let h = colorPicker.numRows;
-            let r = self.paperScope.view.pixelRatio            
-            let imdata = self.project.overlay.osdViewer.drawer.canvas.getContext('2d').getImageData(x*r,y*r,w*r,h*r);
-            //downsample if needed
-            function getval(i){
-                if(r==1) return imdata.data[i]/255;
-                let values=Array.from({length:r}).map((_,col)=>{
-                    return Array.from({length:r}).map((_,row)=>{
-                        return imdata.data[i + (col*4) + (row*w*r*4)];
-                    })
-                }).flat().filter(v=>typeof v !== 'undefined');
-                return (values.reduce((a,v)=>a+=v,0)/values.length)/255;
-            }
-            
-            let p=1;
-            for(var row=0; row<h*r; row += r){
-                for(var col=0;col<w*r; col += r, p += 1){
-                    let i = 4*(col + (row*w*r));
-                    colorPicker.children[p].fillColor.red = getval(i);
-                    colorPicker.children[p].fillColor.green = getval(i+1);
-                    colorPicker.children[p].fillColor.blue = getval(i+2);
-                }
-            }
-            colorPicker.borderElement.fillColor = colorPicker.centerCell.fillColor;
-            colorPicker.selectedColor = colorPicker.centerCell.fillColor;  
+            colorPicker.updatePosition(ev.point);
         }
         tool.onMouseUp=function(ev){
-            colorPicker.visible=true;
-            colorPicker.bringToFront();
-            colorPicker.position=ev.point;
-            
+            colorPicker.element.visible=true;
+            colorPicker.element.bringToFront();
+            // colorPicker.position=ev.point;
+            colorPicker.updatePosition(ev.point);
         }
         
         tool.extensions.onKeyUp=function(ev){
