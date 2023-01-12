@@ -34,6 +34,10 @@ $('.dsa-link').on('keypress',ev=>{
 })
 $('#dsa-go').on('click',()=>{
     let baseurl = $('.dsa-link').val().trim().replace(/api\/v1\/?.*/,'').replace(/\/*$/, '');
+    if(!baseurl.match(/http/)){
+        baseurl = 'https://'+baseurl;
+        $('.dsa-link').val(baseurl);
+    }
     if(baseurl !== $('#dsa-dialog').data('baseurl')){
         setupDSA(baseurl);
         $('#dsa-dialog').data('baseurl',baseurl);
