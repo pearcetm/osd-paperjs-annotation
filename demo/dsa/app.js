@@ -11,7 +11,7 @@ $.get('./init.geoJSON').then(x=>{
 $.get('./Examples.json').then(x=>{
     examples=x;
 });
-let defaultDSA = window.location.hash||'';
+let defaultDSA = window.location.hash.substring(1);
 $('.dsa-link').val(defaultDSA);
 let v1 = createViewer();
 v1.addOnceHandler('open',()=>{
