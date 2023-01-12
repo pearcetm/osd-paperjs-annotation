@@ -19,8 +19,9 @@ export class RectangleTool extends AnnotationUITool{
 
         this.tool.onMouseDown=function(ev){
             if(self.itemToCreate){
-                self.project.paperScope.initializeItem('Polygon','Rectangle');
-                self.getSelectedItems();
+                self.itemToCreate.initializeGeoJSONFeature('Point', 'Rectangle');
+                self.refreshItems();
+                
                 let r=new paper.Path.Rectangle(ev.point,ev.point);
                 self.creating = r;
                 self.item.removeChildren();
@@ -35,6 +36,7 @@ export class RectangleTool extends AnnotationUITool{
                     let idx=result.segment.path.segments.indexOf(result.segment);
                     let oppositeIdx=(idx+2) % result.segment.path.segments.length;
                     self.refPoint = result.segment.path.segments[oppositeIdx].point;
+                    self.ctrlPoint = result.segment.point.clone();
                 }
             }
             // else{
@@ -42,27 +44,46 @@ export class RectangleTool extends AnnotationUITool{
             // }
         }
         this.tool.onMouseDrag=function(ev){
-            setCursorPosition(this,ev);
-            let refPt, angle;
+            let refPt, currPt, angle;
             let center = self.item.center;
             if(self.mode=='creating'){
                 angle = -self.item.view.getRotation();
                 refPt = ev.downPoint;
+                
+                if(ev.modifiers.command || ev.modifiers.control){
+                    let delta = ev.point.subtract(ev.downPoint);
+                    let axes = [[1,1],[1,-1],[-1,-1],[-1,1]].map(p=>new paper.Point(p[0],p[1]).rotate(angle));
+                    let closestAxis = axes.sort( (a, b) => a.dot(delta) - b.dot(delta))[0];
+                    let proj = delta.project(closestAxis);
+                    currPt = ev.downPoint.add(proj);
+                } else {
+                    currPt = ev.point;
+                }
             }
             else if(self.mode=='corner-drag'){
-                // console.log('Here!',ev.item)
                 angle = self.item.children[0].segments[1].point.subtract(self.item.children[0].segments[0].point).angle;
                 refPt = self.refPoint;
+
+                if(ev.modifiers.command || ev.modifiers.control){
+                    let delta = ev.point.subtract(self.refPoint);
+                    let axis = self.ctrlPoint.subtract(self.refPoint);
+                    let proj = delta.project(axis);
+                    currPt = self.refPoint.add(proj);
+                } else {
+                    currPt = ev.point;
+                }
             }
             else{
+                setCursorPosition(this,ev.point);
                 return;
             }
-            let r=new paper.Rectangle(refPt.rotate(-angle,center),ev.point.rotate(-angle, center));
+            setCursorPosition(this,currPt);
+            let r=new paper.Rectangle(refPt.rotate(-angle,center),currPt.rotate(-angle, center));
             let corners = [r.topLeft, r.topRight, r.bottomRight, r.bottomLeft].map(p=>p.rotate(angle,center));
             self.item.children[0].set({segments:corners})
         }
         this.tool.onMouseMove=function(ev){
-            setCursorPosition(this,ev);
+            setCursorPosition(this,ev.point);
             if(self.mode == 'modifying'){
                 let hitResult = self.item.hitTest(ev.point,{fill:false,stroke:false,segments:true,tolerance:5/self.project.getZoom()});
                 if(hitResult){
@@ -77,7 +98,7 @@ export class RectangleTool extends AnnotationUITool{
             self.mode='modifying';
             crosshairTool.visible=false;
             self.creating=null;
-            self.toolbarControl.updateInstructions('Polygon:Rectangle');
+            self.toolbarControl.updateInstructions('Point:Rectangle');
         }
         this.extensions.onActivate = this.onSelectionChanged = function(){
             if(self.itemToCreate){
@@ -95,13 +116,13 @@ export class RectangleTool extends AnnotationUITool{
                 self.creating=null;//reset reference to actively creating item
                 self.mode='modifying';
                 crosshairTool.visible = false;
-                self.toolbarControl.updateInstructions('Polygon:Rectangle');
+                self.toolbarControl.updateInstructions('Point:Rectangle');
             }
             else {
                 self.creating=null;//reset reference to actively creating item
                 self.mode=null;
                 crosshairTool.visible = false;
-                self.toolbarControl.updateInstructions('Polygon:Rectangle');
+                self.toolbarControl.updateInstructions('Point:Rectangle');
             }
         }
         this.extensions.onDeactivate = function(finished){
@@ -111,10 +132,10 @@ export class RectangleTool extends AnnotationUITool{
             self.project.overlay.removeClass('rectangle-tool-resize');
         }
 
-        function setCursorPosition(tool,ev){
+        function setCursorPosition(tool,point){
             //to do: account for view rotation
             // let viewBounds=tool.view.bounds;
-            let pt = tool.view.projectToView(ev.point);
+            let pt = tool.view.projectToView(point);
             let left=tool.view.viewToProject(new paper.Point(0, pt.y))
             let right=tool.view.viewToProject(new paper.Point(tool.view.viewSize.width, pt.y))
             let top=tool.view.viewToProject(new paper.Point(pt.x, 0))
@@ -140,9 +161,9 @@ class RectToolbar extends AnnotationUIToolbarBase{
         this.instructions = $('<span>').text('Click and drag to create a rectangle').appendTo(this.dropdown);
     }
     isEnabledForMode(mode){
-        return ['new','Polygon:Rectangle'].includes(mode);
+        return ['new','Point:Rectangle'].includes(mode);
     }
     updateInstructions(mode){
-        this.instructions.text(mode=='new'?'Click and drag to create a rectangle' : mode=='Polygon:Rectangle' ? 'Drag a corner to resize' : '???' )
+        this.instructions.text(mode=='new'?'Click and drag to create a rectangle' : mode=='Point:Rectangle' ? 'Drag a corner to resize' : '???' )
     }
 }

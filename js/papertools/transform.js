@@ -59,25 +59,29 @@ export class TransformTool extends AnnotationUITool{
              ctrl.opposite=c[1];
              ctrl.onMouseDown = function(ev){ev.stopPropagation();}
              ctrl.onMouseDrag = function(ev){
-                let rotation=this.parent.rotation
+                let rotation=this.parent.rotation;
                 let delta=ev.delta.rotate(-rotation);
-                let refPosX = this.parent.matrix.inverseTransform(this.parent.corners[this.opposite].refPos);
-                // let refPosX = this.parent.matrix.inverseTransform(this.parent.corners[this.opposite].refPt.position);
+                
                 let refPos = this.parent.corners[this.opposite].position;
-                // console.log(refPos,refPos2)
-                // let refPos = this.parent.matrix.transform(this.parent.corners[this.opposite].position);
-                let thisPos = this.position;
+
+                if(ev.modifiers.command || ev.modifiers.control){
+                    delta = delta.project(this.position.subtract(refPos));
+                }
+                
+                let oldPos = this.position;
                 let newPos = this.position.add(delta);
-                let oldSize=new paper.Rectangle(refPos,thisPos).size;
+                let oldSize=new paper.Rectangle(refPos,oldPos).size;
                 let newSize=new paper.Rectangle(refPos,newPos).size;
                 let sf = newSize.divide(oldSize);
+                
+                let refPosX = refPos.transform(this.parent.matrix);
+                let refPosZ = this.parent.matrix.inverseTransform(this.parent.corners[this.opposite].refPos);
 
                 this.parent.transforming.forEach( item=>{
-                    item.matrix.append(new paper.Matrix().scale(sf.width,sf.height,refPosX));
+                    let matrix = new paper.Matrix().scale(sf.width,sf.height,refPosZ); 
+                    item.matrix.append(matrix);
+                    item.onTransform && item.onTransform('scale', refPosX, rotation, matrix);
                 });
-                // Object.values(this.parent.corners).forEach( corner=>{
-                //     corner.refPt.scale(sf.width,sf.height,refPosX);
-                // });
                 
                 this.parent.boundingRect.scale(sf.width,sf.height,refPos);
                 this.parent.setBounds(true);
@@ -99,7 +103,10 @@ export class TransformTool extends AnnotationUITool{
             let newVec = ev.point.subtract(center);
             let angle = newVec.angle - oldVec.angle;
             this.parent.rotate(angle,center);
-            this.parent.transforming.forEach(item=>{item.rotate(angle,center); })
+            this.parent.transforming.forEach(item=>{
+                item.rotate(angle,center);
+                item.onTransform && item.onTransform('rotate', angle, center);
+            })
             Object.values(this.parent.corners).forEach(corner=>{
                 corner.refPos = corner.refPos.rotate(angle,center);
             })
@@ -122,7 +129,10 @@ export class TransformTool extends AnnotationUITool{
             Object.values(this.corners).forEach(corner=>{
                 corner.refPos = corner.refPos.add(ev.delta);
             })
-            this.transforming.forEach(item=>item.translate(ev.delta));
+            this.transforming.forEach(item=>{
+                item.translate(ev.delta);
+                item.onTransform && item.onTransform('translate', ev.delta);
+            });
         }
 
         //(re)positioning the tool handles (corners, rotation control)
@@ -159,6 +169,7 @@ export class TransformTool extends AnnotationUITool{
             //finish applying all transforms to previous items (called during disableTransformToolObject)
             this.transforming.forEach(item=>{
                 item.matrix.apply(true,true);
+                item.onTransform && item.onTransform('complete');
             })
 
             //set up new objects for transforming, and reset matrices of the tool
@@ -207,7 +218,16 @@ class TransformToolbar extends AnnotationUIToolbarBase{
         
     }
     isEnabledForMode(mode){
-        return this.tool.project.paperScope.findSelectedItems().length>0 && ['select','multiselection','Polygon','Polygon:Rectangle','Point','LineString','Polygon:Raster'].includes(mode);
+        return this.tool.project.paperScope.findSelectedItems().length>0 && [
+            'select',
+            'multiselection',
+            'MultiPolygon',
+            'Point:Rectangle',
+            'Point:Ellipse',
+            'Point',
+            'LineString',
+            'GeometryCollection:Raster',
+        ].includes(mode);
     }
     
 }

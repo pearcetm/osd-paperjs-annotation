@@ -17,7 +17,6 @@ class DefaultToolbar extends AnnotationUIToolbarBase{
     }
     isEnabledForMode(mode){
         return true;//enabled for all modes
-        //return ['noselection','select','new','transform','Rect','Polygon','Polygon:Rectangle','Point','LineString','Polygon:Raster','Wand'].includes(mode);
     }
     
 }

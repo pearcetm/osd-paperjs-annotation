@@ -1,5 +1,5 @@
 import {AnnotationUITool, AnnotationUIToolbarBase} from './annotationUITool.js';
-export class RectangleTool extends AnnotationUITool{
+export class EllipseTool extends AnnotationUITool{
     constructor(paperScope){
         super(paperScope);
         let self=this;
@@ -15,13 +15,14 @@ export class RectangleTool extends AnnotationUITool{
         this.mode = null;
         this.creating = null;
         
-        this.setToolbarControl(new RectToolbar(this));
+        this.setToolbarControl(new EllipseToolbar(this));
 
         this.tool.onMouseDown=function(ev){
             if(self.itemToCreate){
-                self.project.paperScope.initializeItem('Polygon','Rectangle');
-                self.getSelectedItems();
-                let r=new paper.Path.Rectangle(ev.point,ev.point);
+                self.itemToCreate.initializeGeoJSONFeature('Point', 'Ellipse');
+                self.refreshItems();
+                
+                let r=new paper.Path.Ellipse(ev.point,ev.point);
                 self.creating = r;
                 self.item.removeChildren();
                 self.item.addChild(r);
@@ -31,10 +32,16 @@ export class RectangleTool extends AnnotationUITool{
                 let result = self.item.hitTest(ev.point,{fill:false,stroke:false,segments:true,tolerance:5/self.project.getZoom()})
                 if(result){
                     // crosshairTool.visible=true;
-                    self.mode='corner-drag';
+                    self.mode='segment-drag';
                     let idx=result.segment.path.segments.indexOf(result.segment);
                     let oppositeIdx=(idx+2) % result.segment.path.segments.length;
-                    self.refPoint = result.segment.path.segments[oppositeIdx].point;
+                    //save reference to the original points of the ellipse before the drag started
+                    self.points = {
+                        opposite: result.segment.path.segments[oppositeIdx].point.clone(),
+                        drag: result.segment.point.clone(),
+                        p1: result.segment.next.point.clone(),
+                        p2: result.segment.previous.point.clone(),
+                    }
                 }
             }
             // else{
@@ -42,27 +49,62 @@ export class RectangleTool extends AnnotationUITool{
             // }
         }
         this.tool.onMouseDrag=function(ev){
-            setCursorPosition(this,ev);
-            let refPt, angle;
-            let center = self.item.center;
+            let currPt;
+            let center = self.item.bounds.center;
             if(self.mode=='creating'){
-                angle = -self.item.view.getRotation();
-                refPt = ev.downPoint;
+                let angle = -self.item.view.getRotation();
+                
+                if(ev.modifiers.command || ev.modifiers.control){
+                    let delta = ev.point.subtract(ev.downPoint);
+                    let axes = [[1,1],[1,-1],[-1,-1],[-1,1]].map(p=>new paper.Point(p[0],p[1]).rotate(angle));
+                    let closestAxis = axes.sort( (a, b) => a.dot(delta) - b.dot(delta))[0];
+                    let proj = delta.project(closestAxis);
+                    currPt = ev.downPoint.add(proj);
+                } else {
+                    currPt = ev.point;
+                }
+                let r=new paper.Rectangle(ev.downPoint.rotate(-angle,center),currPt.rotate(-angle, center));
+                let ellipse = new paper.Path.Ellipse(r).rotate(angle);
+                self.item.children[0].set({segments: ellipse.segments});
+                ellipse.remove();
             }
-            else if(self.mode=='corner-drag'){
-                // console.log('Here!',ev.item)
-                angle = self.item.children[0].segments[1].point.subtract(self.item.children[0].segments[0].point).angle;
-                refPt = self.refPoint;
+            else if(self.mode=='segment-drag'){
+                let dragdelta = ev.point.subtract(self.points.opposite);
+                let axis = self.points.drag.subtract(self.points.opposite);
+                let proj = dragdelta.project(axis);
+                let angle = axis.angle;
+                
+                if(ev.modifiers.command || ev.modifiers.control){
+                    //scale proportionally
+                    let scalefactor = proj.length / axis.length;
+                    let halfproj = proj.divide(2);
+                    let center = self.points.opposite.add(halfproj);
+                    let r1 = halfproj.length;
+                    let r2 = Math.abs(self.points.p1.subtract(self.points.opposite).multiply(scalefactor).cross(proj.normalize()));
+                    let ellipse = new paper.Path.Ellipse({center:center, radius: [r1, r2]}).rotate(angle);
+                    self.item.children[0].set({segments: ellipse.segments});
+                    ellipse.remove();
+                } else {
+                    //scale in one direction only
+                    let halfproj = proj.divide(2);
+                    let center = self.points.opposite.add(halfproj);
+                    let r1 = halfproj.length;
+                    let r2 = Math.abs(self.points.p1.subtract(self.points.opposite).cross(proj.normalize()));
+                    let ellipse = new paper.Path.Ellipse({center:center, radius: [r1, r2]}).rotate(angle);
+                    self.item.children[0].set({segments: ellipse.segments});
+                    ellipse.remove();
+                }
+
             }
             else{
+                setCursorPosition(this,ev.point);
                 return;
             }
-            let r=new paper.Rectangle(refPt.rotate(-angle,center),ev.point.rotate(-angle, center));
-            let corners = [r.topLeft, r.topRight, r.bottomRight, r.bottomLeft].map(p=>p.rotate(angle,center));
-            self.item.children[0].set({segments:corners})
+            setCursorPosition(this,currPt);
+            
         }
         this.tool.onMouseMove=function(ev){
-            setCursorPosition(this,ev);
+            setCursorPosition(this,ev.point);
             if(self.mode == 'modifying'){
                 let hitResult = self.item.hitTest(ev.point,{fill:false,stroke:false,segments:true,tolerance:5/self.project.getZoom()});
                 if(hitResult){
@@ -77,7 +119,7 @@ export class RectangleTool extends AnnotationUITool{
             self.mode='modifying';
             crosshairTool.visible=false;
             self.creating=null;
-            self.toolbarControl.updateInstructions('Polygon:Rectangle');
+            self.toolbarControl.updateInstructions('Point:Ellipse');
         }
         this.extensions.onActivate = this.onSelectionChanged = function(){
             if(self.itemToCreate){
@@ -95,13 +137,13 @@ export class RectangleTool extends AnnotationUITool{
                 self.creating=null;//reset reference to actively creating item
                 self.mode='modifying';
                 crosshairTool.visible = false;
-                self.toolbarControl.updateInstructions('Polygon:Rectangle');
+                self.toolbarControl.updateInstructions('Point:Ellipse');
             }
             else {
                 self.creating=null;//reset reference to actively creating item
                 self.mode=null;
                 crosshairTool.visible = false;
-                self.toolbarControl.updateInstructions('Polygon:Rectangle');
+                self.toolbarControl.updateInstructions('Point:Ellipse');
             }
         }
         this.extensions.onDeactivate = function(finished){
@@ -111,10 +153,10 @@ export class RectangleTool extends AnnotationUITool{
             self.project.overlay.removeClass('rectangle-tool-resize');
         }
 
-        function setCursorPosition(tool,ev){
+        function setCursorPosition(tool,point){
             //to do: account for view rotation
             // let viewBounds=tool.view.bounds;
-            let pt = tool.view.projectToView(ev.point);
+            let pt = tool.view.projectToView(point);
             let left=tool.view.viewToProject(new paper.Point(0, pt.y))
             let right=tool.view.viewToProject(new paper.Point(tool.view.viewSize.width, pt.y))
             let top=tool.view.viewToProject(new paper.Point(pt.x, 0))
@@ -132,17 +174,17 @@ export class RectangleTool extends AnnotationUITool{
     }
     
 }
-class RectToolbar extends AnnotationUIToolbarBase{
+class EllipseToolbar extends AnnotationUIToolbarBase{
     constructor(tool){
         super(tool);
-        let html = $('<i>',{class:'fa-solid fa-vector-square'})[0];
-        this.button.configure(html,'Rectangle Tool');
-        this.instructions = $('<span>').text('Click and drag to create a rectangle').appendTo(this.dropdown);
+        let html = $('<i>',{class:'fa-regular fa-circle'})[0];
+        this.button.configure(html,'Ellipse Tool');
+        this.instructions = $('<span>').text('Click and drag to create an ellipse').appendTo(this.dropdown);
     }
     isEnabledForMode(mode){
-        return ['new','Polygon:Rectangle'].includes(mode);
+        return ['new','Point:Ellipse'].includes(mode);
     }
     updateInstructions(mode){
-        this.instructions.text(mode=='new'?'Click and drag to create a rectangle' : mode=='Polygon:Rectangle' ? 'Drag a corner to resize' : '???' )
+        this.instructions.text(mode=='new'?'Click and drag to create an ellipse' : mode=='Point:Ellipse' ? 'Drag a point to resize' : '???' )
     }
 }

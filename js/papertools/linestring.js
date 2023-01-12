@@ -27,8 +27,6 @@ export class LinestringTool extends PolygonTool{
             self.cursor.visible=true;
             tool.minDistance=4/self.project.getZoom();
             tool.maxDistance=10/self.project.getZoom();
-            // self.item = self.item || self.project.paperScope.findSelectedItem();
-            // if(self.item && !self.item.isLineString) self.item = null;
         }
         this.extensions.onDeactivate = function(finished){
             self.cursor.visible=false;
@@ -47,8 +45,9 @@ export class LinestringTool extends PolygonTool{
             self.draggingSegment=null;
 
             if(self.itemToCreate){
-                self.project.paperScope.initializeItem('LineString');
-                self.getSelectedItems();
+                self.itemToCreate.initializeGeoJSONFeature('MultiLineString');
+                self.refreshItems();
+                
                 self.startNewPath(ev)
                 // console.log('initialized item')
                 return;
@@ -121,26 +120,12 @@ export class LinestringTool extends PolygonTool{
     //override finishCurrentPath so it doesn't close the path
     finishCurrentPath(){
         if(!this.drawing() || !this.item) return;
-        console.log('finished current path')
-        // this.drawing.path.closed=true;
-        // if(this.drawing.path.parent==this.drawingGroup){
-        //     let result = this.eraseMode ? this.item.subtract(this.drawing.path,{insert:false}) : this.item.unite(this.drawing.path,{insert:false});
-        //     if(result){
-        //         result=result.toCompoundPath();
-        //         if(!this.item.isBoundingElement){
-        //             let boundingItems = this.item.parent.children.filter(i=>i.isBoundingElement);
-        //             result.applyBounds(boundingItems);
-        //         }
-        //         this.item.removeChildren();
-        //         this.item.addChildren(result.children);
-        //         result.remove();
-        //     }
-        //     this.drawingGroup.removeChildren();
-        //     this.drawing=null;
-        // }
-        this.item.addChild(this.drawing().path);
+        
+        let newPath = this.drawing().path;
+        if(newPath.segments.length>1){
+            this.item.addChild(this.drawing().path);
+        }
         this.drawingGroup.removeChildren();
-        // this.drawing=null;
     }
 }
 
@@ -171,7 +156,7 @@ class LinestringToolbar extends AnnotationUIToolbarBase{
         }
     }
     isEnabledForMode(mode){
-        return ['new','LineString'].includes(mode);
+        return ['new','LineString','MultiLineString'].includes(mode);
     }
     setEraseMode(erasing){
         erasing ? this.eraseButton.addClass('active') : this.eraseButton.removeClass('active');

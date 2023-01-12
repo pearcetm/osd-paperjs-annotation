@@ -34,6 +34,7 @@ body{
 }
 .annotation-ui-mainwindow{
     height:100%;
+    width:20em;
 }
 .annotation-ui-feature-collections{
     overflow:auto;
@@ -47,7 +48,7 @@ input.dsa-link{
 }
 
 
-.dsa-contents .collection{
+.dsa-contents .collection, .dsa-contents .item{
     cursor:pointer;
 }
 .dsa-contents .folder-header:hover{
@@ -61,6 +62,16 @@ input.dsa-link{
 }
 .folder-contents .folder{
     order:0;
+}
+.folder-contents .loading::before{
+    content:'Loading...';
+    opacity: 0.6;
+    cursor: pointer;
+}
+.folder-contents:empty::before{
+    content:'No tiled images found';
+    opacity: 0.6;
+    cursor: pointer;
 }
 .folder-contents .item{
     order:1;

@@ -144,7 +144,8 @@ export class StyleTool extends AnnotationUITool{
             self.activate();
             self.pickingColor=true;
             self.cursor.visible=true;
-            self.cursor.addTo(self.project.paperScope.project.activeLayer);
+            // self.cursor.addTo(self.project.paperScope.project.activeLayer);
+            self.project.paperScope.project.layers.toolLayer.bringToFront();
             self.tool.onMouseMove({point:self.cursor.view.center});
             self.project.overlay.addClass('tool-action').setAttribute('data-tool-action','colorpicker');
         }).finally(()=>{
@@ -201,8 +202,6 @@ export class StyleTool extends AnnotationUITool{
 
             //for annotation items, update the config object and apply rescale
             if(item.isGeoJSONFeature){
-                // item.config.properties.strokeWidth = value;
-                // item.config.properties.rescale && (item.config.properties.rescale.strokeWidth = value);
                 item.applyRescale();
             }
             

@@ -121,7 +121,15 @@ class SelectToolbar extends AnnotationUIToolbarBase{
     }
     isEnabledForMode(mode){
         let itemsExist = this.tool.doAnnotationItemsExist();
-        return itemsExist && ['default','select','multiselection','Polygon','Polygon:Rectangle','Point','LineString','Polygon:Raster'].includes(mode);
+        return itemsExist && [
+            'default',
+            'select',
+            'multiselection',
+            'MultiPolygon',
+            'Point:Rectangle',
+            'Point','LineString',
+            'GeometryColletion:Raster',
+        ].includes(mode);
     }
     
 }

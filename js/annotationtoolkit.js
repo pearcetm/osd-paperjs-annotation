@@ -1,9 +1,15 @@
 import { AnnotationUI } from './annotationui.js';
-import {AnnotationItemPoint} from './paperitems/annotationitempoint.js';
-import {AnnotationItemPolygon} from './paperitems/annotationitempolygon.js';
-import {AnnotationItemLinestring} from './paperitems/annotationitemlinestring.js';
 import {PaperOverlay} from './paper-overlay.js';
-import { AnnotationItemPlaceholder } from './paperitems/annotationitemplaceholder.js';
+import { AnnotationItemFactory } from './paperitems/annotationitem.js';
+import { MultiPolygon } from './paperitems/multipolygon.js';
+import { Placeholder } from './paperitems/placeholder.js';
+import { Linestring } from './paperitems/linestring.js';
+import { MultiLinestring } from './paperitems/multilinestring.js';
+import { Raster } from './paperitems/raster.js';
+import { Point } from './paperitems/point.js';
+import { PointText } from './paperitems/pointtext.js';
+import { Rectangle } from './paperitems/rectangle.js';
+import { Ellipse } from './paperitems/ellipse.js';
 
 //to do:
 // - Add configuration options (as a class, modeled after OpenSeadragon??)
@@ -25,19 +31,20 @@ Object.defineProperty(paper.Project.prototype, 'descendants', descendantsDefProj
 Object.defineProperty(paper.Project.prototype, 'fillOpacity', itemFillOpacityPropertyDef())
 Object.defineProperty(paper.View.prototype, 'fillOpacity', viewFillOpacityPropertyDef())
 Object.defineProperty(paper.Project.prototype, 'strokeOpacity', itemStrokeOpacityPropertyDef())
+Object.defineProperty(paper.TextItem.prototype, 'content', textItemContentPropertyDef())
 
 let origRemove=paper.Item.prototype.remove;
-paper.Item.prototype.remove=function(){ origRemove.call(this); this.emit('removed',{item:this}); }
+paper.Item.prototype.remove=function(){
+    (this.isGeoJSONFeature || this.isGeoJSONFeatureCollection) && this.project.emit('item-removed',{item: this});
+    origRemove.call(this);
+    (this.isGeoJSONFeature || this.isGeoJSONFeatureCollection) && this.emit('removed',{item:this});
+}
 
 
 paper.Group.prototype.insertChildren=getInsertChildrenDef();
-paper.Item.prototype.replace = replaceItem;
-paper.Item.prototype.toGeoJSON = paperItemToGeoJson;
+// paper.Item.prototype.toGeoJSON = paperItemToGeoJson;
 paper.Group.prototype.toGeoJSON = paperGroupToGeoJson;
 paper.Project.prototype.toGeoJSON = paperProjectToGeoJson;
-paper.Item.fromGeoJSON = paperItemFromGeoJson;
-// paper.Group.fromGeoJSON = paperGroupFromGeoJson;
-// paper.Project.prototype.fromGeoJSON = paperProjectFromGeoJSON;
 paper.Project.prototype.loadGeoJSON = paperProjectLoadGeoJSON;
 paper.Color.prototype.toJSON = paper.Color.prototype.toCSS;//for saving/restoring colors as JSON
 paper.Style.prototype.toJSON = styleToJSON;
@@ -58,7 +65,6 @@ paper.PaperScope.prototype.findSelectedPolygon = findSelectedPolygon;
 paper.PaperScope.prototype.findSelectedItems = findSelectedItems;
 paper.PaperScope.prototype.findSelectedItem = findSelectedItem;
 paper.PaperScope.prototype.createFeatureCollectionLayer = createFeatureCollectionLayer;
-paper.PaperScope.prototype.initializeItem = initializeItem;
 paper.PaperScope.prototype.scaleByCurrentZoom = function (v) { return v / this.view.getZoom(); };
 paper.PaperScope.prototype.getActiveTool = function(){ return this.tool ? this.tool._toolObject : null; }        
 
@@ -93,12 +99,34 @@ class AnnotationToolkit {
         OpenSeadragon.EventSource.call(this);
         
         this.viewer.annotationToolkit = this;
+
+        // this._annotationItemFactory = new AnnotationItemFactory();
+        // paper.Item.fromGeoJSON = (geoJSON)=>{ return this._annotationItemFactory.createItem(geoJSON); }
+
+        AnnotationItemFactory.register(MultiPolygon);
+        AnnotationItemFactory.register(Placeholder);
+        AnnotationItemFactory.register(Linestring);
+        AnnotationItemFactory.register(MultiLinestring);
+        AnnotationItemFactory.register(Raster);
+        AnnotationItemFactory.register(Point);
+        AnnotationItemFactory.register(PointText);
+        AnnotationItemFactory.register(Rectangle);
+        AnnotationItemFactory.register(Ellipse);
+
+        // paper.Item.fromGeoJSON = (geoJSON)=>{ return AnnotationItemFactory.itemFromGeoJSON(geoJSON); }
+        // paper.Item.fromAnnotationItem = (item) => { return AnnotationItemFactory.itemFromAnnotationItem(item)}
+        paper.Item.fromGeoJSON = AnnotationItemFactory.itemFromGeoJSON;
+        paper.Item.fromAnnotationItem = AnnotationItemFactory.itemFromAnnotationItem;
     }
 
 
     get defaultStyle(){
         return this._defaultStyle;
     }
+
+    // addItemType(ctor){
+    //     this._annotationItemFactory.register(ctor);
+    // }
 
     addAnnotationUI(opts = {}){
         if (!this._annotationUI) this._annotationUI = new AnnotationUI(this, opts);
@@ -118,6 +146,7 @@ class AnnotationToolkit {
     }
     addFeatureCollections(featureCollections,replaceCurrent){
         this.overlay.paperScope.project.loadGeoJSON(featureCollections,replaceCurrent);
+        this.overlay.rescaleItems();
     }
     getFeatureCollectionLayers(){
         return this.overlay.paperScope.project.layers.filter(l=>l.isGeoJSONFeatureCollection);
@@ -133,6 +162,9 @@ class AnnotationToolkit {
 
 export {AnnotationToolkit as AnnotationToolkit};
 
+
+
+// private functions
 
 function toCompoundPath() {
     if (this.constructor !== paper.CompoundPath) {
@@ -189,10 +221,8 @@ function paperItemToggle(keepOtherSelectedItems) {
 }
 
 function findSelectedNewItem() {
-    //relies on the presence of a custom "instructions" property to identify uninitialized items
-    //only return selected items
     //to do: change this to use type=='Feature' and geometry==null to match GeoJSON spec and AnnotationItemPlaceholder definition
-    return this.project.getItems({ selected:true, match: function (i) { return i.instructions; } })[0];
+    return this.project.getItems({ selected:true, match: function (i) { return i.isGeoJSONFeature && i.initializeGeoJSONFeature; } })[0];
 }
 function findSelectedPolygon() {
     return this.project.getItems({ selected: true, class: paper.CompoundPath })[0];
@@ -215,8 +245,9 @@ function createFeatureCollectionLayer(displayLabel=null) {
 }
 
 function updateFillOpacity(){
+    this._computedFillOpacity = this.hierarchy.filter(item=>'fillOpacity' in item && (item._multiplyOpacity||item==this)).reduce((prod,item)=>prod*item.fillOpacity,1);
     if(this.fillColor){
-        this.fillColor.alpha = this.hierarchy.filter(item=>'fillOpacity' in item && (item._multiplyOpacity||item==this)).reduce((prod,item)=>prod*item.fillOpacity,1);
+        this.fillColor.alpha = this._computedFillOpacity;
     }
 }
 function updateStrokeOpacity(){
@@ -224,33 +255,6 @@ function updateStrokeOpacity(){
         this.strokeColor.alpha = this.hierarchy.filter(item=>'strokeOpacity' in item && (item._multiplyOpacity||item==this)).reduce((prod,item)=>prod*item.strokeOpacity,1);
     }
 }
-
-
-function initializeItem(geoJSONGeometryType, geometrySubtype) {
-    let item = this.findSelectedNewItem();
-    // let geoJSON = item.instructions;
-    let geoJSON = {
-        geometry:{
-            type: geoJSONGeometryType,
-            coordinates: [],
-            properties: {
-                subtype:geometrySubtype,
-            },
-        },
-        properties: item.instructions,
-    };
-    
-    let newItem = paper.Item.fromGeoJSON(geoJSON);
-    // newItem.selected=item.selected;
-    item.replace && item.replace(newItem);
-        
-    return newItem;
-}
-
-
-
-
-
 
 function fillOpacityPropertyDef(){
     return {
@@ -354,7 +358,7 @@ function hierarchyDef(){
 function descendantsDef(){
     return {
         get: function descendants(){
-            return this.children && !this.isGeoJSONFeature ? this.children.map(child=>child.descendants).flat() : [this];
+            return (this.children ? this.children.map(child=>child.descendants).flat() : []).concat(this.isGeoJSONFeature ? [this] : []);
         }
     }
 }
@@ -388,77 +392,25 @@ function styleSet(style){
     }
 	
 }
-function replaceItem(newItem){
-    newItem._callbacks = this._callbacks;
-    let rescale = $.extend(true,this.rescale,newItem.rescale);
-    newItem.style = this.style; //to do: make this work with rescale properties, so that rescale.strokeWidth doesn't overwrite other props
-    newItem.rescale=rescale;
-    //replace in the paper hierarchy
-    this.emit('item-replaced',{item:newItem});
-    newItem.project.emit('item-replaced',{item:newItem});
-    this.replaceWith(newItem);
-    newItem.selected = this.selected;
-    newItem.updateFillOpacity();
-    newItem.applyRescale();
-    newItem.project.view.update();
-    return newItem;
-}
 
-function paperItemFromGeoJson(geoJSONFeature) {
-    if(!('geometry' in geoJSONFeature && 'properties' in geoJSONFeature)){
-        console.warn('Invalid GeoJSON Feature object. Returning undefined.');
-        return;
-    }
-    let factory = {
-        Point: geoJSON=>new AnnotationItemPoint(geoJSON),
-        LineString: geoJSON=>new AnnotationItemLinestring(geoJSON),
-        Polygon: geoJSON=>new AnnotationItemPolygon(geoJSON),
-        Placeholder: geoJSON=>new AnnotationItemPlaceholder(geoJSON),
-    };
 
-    let type = geoJSONFeature.geometry ? geoJSONFeature.geometry.type : 'Placeholder';
-    if (factory.hasOwnProperty(type) === false) {
-        error(`No method defined for GeoJSON Geometry type ${type}`);
-    }
-    var obj = factory[type](geoJSONFeature);
-    obj.style.set(geoJSONFeature.properties);
-    obj.isGeoJSONFeature = true;
-    if(obj.displayName === undefined){
-        obj.displayName = geoJSONFeature.properties.label;
-    }
-    if('selected' in geoJSONFeature.properties){
-        obj.selected = geoJSONFeature.properties.selected;
-    }
-
-    return obj;
-
-}
-function paperItemToGeoJson(){
-    let GeoJSON = {
-        type:'Feature',
-        geometry:this.toGeoJSONGeometry(),
-        properties:{
-            label:this.displayName,
-            ...this.style.toJSON(),
-            selected:this.selected,
-        }
-    }
-    return GeoJSON;
-}
 function paperGroupToGeoJson(){
-    if(this.isGeoJSONFeature){
-        return paperItemToGeoJson.call(this);
+    if(this.annotationItem){
+        return this.annotationItem.toGeoJSONFeature();
     }
-    let GeoJSON = {
+    // if(this.isGeoJSONFeature){
+    //     return paperItemToGeoJson.call(this);
+    // }
+    let geoJSON = {
         type:'FeatureCollection',
-        features: this.descendants.filter(d=>d.isGeoJSONFeature).map(d=>d.toGeoJSON()),
-        // features: this.descendants.map(d=>d.toGeoJSON()).filter(d=>d.geometry),
+        features: this.descendants.filter(d=>d.annotationItem).map(d=>d.annotationItem.toGeoJSONFeature()),
         properties:{
-            ...this.defaultStyle.toJSON(),
+            defaultStyle: this.defaultStyle.toJSON(),
+            userdata: this.userdata,
         },
         label:this.displayName,
     }
-    return GeoJSON;
+    return geoJSON;
 }
 function paperProjectToGeoJson(){
     return this.getItems({match:i=>i.isGeoJSONFeatureCollection}).map(l=>l.toGeoJSON())
@@ -484,6 +436,9 @@ function paperProjectLoadGeoJSON(geoJSON, replaceCurrent){
     geoJSON.forEach(obj=>{
         if(obj.type=='FeatureCollection'){
             let layer = this.overlay.paperScope.createFeatureCollectionLayer(obj.label);
+            let props = (obj.properties || {});
+            layer.userdata = Object.assign({},props.userdata);
+            layer.defaultStyle.set(props.defaultStyle);
             obj.features.forEach(feature=>{
                 let item = paper.Item.fromGeoJSON(feature);
                 layer.addChild(item);
@@ -498,7 +453,7 @@ function getInsertChildrenDef(){
     let origInsertChildren = paper.Group.prototype.insertChildren.original || paper.Group.prototype.insertChildren;
     function insertChildren(){ 
         let output = origInsertChildren.apply(this,arguments); 
-        let index = arguments[0], children=Array.from(arguments[1]); 
+        let index = arguments[0], children=Array.from(arguments[1]);
         children&&children.forEach((child,i)=>{
             if(child.isGeoJSONFeature){
                 let idx = typeof index !== 'undefined' ? index+1 : -1; 
@@ -509,4 +464,17 @@ function getInsertChildrenDef(){
     }
     insertChildren.original = origInsertChildren;
     return insertChildren;
+}
+function textItemContentPropertyDef(){
+    let _set = paper.TextItem.prototype._setContent || Object.getOwnPropertyDescriptor(paper.TextItem.prototype, 'content').set;
+    paper.TextItem.prototype._setContent = _set;
+    return{
+        get: function() {
+            return this._content;
+        },
+        set: function(content) {
+            _set.call(this, content);
+            this.emit('content-changed');
+        },
+    }
 }

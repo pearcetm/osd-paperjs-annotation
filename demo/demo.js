@@ -2,20 +2,6 @@
 import { AnnotationToolkit } from '../js/annotationtoolkit.js';
 import { RotationControlOverlay } from '../js/rotationcontrol.js';
 
-OpenSeadragon.Button.prototype.disable = function(){
-    this.notifyGroupExit();
-    this.element.disabled = true;
-    this.tracker.setTracking(false);
-    OpenSeadragon.setElementOpacity( this.element, 0.2, true );
-}
-
-OpenSeadragon.Button.prototype.enable = function(){
-    this.element.disabled = false;
-    this.tracker.setTracking(true);
-    OpenSeadragon.setElementOpacity( this.element, 1.0, true );
-    this.notifyGroupEnter();
-}
-
 let v1 =window.v1 = OpenSeadragon({
     element:'basic-viewer',
     prefixUrl: "https://openseadragon.github.io/openseadragon/images/",

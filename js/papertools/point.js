@@ -1,25 +1,27 @@
 import {AnnotationUITool, AnnotationUIToolbarBase} from './annotationUITool.js';
-import { AnnotationItemPoint } from '../paperitems/annotationitempoint.js';
+import { Point } from '../paperitems/point.js';
 export class PointTool extends AnnotationUITool{
     constructor(paperScope){
         super(paperScope);
         let tool = this.tool;
         let self=this;
         let dragging=false;
-        let cursor = new AnnotationItemPoint({geometry:{type:'Point',coordinates:[0,0]},properties:{label:'Point Tool'}}, false);
+        
+        let cursor = new Point({geometry:{type:'Point',coordinates:[0,0]},properties:{label:'Point Tool'}}).paperItem;
         cursor.fillColor=null;
         cursor.strokeColor='grey';
-        // cursor.strokeWidth='1';
-        // cursor.rescale.strokeWidth=1;
         cursor.visible=false;
         this.project.toolLayer.addChild(cursor);
+        
         this.setToolbarControl(new PointToolbar(this));
         this.extensions.onActivate=function(){
-            self.project.paperScope.project.activeLayer.addChild(cursor);
+            // self.project.paperScope.project.activeLayer.addChild(cursor);
+            self.project.toolLayer.bringToFront();
             if(self.itemToCreate) cursor.visible = true;
         }
         this.extensions.onDeactivate=function(){
-            self.project.toolLayer.addChild(cursor);
+            self.project.toolLayer.sendToBack();
+            // self.project.toolLayer.addChild(cursor);
             cursor.visible=false;
             self.project.overlay.removeClass('point-tool-grab', 'point-tool-grabbing');
         }
@@ -37,8 +39,8 @@ export class PointTool extends AnnotationUITool{
         }
         tool.onMouseDown=function(ev){
             if(self.itemToCreate){
-                self.project.paperScope.initializeItem('Point');
-                self.getSelectedItems();
+                self.itemToCreate.initializeGeoJSONFeature('Point');
+                self.refreshItems();
                 self.item.position=ev.point;
                 cursor.visible=false;
                 self.toolbarControl.updateInstructions('Point');

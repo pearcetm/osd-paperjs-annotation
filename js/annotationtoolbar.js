@@ -3,7 +3,9 @@ import {DefaultTool} from './papertools/default.js';
 import {WandTool} from './papertools/wand.js';
 import {BrushTool} from './papertools/brush.js';
 import {PointTool} from './papertools/point.js';
+import {PointTextTool} from './papertools/pointtext.js';
 import {RectangleTool} from './papertools/rectangle.js';
+import {EllipseTool} from './papertools/ellipse.js';
 import {StyleTool} from './papertools/style.js';
 import {LinestringTool} from './papertools/linestring.js';
 import {PolygonTool} from './papertools/polygon.js';
@@ -34,7 +36,9 @@ export class AnnotationToolbar{
             transform:new TransformTool(paperScope),
             style: new StyleTool(paperScope),
             rectangle:new RectangleTool(paperScope),
+            ellipse:new EllipseTool(paperScope),
             point: new PointTool(paperScope),
+            text: new PointTextTool(paperScope),
             polygon: new PolygonTool(paperScope),
             brush: new BrushTool(paperScope),
             wand: new WandTool(paperScope),
@@ -70,6 +74,9 @@ export class AnnotationToolbar{
             'item-deselected':function(ev){
                 self.setMode()
             },
+            'item-removed':function(ev){
+                self.setMode()
+            },
         });
 
     }
@@ -87,10 +94,10 @@ export class AnnotationToolbar{
             }
             else if(selection.length==1){
                 let item=selection[0];
-                let mode = item.instructions ? 'new' : 
-                    item.config ? 
-                        item.config.geometry.type +(item.config.geometry.properties&&item.config.geometry.properties.subtype? ':'+item.config.geometry.properties.subtype: '') 
-                        : arg;
+                let def = item.annotationItem || {};
+                let type = def.type;
+                if(def.subtype) type += ':' + def.subtype;
+                let mode = type === null ? 'new' : type;
                 this.currentMode = mode;
             }
             else{

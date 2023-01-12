@@ -41,11 +41,12 @@ export class LayerUI{
 
         self.element.on('selected','.feature',function(ev){
             ev.stopPropagation();
-            let feature = $(this).addClass('selected').data('feature');
+            $(this).addClass('selected');
+            this.scrollIntoViewIfNeeded();
         });
         self.element.on('deselected','.feature',function(ev){
             ev.stopPropagation();
-            let feature = $(this).removeClass('selected').data('feature');
+            $(this).removeClass('selected');
         });
 
         

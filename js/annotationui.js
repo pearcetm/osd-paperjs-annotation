@@ -111,13 +111,7 @@ class AnnotationUI{
         }
         
     }
-    // toGeoJSON(opts){
-    //     return this._layerUI.toGeoJSON(opts)
-    // }
-    // loadGeoJSON(geoJSON,opts){
-    //     return this._layerUI.loadGeoJSON(geoJSON,opts)
-    // }
-
+    
     //private
     _createJqueryUIdialog(){
         let element = this._layerUI.element;

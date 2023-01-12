@@ -163,8 +163,8 @@ export class WandTool extends AnnotationUITool{
     
     applyChanges(){
         if(this.itemToCreate){
-            this.project.paperScope.initializeItem('Polygon');
-            this.getSelectedItems();
+            this.itemToCreate.initializeGeoJSONFeature('MultiPolygon');
+            this.refreshItems();
         }
         let wandOutput = {
             width:this.imageData.width,
@@ -345,8 +345,10 @@ export class WandTool extends AnnotationUITool{
         }
 
         this.preview && this.preview.remove();
+        
         this.preview = this.project.paperScope.overlay.osdViewer.getViewportRaster(this.project.paperScope.view, false);
         this.project.toolLayer.insertChild(0, this.preview);//add the raster to the bottom of the tool layer
+        console.log('New preview',this.preview.id, this.preview.parent.id);
         
         let c;
         let imdata=this.preview.createImageData(this.preview.size);
@@ -359,8 +361,14 @@ export class WandTool extends AnnotationUITool{
         }
         this.preview.setImageData(imdata, new paper.Point(0,0));
         
-        function tween1(){self.preview.tweenTo({opacity:0.15},{duration:1200,easing:'easeInQuart'}).then(tween2);}
-        function tween2(){self.preview.tweenTo({opacity:1},{duration:800,easing:'easeOutCubic'}).then(tween1);}
+        function tween1(){
+            // console.log('tween1', self.preview.id)
+            self.preview.tweenTo({opacity:0.15},{duration:1200,easing:'easeInQuart'}).then(tween2);
+        }
+        function tween2(){
+            // console.log('tween2', self.preview.id)
+            self.preview.tweenTo({opacity:1},{duration:800,easing:'easeOutCubic'}).then(tween1);
+        }
         tween1();
     } 
     
@@ -439,7 +447,7 @@ class WandToolbar extends AnnotationUIToolbarBase{
         });
     }
     isEnabledForMode(mode){
-        return ['new','Polygon','Polygon:Rectangle'].includes(mode);
+        return ['new','MultiPolygon'].includes(mode);
     }
     
     setThreshold(thr){

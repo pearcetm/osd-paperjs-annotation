@@ -58,7 +58,8 @@ export class FeatureCollectionUI{
         this._addFeature=function(f){
             f.paperItem.updateFillOpacity();
             self._featurelist.append(f.element);
-            self._featurelist.sortable('refresh');
+            self._sortableDebounce && window.clearTimeout(self._sortableDebounce);
+            self._sortableDebounce = window.setTimeout(()=>$(`${init.guiSelector} .features-list .feature`).length>100 ? self._featurelist.sortable('disable') : self._featurelist.sortable('refresh'), 15);
             return f.element; 
         }
         this.createFeature=function(){
@@ -151,7 +152,6 @@ export class FeatureCollectionUI{
         return l;
     }
     updateLabel(){
-        // this.element.find('.annotation-header .annotation-name.edit').text(this.label);
         this._editableName.setText(this.label);
     }
     toggleVisibility(){
@@ -159,22 +159,6 @@ export class FeatureCollectionUI{
         this.layer.visible = !this.element.hasClass('annotation-hidden');
     }
     trashClicked(){
-        //if previously trashed, restore the paperItems
-        // To Do: add option for user to choose whether to restore or permanently remove
-        // if(this.element.hasClass('trashed')){
-        //     this.element.removeClass('trashed');
-        //     this.features().map(function(f){
-        //         this.layer.addChild(f.paperItem);
-        //         f.paperItem.deselect();//insert objects as deselected
-        //     });
-        // }
-        // else{
-        //     this.element.addClass('trashed');
-        //     this.features().map(function(f){
-        //         f.paperItem.remove();
-        //         f.paperItem.deselect();//ensure items are deselected
-        //     });
-        // }   
         if(window.confirm('Remove this layer?')==true){
             this.layer.remove();
         } else {

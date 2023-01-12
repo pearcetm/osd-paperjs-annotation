@@ -36,8 +36,9 @@ export class PolygonTool extends AnnotationUITool{
             self.simplifying && self.cancelSimplify();  
             
             if(self.itemToCreate){
-                self.project.paperScope.initializeItem('Polygon');
-                self.selectionChanged();
+                self.itemToCreate.initializeGeoJSONFeature('MultiPolygon');
+                self.refreshItems();
+                
                 self.saveHistory();        
             }
 
@@ -284,7 +285,7 @@ export class PolygonToolbar extends AnnotationUIToolbarBase{
         });
     }
     isEnabledForMode(mode){
-        return ['new','Polygon','Polygon:Rectangle'].includes(mode);
+        return ['new','MultiPolygon'].includes(mode);
     }
     setEraseMode(erasing){
         erasing ? this.eraseButton.addClass('active') : this.eraseButton.removeClass('active');

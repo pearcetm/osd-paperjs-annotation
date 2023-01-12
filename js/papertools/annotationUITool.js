@@ -37,6 +37,9 @@ export class AnnotationUITool extends ToolBase{
         this.toolbarControl = toolbarControl;
         return this.toolbarControl;
     }
+    refreshItems(){
+        return this.getSelectedItems();
+    }
     getSelectedItems(){
         this._items = this.project.paperScope.findSelectedItems();
         this._itemToCreate = this.project.paperScope.findSelectedNewItem();

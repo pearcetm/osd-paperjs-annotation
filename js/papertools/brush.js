@@ -59,8 +59,8 @@ export class BrushTool extends AnnotationUITool{
             ev.stopPropagation();
             
             if(self.itemToCreate){
-                self.project.paperScope.initializeItem('Polygon');
-                self.getSelectedItems();
+                self.itemToCreate.initializeGeoJSONFeature('MultiPolygon');
+                self.refreshItems();
             }
             
             cursor.position=ev.point;
@@ -175,7 +175,7 @@ class BrushToolbar extends AnnotationUIToolbarBase{
         setTimeout(()=>brushTool.setRadius(defaultRadius), 0);
     }
     isEnabledForMode(mode){
-        return ['new','Polygon','Polygon:Rectangle'].includes(mode);
+        return ['new','MultiPolygon'].includes(mode);
     }
     updateBrushRadius(update){
         if(update.larger){
