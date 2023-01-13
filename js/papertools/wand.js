@@ -188,8 +188,7 @@ export class WandTool extends AnnotationUITool{
     
     async getImageData(){
         let self=this;
-        let viewer = self.project.overlay.osdViewer;
-        let imageData = viewer.getImageData();
+        let imageData = self.project.overlay.osdViewer.getImageData();
         
         let viewportGroup = new paper.Group({children:[],insert:false});
 
@@ -252,7 +251,6 @@ export class WandTool extends AnnotationUITool{
         else{
             self.rasterPreview(self.imageData.binaryMask);
         } 
-        // imgPreview(this.getImageDataURL(cm));
         
     }
     applyMagicWand(eventPoint){

@@ -16,6 +16,7 @@ import { Ellipse } from './paperitems/ellipse.js';
 // --- Document configuration options. JSDocs?
 
 //extend paper prototypes to add functionality
+//property definitions
 Object.defineProperty(paper.Item.prototype, 'hierarchy', hierarchyDef())
 Object.defineProperty(paper.Item.prototype, 'descendants', descendantsDef())
 Object.defineProperty(paper.Item.prototype, 'displayName', displayNamePropertyDef())
@@ -33,19 +34,15 @@ Object.defineProperty(paper.View.prototype, 'fillOpacity', viewFillOpacityProper
 Object.defineProperty(paper.Project.prototype, 'strokeOpacity', itemStrokeOpacityPropertyDef())
 Object.defineProperty(paper.TextItem.prototype, 'content', textItemContentPropertyDef())
 
+//extend remove function to emit events for GeoJSON type annotation objects
 let origRemove=paper.Item.prototype.remove;
 paper.Item.prototype.remove=function(){
     (this.isGeoJSONFeature || this.isGeoJSONFeatureCollection) && this.project.emit('item-removed',{item: this});
     origRemove.call(this);
     (this.isGeoJSONFeature || this.isGeoJSONFeatureCollection) && this.emit('removed',{item:this});
 }
-
-
+//function definitions
 paper.Group.prototype.insertChildren=getInsertChildrenDef();
-// paper.Item.prototype.toGeoJSON = paperItemToGeoJson;
-paper.Group.prototype.toGeoJSON = paperGroupToGeoJson;
-paper.Project.prototype.toGeoJSON = paperProjectToGeoJson;
-paper.Project.prototype.loadGeoJSON = paperProjectLoadGeoJSON;
 paper.Color.prototype.toJSON = paper.Color.prototype.toCSS;//for saving/restoring colors as JSON
 paper.Style.prototype.toJSON = styleToJSON;
 paper.Style.prototype.set= styleSet;
@@ -61,7 +58,6 @@ paper.Item.prototype.updateStrokeOpacity = updateStrokeOpacity;
 paper.Project.prototype.updateFillOpacity = updateFillOpacity;
 //to do: should these all be installed on project instead of scope?
 paper.PaperScope.prototype.findSelectedNewItem = findSelectedNewItem;
-paper.PaperScope.prototype.findSelectedPolygon = findSelectedPolygon;
 paper.PaperScope.prototype.findSelectedItems = findSelectedItems;
 paper.PaperScope.prototype.findSelectedItem = findSelectedItem;
 paper.PaperScope.prototype.createFeatureCollectionLayer = createFeatureCollectionLayer;
@@ -100,9 +96,6 @@ class AnnotationToolkit {
         
         this.viewer.annotationToolkit = this;
 
-        // this._annotationItemFactory = new AnnotationItemFactory();
-        // paper.Item.fromGeoJSON = (geoJSON)=>{ return this._annotationItemFactory.createItem(geoJSON); }
-
         AnnotationItemFactory.register(MultiPolygon);
         AnnotationItemFactory.register(Placeholder);
         AnnotationItemFactory.register(Linestring);
@@ -113,8 +106,6 @@ class AnnotationToolkit {
         AnnotationItemFactory.register(Rectangle);
         AnnotationItemFactory.register(Ellipse);
 
-        // paper.Item.fromGeoJSON = (geoJSON)=>{ return AnnotationItemFactory.itemFromGeoJSON(geoJSON); }
-        // paper.Item.fromAnnotationItem = (item) => { return AnnotationItemFactory.itemFromAnnotationItem(item)}
         paper.Item.fromGeoJSON = AnnotationItemFactory.itemFromGeoJSON;
         paper.Item.fromAnnotationItem = AnnotationItemFactory.itemFromAnnotationItem;
     }
@@ -123,10 +114,6 @@ class AnnotationToolkit {
     get defaultStyle(){
         return this._defaultStyle;
     }
-
-    // addItemType(ctor){
-    //     this._annotationItemFactory.register(ctor);
-    // }
 
     addAnnotationUI(opts = {}){
         if (!this._annotationUI) this._annotationUI = new AnnotationUI(this, opts);
@@ -145,17 +132,52 @@ class AnnotationToolkit {
         this.overlay.paperScope.view._element.setAttribute('style', 'visibility:' + (show ? 'visible;' : 'hidden;'));
     }
     addFeatureCollections(featureCollections,replaceCurrent){
-        this.overlay.paperScope.project.loadGeoJSON(featureCollections,replaceCurrent);
+        this.loadGeoJSON(featureCollections,replaceCurrent);
         this.overlay.rescaleItems();
     }
     getFeatureCollectionLayers(){
         return this.overlay.paperScope.project.layers.filter(l=>l.isGeoJSONFeatureCollection);
     }
-    getGeoJSONObjects(){
-        return this.overlay.paperScope.project.toGeoJSON();
+    toGeoJSON(){
+        //find all featureCollection items and convert to GeoJSON compatible structures
+        return this.overlay.paperScope.project.getItems({match:i=>i.isGeoJSONFeatureCollection}).map(layer=>{
+            let geoJSON = {
+                type:'FeatureCollection',
+                features: layer.descendants.filter(d=>d.annotationItem).map(d=>d.annotationItem.toGeoJSONFeature()),
+                properties:{
+                    defaultStyle: this.defaultStyle.toJSON(),
+                    userdata: this.userdata,
+                },
+                label:this.displayName,
+            }
+            return geoJSON;
+        })
     }
-    getGeoJSONString(replacer,space){
-        return JSON.stringify(this.getGeoJSONObjects(),replacer,space);
+    toGeoJSONString(replacer,space){
+        return JSON.stringify(this.toGeoJSON(),replacer,space);
+    }
+    loadGeoJSON(geoJSON, replaceCurrent){
+        if(replaceCurrent){
+            this.overlay.paperScope.project.getItems({match:i=>i.isGeoJSONFeatureCollection}).forEach(layer=>layer.remove());
+        }
+        if(!Array.isArray(geoJSON)){
+            geoJSON = [geoJSON];
+        }
+        geoJSON.forEach(obj=>{
+            if(obj.type=='FeatureCollection'){
+                let layer = this.overlay.paperScope.createFeatureCollectionLayer(obj.label);
+                let props = (obj.properties || {});
+                layer.userdata = Object.assign({},props.userdata);
+                layer.defaultStyle.set(props.defaultStyle);
+                obj.features.forEach(feature=>{
+                    let item = paper.Item.fromGeoJSON(feature);
+                    layer.addChild(item);
+                })
+            }
+            else{
+                console.warn('GeoJSON object not loaded: wrong type. Only FeatureCollection objects are currently supported');
+            }
+        })
     }
     
 };
@@ -223,9 +245,6 @@ function paperItemToggle(keepOtherSelectedItems) {
 function findSelectedNewItem() {
     //to do: change this to use type=='Feature' and geometry==null to match GeoJSON spec and AnnotationItemPlaceholder definition
     return this.project.getItems({ selected:true, match: function (i) { return i.isGeoJSONFeature && i.initializeGeoJSONFeature; } })[0];
-}
-function findSelectedPolygon() {
-    return this.project.getItems({ selected: true, class: paper.CompoundPath })[0];
 }
 function findSelectedItems() {
     return this.project.getItems({ selected: true, match: function (i) { return i.isGeoJSONFeature; } });
@@ -393,28 +412,6 @@ function styleSet(style){
 	
 }
 
-
-function paperGroupToGeoJson(){
-    if(this.annotationItem){
-        return this.annotationItem.toGeoJSONFeature();
-    }
-    // if(this.isGeoJSONFeature){
-    //     return paperItemToGeoJson.call(this);
-    // }
-    let geoJSON = {
-        type:'FeatureCollection',
-        features: this.descendants.filter(d=>d.annotationItem).map(d=>d.annotationItem.toGeoJSONFeature()),
-        properties:{
-            defaultStyle: this.defaultStyle.toJSON(),
-            userdata: this.userdata,
-        },
-        label:this.displayName,
-    }
-    return geoJSON;
-}
-function paperProjectToGeoJson(){
-    return this.getItems({match:i=>i.isGeoJSONFeatureCollection}).map(l=>l.toGeoJSON())
-}
 function styleToJSON(){
     let output={};
     Object.keys(this._values).forEach(key=>{
@@ -423,32 +420,9 @@ function styleToJSON(){
     return output;
 }
 function paperViewGetImageData(){
-    //let canvas = this.element;
     return this.element.getContext('2d').getImageData(0,0,this.element.width, this.element.height);
 }
-function paperProjectLoadGeoJSON(geoJSON, replaceCurrent){
-    if(replaceCurrent){
-        this.getItems({match:i=>i.isGeoJSONFeatureCollection}).forEach(layer=>layer.remove());
-    }
-    if(!Array.isArray(geoJSON)){
-        geoJSON = [geoJSON];
-    }
-    geoJSON.forEach(obj=>{
-        if(obj.type=='FeatureCollection'){
-            let layer = this.overlay.paperScope.createFeatureCollectionLayer(obj.label);
-            let props = (obj.properties || {});
-            layer.userdata = Object.assign({},props.userdata);
-            layer.defaultStyle.set(props.defaultStyle);
-            obj.features.forEach(feature=>{
-                let item = paper.Item.fromGeoJSON(feature);
-                layer.addChild(item);
-            })
-        }
-        else{
-            console.warn('GeoJSON object not loaded: wrong type. Only FeatureCollection objects are currently supported');
-        }
-    })
-}
+
 function getInsertChildrenDef(){
     let origInsertChildren = paper.Group.prototype.insertChildren.original || paper.Group.prototype.insertChildren;
     function insertChildren(){ 

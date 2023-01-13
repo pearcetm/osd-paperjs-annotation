@@ -80,8 +80,7 @@ function createViewer(){
         
         let tk = new AnnotationToolkit(v1);
         tk.addOnceHandler('before-destroy',(ev)=>{
-            // console.log('before-destroy',this);
-            ts.annotationStore = tk.getGeoJSONObjects();
+            ts.annotationStore = tk.toGeoJSON();
         })
         let ui=tk.addAnnotationUI({
             autoOpen:true,
@@ -100,10 +99,10 @@ function createViewer(){
         let json = ts.annotationStore || styledef;
         if(ts.getAnnotations) {
             ts.getAnnotations().then(a=>{
-                console.log('Annotation info',a);
+                // console.log('Annotation info',a);
                 tk.addFeatureCollections(a);
                 $('#current-file').append($('<button>').text('Save to DSA').on('click',function(){
-                    let geoJSON = tk.getGeoJSONObjects();
+                    let geoJSON = tk.toGeoJSON();
                     // console.log('Saving',geoJSON);
                     let itemId = ts.item._id;
                     let API = $('#dsa-dialog').data('API');

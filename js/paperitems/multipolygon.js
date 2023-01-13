@@ -8,7 +8,9 @@ export class MultiPolygon extends AnnotationItem{
         if (geoJSON.geometry.type !== 'MultiPolygon') {
             error('Bad geoJSON object: type !=="MultiPolygon"');
         }
-        let coords = geoJSON.geometry.coordinates; //array of array of points
+        //GeoJSON MultiPolygons are arrays of array of arrays of points
+        //Flatten the first level so it's an array of array of points
+        let coords = geoJSON.geometry.coordinates.flat();
         let paths = coords.map(function (points) {
             let pts = points.map(function (point) {
                 return new paper.Point(point[0], point[1]);

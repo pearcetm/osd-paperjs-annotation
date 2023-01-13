@@ -112,7 +112,7 @@ export class FileDialog{
         }
         function saveGeoJSON(){
             initDlg();
-            let fcs = atk.getGeoJSONObjects();
+            let fcs = atk.toGeoJSON();
             let list = setupFeatureCollectionList(fcs);
             let finishbutton = setupFinalize('Create file','Choose file name:',getFileName()+'-FeatureCollections.json');
             finishbutton.on('click',function(){
@@ -128,7 +128,7 @@ export class FileDialog{
         }
         function exportSVG(){
             initDlg();
-            let fcs = atk.getGeoJSONObjects();
+            let fcs = atk.toGeoJSON();
             let list = setupFeatureCollectionList(fcs);
             let finishbutton = setupFinalize('Create file','Choose file name:',getFileName()+'-FeatureCollections.svg');
             finishbutton.on('click',function(){
@@ -170,7 +170,7 @@ export class FileDialog{
         }
         function localstorageStore(){
             initDlg();
-            let fcs = atk.getGeoJSONObjects();
+            let fcs = atk.toGeoJSON();
             let list = setupFeatureCollectionList(fcs);
             let finishbutton=setupFinalize('Save data','Local storage key:',getFileName(),true)
             finishbutton.on('click',function(){

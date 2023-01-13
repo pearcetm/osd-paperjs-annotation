@@ -21,7 +21,7 @@ v1.addHandler('open',()=>{
     tk.addAnnotationUI({autoOpen:true});
     window.tk = tk;
 
-    $.get('./demo-annotation.geoJSON').then(x=>tk.addFeatureCollections(x))
+    $.get('./demo-annotation.json').then(x=>tk.addFeatureCollections(x))
 });
 
 

@@ -54,10 +54,12 @@
         }
     });
     
-    OpenSeadragon.Viewer.prototype.getImageData = function(){
-        let canvas = this.drawer.canvas;
-        return canvas.getContext('2d').getImageData(0,0,canvas.width, canvas.height);
-        // return canvas.getContext('2d').getImageData(0,0,canvas.width*canvas.pixelRatio, canvas.height*canvas.pixelRatio);
+    OpenSeadragon.Viewer.prototype.getImageData = function(x, y, w, h){
+        x = x || 0;
+        y = y || 0;
+        w = w == undefined ? this.drawer.canvas.width : w;
+        h = h == undefined ? this.drawer.canvas.height : h;
+        return this.drawer.canvas.getContext('2d',{willReadFrequently:true}).getImageData(x, y, w, h);
     }
 
     OpenSeadragon.Viewer.prototype.getViewportRaster = function(view, withImageData = true){

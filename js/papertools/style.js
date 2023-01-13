@@ -487,7 +487,7 @@ export function ColorpickerCursor(cursorCellSize,cursorGridSize,parent){
         let w = cursor.numColumns;
         let h = cursor.numRows;
         let r = cursor.view.pixelRatio            
-        let imdata = cursor.project.overlay.osdViewer.drawer.canvas.getContext('2d').getImageData(x*r,y*r,w*r,h*r);
+        let imdata = cursor.project.overlay.osdViewer.getImageData(x*r,y*r,w*r,h*r);
         ctx.clearRect(0, 0, w, h);
         window.createImageBitmap(imdata).then(bitmap=>{
             ctx.drawImage(bitmap, 0,0, cursor.numColumns, cursor.numRows);

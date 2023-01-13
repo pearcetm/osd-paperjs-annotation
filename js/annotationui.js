@@ -87,8 +87,7 @@ class AnnotationUI{
         }
 
         if(opts.featureCollections){
-            // this.addFeatureCollections(opts.featureCollections);
-            annotationToolkit.overlay.paperScope.project.loadGeoJSON(opts.featureCollections);
+            annotationToolkit.loadGeoJSON(opts.featureCollections);
         }
     }
     

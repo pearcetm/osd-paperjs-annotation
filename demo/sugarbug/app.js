@@ -39,7 +39,7 @@ $('#file-picker').on('change',function(){
 $('#get-results').on('click',function(){
     //get current annotations
     if(!v1.annotationToolkit) return;
-    v1.tileSources[v1.currentPage()].annotationStore = v1.annotationToolkit.getGeoJSONObjects();
+    v1.tileSources[v1.currentPage()].annotationStore = v1.annotationToolkit.toGeoJSON();
     let zip = new JSZip();
     let files=v1.tileSources.filter(ts=>ts.annotationStore).map(ts=>{
         let p = new paper.PaperScope();
@@ -103,8 +103,7 @@ function createViewer(){
         
         let tk = new AnnotationToolkit(v1);
         tk.addOnceHandler('before-destroy',(ev)=>{
-            // console.log('before-destroy',this);
-            ts.annotationStore = tk.getGeoJSONObjects();
+            ts.annotationStore = tk.toGeoJSON();
         })
         let ui=tk.addAnnotationUI({
             autoOpen:true,
