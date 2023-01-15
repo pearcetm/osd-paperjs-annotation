@@ -55,7 +55,7 @@
          * @function
          * @param {Object|Array} data
          */
-        supports: function( data, url ){
+        supports: function( data ){
             return (
                 data.type &&
                 "native-levels-image-pyramid" === data.type
@@ -74,10 +74,6 @@
          */
         configure: function( configuration ){
             return configuration;
-            // var options  = configuration.levels;
-    
-            // return options;
-    
         },
     
         /**
@@ -109,7 +105,6 @@
          * @param {Number} level
          */
         getLevelScale: function ( level ) {
-            // console.log('getLevelScale')
             var levelScale = NaN;
             if ( this.levels.length > 0 && level >= this.minLevel && level <= this.maxLevel ) {
                 levelScale =
@@ -124,12 +119,6 @@
          * @param {Number} level
          */
         getNumTiles: function( level ) {
-            // var scale = this.getLevelScale( level );
-            // if ( scale ){
-            //     return new $.Point( 1, 1 );
-            // } else {
-            //     return new $.Point( 0, 0 );
-            // }
             return new $.Point(this.levels[level].rows,this.levels[level].columns)
         },
     
@@ -142,12 +131,6 @@
          * @throws {Error}
          */
         getTileUrl: function ( level, x, y ) {
-            // var url = null;
-            // if ( this.levels.length > 0 && level >= this.minLevel && level <= this.maxLevel ) {
-            //     url = this.levels[ level ].url;
-            // }
-            // return url;
-            // console.log(`${this.baseurl}${this.levels[level].level}/${x}_${y}`)
             return `${this.baseurl}${this.levels[level].level}/${x}_${y}`;
         }
     } );

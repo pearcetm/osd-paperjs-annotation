@@ -1,5 +1,5 @@
 
-import { AnnotationToolkit } from '../../js/annotationtoolkit.js';
+import { AnnotationToolkit } from '../../js/annotationtoolkit.mjs';
 let styledef;
 $.get('./init.geoJSON').then(x=>{
     styledef=x;
