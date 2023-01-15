@@ -91,7 +91,7 @@
         let degreesToRotate = degrees - (this._rotation || 0)
         this.rotate(degreesToRotate, center);
         this._rotation = OpenSeadragon.positiveModulo(degrees, 360);
-        this.emit('rotate',{rotatedBy:degreesToRotate, currentRotation:this._rotation, center:center})
+        this.emit('rotate',{rotatedBy:degreesToRotate, currentRotation:this._rotation, center:center});
     }
 
     //Add applyRescale as a method to paper objects
@@ -206,8 +206,8 @@ export class PaperOverlay{
         })(this);
         this.onViewerRotate=(self=>function(ev){
             // console.log('Viewer rotate',ev)
-            let center = self.osdViewer.viewport.viewportToImageCoordinates(self.osdViewer.viewport.getCenter());
-            self.paperScope.view.setRotation(ev.degrees, center)
+            let pivot = ev.pivot || self.osdViewer.viewport.viewportToImageCoordinates(self.osdViewer.viewport.getCenter());
+            self.paperScope.view.setRotation(ev.degrees, pivot)
         })(this);
 
         viewer.addHandler('resize',this.onViewerResize);

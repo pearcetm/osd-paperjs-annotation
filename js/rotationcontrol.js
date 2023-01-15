@@ -63,7 +63,6 @@ export class RotationControlTool extends ToolBase{
             
         }
         this.tool.onMouseMove=function(ev){
-            // console.log('move',ev.point)
             widget.setLineOrientation(ev.point);
         }
         this.tool.onMouseUp = function(){
@@ -88,21 +87,13 @@ export class RotationControlTool extends ToolBase{
             widget.item.opacity = 0.3;
         }
 
-        function setAngle(angle){
-            let widgetCenter = new OpenSeadragon.Point(widget.item.position.x, widget.item.position.y)
-            let pivot = viewer.viewport.pointFromPixel(widgetCenter);
-            
-            //save reference in viewer coordinate frame
-            let refViewerElementCoordinates = viewer.viewport.viewportToViewerElementCoordinates(pivot);
-            //pan the image so the desired center of rotation is in the center of the viewport
-            viewer.viewport.panTo(pivot,true);//pivot becomes the new center point of the viewport
-            
-
-            viewer.viewport.setRotation(angle, null, true);
-
-            let refPoint=viewer.viewport.viewerElementToViewportCoordinates(refViewerElementCoordinates);//compute location to move pivot back to
-            let delta = pivot.minus(refPoint);
-            viewer.viewport.panBy(delta,true);
+        function setAngle(angle, pivot){
+            if(!pivot){
+                let widgetCenter = new OpenSeadragon.Point(widget.item.position.x, widget.item.position.y)
+                pivot = viewer.viewport.pointFromPixel(widgetCenter);
+                
+            }
+            viewer.viewport.rotateTo(angle, pivot, true);
         }
     }
     
@@ -227,7 +218,6 @@ function RotationControlWidget(center, setAngle){
     }
     arrowControl.onMouseDown=function(ev){
         arrowControl._angleOffset = currentRotationIndicator.rotation - ev.point.subtract(circle.bounds.center).angle;
-        // console.log('arrow onmousedown',arrowControl._refAngle)
     }
     arrowControl.onMouseDrag=function(ev){
         let hitResults = this.project.hitTestAll(ev.point).filter(hr=>cardinalControls.includes(hr.item));
@@ -238,7 +228,6 @@ function RotationControlWidget(center, setAngle){
             ev.point = hitResults[0].item.bounds.center;
         }
         angle = ev.point.subtract(circle.bounds.center).angle + arrowControl._angleOffset;
-        
         setAngle(angle);
         widget.setLineOrientation(ev.point, true);
     }
