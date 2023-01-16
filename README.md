@@ -1,4 +1,4 @@
-# osd-annotation - Annotation tools for Openseadragon built with Paper.js
+# osd-paperjs-annotation - Annotation tools for Openseadragon built with Paper.js
 
 This project combines the [OpenSeadragon](https://openseadragon.github.io/) zoomable image viewer with [PaperJS](http://paperjs.org/)-based annotations drawn into a synced zoomable overlay.
 
