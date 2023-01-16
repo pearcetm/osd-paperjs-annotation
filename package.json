@@ -1,6 +1,6 @@
 
 {
-  "name": "osd-annotation",
+  "name": "osd-paperjs-annotation",
   "description": "",
   "version": "0.1.0",
   "scripts": {
@@ -8,13 +8,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/pearcetm/osd-annotation.git"
+    "url": "https://github.com/pearcetm/osd-paperjs-annotation.git"
   },
   "keywords": [],
   "author": "",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/pearcetm/osd-annotation/issues"
+    "url": "https://github.com/pearcetm/osd-paperjs-annotation/issues"
   },
-  "homepage": "https://github.com/pearcetm/osd-annotation"
+  "homepage": "https://github.com/pearcetm/osd-paperjs-annotation"
 }
