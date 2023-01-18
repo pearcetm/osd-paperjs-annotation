@@ -145,10 +145,10 @@ class AnnotationToolkit {
                 type:'FeatureCollection',
                 features: layer.descendants.filter(d=>d.annotationItem).map(d=>d.annotationItem.toGeoJSONFeature()),
                 properties:{
-                    defaultStyle: this.defaultStyle.toJSON(),
-                    userdata: this.userdata,
+                    defaultStyle: layer.defaultStyle.toJSON(),
+                    userdata: layer.userdata,
                 },
-                label:this.displayName,
+                label:layer.displayName,
             }
             return geoJSON;
         })
