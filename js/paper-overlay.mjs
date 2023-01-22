@@ -87,7 +87,6 @@
     }
 
     paper.View.prototype.setRotation = function(degrees, center){
-        // console.log('Setting View rotation',degrees,center);
         let degreesToRotate = degrees - (this._rotation || 0)
         this.rotate(degreesToRotate, center);
         this._rotation = OpenSeadragon.positiveModulo(degrees, 360);
@@ -179,7 +178,6 @@ export class PaperOverlay{
         })(this);
         this.onViewerResetSize=(self=>function(ev){
             self._scale = getViewerContentWidth(ev);
-            console.log('onViewerResetSize',self._scale);
             //need to setTimeout to wait for some value (viewport.getZoom()?) to actually be updated before doing our update
             //need to check for destroyed because this will get called as part of the viewer destroy chain, and we've set the timeout
             setTimeout(()=>{
@@ -200,7 +198,6 @@ export class PaperOverlay{
             } 
         })(this);
         this.onViewerRotate=(self=>function(ev){
-            // console.log('Viewer rotate',ev)
             let pivot = ev.pivot || self.osdViewer.viewport.viewportToImageCoordinates(self.osdViewer.viewport.getCenter());
             self.paperScope.view.setRotation(ev.degrees, pivot)
         })(this);
@@ -346,7 +343,7 @@ export class PaperOverlay{
         let center = this.osdViewer.viewport.viewportToImageCoordinates(this.osdViewer.viewport.getCenter(true));
         this.osdViewer.drawer.canvas.pixelRatio = window.devicePixelRatio;
         this.paperScope.view.center = new paper.Point(center.x, center.y);
-        // console.log('updatePaperView',center,this._scale)
+        
         if(Math.abs(this.paperScope.view.zoom - oldZoom)>0.0000001){
             this.paperScope.view.emit('zoom-changed',{zoom:this.paperScope.view.zoom});
         }
