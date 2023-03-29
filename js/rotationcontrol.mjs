@@ -18,7 +18,6 @@ export class RotationControlOverlay{
                 tool.active ? self.deactivate() : self.activate();
             }
         });
-    
      
     }
     activate(){

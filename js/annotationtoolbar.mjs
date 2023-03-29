@@ -77,6 +77,9 @@ export class AnnotationToolbar{
             'item-removed':function(ev){
                 self.setMode()
             },
+            'items-changed':function(ev){
+                self.setMode();
+            }
         });
 
     }

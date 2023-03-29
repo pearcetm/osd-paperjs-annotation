@@ -6,17 +6,15 @@
    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.0/FileSaver.min.js"></script>
    
    <script type="module" src="./app.mjs"></script>
-   <link rel="stylesheet" href="./dsa.css">
+   <link rel="stylesheet" href="../dsa/dsa.css">
+   <!-- <link rel="stylesheet" href="../dsa/app.css"> -->
    <link rel="stylesheet" href="./app.css">
    
 </head>
 <body>
     <div class="content">
         <div id="header">
-            <div>
-                Select files:
-                <input id="file-picker" type='file' accept="image/*" multiple>
-            </div>
+            <div>Hotkeys: previous(c)  - next(b)  - cycle category (v)  - transform tool (g)  - rectangle tool (g)</div>
             <div class="dsa-ui-container"></div>
             <div>
                 Now annotating: <span id="current-file"></span>
@@ -38,11 +36,4 @@
             <div id="paper-gui"></div>
         </div>
     </div>
-    <!-- <div id="dsa-dialog">
-        <div class="login"></div>
-        <h3>Annotated images</h3>
-        <div class="dsa-contents dsa-annotated-images"></div>
-        <h3>Collections</h3>
-        <div class="dsa-contents dsa-collections"></div>
-    </div> -->
 </body>

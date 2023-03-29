@@ -1,8 +1,9 @@
 import { FeatureCollectionUI } from './featurecollectionui.mjs';
 
-export class LayerUI{
+export class LayerUI extends OpenSeadragon.EventSource{
 
     constructor(paperScope){
+        super();
         let self=this;
         
         this.paperScope = paperScope;
@@ -11,8 +12,8 @@ export class LayerUI{
         self.element = makeHTMLElement();
         
         //make this an event source
-        OpenSeadragon.extend(LayerUI.prototype, OpenSeadragon.EventSource.prototype);
-        OpenSeadragon.EventSource.call(this);
+        // OpenSeadragon.extend(LayerUI.prototype, OpenSeadragon.EventSource.prototype);
+        // OpenSeadragon.EventSource.call(this);
         
         self.element.find('.new-feature-collection').on('click',function(ev){
             ev.stopPropagation();

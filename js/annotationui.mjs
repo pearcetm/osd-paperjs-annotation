@@ -110,6 +110,10 @@ class AnnotationUI{
         }
         
     }
+
+    get toolbar(){
+        return this._toolbar;
+    }
     
     //private
     _createJqueryUIdialog(){

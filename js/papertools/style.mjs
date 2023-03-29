@@ -61,16 +61,16 @@ export class StyleTool extends AnnotationUITool{
         this.activate();
         this.toolbarControl.updateDisplay();
         this._ignoreNextSelectionChange=false;
-        console.log('finished activateForItem')
+        // console.log('finished activateForItem')
     }
     onSelectionChanged(){
         if(!this._ignoreNextSelectionChange){
-            console.log('onSelctionChanged handled')
+            // console.log('onSelctionChanged handled')
             this.targetItems = this.items;
             this.toolbarControl.updateDisplay();
         }
         else{
-            console.log('onSelctionChanged ignored')
+            // console.log('onSelctionChanged ignored')
         }
         this._ignoreNextSelectionChange=false;
     }
@@ -361,7 +361,7 @@ export class StyleToolbar extends AnnotationUIToolbarBase{
     updateDisplay(){
         this._hierarchy = [];
         let targets = this.tool.targetItemStyles;
-        console.log('Style toolbar update display',targets)
+        // console.log('Style toolbar update display',targets)
         this.updateTargetDescription();
 
         let fillColor = targets.map(item=>item.fillColor);

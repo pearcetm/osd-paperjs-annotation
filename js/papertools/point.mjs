@@ -11,6 +11,8 @@ export class PointTool extends AnnotationUITool{
         cursor.fillColor=null;
         cursor.strokeColor='grey';
         cursor.visible=false;
+        delete cursor.isGeoJSONFeature; // remove this field since this isn't really part of the GeoJSON structure
+        
         this.project.toolLayer.addChild(cursor);
         
         this.setToolbarControl(new PointToolbar(this));

@@ -64,8 +64,9 @@ paper.PaperScope.prototype.createFeatureCollectionLayer = createFeatureCollectio
 paper.PaperScope.prototype.scaleByCurrentZoom = function (v) { return v / this.view.getZoom(); };
 paper.PaperScope.prototype.getActiveTool = function(){ return this.tool ? this.tool._toolObject : null; }        
 
-class AnnotationToolkit {
+class AnnotationToolkit extends OpenSeadragon.EventSource{
     constructor(openSeadragonViewer, opts) {
+        super();
         // TO DO: make the options object actually do something
         if(opts){
             console.warn('Configuration options for AnnotationToolkit are not yet supported')
@@ -91,8 +92,8 @@ class AnnotationToolkit {
         this.overlay.paperScope.project.defaultStyle.set(this.defaultStyle);
         this.overlay.autoRescaleItems(true);
 
-        OpenSeadragon.extend(AnnotationToolkit.prototype, OpenSeadragon.EventSource.prototype);
-        OpenSeadragon.EventSource.call(this);
+        // OpenSeadragon.extend(AnnotationToolkit.prototype, OpenSeadragon.EventSource.prototype);
+        // OpenSeadragon.EventSource.call(this);
         
         this.viewer.annotationToolkit = this;
 
@@ -128,15 +129,26 @@ class AnnotationToolkit {
         this._annotationUI && this._annotationUI.destroy();
         this.overlay.destroy();
     }
+    close() {
+        this.raiseEvent('before-close');
+        let tool=this.overlay.paperScope && this.overlay.paperScope.getActiveTool();
+        if(tool) tool.deactivate(true);
+
+        this.addFeatureCollections([],true);
+    }
     setGlobalVisibility(show = false){
         this.overlay.paperScope.view._element.setAttribute('style', 'visibility:' + (show ? 'visible;' : 'hidden;'));
     }
     addFeatureCollections(featureCollections,replaceCurrent){
         this.loadGeoJSON(featureCollections,replaceCurrent);
         this.overlay.rescaleItems();
+        this.overlay.paperScope.project.emit('items-changed');
     }
     getFeatureCollectionLayers(){
         return this.overlay.paperScope.project.layers.filter(l=>l.isGeoJSONFeatureCollection);
+    }
+    getFeatures(){
+        return this.overlay.paperScope.project.getItems({match:i=>i.isGeoJSONFeature});
     }
     toGeoJSON(){
         //find all featureCollection items and convert to GeoJSON compatible structures

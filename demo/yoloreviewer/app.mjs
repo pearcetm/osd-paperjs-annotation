@@ -1,20 +1,12 @@
 
 import { AnnotationToolkit } from '../../js/annotationtoolkit.mjs';
-import { DSAUserInterface } from './dsauserinterface.mjs';
+import { DSAUserInterface } from '../dsa/dsauserinterface.mjs';
 import { RotationControlOverlay } from '../../js/rotationcontrol.mjs';
 
 
-// let styledef;
-// let examples;
 $(window).on('beforeunload',function(){
     return 'Are you sure you want to leave?';
 })
-// $.get('./init.geoJSON').then(x=>{
-//     styledef=x;
-// });
-// $.get('./Examples.json').then(x=>{
-//     examples=x;
-// });
 
 let v1 = createViewer();
 let tk;
@@ -31,7 +23,7 @@ v1.addOnceHandler('open',()=>{
 v1.open(
     {
         type: 'image',
-        url:  './dsa_logo.svg',
+        url:  '../dsa/dsa_logo.svg',
         buildPyramid: false
     }
 )
@@ -192,17 +184,6 @@ $(window).on('keypress',event=>{
     }
 })
 
-
-
-// Local file setup
-
-$('#file-picker').on('change',function(){
-   let tileSources = Array.from(this.files).map(imageTileSource);
-    v1.open(tileSources);
-    v1.goToPage(0);
-})
-
-
 // Viewer creation and annotation setup
 
 function createViewer(){
@@ -260,23 +241,10 @@ function createViewer(){
     return viewer;
 }
 
-function imageTileSource(file){
-    let obj = {
-        url:'',
-        file:file,
-        name:file.name,
-    }
-    let ts = new OpenSeadragon.ImageTileSource(obj);
-    ts.ready=false;
-    let origDestroy = ts.destroy;
-    ts.destroy = function(){origDestroy.call(ts); ts.ready = false;}
-    return ts;
-}
-
 function debounce(func, timeout = 0){
     let timer;
     return (...args) => {
       clearTimeout(timer);
       timer = setTimeout(() => { func.apply(this, args); }, timeout);
     };
-  }
+}

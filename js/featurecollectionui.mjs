@@ -35,7 +35,7 @@ export class FeatureCollectionUI{
                 self.remove();
             },
             'child-added':function(ev){
-                let featureUI = ev.item._FeatureUI || new FeatureUI(ev.item);
+                let featureUI = ev.item.FeatureUI || new FeatureUI(ev.item);
                 self._addFeature(featureUI);
             }
         });
@@ -120,9 +120,9 @@ export class FeatureCollectionUI{
             ev.preventDefault();
             let action = $(ev.target).data('action');
             switch(action){
-                case 'trash': self.trashClicked(); break;
+                case 'trash': self.removeLayer(true); break;
                 // case 'edit': self.editClicked(); break;
-                case 'style': self.styleClicked(ev); break;
+                case 'style': self.openStyleEditor(ev); break;
                 case 'show': self.toggleVisibility(); break;
                 case 'hide': self.toggleVisibility(); break;
                 default: console.log('No function set for action:',action);
@@ -157,8 +157,8 @@ export class FeatureCollectionUI{
         this.element.toggleClass('annotation-hidden');
         this.layer.visible = !this.element.hasClass('annotation-hidden');
     }
-    trashClicked(){
-        if(window.confirm('Remove this layer?')==true){
+    removeLayer(confirm = true){
+        if(confirm && window.confirm('Remove this layer?')==true){
             this.layer.remove();
         } else {
 
@@ -175,7 +175,7 @@ export class FeatureCollectionUI{
         selection.removeAllRanges();
         selection.addRange(range);  
     }
-    styleClicked(ev){
+    openStyleEditor(ev){
         let heard = this.layer.project.emit('edit-style',{item:this.layer});
         if(!heard){
             console.warn('No event listeners are registered for paperScope.project for event \'edit-style\'');

@@ -1,74 +1,57 @@
-function DSAAnnotationToGeoJSONFeatureCollection(dsa){
-    console.log('Converting from DSA:',dsa);
-    // let metadata = Object.assign({}, dsa);
-    // delete metadata['annotation'];
-
-    let fc;
-    if(dsa.annotation.attributes && dsa.annotation.attributes.geojslayer){
-        fc = dsa.annotation.attributes.geojslayer;
-    } else {
-        let grouped = dsa.annotation.elements.reduce((acc, f)=>{
-            let feature = elementToFeature(f);
-            if(f.user && f.user.MultiPolygon){
-                if(!acc.multiPolygons[f.user.MultiPolygon]){
-                    acc.multiPolygons[f.user.MultiPolygon] = feature;
-                    acc.featurelist.push(feature);
-                } else {
-                    acc.multiPolygons[f.user.MultiPolygon].geometry.coordinates.push(...feature.geometry.coordinates);
+export class DSAAdapter{
+    // Convert a DSA annotation into GeoJSON FeatureCollections
+    annotationToFeatureCollections(dsa){
+        // console.log('Converting from DSA:',dsa);
+        let featureCollections = [];
+        if(dsa.annotation.attributes && dsa.annotation.attributes.geojslayer){
+            featureCollections.push(dsa.annotation.attributes.geojslayer);
+        } else {
+            let groups = dsa.annotation.elements.reduce((acc, f)=>{
+                if(!acc[f.group]){
+                    acc[f.group] = [];
                 }
-                
-            } else if (f.user && f.user.MultiLineString){
-                if(!acc.multiLineStrings[f.user.MultiLineString]){
-                    acc.multiLineStrings[f.user.MultiLineString] = feature;
-                    acc.featurelist.push(feature);
-                } else {
-                    acc.multiLineStrings[f.user.MultiLineString].geometry.coordinates.push(...feature.geometry.coordinates);
-                }
-                
-            } else if (f.user && f.user.MultiPoint){
-                if(!acc.multiPoints[f.user.MultiPoint]){
-                    acc.multiPoints[f.user.MultiPoint] = feature;
-                    acc.featurelist.push(feature);
-                } else {
-                    acc.multiPoints[f.user.MultiPoint].geometry.coordinates.push(...feature.geometry.coordinates);
-                }
-                
-            } else {
-                acc.featurelist.push(feature);
-            }
-            return acc;
-        }, {featurelist:[], multiPolygons: {}, multiLineStrings: {}, multiPoints: {}});
-        
-        fc = {
-            type: 'FeatureCollection',
-            features: grouped.featurelist,
-            label: dsa.annotation.name,
-            properties: {
-                userdata:{
-                    dsa:{
-                        annotationId: dsa._id,
-                        annotationDescription: dsa.annotation.description
-                    }
-                },
-            }
+                acc[f.group].push(f);
+                return acc;
+            }, {});
+            Object.keys(groups).forEach(groupName=>{
+                let elements = groups[groupName];
+                let label = typeof groupName === undefined ? dsa.annotation.name : groupName;
+                let description = dsa.annotation.description;
+                featureCollections.push(elementArrayToFeatureCollection(dsa._id, label, elements, description, groupName));
+            })
         }
+    
+        return featureCollections;
     }
-    
-    return fc;
-}
-function GeoJSONFeatureCollectionToDSAAnnotation(geojson){
-    let obj = {};
-    let userdata = geojson.properties.userdata || {};
-    let dsainfo = userdata.dsa || {};
-    obj.name = geojson.label;
-    obj.description = "description" in dsainfo ? dsainfo.description : 'Created by AnnotationToolkit DSA Adapter v1';
-    obj.attributes = {}
-    
-    obj.elements = geojson.features.map(featureToElement).flat();
 
-    return obj;
+    // Convert array of GeoJSON FeatureCollections into DSA annotation elements
+    featureCollectionsToElements(fcArray){
+        
+        let elements = fcArray.map(geojson=>{
+            // let obj = {};
+            // let userdata = (geojson.properties && geojson.properties.userdata) || {};
+            // let dsainfo = userdata.dsa || {};
+            // obj.name = geojson.label;
+            // obj.description = "description" in dsainfo ? dsainfo.description : 'Created by AnnotationToolkit DSA Adapter v1';
+            // obj.attributes = {}
+            
+            return geojson.features.map(featureToElement).flat().map(element=>{
+                element.group = ''+geojson.label;
+                return element;
+            });
+            
+        }).flat();
+        
+        return elements;
+    }
+
+
+    
 }
 
+// private
+
+// Convert a DSA annotation element into a GeoJSON Feature
 function elementToFeature(element){
     function mapElementToGeometryType(e){
         let g = {
@@ -156,14 +139,9 @@ function elementToFeature(element){
     
     return f;
 }
-function getColorString(color, useParentFillOpacity){
-    let clone = color.clone();
-    if(useParentFillOpacity){
-        clone.alpha = color._owner.fillOpacity;
-    }
-    let string = clone.toCSS();
-    return string;
-}
+
+
+// convert a GeoJSON Feature into a DSA annotation element
 function featureToElement(feature){
     let g = feature.geometry;
     let p = feature.properties;
@@ -274,6 +252,73 @@ function featureToElement(feature){
     return e;
 }
 
+// Convert a paper.js Color into a string
+function getColorString(color, useParentFillOpacity){
+    let clone = color.clone();
+    if(useParentFillOpacity){
+        clone.alpha = color._owner.fillOpacity;
+    }
+    let string = clone.toCSS();
+    return string;
+}
+
+function elementArrayToFeatureCollection(annotationId, label, elements, description, groupName){
+    
+    let grouped = elements.reduce((acc, f)=>{
+        let feature = elementToFeature(f);
+        if(f.user && f.user.MultiPolygon){
+            if(!acc.multiPolygons[f.user.MultiPolygon]){
+                feature.geometry.coordinates = [feature.geometry.coordinates]; //wrap the first in an array
+                acc.multiPolygons[f.user.MultiPolygon] = feature;
+                acc.featurelist.push(feature);
+            } else {
+                acc.multiPolygons[f.user.MultiPolygon].geometry.coordinates.push(feature.geometry.coordinates);
+            }
+            
+        } else if (f.user && f.user.MultiLineString){
+            if(!acc.multiLineStrings[f.user.MultiLineString]){
+                feature.geometry.coordinates = [feature.geometry.coordinates]; //wrap the first in an array
+                acc.multiLineStrings[f.user.MultiLineString] = feature;
+                acc.featurelist.push(feature);
+            } else {
+                acc.multiLineStrings[f.user.MultiLineString].geometry.coordinates.push(feature.geometry.coordinates);
+            }
+            
+        } else if (f.user && f.user.MultiPoint){
+            if(!acc.multiPoints[f.user.MultiPoint]){
+                feature.geometry.coordinates = [feature.geometry.coordinates]; //wrap the first in an array
+                acc.multiPoints[f.user.MultiPoint] = feature;
+                acc.featurelist.push(feature);
+            } else {
+                acc.multiPoints[f.user.MultiPoint].geometry.coordinates.push(feature.geometry.coordinates);
+            }
+            
+        } else {
+            acc.featurelist.push(feature);
+        }
+        return acc;
+    }, {featurelist:[], multiPolygons: {}, multiLineStrings: {}, multiPoints: {}});
+    
+    let fc = {
+        type: 'FeatureCollection',
+        features: grouped.featurelist,
+        label: label,
+        properties: {
+            userdata:{
+                dsa:{
+                    annotationId: annotationId,
+                    group: groupName,
+                    annotationDescription: description
+                }
+            },
+        }
+    }
+    
+    return fc;
+}
+
+
+// private
 function makeGUID(){
     let guid= 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(c) {
         let r = Math.random() * 16|0;

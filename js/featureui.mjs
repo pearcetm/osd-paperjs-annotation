@@ -5,7 +5,7 @@ export class FeatureUI{
         let self=this;
         this.paperItem=paperItem;
         let el = this._element = makeFeatureElement();
-        this.paperItem._FeatureUI = this;
+        this.paperItem.FeatureUI = this;
         this._editableName = new EditableContent();
         el.find('.feature-item.name').empty().append(this._editableName.element);
         this._editableName.onChanged = function(text){
@@ -26,11 +26,11 @@ export class FeatureUI{
             ev.preventDefault();
             let action = $(ev.target).data('action');
             switch(action){
-                case 'trash': self.trashClicked(); break;
+                case 'trash': self.removeItem(); break;
                 case 'edit': self.editClicked(); break;
-                case 'bounds': self.boundsClicked(); break;
-                case 'style':self.styleClicked(ev); break;
-                case 'zoom-to':self.zoomClicked(); break;
+                case 'bounds': self.useAsBoundingElement(); break;
+                case 'style':self.openStyleEditor(ev); break;
+                case 'zoom-to':self.centerItem(); break;
                 default: console.log('No function set for action:',action);
             }
             
@@ -76,7 +76,7 @@ export class FeatureUI{
                     ev.item.displayName = self.label;
                 }
                 self.paperItem = ev.item;
-                self.paperItem._FeatureUI=self;
+                self.paperItem.FeatureUI=self;
                 self.updateLabel();
             },
             'display-name-changed':function(ev){
@@ -113,7 +113,7 @@ export class FeatureUI{
         // this._element.find('.feature-item.name').text(this.label);//.trigger('value-changed',[l]);
         this._editableName.setText(this.label);
     }
-    trashClicked(){        
+    removeItem(){        
         //clean up paperItem
         this.paperItem.remove();
         this.paperItem.deselect();
@@ -132,18 +132,25 @@ export class FeatureUI{
         selection.removeAllRanges();
         selection.addRange(range);
     }
-    boundsClicked(){
-        if(!this.paperItem.canBeBoundingElement) return;
-        let isActive = this._element.find('[data-action="bounds"]').toggleClass('active').hasClass('active');
+    useAsBoundingElement(toggle=false){
+        if(!this.paperItem.canBeBoundingElement) return false;
+        let element = this._element.find('[data-action="bounds"]');
+        if(toggle){
+            element.find('[data-action="bounds"]').toggleClass('active');
+        } else {
+            element.find('[data-action="bounds"]').addClass('active');
+        }
+        let isActive = element.hasClass('active');
         this.paperItem.isBoundingElement = isActive;
+        return isActive;
     }    
-    styleClicked(){
+    openStyleEditor(){
         let heard = this.paperItem.project.emit('edit-style',{item:this.paperItem});
         if(!heard){
             console.warn('No event listeners are registered for paperScope.project for event \'edit-style\'');
         }
     }
-    zoomClicked(){
+    centerItem(){
         let viewport = this.paperItem.project.overlay.osdViewer.viewport;
         let bounds = this.paperItem.bounds;
         let center = viewport.imageToViewportCoordinates(bounds.center.x,bounds.center.y);
@@ -158,7 +165,7 @@ export class FeatureUI{
         else{
             viewport.panTo(center);
         }
-        console.log('zoom clicked',rect)
+        // console.log('centerItem clicked',rect)
     }
     
 }

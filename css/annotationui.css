@@ -13,6 +13,7 @@
     display:none;
 }
 .annotation-ui-mainwindow{
+    height:100%;
     color:black;
     overflow:hidden;
     display:grid;
