@@ -233,8 +233,20 @@ canvas.point-tool-grab{
 canvas.point-tool-grabbing{
     cursor:grabbing;
 }
+canvas.rectangle-tool-move{
+    cursor: move;
+}
 canvas.rectangle-tool-resize{
     cursor:nesw-resize;
+}
+canvas.transform-tool-move{
+    cursor: move;
+}
+canvas.transform-tool-resize{
+    cursor:nesw-resize;
+}
+canvas.transform-tool-rotate{
+    cursor: pointer;
 }
 .tool-action[data-tool-action="segment"]{
     cursor:move;

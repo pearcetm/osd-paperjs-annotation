@@ -115,10 +115,13 @@ export class TransformTool extends AnnotationUITool{
         //Translation operations
         this._transformTool.onMouseDown = function(ev){
             // console.log('mousedown',ev);
-            let hitresult=self.hitTest(ev.point) || this.boundingDisplay.hitTest(this.matrix.inverseTransform(ev.point));
-            hitresult = hitresult && (hitresult.item==this.boundingDisplay || (hitresult.item.isGeoJSONFeature&&hitresult.item.selected) );
+            // let hitresult=self.hitTest(ev.point) || this.boundingDisplay.hitTest(this.matrix.inverseTransform(ev.point));
+            // hitresult = hitresult && (hitresult.item==this.boundingDisplay || (hitresult.item.isGeoJSONFeature&&hitresult.item.selected) );
             // console.log('hit',hitresult);
-            if(hitresult) this._dragging=true;
+            if(this.boundingDisplay.contains(ev.point)){
+                this._dragging = true;
+            }
+            // if(hitresult) this._dragging=true;
         }
         this._transformTool.onMouseUp = function(ev){
             this._dragging=false;
@@ -133,6 +136,33 @@ export class TransformTool extends AnnotationUITool{
                 item.translate(ev.delta);
                 item.onTransform && item.onTransform('translate', ev.delta);
             });
+        }
+        this.tool.onMouseMove=function(ev){
+            
+                let hitResult = self.project.paperScope.project.hitTest(ev.point);
+                if(hitResult){
+                    if(Object.values(self._transformTool.corners).indexOf(hitResult)){
+                        self.project.overlay.addClass('transform-tool-resize');
+                    } else {
+                        self.project.overlay.removeClass('transform-tool-resize');
+                    }
+                        
+                    if (self._transformTool.rotationHandle == hitResult){
+                        self.project.overlay.addClass('transform-tool-rotate');
+                    } else {
+                        self.project.overlay.removeClass('transform-tool-rotate');
+                    }
+                    
+                } else{
+                    self.project.overlay.removeClass(['transform-tool-resize', 'transform-tool-rotate']);
+                }
+
+                if(self.item.contains(ev.point)){
+                    self.project.overlay.addClass('transform-tool-move');
+                } else {
+                    self.project.overlay.removeClass('transform-tool-move');
+                }
+            
         }
 
         //(re)positioning the tool handles (corners, rotation control)

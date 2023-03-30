@@ -118,14 +118,7 @@ export class PaperOverlay{
         }
         opts=OpenSeadragon.extend(true,defaultOpts,opts);
 
-        // let overlayType = opts.overlayType == 'viewport' ? 'viewport':'image'; 
-
         this._scale = opts.overlayType=='image' ? getViewerContentWidth(viewer) : 1;
-
-        // if(!this._scale){
-        //     console.error('tile source must contain width parameter');
-        //     throw('viewer.source.width must have a (truthy numeric) value');
-        // }
 
         this.osdViewer = viewer;
         
@@ -294,9 +287,13 @@ export class PaperOverlay{
         return this;
     }
     // returns: mouseNavEnabled status BEFORE the call (for reverting)
+    // raises 'mouse-nav-enabled' event
     setOSDMouseNavEnabled(enabled=true){
         let wasMouseNavEnabled = this.osdViewer.isMouseNavEnabled();
         this.osdViewer.setMouseNavEnabled(enabled);
+        if(enabled !== wasMouseNavEnabled){
+            this.osdViewer.raiseEvent('mouse-nav-changed',{enabled: enabled, overlay: this});
+        }
         return wasMouseNavEnabled;
     }
     // ----------

@@ -21,6 +21,7 @@ class AnnotationUI{
             featureCollections:[],
             addButton:true,
             addToolbar:true,
+            tools: null,
             addLayerDialog:true,
             addFileButton:true,
             buttonTogglesToolbar:true,
@@ -33,7 +34,7 @@ class AnnotationUI{
 
         
         //AnnotationToolbar: UI for interactive tools
-        this._toolbar = new AnnotationToolbar(annotationToolkit.overlay.paperScope);
+        this._toolbar = new AnnotationToolbar(annotationToolkit.overlay.paperScope, opts.tools);
         if(opts.addToolbar){
             this._toolbar.addToOpenSeadragon(_viewer);
         }

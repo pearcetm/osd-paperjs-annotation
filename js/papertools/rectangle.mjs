@@ -28,8 +28,9 @@ export class RectangleTool extends AnnotationUITool{
                 self.item.addChild(r);
                 self.mode='creating';
             }
-            else if(self.item && self.item.hitTest(ev.point,{fill:false,stroke:false,segments:true,tolerance:5/self.project.getZoom()})){
-                let result = self.item.hitTest(ev.point,{fill:false,stroke:false,segments:true,tolerance:5/self.project.getZoom()})
+            else if(self.item){
+                // try hit test on corners first
+                let result = self.item.hitTest(ev.point,{fill:false,stroke:false,segments:true,tolerance:5/self.project.getZoom()});
                 if(result){
                     // crosshairTool.visible=true;
                     self.mode='corner-drag';
@@ -37,11 +38,16 @@ export class RectangleTool extends AnnotationUITool{
                     let oppositeIdx=(idx+2) % result.segment.path.segments.length;
                     self.refPoint = result.segment.path.segments[oppositeIdx].point;
                     self.ctrlPoint = result.segment.point.clone();
+                    return;
+                }
+                
+                // next hit test on "fill"
+                if(self.item.contains(ev.point)){
+                    // crosshairTool.visible=true;
+                    self.mode='fill-drag';
+                    return;
                 }
             }
-            // else{
-            //     self.mode='modifying';
-            // }
         }
         this.tool.onMouseDrag=function(ev){
             let refPt, currPt, angle;
@@ -59,8 +65,7 @@ export class RectangleTool extends AnnotationUITool{
                 } else {
                     currPt = ev.point;
                 }
-            }
-            else if(self.mode=='corner-drag'){
+            } else if(self.mode=='corner-drag'){
                 angle = self.item.children[0].segments[1].point.subtract(self.item.children[0].segments[0].point).angle;
                 refPt = self.refPoint;
 
@@ -72,8 +77,10 @@ export class RectangleTool extends AnnotationUITool{
                 } else {
                     currPt = ev.point;
                 }
-            }
-            else{
+            } else if(self.mode == 'fill-drag') {
+                self.item.translate(ev.delta);
+                return;
+            } else{
                 setCursorPosition(this,ev.point);
                 return;
             }
@@ -88,9 +95,14 @@ export class RectangleTool extends AnnotationUITool{
                 let hitResult = self.item.hitTest(ev.point,{fill:false,stroke:false,segments:true,tolerance:5/self.project.getZoom()});
                 if(hitResult){
                     self.project.overlay.addClass('rectangle-tool-resize');
-                }
-                else{
+                } else{
                     self.project.overlay.removeClass('rectangle-tool-resize');
+                }
+
+                if(self.item.contains(ev.point)){
+                    self.project.overlay.addClass('rectangle-tool-move');
+                } else {
+                    self.project.overlay.removeClass('rectangle-tool-move');
                 }
             }
         }
@@ -119,10 +131,11 @@ export class RectangleTool extends AnnotationUITool{
                 self.toolbarControl.updateInstructions('Point:Rectangle');
             }
             else {
-                self.creating=null;//reset reference to actively creating item
-                self.mode=null;
-                crosshairTool.visible = false;
-                self.toolbarControl.updateInstructions('Point:Rectangle');
+                // self.creating=null;//reset reference to actively creating item
+                // self.mode=null;
+                // crosshairTool.visible = false;
+                // self.toolbarControl.updateInstructions('Point:Rectangle');
+                self.deactivate();
             }
         }
         this.extensions.onDeactivate = function(finished){

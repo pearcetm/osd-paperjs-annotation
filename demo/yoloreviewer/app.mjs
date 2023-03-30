@@ -163,17 +163,17 @@ $(window).on('keypress',event=>{
     } else if(key == 'b'){
         //navigate to next
         reviewNext();
+    } else if(key == 'f'){
+        if(toolbar.tools.select.isActive()){
+            toolbar.tools.select.deactivate();
+        } else {
+            toolbar.tools.select.activate();
+        }
     } else if(key == 'g'){
         if(toolbar.tools.rectangle.isActive()){
             toolbar.tools.rectangle.deactivate();
         } else {
             toolbar.tools.rectangle.activate();
-        }
-    } else if(key == 'f'){
-        if(toolbar.tools.transform.isActive()){
-            toolbar.tools.transform.deactivate();
-        } else {
-            toolbar.tools.transform.activate();
         }
     } else {
         preventDefault = false;
@@ -223,7 +223,7 @@ function createViewer(){
         let ui=tk.addAnnotationUI({
             autoOpen:true,
             addLayerDialog:false,
-
+            tools:['default','select','rectangle','style']
         });
         ui._layerUI.element.appendTo($('#paper-gui')).on('element-added',(ev)=>{
             let scrollToElement = $(ev.target);

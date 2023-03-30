@@ -15,12 +15,14 @@ import {RasterTool} from './papertools/raster.mjs';
 
 export class AnnotationToolbar{
 
-    constructor(paperScope){
-        
-        let self=this;
+    constructor(paperScope, tools){
+        // tools should be an array of strings, or null/falsey
+        if(tools && !Array.isArray(tools)){
+            throw('Bad option: if present, tools must be an Array of tool names to use.');
+        }
         this.ui = makeUI();
         this.paperScope=paperScope;
-        // this.tools=[];
+        
         this.currentMode = null;
         this.setModeTimeout = null;
 
@@ -29,34 +31,46 @@ export class AnnotationToolbar{
         toolLayer.name = 'toolLayer';
         paperScope.project.addLayer(toolLayer);
 
-        
-        this.tools = {
-            default:new DefaultTool(paperScope),
-            select: new SelectTool(paperScope),
-            transform:new TransformTool(paperScope),
-            style: new StyleTool(paperScope),
-            rectangle:new RectangleTool(paperScope),
-            ellipse:new EllipseTool(paperScope),
-            point: new PointTool(paperScope),
-            text: new PointTextTool(paperScope),
-            polygon: new PolygonTool(paperScope),
-            brush: new BrushTool(paperScope),
-            wand: new WandTool(paperScope),
-            linestring : new LinestringTool(paperScope),
-            raster: new RasterTool(paperScope),
+        this.toolConstructors = {
+            default:DefaultTool,
+            select: SelectTool,
+            transform: TransformTool,
+            style:  StyleTool,
+            rectangle: RectangleTool,
+            ellipse: EllipseTool,
+            point: PointTool,
+            text: PointTextTool,
+            polygon: PolygonTool,
+            brush: BrushTool,
+            wand: WandTool,
+            linestring : LinestringTool,
+            raster: RasterTool,
         }
-        Object.keys(this.tools).forEach(function(toolname){
-            let toolObj = self.tools[toolname];
+        this.tools = {};
+
+        // if array of tools was passed in, use that. Otherwise use all available ones listed in the toolConstructors dictionary
+        let toolsToUse = tools || Object.keys(this.toolConstructors);
+        // make sure the default tool is always included
+        if(toolsToUse.indexOf('default') == -1){
+            toolsToUse = ['default', ...toolsToUse];
+        }
+        toolsToUse.forEach(toolname => {
+            if(!this.toolConstructors[toolname]){
+                console.warn(`The requested tool is invalid: ${toolname}. No constructor found for that name.`);
+                return;
+            }
+
+            let toolObj = this.tools[toolname] = new this.toolConstructors[toolname](this.paperScope);
             let toolbarControl = toolObj.getToolbarControl();
-            if(toolbarControl) self.addToolbarControl(toolbarControl);
+            if(toolbarControl) this.addToolbarControl(toolbarControl);
 
             // if(toolObj !== tools.default){
-            toolObj.addEventListener('deactivated',function(ev){
+            toolObj.addEventListener('deactivated',ev => {
                 //If deactivation is triggered by another tool being activated, this condition will fail
-                if(ev.target == self.paperScope.getActiveTool()){
-                    self.tools.default.activate();
+                if(ev.target == this.paperScope.getActiveTool()){
+                    this.tools.default.activate();
                 }
-            })
+            });
             
         })
         this.tools.default.activate();
@@ -65,20 +79,20 @@ export class AnnotationToolbar{
 
         //items emit events on the paper project; add listeners to update the toolbar status as needed
         paperScope.project.on({
-            'item-replaced':function(ev){
-                self.setMode();
+            'item-replaced':()=>{
+                this.setMode();
             },
-            'item-selected':function(ev){
-                self.setMode()
+            'item-selected':()=>{
+                this.setMode()
             },
-            'item-deselected':function(ev){
-                self.setMode()
+            'item-deselected':()=>{
+                this.setMode()
             },
-            'item-removed':function(ev){
-                self.setMode()
+            'item-removed':()=>{
+                this.setMode()
             },
-            'items-changed':function(ev){
-                self.setMode();
+            'items-changed':()=>{
+                this.setMode();
             }
         });
 
@@ -133,14 +147,29 @@ export class AnnotationToolbar{
     addToOpenSeadragon(viewer){
         let bg = new OpenSeadragon.ButtonGroup({buttons:this.ui.buttongroup.buttons,element:this.ui.buttongroup.element});
         viewer.addControl(bg.element,{anchor:OpenSeadragon.ControlAnchor.TOP_LEFT});
+        // get the new OpenSeadragon.Control object
+        this.control = viewer.controls[viewer.controls.length-1];
         this.viewer = viewer;//save reference so we can remove/destroy this toolbar
+        let handler = event=>{
+            console.log('Mouse nav changed',event);
+            // this.control.setVisible(true);
+            // if mouse nav is enabled, enable autoFade, otherwise disable
+            if(event.overlay == this.paperScope.overlay){
+                this.control.autoFade = event.enabled;
+            }
+        }
+        this._mousenavhandler = handler;
+        this.viewer.addHandler('mouse-nav-changed',handler);
         $(this.ui.buttongroup.element).append(this.ui.dropdowns);
         $(viewer.controls.topleft).addClass('viewer-controls-topleft');
         $('.toggles .btn').attr('style','');
     }
     destroy(){
-        this.viewer && this.viewer.removeControl(this.ui.buttongroup.element);
-        this.viewer && $(this.viewer.controls.topleft).removeClass('viewer-controls-topleft');
+        if(this.viewer){
+            this.viewer.removeControl(this.ui.buttongroup.element);
+            $(this.viewer.controls.topleft).removeClass('viewer-controls-topleft');
+            this.viewer.removeHandler(this._mousenavhandler);
+        } 
         this.ui.dropdowns.parent().remove();
     } 
 }

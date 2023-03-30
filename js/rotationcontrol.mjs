@@ -9,13 +9,13 @@ export class RotationControlOverlay{
         let overlay=this.overlay = new PaperOverlay(viewer,{overlayType:'viewport'})
         let tool = this.tool = new RotationControlTool(this.overlay.paperScope, this);
         this.dummyTool = new this.overlay.paperScope.Tool();//to capture things like mouseMove, keyDown etc (when actual tool is not active)
-        let self=this;
+        this.dummyTool.activate();
         this._mouseNavEnabledAtActivation = true;
         overlay.addViewerButton({
             faIconClasses:'fa-solid fa-rotate',
             tooltip:'Rotate image',
             onClick:()=>{
-                tool.active ? self.deactivate() : self.activate();
+                tool.active ? this.deactivate() : this.activate();
             }
         });
      
