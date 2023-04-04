@@ -19,7 +19,7 @@ body{
 #header{
     grid-column:span 2;
     display:grid;
-    grid-template-columns:auto auto 1fr;
+    grid-template-columns:auto auto 1fr auto;
     column-gap:1em;
     padding:2px 5px;
 }

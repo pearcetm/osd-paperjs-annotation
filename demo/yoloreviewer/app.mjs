@@ -18,10 +18,8 @@ let groups = {};
 
 const hashInfo = {
     dsa: null,
-    id: null,
-    x: null,
-    y: null,
-    zoom: null,
+    image: null,
+    bounds: null,
 };
 
 v1.addOnceHandler('open',()=>{
@@ -46,14 +44,14 @@ dsaUI.annotationEditorGUI.appendTo('#dsa-gui');
 readHash();
 if(hashInfo.dsa){
     let success = dsaUI.connectToDSA(hashInfo.dsa);
-    if(success && hashInfo.id){
-        dsaUI.openItem(hashInfo.id).catch(e => {
+    if(success && hashInfo.image){
+        dsaUI.openItem(hashInfo.image).catch(e => {
             dsaUI.addOnceHandler('login-returned', event=>{
                 if(event.success){
-                    dsaUI.openItem(hashInfo.id);
+                    dsaUI.openItem(hashInfo.image);
                 } else {
                     alert('Could not open: image does not exist or you do not have permissions. Are you logged in?');
-                    throw(`Could not open image with id=${hashInfo.id}`);
+                    throw(`Could not open image with id=${hashInfo.image}`);
                 }
 
             })
@@ -61,7 +59,7 @@ if(hashInfo.dsa){
     }
 }
 //dsaUI event handlers
-dsaUI.addHandler('annotation-opened',()=>{
+dsaUI.addHandler('annotation-opened',event=>{
     $('#reviewer-controls').show();
     setupReview();
 });
@@ -109,7 +107,8 @@ function updateHash(options){
 $('#reviewer-controls .review-next').on('click',reviewNext);
 $('#reviewer-controls .review-previous').on('click',reviewPrevious);
 $('#reviewer-controls .refresh-review').on('click',setupReview);
-$('#reviewer-controls select').on('change',addSelectedItemsToGroup);
+$('#reviewer-controls .align-to-roi').on('click',alignToROI);
+$('#reviewer-controls select').on('change',event=>addSelectedItemsToLayer(groups[event.target.value]));
 
 function reviewNext(){
     let newIndex = OpenSeadragon.positiveModulo(reviewIndex+1, items.length);
@@ -125,6 +124,18 @@ function handleItemSelected(){
     let selected = getSelectedFeatures();
     if(selected.length){
         let item = selected[0];
+        if(item.displayName == 'Creating...'){
+            // item.displayName = item.layer.displayName;
+            let changeLabel = (event)=>{
+                window.setTimeout(()=>{
+                    event.item.displayName = event.item.layer.displayName;
+                    setupReview();
+                });
+            };
+            item.on('item-replaced',changeLabel);
+            toolbar.tools.rectangle.activate();
+            return;
+        }
         setupReviewForItem(item);
         if(selected.length === 1){
             //Only one item - navigate to it.
@@ -143,8 +154,7 @@ function setupReviewForItem(item){
     let dropdown = $('#reviewer-controls select')[0];
     dropdown.value = item.layer.displayName;
 }
-function addSelectedItemsToGroup(event){
-    let layer = groups[event.target.value];
+function addSelectedItemsToLayer(layer){
 
     // get selected items
     let list = getSelectedFeatures();
@@ -152,6 +162,7 @@ function addSelectedItemsToGroup(event){
         layer.addChild(item);
         item.style.set(layer.defaultStyle);
         item.applyRescale();
+        item.displayName = layer.displayName;
     });
 }
 
@@ -159,11 +170,11 @@ function setupReview(){
     // identify which FeatureCollections and Features to work with
     let layers = tk.getFeatureCollectionLayers();
     items = getFeaturesToReview();
-    // add groups (other than "ROI") to the select dropdown and the dictionary of groups
+    // add groups (other than those that start with "ROI") to the select dropdown and the dictionary of groups
     groups = {};
     let select = $('#reviewer-controls select').empty();
     layers.forEach(g=>{
-        if(''+g.displayName !== 'ROI'){
+        if( !(''+g.displayName).startsWith('ROI')){
             $('<option>').text(g.displayName).appendTo(select);
             groups[g.displayName] = g;
 
@@ -179,13 +190,13 @@ function setupReview(){
 }
 
 function getFeaturesToReview(){
-    let items = tk.getFeatures().filter(f=>''+f.layer.displayName !== 'ROI');
+    let items = tk.getFeatures().filter(f=>!(''+f.layer.displayName).startsWith('ROI'));
     return items;
 }
 function getSelectedFeatures(){
     let realSelection = getFeaturesToReview().filter(item=>item.selected);
     if(realSelection.length){
-        tk.getFeatures().filter(f=>''+f.layer.displayName == 'ROI').forEach(item=>{
+        tk.getFeatures().filter(f=>!(''+f.layer.displayName.startsWith('ROI'))).forEach(item=>{
             item.deselect(true);
         });
     }
@@ -202,6 +213,36 @@ function getIndexOfSelection(selection){
         index = items.indexOf(first);
     }
     return index;
+}
+
+function alignToROI(){
+    // console.log('alignToROI',event);
+    // let ROI = event.featureCollections.filter(f=>f.label.startsWith('ROI'))[0];
+    let ROI_layer = tk.overlay.paperScope.project.layers.filter(l=>l.displayName && l.displayName.startsWith('ROI'))[0];
+    let ROI = ROI_layer && ROI_layer.children[0];
+    if(ROI){
+        try{
+            let path = ROI.children[0];
+            let angle = path.segments[1].point.subtract(path.segments[0].point).angle;
+            //let angle = ROI.features[0].geometry.properties.angle;
+            viewer.viewport.rotateTo(-angle);
+        } catch (e){
+            console.warn('ROI was found, did not have the expected format.');
+        }
+        
+    } else {
+        alert('No FeatureCollection (group) with a name starting with ROI was found');
+    }
+}
+
+function setMagnificationValue(){
+    let mz = v1.viewport.getMaxZoom() / v1.viewport.maxZoomPixelRatio;
+    let src = v1.world.getItemAt(0).source;
+    let objmag = src.item.detail.magnification;
+
+    let mag = v1.viewport.getZoom(true) / mz * objmag;
+    // console.log('mag',mag);
+    $('.current-mag').text(mag.toFixed(2));
 }
 
 // add key handlers
@@ -283,36 +324,30 @@ function createViewer(){
         $('#current-file').text(`${ts.name} (${ev.page+1} of ${ev.eventSource.tileSources.length})`);
 
         // before updating hash with new ID, check to see if we should navigate using hash paramaters
-        if(hashInfo.id === (ts.item && ts.item._id)){
-            let center = new OpenSeadragon.Point(Number(hashInfo.x), Number(hashInfo.y));
-            let zoom = Number(hashInfo.zoom);
-            window.setTimeout(()=>{
-                viewer.viewport.panTo(viewer.viewport.imageToViewportCoordinates(center), true);
-                viewer.viewport.zoomTo(zoom, null, true);
-            });
-            
+        if(hashInfo.image === (ts.item && ts.item._id)){
+            if(hashInfo.bounds){
+                let bounds = hashInfo.bounds.split('%2C').map(b=>Number(b));
+                let rect = new OpenSeadragon.Rect(bounds[0], bounds[1], bounds[2] - bounds[0], bounds[3] - bounds[1]);
+                window.setTimeout(()=>viewer.viewport.fitBounds(viewer.viewport.imageToViewportRectangle(rect)));
+            }
         } else {
             // add DSA ID as hash paramater via dsaUI
-            updateHash({id: ts.item && ts.item._id});
+            updateHash({image: ts.item && ts.item._id});
         }
-
-        
 
     });
 
     // set up handler for view info (x, y, zoom) as hash parameter via dsaUI
     viewer.addHandler('animation-finish',ev=>{
         let source = viewer.world.getItemAt(0).source
-        if(!source.item || (source.item._id !== hashInfo.id)){
+        if(!source.item || (source.item._id !== hashInfo.image)){
             return;
         }
-        let center = viewer.viewport.viewportToImageCoordinates(viewer.viewport.getCenter(false));
-        let zoom = viewer.viewport.getZoom(false);
+        let bounds = viewer.viewport.viewportToImageRectangle(viewer.viewport.getBounds(false));
         updateHash({
-            x: Math.round(center.x),
-            y: Math.round(center.y),
-            zoom: zoom,
-        })
+            bounds: [Math.round(bounds.x), Math.round(bounds.y), Math.round(bounds.x+bounds.width), Math.round(bounds.y+bounds.height)].join('%2C')
+        });
+        setMagnificationValue();
     })
 
 

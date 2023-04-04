@@ -18,6 +18,7 @@
             <div>
                 Now annotating: <span id="current-file"></span>
             </div>
+            <div>View mag: <span class="current-mag"></span></div>
         </div>
         <div id="viewer-container">
             <div id='viewer' class="viewer"></div>
@@ -25,7 +26,11 @@
         <div id="gui-container">
             <div id="dsa-gui" class="gui-component"></div>
             <div id="reviewer-controls" class="gui-component">
-                <div>On <span class="current-index">-</span> of <span class="total-annotations">-</span> <button class="refresh-review">Refresh</button></div>
+                <div>
+                    On <span class="current-index">-</span> of <span class="total-annotations">-</span> 
+                    <button class="refresh-review">Refresh</button>
+                    <button class="align-to-roi">Align</button> 
+                </div>
                 <div>
                     <button class="review-previous"><-</button>
                     <select></select>

@@ -120,7 +120,7 @@ export class DSAUserInterface extends OpenSeadragon.EventSource{
             .then(d=>{
                 this._viewer.annotationToolkit.addFeatureCollections(d, true);
                 this.annotationEditorGUI.data({listitem: element});
-                this.raiseEvent('annotation-opened',{annotation: annotation});       
+                this.raiseEvent('annotation-opened',{annotation: annotation, featureCollections: d});       
             });
     }
 
@@ -315,6 +315,7 @@ export class DSAUserInterface extends OpenSeadragon.EventSource{
         tileSource.ajaxWithCredentials = true;
         tileSource.name = item.name;
         tileSource.item = item;
+        tileSource.item.detail = fileInfo;
         return tileSource;
     }
 }
