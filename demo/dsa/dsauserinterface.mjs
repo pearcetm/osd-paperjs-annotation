@@ -33,16 +33,12 @@ export class DSAUserInterface extends OpenSeadragon.EventSource{
 
         // on pressing Go, open the dialog, initializing the DSA connection if needed
         this.dsaGoButton.on('click',()=>{
-            let baseurl = this.dsaLinkInput.val().trim().replace(/api\/v1\/?.*/,'').replace(/\/*$/, '');
-            if(!baseurl.match(/http/)){
-                baseurl = 'https://'+baseurl;
-                $('.dsa-link').val(baseurl);
+            let baseurl = this.dsaLinkInput.val();
+            let success = this.connectToDSA(baseurl);
+            if(success){
+                this.dialog.dialog('open');
             }
-            if(baseurl !== $('#dsa-dialog').data('baseurl')){
-                this._setupDSA(baseurl);
-                this.dialog.data('baseurl',baseurl);
-            }
-            this.dialog.dialog('open');
+            
         });
 
         // on clicking the "New" annotation button, create a new annotation
@@ -68,8 +64,37 @@ export class DSAUserInterface extends OpenSeadragon.EventSource{
         });
         this.dialog.on('click','.item',(event)=>{
             let item = $(event.target).data('item');
+            this.openItem(item._id);
+            
+        });
+
+    }
+
+    connectToDSA(baseurl){
+        baseurl = baseurl.trim().replace(/api\/v1\/?.*/,'').replace(/\/*$/, '');
+        if(baseurl.trim().length == 0){
+            alert("A URL must be provided");
+            return false;
+        }
+        if(!baseurl.match(/http/)){
+            baseurl = 'https://'+baseurl;
+        }
+        this.dsaLinkInput.val(baseurl); //update the input to match what we have
+        if(baseurl !== $('#dsa-dialog').data('baseurl')){
+            this._setupDSA(baseurl);
+            this.dialog.data('baseurl',baseurl);
+            this.raiseEvent('set-dsa-instance',{url: baseurl});
+        }
+        return true;
+    }
+    
+    openItem(id){
+        return this.API.get(`item/${id}`).then(item=>{
             this._currentItem = item;
-            this.API.get(`item/${item._id}/tiles`).then(d=>{
+            this.API.get(`item/${id}/tiles`).catch(e=>{
+                // console.log('Item not a tilesource',item)
+                return this.API.get(`item/${item._id}/files`);
+            }).then(d=>{
                 let ts = this._createTileSource(item, d);
                 this.raiseEvent('open-tile-source',{
                     tileSource: ts,
@@ -80,9 +105,8 @@ export class DSAUserInterface extends OpenSeadragon.EventSource{
                 this.annotationEditorGUI.attr('data-mode','picker');
             });
         });
-
+        
     }
-
 
     // private
     _openAnnotation(annotation, element){
@@ -96,8 +120,7 @@ export class DSAUserInterface extends OpenSeadragon.EventSource{
             .then(d=>{
                 this._viewer.annotationToolkit.addFeatureCollections(d, true);
                 this.annotationEditorGUI.data({listitem: element});
-                this.raiseEvent('annotation-opened',{annotation: annotation});
-                
+                this.raiseEvent('annotation-opened',{annotation: annotation});       
             });
     }
 
@@ -141,15 +164,30 @@ export class DSAUserInterface extends OpenSeadragon.EventSource{
     _setupDSA(baseurl){
         
         this.API = new DigitalSlideArchiveAPI(baseurl);
-        this.dialog.dialog('option', 'title', 'DSA: '+baseurl); 
+        this.API.get('system/check?mode=basic').catch(e=>{
+            this.API = null;
+            throw('Either this URL is not a DSA, or the DSA cannot be reached (check CORS settings).');
+        }).then(d=>{
+            this.dialog.dialog('option', 'title', 'DSA: '+baseurl); 
+            
+            let loginScreen=this.API.LoginSystem.getLoginScreen();
+            loginScreen.on('logged-in',()=>{
+                this._getAnnotatedImages();
+                this._getCollections();
+                this.raiseEvent('logged-in');
+            });
+            loginScreen.on('login-returned',(_,event)=>{
+                this.raiseEvent('login-returned',{success: event.success});
+            })
+            this.dialog.find('.login').html(loginScreen);
+            this.dialog.find('.dsa-contents').html('Loading...')
+            this.API.LoginSystem.autologin();
+            this._getAnnotatedImages();
+            this._getCollections();
+
+            this.raiseEvent('dsa-connected');
+        })
         
-        let loginScreen=this.API.LoginSystem.getLoginScreen();
-        loginScreen.on('logged-in',()=>this._getCollections());
-        this.dialog.find('.login').html(loginScreen);
-        this.dialog.find('.dsa-contents').html('Loading...')
-        this.API.LoginSystem.autologin();
-        this._getAnnotatedImages();
-        this._getCollections();
     }
 
     // private
@@ -241,20 +279,21 @@ export class DSAUserInterface extends OpenSeadragon.EventSource{
         // let _this = this;
         return this.API.get('item',{params:{folderId:folder._id}}).then(d=>{
 
-            let promises = d.map(item=>{
-                return this.API.get(`item/${item._id}/tiles`).then(d=>{
-                    return item;
-                }).catch(e=>{
-                    // console.log('Item not a tilesource',item)
-                    return this.API.get(`item/${item._id}/files`).then(d=>{
-                        return item;
-                    });
-                });
-            });
+            // let promises = d.map(item=>{
+            //     return this.API.get(`item/${item._id}/tiles`).then(d=>{
+            //         return item;
+            //     }).catch(e=>{
+            //         // console.log('Item not a tilesource',item)
+            //         return this.API.get(`item/${item._id}/files`).then(d=>{
+            //             return item;
+            //         });
+            //     });
+            // });
     
-            return Promise.all(promises).then(itemList=>{
-                this._makeItemList(container, itemList);
-            });
+            // return Promise.all(promises).then(itemList=>{
+            //     this._makeItemList(container, itemList);
+            // });
+            return this._makeItemList(container, d);
         });
     }
 

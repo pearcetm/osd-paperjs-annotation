@@ -16,6 +16,14 @@ let items = [];
 let reviewIndex = -1;
 let groups = {};
 
+const hashInfo = {
+    dsa: null,
+    id: null,
+    x: null,
+    y: null,
+    zoom: null,
+};
+
 v1.addOnceHandler('open',()=>{
     v1.viewport.zoomTo(0.01,null,true);
     v1.viewport.zoomTo(0.5);
@@ -31,12 +39,27 @@ v1.open(
 // DSA setup
 
 let dsaUI = new DSAUserInterface(v1);
-
-// get initial DSA link from location hash
-dsaUI.dsaLinkInput.val(window.location.hash.substring(1));
 dsaUI.header.appendTo('.dsa-ui-container');
 dsaUI.annotationEditorGUI.appendTo('#dsa-gui');
 
+// initialize based on hash input
+readHash();
+if(hashInfo.dsa){
+    let success = dsaUI.connectToDSA(hashInfo.dsa);
+    if(success && hashInfo.id){
+        dsaUI.openItem(hashInfo.id).catch(e => {
+            dsaUI.addOnceHandler('login-returned', event=>{
+                if(event.success){
+                    dsaUI.openItem(hashInfo.id);
+                } else {
+                    alert('Could not open: image does not exist or you do not have permissions. Are you logged in?');
+                    throw(`Could not open image with id=${hashInfo.id}`);
+                }
+
+            })
+        });
+    }
+}
 //dsaUI event handlers
 dsaUI.addHandler('annotation-opened',()=>{
     $('#reviewer-controls').show();
@@ -45,6 +68,42 @@ dsaUI.addHandler('annotation-opened',()=>{
 dsaUI.addHandler('annotation-closed',()=>{
     $('#reviewer-controls').hide();
 });
+dsaUI.addHandler('set-dsa-instance',event=>{
+    updateHash({dsa: event.url});
+});
+
+// has-based state saving - add image ID and navigation parameters to the URL
+function readHash(){
+    // get initial DSA link from location hash
+    let hash = window.location.hash;
+    if(!hash){
+        return;
+    }
+    hash = hash.substring(1);
+    let pairs = hash.split('&');
+    pairs.forEach(pair=>{
+        let array = pair.split('=');
+        if(array.length === 2 && Object.keys(hashInfo).includes(array[0])){
+            hashInfo[array[0]]=array[1];
+        }
+    });
+}
+function updateHash(options){
+    for (const [key, value] of Object.entries(options)) {
+        console.log(`${key}: ${value}`);
+        if(hashInfo.hasOwnProperty(key)){
+            hashInfo[key] = value;
+        } else {
+            console.error(`Bad hash option: ${key} not allowed as a key.`);
+        }
+    }
+
+    let newHash = Object.keys(hashInfo).filter(key=>hashInfo[key] !== null).map(key=>{
+        return key + '=' + hashInfo[key];
+    }).join('&');
+
+    window.location.hash = newHash;
+}
 
 //reviewer control setup
 $('#reviewer-controls .review-next').on('click',reviewNext);
@@ -163,12 +222,6 @@ $(window).on('keypress',event=>{
     } else if(key == 'b'){
         //navigate to next
         reviewNext();
-    } else if(key == 'f'){
-        if(toolbar.tools.select.isActive()){
-            toolbar.tools.select.deactivate();
-        } else {
-            toolbar.tools.select.activate();
-        }
     } else if(key == 'g'){
         if(toolbar.tools.rectangle.isActive()){
             toolbar.tools.rectangle.deactivate();
@@ -202,13 +255,8 @@ function createViewer(){
     new RotationControlOverlay(viewer);
     
     viewer.addHandler('page',ev=>{
-        //console.log('page',ev);
+        
         let ts=ev.eventSource.tileSources[ev.page];
-        if(!ts.ready && ts.file && ts.file.constructor === File){
-            let fr = new FileReader();
-            fr.readAsDataURL(v1.tileSources[ev.page].file);
-            fr.onload = () => ts.getImageInfo(fr.result);
-        }
         
         // tk defined at containing scope
         tk = new AnnotationToolkit(v1);
@@ -217,9 +265,6 @@ function createViewer(){
         window.project = tk.overlay.paperScope.project;
         tk.overlay.paperScope.project.on('item-selected', debounce(handleItemSelected));
 
-        tk.addOnceHandler('before-destroy',(ev)=>{
-            ts.annotationStore = tk.toGeoJSON();
-        })
         let ui=tk.addAnnotationUI({
             autoOpen:true,
             addLayerDialog:false,
@@ -235,9 +280,42 @@ function createViewer(){
         
         toolbar = ui.toolbar;
 
-        $('#current-file').text(`${ts.name} (${ev.page+1} of ${ev.eventSource.tileSources.length})`)
+        $('#current-file').text(`${ts.name} (${ev.page+1} of ${ev.eventSource.tileSources.length})`);
 
+        // before updating hash with new ID, check to see if we should navigate using hash paramaters
+        if(hashInfo.id === (ts.item && ts.item._id)){
+            let center = new OpenSeadragon.Point(Number(hashInfo.x), Number(hashInfo.y));
+            let zoom = Number(hashInfo.zoom);
+            window.setTimeout(()=>{
+                viewer.viewport.panTo(viewer.viewport.imageToViewportCoordinates(center), true);
+                viewer.viewport.zoomTo(zoom, null, true);
+            });
+            
+        } else {
+            // add DSA ID as hash paramater via dsaUI
+            updateHash({id: ts.item && ts.item._id});
+        }
+
+        
+
+    });
+
+    // set up handler for view info (x, y, zoom) as hash parameter via dsaUI
+    viewer.addHandler('animation-finish',ev=>{
+        let source = viewer.world.getItemAt(0).source
+        if(!source.item || (source.item._id !== hashInfo.id)){
+            return;
+        }
+        let center = viewer.viewport.viewportToImageCoordinates(viewer.viewport.getCenter(false));
+        let zoom = viewer.viewport.getZoom(false);
+        updateHash({
+            x: Math.round(center.x),
+            y: Math.round(center.y),
+            zoom: zoom,
+        })
     })
+
+
     return viewer;
 }
 

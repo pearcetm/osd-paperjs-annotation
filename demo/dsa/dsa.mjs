@@ -115,7 +115,10 @@ class LoginSystem{
                 dsa.settoken(json.authToken && json.authToken.token);
             }
             if(dsa.gettoken()){
-                dsa.get('user/authentication').then(_onlogin);
+                dsa.get('user/authentication').then(_onlogin).catch(e=>{
+                    dsa.LoginSystem.getLoginScreen().trigger('login-failed');
+                    dsa.LoginSystem.getLoginScreen().trigger('login-returned',[{success:false}]);
+                });
             }   
             
         }
@@ -136,6 +139,7 @@ class LoginSystem{
             window.localStorage.setItem('dsa-auth',JSON.stringify(d));
             dsa.userinfo = d;
             dsa.LoginSystem.getLoginScreen().trigger('logged-in');
+            dsa.LoginSystem.getLoginScreen().trigger('login-returned',[{success:true}]);
         }
     }
     
