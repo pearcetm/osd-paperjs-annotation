@@ -309,30 +309,38 @@ function setupKeypressHandlers(){
             return;
         }
         let key = event.key;
-        let preventDefault = true;
-        if(key=='c'){
+        // let preventDefault = true;
+        if(key=='q'){
             //navigate to previous
             reviewPrevious();
-        } else if (key == 'v'){
+        } else if (key == 'w'){
             //cycle through classification groups
             let dropdown = $('#reviewer-controls select')[0];
             dropdown.selectedIndex = (dropdown.selectedIndex+1) % dropdown.options.length;
             $(dropdown).trigger('change');
-        } else if(key == 'b'){
+        } else if(key == 'e'){
             //navigate to next
             reviewNext();
-        } else if(key == 'g'){
+        } else if(key == 'r'){
             if(toolbar.tools.rectangle.isActive()){
                 toolbar.tools.rectangle.deactivate();
             } else {
                 toolbar.tools.rectangle.activate();
             }
         } else {
-            preventDefault = false;
+            // preventDefault = false;
         }
-        if(preventDefault){
-            event.preventDefault();
-            event.stopImmediatePropagation();
+        // if(preventDefault){
+        //     event.preventDefault();
+        //     event.stopImmediatePropagation();
+        // }
+    });
+
+    // suppress default OSD keydown handling for a subset of keys
+    v1.addHandler('canvas-key',event=>{
+        // console.log('canvas-key',event);
+        if(['q','w','e','r','a','s','d','f'].includes(event.originalEvent.key)){
+            event.preventDefaultAction = true;
         }
     });
 }
