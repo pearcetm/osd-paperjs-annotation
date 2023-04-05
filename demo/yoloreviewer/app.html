@@ -18,7 +18,22 @@
             <div>
                 Now annotating: <span id="current-file"></span>
             </div>
-            <div>View mag: <span class="current-mag"></span></div>
+            <div class="magnification-widget expanded">
+                <div class="slider-controls">
+                    <input type="range" min="1" max="100">
+                    
+                    <button data-value="0.5">0.5</button>
+                    <button data-value="1">1</button>
+                    <button data-value="2">2</button>
+                    <button data-value="4">4</button>
+                    <button data-value="10">10</button>
+                    <button data-value="20">20</button>
+                    <button data-value="40">40</button>
+                    <button data-value="80">80</button>
+                
+                </div>
+                <div>Magnification: <span class="current-mag"></span></div>
+            </div>
         </div>
         <div id="viewer-container">
             <div id='viewer' class="viewer"></div>

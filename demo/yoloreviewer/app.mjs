@@ -70,6 +70,17 @@ dsaUI.addHandler('set-dsa-instance',event=>{
     updateHash({dsa: event.url});
 });
 
+
+//reviewer control setup
+$('#reviewer-controls .review-next').on('click',reviewNext);
+$('#reviewer-controls .review-previous').on('click',reviewPrevious);
+$('#reviewer-controls .refresh-review').on('click',setupReview);
+$('#reviewer-controls .align-to-roi').on('click',alignToROI);
+$('#reviewer-controls select').on('change',event=>addSelectedItemsToLayer(groups[event.target.value]));
+
+setupKeypressHandlers();
+setupMagnificationControls();
+
 // has-based state saving - add image ID and navigation parameters to the URL
 function readHash(){
     // get initial DSA link from location hash
@@ -88,7 +99,6 @@ function readHash(){
 }
 function updateHash(options){
     for (const [key, value] of Object.entries(options)) {
-        console.log(`${key}: ${value}`);
         if(hashInfo.hasOwnProperty(key)){
             hashInfo[key] = value;
         } else {
@@ -103,12 +113,6 @@ function updateHash(options){
     window.location.hash = newHash;
 }
 
-//reviewer control setup
-$('#reviewer-controls .review-next').on('click',reviewNext);
-$('#reviewer-controls .review-previous').on('click',reviewPrevious);
-$('#reviewer-controls .refresh-review').on('click',setupReview);
-$('#reviewer-controls .align-to-roi').on('click',alignToROI);
-$('#reviewer-controls select').on('change',event=>addSelectedItemsToLayer(groups[event.target.value]));
 
 function reviewNext(){
     let newIndex = OpenSeadragon.positiveModulo(reviewIndex+1, items.length);
@@ -235,48 +239,104 @@ function alignToROI(){
     }
 }
 
-function setMagnificationValue(){
-    let mz = v1.viewport.getMaxZoom() / v1.viewport.maxZoomPixelRatio;
-    let src = v1.world.getItemAt(0).source;
-    let objmag = src.item.detail.magnification;
+function setupMagnificationControls(){
+    $('.magnification-widget')
+        .on('mouseover',ev=>$(ev.currentTarget).addClass('expanded'))
+        .on('mouseout',ev=>$(ev.currentTarget).removeClass('expanded'));
 
-    let mag = v1.viewport.getZoom(true) / mz * objmag;
-    // console.log('mag',mag);
-    $('.current-mag').text(mag.toFixed(2));
+    $('.magnification-widget input[type=range]').on('input',function(){
+        let mag = sliderValueToMag(this.value);
+        let sf = getZoomScaleFactor(v1, getFullResolutionMagnification(v1));
+        let zoom = magToZoom(mag, sf);
+        v1.viewport.zoomTo(zoom, null, true);
+    });
+    $('.magnification-widget button').on('click',function(){
+        let mag = $(this).data('value');
+        let sf = getZoomScaleFactor(v1, getFullResolutionMagnification(v1));
+        let zoom = magToZoom(mag, sf);
+        v1.viewport.zoomTo(zoom, null, true);
+    });
+
+    v1.addHandler('zoom',event=>{
+        let sf = getZoomScaleFactor(v1, getFullResolutionMagnification(v1));
+        setMagnificationValue(zoomToMag(event.zoom, sf));
+    })
+
+    let smin = 1;
+    let smax = 100;
+    let mmin = 0.5;
+    let mmax = 80;
+    let scale = (Math.log2(mmax) - Math.log2(mmin)) / (smax - smin);
+    function sliderValueToMag(value){
+        return Math.pow(2, scale*(value - smin) + Math.log2(mmin));
+    }
+    function magToSliderValue(mag){
+        return smin + (1/scale) * (Math.log2(mag) - Math.log2(mmin));
+    }
+    function zoomToMag(zoom, scaleFactor){
+        return zoom * scaleFactor;
+    }
+    function magToZoom(mag, scaleFactor){
+        return mag / scaleFactor;
+    }
+    function getFullResolutionMagnification(viewer){
+        let src = viewer.world.getItemAt(0).source;
+        let item = src.item;
+        if(!item){
+            return;
+        }
+        return item.detail.magnification;
+    }
+
+    function getZoomScaleFactor(viewer, fullResMagnification){
+        return fullResMagnification * viewer.viewport.maxZoomPixelRatio / viewer.viewport.getMaxZoom();
+    }
+
+    function setMagnificationValue(mag){
+        
+        // console.log('mag',mag);
+        $('.current-mag').text(mag.toFixed(2));
+        $('.magnification-widget input[type=range]').val(magToSliderValue(mag));
+    }
+
+
 }
 
-// add key handlers
-$(window).on('keypress',event=>{
-    if(event.originalEvent.repeat){
-        return;
-    }
-    let key = event.key;
-    let preventDefault = true;
-    if(key=='c'){
-        //navigate to previous
-        reviewPrevious();
-    } else if (key == 'v'){
-        //cycle through classification groups
-        let dropdown = $('#reviewer-controls select')[0];
-        dropdown.selectedIndex = (dropdown.selectedIndex+1) % dropdown.options.length;
-        $(dropdown).trigger('change');
-    } else if(key == 'b'){
-        //navigate to next
-        reviewNext();
-    } else if(key == 'g'){
-        if(toolbar.tools.rectangle.isActive()){
-            toolbar.tools.rectangle.deactivate();
-        } else {
-            toolbar.tools.rectangle.activate();
+function setupKeypressHandlers(){
+    // add key handlers
+    $(window).on('keypress',event=>{
+        if(event.originalEvent.repeat){
+            return;
         }
-    } else {
-        preventDefault = false;
-    }
-    if(preventDefault){
-        event.preventDefault();
-        event.stopImmediatePropagation();
-    }
-})
+        let key = event.key;
+        let preventDefault = true;
+        if(key=='c'){
+            //navigate to previous
+            reviewPrevious();
+        } else if (key == 'v'){
+            //cycle through classification groups
+            let dropdown = $('#reviewer-controls select')[0];
+            dropdown.selectedIndex = (dropdown.selectedIndex+1) % dropdown.options.length;
+            $(dropdown).trigger('change');
+        } else if(key == 'b'){
+            //navigate to next
+            reviewNext();
+        } else if(key == 'g'){
+            if(toolbar.tools.rectangle.isActive()){
+                toolbar.tools.rectangle.deactivate();
+            } else {
+                toolbar.tools.rectangle.activate();
+            }
+        } else {
+            preventDefault = false;
+        }
+        if(preventDefault){
+            event.preventDefault();
+            event.stopImmediatePropagation();
+        }
+    });
+}
+
 
 // Viewer creation and annotation setup
 
@@ -347,7 +407,6 @@ function createViewer(){
         updateHash({
             bounds: [Math.round(bounds.x), Math.round(bounds.y), Math.round(bounds.x+bounds.width), Math.round(bounds.y+bounds.height)].join('%2C')
         });
-        setMagnificationValue();
     })
 
 

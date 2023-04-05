@@ -98,3 +98,38 @@ input.dsa-link{
 .gui-component{
     border-bottom:thin black solid;
 }
+
+.magnification-widget{
+    position:relative;
+}
+.magnification-widget:not(.expanded) .slider-controls{
+    display:none;
+}
+.magnification-widget .slider-controls{
+    position:absolute;
+    background-color:white;
+    right:-5px; /* To offset parent padding */
+    top:-2px; /* To offset parent padding */
+    padding:10px;
+    padding-top:1.5em;
+    border-bottom:thin gray solid;
+    border-left:thin gray solid;
+    border-bottom-left-radius: 5px;
+    display:inline-grid;
+    grid-template-rows:auto;
+    grid-template-columns:repeat(16, auto);
+    white-space: nowrap;
+}
+.magnification-widget .current-mag{
+    float:right;
+}
+.magnification-widget>div{
+    position:relative;
+}
+.magnification-widget button{
+    grid-column: 2 span;
+    width: 2.5em;
+}
+.magnification-widget input[type='range']{
+    grid-area: 1 / 1 / 2 / 16;
+}
