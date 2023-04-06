@@ -229,7 +229,7 @@ function alignToROI(){
             let path = ROI.children[0];
             let angle = path.segments[1].point.subtract(path.segments[0].point).angle;
             //let angle = ROI.features[0].geometry.properties.angle;
-            viewer.viewport.rotateTo(-angle);
+            viewer.viewport.rotateTo(-angle, null, true);
         } catch (e){
             console.warn('ROI was found, did not have the expected format.');
         }
