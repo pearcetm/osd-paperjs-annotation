@@ -100,7 +100,10 @@ export class FeatureCollectionUI{
 
         self.label = this.layer.displayName;
 
-        self._featurelist.sortable('refresh');
+        if(!self._featurelist.sortable('option','disabled') == false){
+            self._featurelist.sortable('refresh');
+        }
+        
 
         self.element.on('click',function(ev){
             ev.stopPropagation();
