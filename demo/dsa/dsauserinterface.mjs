@@ -358,7 +358,7 @@ export class DSAUserInterface extends OpenSeadragon.EventSource{
     // private
     _getFolders(parent){
         
-        return this.API.get('folder',{params:{parentType:parent._modelType,parentId:parent._id}}).then(d=>{
+        return this.API.get('folder',{params:{parentType:parent._modelType,parentId:parent._id,limit:0}}).then(d=>{
             
             let folders = d.map(folder=>{
                 let element=$('<div>',{class:'folder'});
@@ -388,7 +388,7 @@ export class DSAUserInterface extends OpenSeadragon.EventSource{
     // private
     _getItems(folder, container){
         // let _this = this;
-        return this.API.get('item',{params:{folderId:folder._id}}).then(d=>{
+        return this.API.get('item',{params:{folderId:folder._id,limit:0}}).then(d=>{
             return this._makeItemList(container, d);
         });
     }
