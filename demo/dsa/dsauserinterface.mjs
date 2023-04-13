@@ -2,13 +2,22 @@ import { DigitalSlideArchiveAPI } from "./dsa.mjs";
 import { DSAAdapter } from "./adapter.mjs";
 
 export class DSAUserInterface extends OpenSeadragon.EventSource{
-    constructor(viewer){
+    constructor(viewer, options){
         super();
+
+        let defaultOptions = {
+            hash: true,
+        }
+
+        this.options = Object.assign(defaultOptions, options);
+
         this._viewer = viewer;
         this.API = null;
         this._currentItem = null;
         this._currentAnnotation = null;
 
+        this.hashInfo = new HashInfo('dsa','image','bounds');
+        
         // API for UI elements
         this.dialog = $(dialogHtml());
         this.header = $(headerHtml());
@@ -62,11 +71,74 @@ export class DSAUserInterface extends OpenSeadragon.EventSource{
         this.annotationEditorGUI.on('click','.dsa-save-annotation',(ev)=>{
             this._saveAnnotation();
         });
+        this.annotationEditorGUI.on('click','.dsa-save-geojson',(ev)=>{
+            this._saveAnnotationAsGeoJSON();
+        });
         this.dialog.on('click','.item',(event)=>{
             let item = $(event.target).data('item');
             this.openItem(item._id);
             
         });
+
+
+        // setup hash functionality, if enabled
+        if(this.options.hash){
+            // initialized based on hash
+            this.hashInfo.read();
+            if(this.hashInfo.dsa){
+                let success = this.connectToDSA(this.hashInfo.dsa);
+                if(success && this.hashInfo.image){
+                    this.openItem(this.hashInfo.image).catch(e => {
+                        this.addOnceHandler('login-returned', event=>{
+                            if(event.success){
+                                this.openItem(this.hashInfo.image);
+                            } else {
+                                alert('Could not open: image does not exist or you do not have permissions. Are you logged in?');
+                                throw(`Could not open image with id=${this.hashInfo.image}`);
+                            }
+
+                        })
+                    });
+                }
+            }
+
+            this._viewer.addHandler('open',(event)=>{
+                let ts = this._tileSource = event.source;
+                // before updating hash with new ID, check to see if we should navigate using hash paramaters
+                if(this.hashInfo.image === (ts.item && ts.item._id)){
+                    if(this.hashInfo.bounds){
+                        let bounds = this.hashInfo.bounds.split('%2C').map(b=>Number(b));
+                        let rect = new OpenSeadragon.Rect(bounds[0], bounds[1], bounds[2] - bounds[0], bounds[3] - bounds[1]);
+                        window.setTimeout(()=>viewer.viewport.fitBounds(viewer.viewport.imageToViewportRectangle(rect)));
+                    }
+                } else {
+                    // add DSA ID as hash paramater via dsaUI
+                    let imageId = ts.item && ts.item._id; 
+                    if(imageId){
+                        this.hashInfo.update({ image: imageId });
+                    }
+                }
+            });
+
+            // set up handler for view info (x, y, zoom) as hash parameter via dsaUI
+            this._viewer.addHandler('animation-finish',ev=>{
+                let source = this._tileSource;
+                if(!source || !source.item || (source.item._id !== this.hashInfo.image)){
+                    return;
+                }
+                let bounds = viewer.viewport.viewportToImageRectangle(viewer.viewport.getBounds(false));
+                this.hashInfo.update({
+                    bounds: [Math.round(bounds.x), Math.round(bounds.y), Math.round(bounds.x+bounds.width), Math.round(bounds.y+bounds.height)].join('%2C')
+                });
+            });
+            
+            this.addHandler('set-dsa-instance',event=>{
+                this.hashInfo.update({dsa: event.url});
+            });
+
+            
+        }
+        
 
     }
 
@@ -142,14 +214,53 @@ export class DSAUserInterface extends OpenSeadragon.EventSource{
         annotation.annotation.elements = this.adapter.featureCollectionsToElements(geoJSON);
         console.log(annotation);
 
+        let promise;
         if(annotation._id){
             //use PUT to update the annotation 
-            this.API.put(`annotation/${annotation._id}`,{params:{itemId:itemId},data:annotation.annotation});
+            promise = this.API.put(`annotation/${annotation._id}`,{params:{itemId:itemId},data:annotation.annotation});
         } else {
             //use POST to create a new annotation
-            this.API.post('annotation',{params:{itemId:itemId},data:annotation.annotation});
+            promise = this.API.post('annotation',{params:{itemId:itemId},data:annotation.annotation});
+        }
+
+        if(this.annotationEditorGUI.find('.save-geojson').prop('checked')){
+            promise.then(d=>{
+                console.log('Annotation saved',d);
+                this._saveAnnotationAsGeoJSON(annotation.annotation.name, d._id, JSON.stringify(geoJSON));
+            })
         }
        
+    }
+
+    // private
+    _saveAnnotationAsGeoJSON(annotationName, annotationId, geoJSON){
+        let idExtension = `.${annotationId}.json`;
+        let name = `${annotationName}${idExtension}`;
+        let blob = new Blob([geoJSON], {type:'application/json'});
+        let params = {
+            parentType:'item',
+            parentId:this._currentItem._id,
+            name:name,
+        };
+        // console.log('save as geojson', params);
+        this.API.get(`item/${this._currentItem._id}/files`).then(d=>{
+            console.log('files',d);
+            let filtered = d.filter(f=>f.name.endsWith(idExtension) && f.mimeType == 'application/json');
+            if(filtered.length > 0){
+                // file already exists - modify the contents
+                this.API.updateFile(filtered[0], blob).then(d=>{
+                    console.log('Changes saved', d);
+                });
+            } else {
+                // upload a new file to this item
+                this.API.uploadFile(blob, params).then(d=>{
+                    console.log('File uploaded', d)
+                })
+            }
+            // item with this name already exists. Replace contents with new file.
+
+        });
+        // 
     }
 
     // private
@@ -278,21 +389,6 @@ export class DSAUserInterface extends OpenSeadragon.EventSource{
     _getItems(folder, container){
         // let _this = this;
         return this.API.get('item',{params:{folderId:folder._id}}).then(d=>{
-
-            // let promises = d.map(item=>{
-            //     return this.API.get(`item/${item._id}/tiles`).then(d=>{
-            //         return item;
-            //     }).catch(e=>{
-            //         // console.log('Item not a tilesource',item)
-            //         return this.API.get(`item/${item._id}/files`).then(d=>{
-            //             return item;
-            //         });
-            //     });
-            // });
-    
-            // return Promise.all(promises).then(itemList=>{
-            //     this._makeItemList(container, itemList);
-            // });
             return this._makeItemList(container, d);
         });
     }
@@ -343,6 +439,56 @@ function dsaImageTileSource(baseURL, itemId, token){
     })
 }
 
+class HashInfo{
+    constructor(){
+        this.hashInfo = this._initHashInfo(Array.from(arguments));
+        this.hashKeys = Object.keys(this.hashInfo);
+    }
+    
+    // has-based state saving - add image ID and navigation parameters to the URL
+    read(){
+        let hash = window.location.hash;
+        if(!hash){
+            return;
+        }
+        hash = hash.substring(1);
+        let pairs = hash.split('&');
+        pairs.forEach(pair=>{
+            let array = pair.split('=');
+            if(array.length === 2 && this.hashKeys.includes(array[0])){
+                this.hashInfo[array[0]]=array[1];
+            }
+        });
+    }
+    update(options){
+        for (const [key, value] of Object.entries(options)) {
+            if(this.hashInfo.hasOwnProperty(key)){
+                this.hashInfo[key] = value;
+            } else {
+                console.error(`Bad hash option: ${key} not allowed as a key.`);
+            }
+        }
+
+        let newHash = this.hashKeys.filter(key=>this.hashInfo[key] !== null).map(key=>{
+            return key + '=' + this.hashInfo[key];
+        }).join('&');
+
+        window.location.hash = newHash;
+    }
+
+    _initHashInfo(fields){
+        let hashInfo = fields.reduce((accumulator, field)=>{
+            accumulator[field] = null;
+            Object.defineProperty(this,field,{
+                get: function(){ return this.hashInfo[field]; }
+            });
+            return accumulator;
+        }, {});
+        return hashInfo;
+    }
+
+}
+
 
 
 function dialogHtml(){
@@ -371,10 +517,11 @@ function annotationEditorHtml(){
             <button class="dsa-new-annotation">Create New</button>
         </div>
         <div class="dsa-current-annotation">
-            <div><input type="text" placeholder="Enter annotation name"></div>
+            <div><input type="text" placeholder="Enter annotation name"><button class="dsa-close-annotation">Close</button></div>
             <div><textarea placeholder="Enter annotation description"></textarea></div>
-            <button class="dsa-save-annotation">Save changes</button>
-            <button class="dsa-close-annotation">Close</button>
+            <button class="dsa-save-annotation">Save</button>
+            <!--<button class="dsa-save-geojson" title="Save this annotation as a GeoJSON file in the DSA">As GeoJSON</button>-->
+            <input type="checkbox" class="save-geojson"> <label>with GeoJSON file</label>
         </div>
     </div>
     `;

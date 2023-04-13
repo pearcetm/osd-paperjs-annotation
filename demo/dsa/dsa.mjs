@@ -62,6 +62,15 @@ export class DigitalSlideArchiveAPI extends REST{
             });
         }
 
+        dsa.updateFile = function(file, blob){
+            return dsa.put(`file/${file._id}/contents`,{
+                data:blob,
+                params:{
+                    size:blob.size,
+                },
+            });
+        }
+
 
         function LinkedFile(){
 

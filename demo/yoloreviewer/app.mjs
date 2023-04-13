@@ -16,11 +16,6 @@ let items = [];
 let reviewIndex = -1;
 let groups = {};
 
-const hashInfo = {
-    dsa: null,
-    image: null,
-    bounds: null,
-};
 
 v1.addOnceHandler('open',()=>{
     v1.viewport.zoomTo(0.01,null,true);
@@ -40,24 +35,6 @@ let dsaUI = new DSAUserInterface(v1);
 dsaUI.header.appendTo('.dsa-ui-container');
 dsaUI.annotationEditorGUI.appendTo('#dsa-gui');
 
-// initialize based on hash input
-readHash();
-if(hashInfo.dsa){
-    let success = dsaUI.connectToDSA(hashInfo.dsa);
-    if(success && hashInfo.image){
-        dsaUI.openItem(hashInfo.image).catch(e => {
-            dsaUI.addOnceHandler('login-returned', event=>{
-                if(event.success){
-                    dsaUI.openItem(hashInfo.image);
-                } else {
-                    alert('Could not open: image does not exist or you do not have permissions. Are you logged in?');
-                    throw(`Could not open image with id=${hashInfo.image}`);
-                }
-
-            })
-        });
-    }
-}
 //dsaUI event handlers
 dsaUI.addHandler('annotation-opened',event=>{
     $('#reviewer-controls').show();
@@ -65,9 +42,6 @@ dsaUI.addHandler('annotation-opened',event=>{
 });
 dsaUI.addHandler('annotation-closed',()=>{
     $('#reviewer-controls').hide();
-});
-dsaUI.addHandler('set-dsa-instance',event=>{
-    updateHash({dsa: event.url});
 });
 
 
@@ -80,39 +54,6 @@ $('#reviewer-controls select').on('change',event=>addSelectedItemsToLayer(groups
 
 setupKeypressHandlers();
 setupMagnificationControls();
-
-// has-based state saving - add image ID and navigation parameters to the URL
-function readHash(){
-    // get initial DSA link from location hash
-    let hash = window.location.hash;
-    if(!hash){
-        return;
-    }
-    hash = hash.substring(1);
-    let pairs = hash.split('&');
-    pairs.forEach(pair=>{
-        let array = pair.split('=');
-        if(array.length === 2 && Object.keys(hashInfo).includes(array[0])){
-            hashInfo[array[0]]=array[1];
-        }
-    });
-}
-function updateHash(options){
-    for (const [key, value] of Object.entries(options)) {
-        if(hashInfo.hasOwnProperty(key)){
-            hashInfo[key] = value;
-        } else {
-            console.error(`Bad hash option: ${key} not allowed as a key.`);
-        }
-    }
-
-    let newHash = Object.keys(hashInfo).filter(key=>hashInfo[key] !== null).map(key=>{
-        return key + '=' + hashInfo[key];
-    }).join('&');
-
-    window.location.hash = newHash;
-}
-
 
 function reviewNext(){
     let newIndex = OpenSeadragon.positiveModulo(reviewIndex+1, items.length);
@@ -391,31 +332,7 @@ function createViewer(){
 
         $('#current-file').text(`${ts.name} (${ev.page+1} of ${ev.eventSource.tileSources.length})`);
 
-        // before updating hash with new ID, check to see if we should navigate using hash paramaters
-        if(hashInfo.image === (ts.item && ts.item._id)){
-            if(hashInfo.bounds){
-                let bounds = hashInfo.bounds.split('%2C').map(b=>Number(b));
-                let rect = new OpenSeadragon.Rect(bounds[0], bounds[1], bounds[2] - bounds[0], bounds[3] - bounds[1]);
-                window.setTimeout(()=>viewer.viewport.fitBounds(viewer.viewport.imageToViewportRectangle(rect)));
-            }
-        } else {
-            // add DSA ID as hash paramater via dsaUI
-            updateHash({image: ts.item && ts.item._id});
-        }
-
     });
-
-    // set up handler for view info (x, y, zoom) as hash parameter via dsaUI
-    viewer.addHandler('animation-finish',ev=>{
-        let source = viewer.world.getItemAt(0).source
-        if(!source.item || (source.item._id !== hashInfo.image)){
-            return;
-        }
-        let bounds = viewer.viewport.viewportToImageRectangle(viewer.viewport.getBounds(false));
-        updateHash({
-            bounds: [Math.round(bounds.x), Math.round(bounds.y), Math.round(bounds.x+bounds.width), Math.round(bounds.y+bounds.height)].join('%2C')
-        });
-    })
 
 
     return viewer;

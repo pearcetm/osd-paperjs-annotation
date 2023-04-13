@@ -7,17 +7,18 @@ export class DSAAdapter{
             featureCollections.push(dsa.annotation.attributes.geojslayer);
         } else {
             let groups = dsa.annotation.elements.reduce((acc, f)=>{
-                if(!acc[f.group]){
-                    acc[f.group] = [];
+                let label = ('group' in f) ? f.group : dsa.annotation.name;
+                if(!acc[label]){
+                    acc[label] = [];
+                    acc[label].group = f.group;
                 }
-                acc[f.group].push(f);
+                acc[label].push(f);
                 return acc;
             }, {});
-            Object.keys(groups).forEach(groupName=>{
-                let elements = groups[groupName];
-                let label = typeof groupName === undefined ? dsa.annotation.name : groupName;
+            Object.keys(groups).forEach(label=>{
+                let elements = groups[label];
                 let description = dsa.annotation.description;
-                featureCollections.push(elementArrayToFeatureCollection(dsa._id, label, elements, description, groupName));
+                featureCollections.push(elementArrayToFeatureCollection(dsa._id, label, elements, description, elements.group));
             })
         }
     
@@ -65,10 +66,10 @@ function elementToFeature(element){
 
         if(e.type == 'polyline' && e.closed == true){
             g.type = 'MultiPolygon';
-            g.coordinates = [e.points].concat(e.holes||[]);
+            g.coordinates = [[e.points].concat(e.holes||[])];
         } else if (e.type == 'polyline' && e.closed == false){
             g.type = 'MultiLineString';
-            g.coordinates = [e.points];
+            g.coordinates = [[e.points]];
             g.properties.strokeWidths=[e.lineWidth];
         } else if (e.type == 'arrow'){
             g.type = 'LineString';
@@ -268,29 +269,29 @@ function elementArrayToFeatureCollection(annotationId, label, elements, descript
         let feature = elementToFeature(f);
         if(f.user && f.user.MultiPolygon){
             if(!acc.multiPolygons[f.user.MultiPolygon]){
-                feature.geometry.coordinates = [feature.geometry.coordinates]; //wrap the first in an array
+                // feature.geometry.coordinates = [feature.geometry.coordinates]; //wrap the first in an array
                 acc.multiPolygons[f.user.MultiPolygon] = feature;
                 acc.featurelist.push(feature);
             } else {
-                acc.multiPolygons[f.user.MultiPolygon].geometry.coordinates.push(feature.geometry.coordinates);
+                acc.multiPolygons[f.user.MultiPolygon].geometry.coordinates.push(feature.geometry.coordinates[0]); // access first element to unwrap before appending
             }
             
         } else if (f.user && f.user.MultiLineString){
             if(!acc.multiLineStrings[f.user.MultiLineString]){
-                feature.geometry.coordinates = [feature.geometry.coordinates]; //wrap the first in an array
+                // feature.geometry.coordinates = [feature.geometry.coordinates]; //wrap the first in an array
                 acc.multiLineStrings[f.user.MultiLineString] = feature;
                 acc.featurelist.push(feature);
             } else {
-                acc.multiLineStrings[f.user.MultiLineString].geometry.coordinates.push(feature.geometry.coordinates);
+                acc.multiLineStrings[f.user.MultiLineString].geometry.coordinates.push(feature.geometry.coordinates [0]); // access first element to unwrap before appending
             }
             
         } else if (f.user && f.user.MultiPoint){
             if(!acc.multiPoints[f.user.MultiPoint]){
-                feature.geometry.coordinates = [feature.geometry.coordinates]; //wrap the first in an array
+                // feature.geometry.coordinates = [feature.geometry.coordinates]; //wrap the first in an array
                 acc.multiPoints[f.user.MultiPoint] = feature;
                 acc.featurelist.push(feature);
             } else {
-                acc.multiPoints[f.user.MultiPoint].geometry.coordinates.push(feature.geometry.coordinates);
+                acc.multiPoints[f.user.MultiPoint].geometry.coordinates.push(feature.geometry.coordinates[0]); // access first element to unwrap before appending
             }
             
         } else {

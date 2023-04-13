@@ -35,7 +35,6 @@ v1.open(
 let dsaUI = new DSAUserInterface(v1);
 
 // get initial DSA link from location hash
-dsaUI.dsaLinkInput.val(window.location.hash.substring(1));
 dsaUI.header.appendTo('.dsa-ui-container');
 dsaUI.annotationEditorGUI.appendTo('#dsa-gui');
 
@@ -76,7 +75,7 @@ function createViewer(){
         }
         
         // tk defined at containing scope
-        tk = new AnnotationToolkit(v1);
+        let tk = new AnnotationToolkit(v1);
 
         // add project to window for debugging
         window.project = tk.overlay.paperScope.project;
