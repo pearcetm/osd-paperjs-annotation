@@ -150,7 +150,7 @@ export class FeatureUI{
             console.warn('No event listeners are registered for paperScope.project for event \'edit-style\'');
         }
     }
-    centerItem(){
+    centerItem(immediately = false){
         let viewport = this.paperItem.project.overlay.osdViewer.viewport;
         let bounds = this.paperItem.bounds;
         let center = viewport.imageToViewportCoordinates(bounds.center.x,bounds.center.y);
@@ -160,10 +160,10 @@ export class FeatureUI{
         let rect=new OpenSeadragon.Rect(xy.x, xy.y, wh.x,wh.y);
         let vb = viewport.getBounds();
         if(rect.width > vb.width || rect.height > vb.height){
-            viewport.fitBounds(rect);
+            viewport.fitBounds(rect, immediately);
         }
         else{
-            viewport.panTo(center);
+            viewport.panTo(center, immediately);
         }
         // console.log('centerItem clicked',rect)
     }

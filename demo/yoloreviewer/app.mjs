@@ -84,7 +84,7 @@ function handleItemSelected(){
         setupReviewForItem(item);
         if(selected.length === 1){
             //Only one item - navigate to it.
-            item.FeatureUI.centerItem();
+            item.FeatureUI.centerItem(true);
         }
     } else {
         $('#reviewer-controls .current-index').text('-'); // add one for readability
