@@ -493,7 +493,7 @@ class HashInfo{
 
 function dialogHtml(){
     return `
-    <div class="dsa-dialog">
+    <div class="dsa-dialog dsaui">
         <div class="login"></div>
         <h3>Annotated images</h3>
         <div class="dsa-contents dsa-annotated-images"></div>
@@ -504,14 +504,14 @@ function dialogHtml(){
 }
 function headerHtml(){
     return `
-    <div class="dsa-header">
+    <div class="dsa-header dsaui">
         <input type="text" placeholder="Paste link to a DSA instance" class="dsa-link"><button class="dsa-go">Open DSA</button>
     </div>
     `;
 }
 function annotationEditorHtml(){
     return `
-    <div class="dsa-annotation-gui" data-mode="picker">
+    <div class="dsa-annotation-gui dsaui" data-mode="picker">
         <div class="dsa-annotation-picker">
             <div class="dsa-annotation-list"></div>
             <button class="dsa-new-annotation">Create New</button>

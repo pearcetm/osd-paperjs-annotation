@@ -127,8 +127,8 @@ function elementToFeature(element){
         geometry:mapElementToGeometryType(element),
         properties:{
             userdata:{id: element.id},
-            fillColor:element.fillColor,
-            strokeColor:element.lineColor,
+            fillColor:element.fillColor || 'rgba(255, 255, 255, 0)', // default to white transparent
+            strokeColor:element.lineColor || 'rgba(0, 0, 0, 0)', // default to black transparent
             strokeWidth:typeof element.lineWidth == 'undefined' ? 1 : element.lineWidth,
             rescale:{
                 strokeWidth: typeof element.lineWidth == 'undefined' ? 1 : element.lineWidth,

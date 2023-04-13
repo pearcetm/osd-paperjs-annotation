@@ -246,7 +246,7 @@ function setupMagnificationControls(){
 function setupKeypressHandlers(){
     // add key handlers
     $(window).on('keypress',event=>{
-        if(event.originalEvent.repeat){
+        if(event.originalEvent.repeat || ['INPUT','TEXTAREA'].includes(event.target.tagName) ){
             return;
         }
         let key = event.key;
@@ -271,10 +271,7 @@ function setupKeypressHandlers(){
         } else {
             // preventDefault = false;
         }
-        // if(preventDefault){
-        //     event.preventDefault();
-        //     event.stopImmediatePropagation();
-        // }
+        
     });
 
     // suppress default OSD keydown handling for a subset of keys
