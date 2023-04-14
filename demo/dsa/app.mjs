@@ -34,10 +34,8 @@ v1.open(
 
 let dsaUI = new DSAUserInterface(v1);
 
-// get initial DSA link from location hash
 dsaUI.header.appendTo('.dsa-ui-container');
 dsaUI.annotationEditorGUI.appendTo('#dsa-gui');
-
 
 // Local file setup
 
@@ -96,7 +94,7 @@ function createViewer(){
         });
         ui._layerUI.element.find('input.annotation-fill-opacity').val('0.5').trigger('input');
 
-        $('#current-file').text(`${ts.name} (${ev.page+1} of ${ev.eventSource.tileSources.length})`)
+        // $('#current-file').text(`${ts.name} (${ev.page+1} of ${ev.eventSource.tileSources.length})`)
 
     })
     return viewer;

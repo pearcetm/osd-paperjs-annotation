@@ -76,7 +76,7 @@ export class DSAUserInterface extends OpenSeadragon.EventSource{
         });
         this.dialog.on('click','.item',(event)=>{
             let item = $(event.target).data('item');
-            this.openItem(item._id);
+            this.openItem(item._id, event.target);
             
         });
 
@@ -160,7 +160,7 @@ export class DSAUserInterface extends OpenSeadragon.EventSource{
         return true;
     }
     
-    openItem(id){
+    openItem(id, element){
         return this.API.get(`item/${id}`).then(item=>{
             this._currentItem = item;
             this.API.get(`item/${id}/tiles`).catch(e=>{
@@ -175,9 +175,29 @@ export class DSAUserInterface extends OpenSeadragon.EventSource{
                 this._viewer.goToPage(0);
                 this.annotationEditorGUI.show();
                 this.annotationEditorGUI.attr('data-mode','picker');
+                this._setupItemNavigation(ts.name, element);
             });
         });
         
+    }
+
+    // private
+    _setupItemNavigation(currentName, currentElement){
+        this.header.find('.item-navigation .item').attr('disabled',true).off('click');
+        this.header.find('.current-item').text(currentName);
+        if(!currentElement){
+            return;
+        }
+        
+        let previous = $(currentElement).prev();
+        let next = $(currentElement).next();
+        if(previous.length > 0){
+            this.header.find('.item-navigation .previous').attr('disabled',false).on('click',()=>previous.trigger('click'));
+        }
+        if(next.length > 0){
+            this.header.find('.item-navigation .next').attr('disabled',false).on('click',()=>next.trigger('click'));
+        }
+
     }
 
     // private
@@ -303,7 +323,7 @@ export class DSAUserInterface extends OpenSeadragon.EventSource{
 
     // private
     _getAnnotatedImages(){
-        this.API.get('annotation/images').then(d=>{
+        this.API.get('annotation/images',{params:{limit:10}}).then(d=>{
             let element=$('<div>',{class:'folder'});
             this.dialog.find('.dsa-annotated-images').empty().append(element);
             let header=$('<div>',{class:'folder-header'}).text(`${d.length} images with annotations`).appendTo(element);
@@ -495,7 +515,7 @@ function dialogHtml(){
     return `
     <div class="dsa-dialog dsaui">
         <div class="login"></div>
-        <h3>Annotated images</h3>
+        <h3>Recently annotated images (up to 10)</h3>
         <div class="dsa-contents dsa-annotated-images"></div>
         <h3>Collections</h3>
         <div class="dsa-contents dsa-collections"></div>
@@ -506,6 +526,11 @@ function headerHtml(){
     return `
     <div class="dsa-header dsaui">
         <input type="text" placeholder="Paste link to a DSA instance" class="dsa-link"><button class="dsa-go">Open DSA</button>
+        <span class="item-navigation"> 
+            Now annotating: <span class="current-item"></span>
+            <button class="item previous" disabled><</button>
+            <button class='item next' disabled>></button>
+        </span>
     </div>
     `;
 }
