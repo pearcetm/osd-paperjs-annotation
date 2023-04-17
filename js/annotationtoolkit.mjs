@@ -31,6 +31,7 @@ Object.defineProperty(paper.Project.prototype, 'hierarchy', hierarchyDef())
 Object.defineProperty(paper.Project.prototype, 'descendants', descendantsDefProject())
 Object.defineProperty(paper.Project.prototype, 'fillOpacity', itemFillOpacityPropertyDef())
 Object.defineProperty(paper.View.prototype, 'fillOpacity', viewFillOpacityPropertyDef())
+Object.defineProperty(paper.View.prototype, '_fillOpacity',{value: 1, writable: true});//initialize to opaque
 Object.defineProperty(paper.Project.prototype, 'strokeOpacity', itemStrokeOpacityPropertyDef())
 Object.defineProperty(paper.TextItem.prototype, 'content', textItemContentPropertyDef())
 
@@ -326,7 +327,7 @@ function viewFillOpacityPropertyDef(){
         },
         get: function opacity(){
             return this._fillOpacity;
-        }
+        },
     }
 }
 

@@ -30,7 +30,13 @@ export class PointTextTool extends AnnotationUITool{
         this.setToolbarControl(new PointTextToolbar(this));
         this.extensions.onActivate=function(){
             self.project.paperScope.project.activeLayer.addChild(cursor);
-            if(self.itemToCreate) cursor.visible = true;
+            if(self.itemToCreate){
+                // new item to be created - show the cursor
+                cursor.visible = true;
+            } else if(self.item){
+                // modifying an existing item
+                self._updateTextInput();
+            }
         }
         this.extensions.onDeactivate=function(){
             self.project.toolLayer.addChild(cursor);
@@ -39,6 +45,7 @@ export class PointTextTool extends AnnotationUITool{
         }
         this.onSelectionChanged = function(){
             cursor.visible = !!this.itemToCreate;
+            self._updateTextInput();
         }
         tool.onMouseMove=function(ev){
             cursor.position = ev.point;
@@ -75,6 +82,9 @@ export class PointTextTool extends AnnotationUITool{
             self.project.overlay.removeClass('point-tool-grabbing');
         }
     } 
+    _updateTextInput(){
+        this.toolbarControl.setItemText(this.item ? this.item.children[1].content : '');
+    }
 }
 
 class PointTextToolbar extends AnnotationUIToolbarBase{
@@ -92,6 +102,9 @@ class PointTextToolbar extends AnnotationUIToolbarBase{
             self.tool.cursor.children[1].content = value;
         });
         this.input.trigger('input');
+    }
+    setItemText(text){
+        this.input.val(text);
     }
     getValue(){
         let input = this.input[0];
