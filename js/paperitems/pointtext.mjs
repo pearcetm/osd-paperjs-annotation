@@ -67,6 +67,22 @@ export class PointText extends AnnotationItem{
         point.applyRescale();
         
         this.paperItem = point;
+
+        // define style getter/setter so that style propagates to/from children
+        Object.defineProperty(point, 'style', {   
+            get: ()=>{ return point.children[0].style },
+            set: style=> { point.children.forEach(child=>child.style = style); }
+        });
+        // override fillOpacity property definition so that style getter/setter doesn't mess with fillOpacity
+        Object.defineProperty(point, 'fillOpacity', {   
+            get: function(){
+                return this._style.fillOpacity;
+            },
+            set: function(opacity){
+                this._style.fillOpacity = opacity;
+            }
+        });
+
     }
     setStyle(props){
         //override default implementation so it doesn't overwrite the rescale properties
@@ -74,7 +90,7 @@ export class PointText extends AnnotationItem{
         // delete props.rescale;
         props.rescale = OpenSeadragon.extend(true, props.rescale, this.paperItem.rescale);
         this.paperItem.style.set(props);
-        this.paperItem.children[0].style.set(props);
+        // this.paperItem.children[0].style.set(props);
     }
     get textitem(){
         return this.paperItem.children[1];
