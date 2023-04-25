@@ -48,8 +48,17 @@ export class REST {
                 retry: options.retry,
                 headers: headers,
             };
-            if (options.parse == false)
+            if (options.parse == false) {
                 axParams.transformResponse = res => { return res; };
+            }
+            if (options.noCache){
+                let ts = `timestamp=${Date.now()}`;
+                if(axParams.url.includes('?')){
+                    axParams.url = axParams.url + '&' + ts;
+                } else {
+                    axParams.url = axParams.url + '?' + ts;
+                }
+            }
             // console.log(axParams)
             let ax = axios(axParams).then(function (res) { return res.data || { status: res.status }; }).catch(error => {
                 console.log('Axios error:', error);

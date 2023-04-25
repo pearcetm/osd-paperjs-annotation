@@ -161,11 +161,11 @@ export class DSAUserInterface extends OpenSeadragon.EventSource{
     }
     
     openItem(id, element){
-        return this.API.get(`item/${id}`).then(item=>{
+        return this.API.get(`item/${id}`, {noCache: true}).then(item=>{
             this._currentItem = item;
-            this.API.get(`item/${id}/tiles`).catch(e=>{
+            this.API.get(`item/${id}/tiles`, {noCache: true}).catch(e=>{
                 // console.log('Item not a tilesource',item)
-                return this.API.get(`item/${item._id}/files`);
+                return this.API.get(`item/${item._id}/files`, {noCache: true});
             }).then(d=>{
                 let ts = this._createTileSource(item, d);
                 this.raiseEvent('open-tile-source',{
@@ -207,7 +207,7 @@ export class DSAUserInterface extends OpenSeadragon.EventSource{
         this.annotationEditorGUI.find('input').val(annotation.annotation.name);
         this.annotationEditorGUI.find('textarea').val(annotation.annotation.description);
 
-        this.API.get(`annotation/${annotation._id}`)
+        this.API.get(`annotation/${annotation._id}`, {noCache: true})
             .then(d=>this.adapter.annotationToFeatureCollections(d))
             .then(d=>{
                 this._viewer.annotationToolkit.addFeatureCollections(d, true);
@@ -263,7 +263,7 @@ export class DSAUserInterface extends OpenSeadragon.EventSource{
             name:name,
         };
         // console.log('save as geojson', params);
-        this.API.get(`item/${this._currentItem._id}/files`).then(d=>{
+        this.API.get(`item/${this._currentItem._id}/files`, {noCache: true}).then(d=>{
             console.log('files',d);
             let filtered = d.filter(f=>f.name.endsWith(idExtension) && f.mimeType == 'application/json');
             if(filtered.length > 0){
@@ -323,7 +323,7 @@ export class DSAUserInterface extends OpenSeadragon.EventSource{
 
     // private
     _getAnnotatedImages(){
-        this.API.get('annotation/images',{params:{limit:10}}).then(d=>{
+        this.API.get('annotation/images',{params:{limit:10}}, {noCache: true}).then(d=>{
             let element=$('<div>',{class:'folder'});
             this.dialog.find('.dsa-annotated-images').empty().append(element);
             let header=$('<div>',{class:'folder-header'}).text(`${d.length} images with annotations`).appendTo(element);
@@ -352,7 +352,7 @@ export class DSAUserInterface extends OpenSeadragon.EventSource{
 
     // private
     _getCollections(){
-        this.API.get('collection',{params:{limit:0}}).then(d=>{
+        this.API.get('collection',{params:{limit:0}, noCache: true}).then(d=>{
             
             let contents=this.dialog.find('.dsa-collections').empty();
             let collections = d.map(collection=>{
@@ -378,7 +378,7 @@ export class DSAUserInterface extends OpenSeadragon.EventSource{
     // private
     _getFolders(parent){
         
-        return this.API.get('folder',{params:{parentType:parent._modelType,parentId:parent._id,limit:0}}).then(d=>{
+        return this.API.get('folder',{params:{parentType:parent._modelType,parentId:parent._id,limit:0}, noCache: true}).then(d=>{
             
             let folders = d.map(folder=>{
                 let element=$('<div>',{class:'folder'});
@@ -408,7 +408,7 @@ export class DSAUserInterface extends OpenSeadragon.EventSource{
     // private
     _getItems(folder, container){
         // let _this = this;
-        return this.API.get('item',{params:{folderId:folder._id,limit:0}}).then(d=>{
+        return this.API.get('item',{params:{folderId:folder._id,limit:0}, noCache: true}).then(d=>{
             return this._makeItemList(container, d);
         });
     }
@@ -419,7 +419,7 @@ export class DSAUserInterface extends OpenSeadragon.EventSource{
         let token = this.API.gettoken();
         let tileSource= fileInfo.tileWidth ? pyramidalTileSource(baseURL, fileInfo, item._id, token) : dsaImageTileSource(baseURL, item._id, token);
         let listElement = this.annotationEditorGUI.find('.dsa-annotation-list').empty();
-        this.API.get('annotation',{params:{itemId:item._id}}).then(d=>{
+        this.API.get('annotation',{params:{itemId:item._id}, noCache: true}).then(d=>{
             let elements = d.map(annotation=>{
                 return $('<div>',{class:'annotation-item'}).text(annotation.annotation.name).data('annotation',annotation);
             })
