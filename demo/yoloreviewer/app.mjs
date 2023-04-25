@@ -58,12 +58,16 @@ setupMagnificationControls();
 function reviewNext(){
     let newIndex = OpenSeadragon.positiveModulo(reviewIndex+1, items.length);
     let item = items[newIndex];
+    if(!item) return;
     item.select(false);
+    
 }
 function reviewPrevious(){
     let newIndex = OpenSeadragon.positiveModulo(reviewIndex-1, items.length);
     let item = items[newIndex];
+    if(!item) return;
     item.select(false);
+    
 }
 function handleItemSelected(){
     let selected = getSelectedFeatures();
@@ -98,6 +102,17 @@ function setupReviewForItem(item){
     $('#reviewer-controls .current-index').text(reviewIndex + 1); // add one for readability
     let dropdown = $('#reviewer-controls select')[0];
     dropdown.value = item.layer.displayName;
+}
+function removeItem(item){
+    let index = items.indexOf(item);
+    if(index > -1){
+        items.splice(index, 1);
+        $('#reviewer-controls .total-annotations').text(items.length);
+        if(reviewIndex >= index){
+            reviewIndex -= 1; //shift index of current item to match new position
+            $('#reviewer-controls .current-index').text(reviewIndex + 1); // add one for readability
+        }
+    }
 }
 function addSelectedItemsToLayer(layer){
 
@@ -311,6 +326,7 @@ function createViewer(){
         // add project to window for debugging
         window.project = tk.overlay.paperScope.project;
         tk.overlay.paperScope.project.on('item-selected', debounce(handleItemSelected));
+        tk.overlay.paperScope.project.on('item-removed', event=>removeItem(event.item));
 
         let ui=tk.addAnnotationUI({
             autoOpen:true,
