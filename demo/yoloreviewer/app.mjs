@@ -120,7 +120,8 @@ function addSelectedItemsToLayer(layer){
     let list = getSelectedFeatures();
     list.forEach(item=>{
         layer.addChild(item);
-        item.style.set(layer.defaultStyle);
+        // item.style.set(layer.defaultStyle);
+        item.style = layer.defaultStyle;
         item.applyRescale();
         item.displayName = layer.displayName;
     });
