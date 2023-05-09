@@ -150,13 +150,13 @@ function setupReview(){
 }
 
 function getFeaturesToReview(){
-    let items = tk.getFeatures().filter(f=>!(''+f.layer.displayName).startsWith('ROI'));
+    let items = tk.getFeatures().filter(f=>!(''+f.layer.displayName).match(/^ROI|ROI$/i) );
     return items;
 }
 function getSelectedFeatures(){
     let realSelection = getFeaturesToReview().filter(item=>item.selected);
     if(realSelection.length){
-        tk.getFeatures().filter(f=>!(''+f.layer.displayName.startsWith('ROI'))).forEach(item=>{
+        tk.getFeatures().filter(f=>!(''+f.layer.displayName.match(/^ROI|ROI$/i) )).forEach(item=>{
             item.deselect(true);
         });
     }
@@ -177,8 +177,7 @@ function getIndexOfSelection(selection){
 
 function alignToROI(){
     // console.log('alignToROI',event);
-    // let ROI = event.featureCollections.filter(f=>f.label.startsWith('ROI'))[0];
-    let ROI_layer = tk.overlay.paperScope.project.layers.filter(l=>l.displayName && l.displayName.startsWith('ROI'))[0];
+    let ROI_layer = tk.overlay.paperScope.project.layers.filter(l=>l.displayName && l.displayName.match(/^ROI|ROI$/i) )[0];
     let ROI = ROI_layer && ROI_layer.children[0];
     if(ROI){
         try{
@@ -281,7 +280,7 @@ function setupKeypressHandlers(){
             //create new element
             console.log('n clicked');
             let project = tk.overlay.paperScope.project;
-            let layer = project.layers.filter(layer=>layer.isGeoJSONFeatureCollection)[0];
+            let layer = project.layers.filter(layer=>layer.isGeoJSONFeatureCollection && !layer.displayName.match(/^ROI|ROI$/i))[0];
             if(layer){
                 let newFeature = layer.featureCollectionUI.createFeature();
                 newFeature.select();
