@@ -40,6 +40,9 @@ export class FeatureCollectionUI{
             }
         });
 
+        // expose this object as a property of the paper.js layer
+        this.layer.featureCollectionUI = this;
+
 
         this.features = function(){
             return self._featurelist.find('.feature').map(function(_,el){

@@ -82,7 +82,7 @@ function handleItemSelected(){
                 });
             };
             item.on('item-replaced',changeLabel);
-            toolbar.tools.rectangle.activate();
+            // toolbar.tools.rectangle.activate();
             return;
         }
         setupReviewForItem(item);
@@ -130,11 +130,11 @@ function setupReview(){
     // identify which FeatureCollections and Features to work with
     let layers = tk.getFeatureCollectionLayers();
     items = getFeaturesToReview();
-    // add groups (other than those that start with "ROI") to the select dropdown and the dictionary of groups
+    // add groups (other than those that start or end with "ROI" (case insensitive)) to the select dropdown and the dictionary of groups
     groups = {};
     let select = $('#reviewer-controls select').empty();
     layers.forEach(g=>{
-        if( !(''+g.displayName).startsWith('ROI')){
+        if( !(''+g.displayName).match(/^ROI|ROI$/i) ){
             $('<option>').text(g.displayName).appendTo(select);
             groups[g.displayName] = g;
 
@@ -277,11 +277,26 @@ function setupKeypressHandlers(){
         } else if(key == 'e'){
             //navigate to next
             reviewNext();
+        } else if(key == 'n'){
+            //create new element
+            console.log('n clicked');
+            let project = tk.overlay.paperScope.project;
+            let layer = project.layers.filter(layer=>layer.isGeoJSONFeatureCollection)[0];
+            if(layer){
+                let newFeature = layer.featureCollectionUI.createFeature();
+                newFeature.select();
+            }
         } else if(key == 'r'){
             if(toolbar.tools.rectangle.isActive()){
                 toolbar.tools.rectangle.deactivate();
             } else {
                 toolbar.tools.rectangle.activate();
+            }
+        } else if(key == 'p'){
+            if(toolbar.tools.point.isActive()){
+                toolbar.tools.point.deactivate();
+            } else {
+                toolbar.tools.point.activate();
             }
         } else {
             // preventDefault = false;
@@ -331,7 +346,7 @@ function createViewer(){
         let ui=tk.addAnnotationUI({
             autoOpen:true,
             addLayerDialog:false,
-            tools:['default','select','rectangle','style']
+            tools:['default','select','point','rectangle','style']
         });
         ui._layerUI.element.appendTo($('#paper-gui')).on('element-added',(ev)=>{
             let scrollToElement = $(ev.target);
