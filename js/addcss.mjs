@@ -1,3 +1,4 @@
+//hello world
 function addCSS(url, nameToCheck){
     if(nameToCheck){
         let pattern=`\/${nameToCheck}\.(?:min\.)?css`;
