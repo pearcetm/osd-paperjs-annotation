@@ -1,103 +1,190 @@
 import { ToolBase } from './papertools/base.mjs';
-import {PaperOverlay} from './paper-overlay.mjs';
-import {addCSS} from './addcss.mjs';
-addCSS('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css','font-awesome/6.1.1/css/all');
-addCSS(`${import.meta.url.match(/(.*?)js\/[^\/]*$/)[1]}css/osd-button.css`,'osd-button');
+import { PaperOverlay } from './paper-overlay.mjs';
+import { addCSS } from './addcss.mjs';
 
-export class RotationControlOverlay{
-    constructor(viewer){
-        let overlay=this.overlay = new PaperOverlay(viewer,{overlayType:'viewport'})
-        let tool = this.tool = new RotationControlTool(this.overlay.paperScope, this);
-        this.dummyTool = new this.overlay.paperScope.Tool();//to capture things like mouseMove, keyDown etc (when actual tool is not active)
-        this.dummyTool.activate();
-        this._mouseNavEnabledAtActivation = true;
-        overlay.addViewerButton({
-            faIconClasses:'fa-solid fa-rotate',
-            tooltip:'Rotate image',
-            onClick:()=>{
-                tool.active ? this.deactivate() : this.activate();
-            }
-        });
-     
-    }
-    activate(){
-        this._mouseNavEnabledAtActivation=this.overlay.osdViewer.isMouseNavEnabled();
-        this.tool.activate();
-        this.tool.active=true;
-        this.overlay.bringToFront();
-    }
-    deactivate(){
-        this.tool.deactivate(true);
-        this.dummyTool.activate();
-        this.overlay.osdViewer.setMouseNavEnabled(this._mouseNavEnabledAtActivation);
-        this.tool.active=false;
-        this.overlay.sendToBack();
-    }
-    
+addCSS('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css', 'font-awesome/6.1.1/css/all');
+addCSS(`${import.meta.url.match(/(.*?)js\/[^\/]*$/)[1]}css/osd-button.css`, 'osd-button');
+
+/**
+ * Represents an overlay for rotation control in a viewer.
+ */
+export class RotationControlOverlay {
+  /**
+   * Creates a RotationControlOverlay instance.
+   * @param {object} viewer - The viewer object.
+   */
+  constructor(viewer) {
+    /**
+     * The PaperOverlay instance associated with the rotation control overlay.
+     * @type {PaperOverlay}
+     */
+    this.overlay = new PaperOverlay(viewer, { overlayType: 'viewport' });
+
+    /**
+     * The RotationControlTool instance associated with the rotation control overlay.
+     * @type {RotationControlTool}
+     */
+    this.tool = new RotationControlTool(this.overlay.paperScope, this);
+
+    /**
+     * A dummy tool used to capture events when the actual tool is not active.
+     * @type {ToolBase}
+     */
+    this.dummyTool = new this.overlay.paperScope.Tool();
+
+    this.dummyTool.activate();
+
+    /**
+     * Stores the state of mouse navigation at the time of activation.
+     * @type {boolean}
+     * @private
+     */
+    this._mouseNavEnabledAtActivation = true;
+
+    this.overlay.addViewerButton({
+      faIconClasses: 'fa-solid fa-rotate',
+      tooltip: 'Rotate image',
+      onClick: () => {
+        tool.active ? this.deactivate() : this.activate();
+      }
+    });
+  }
+
+  /**
+   * Activates the rotation control overlay.
+   */
+  activate() {
+    this._mouseNavEnabledAtActivation = this.overlay.osdViewer.isMouseNavEnabled();
+    this.tool.activate();
+    this.tool.active = true;
+    this.overlay.bringToFront();
+  }
+
+  /**
+   * Deactivates the rotation control overlay.
+   */
+  deactivate() {
+    this.tool.deactivate(true);
+    this.dummyTool.activate();
+    this.overlay.osdViewer.setMouseNavEnabled(this._mouseNavEnabledAtActivation);
+    this.tool.active = false;
+    this.overlay.sendToBack();
+  }
 }
-export class RotationControlTool extends ToolBase{
-    constructor(paperScope, rotationOverlay){
+/**
+ * Represents a tool for controlling rotation.
+ * @extends ToolBase
+ */
+export class RotationControlTool extends ToolBase {
+    /**
+     * Creates a new RotationControlTool.
+     * @param {Object} paperScope - The paper scope.
+     * @param {Object} rotationOverlay - The rotation overlay.
+     */
+    constructor(paperScope, rotationOverlay) {
         super(paperScope);
-        let self=this;
+        let self = this;
         let bounds = paperScope.view.bounds;
         let widget = new RotationControlWidget(paperScope.view.bounds.center, setAngle);
 
         let viewer = paperScope.overlay.osdViewer;
-        viewer.addHandler('rotate', (ev)=>widget.setCurrentRotation(ev.degrees));
-        paperScope.view.on('resize',function(ev){
+        viewer.addHandler('rotate', (ev) => widget.setCurrentRotation(ev.degrees));
+        paperScope.view.on('resize', function (ev) {
             let pos = widget.item.position;
             let w = pos.x / bounds.width;
             let h = pos.y / bounds.height;
-            bounds = paperScope.view.bounds;//new bounds after the resize
+            bounds = paperScope.view.bounds; //new bounds after the resize
             widget.item.position = new paper.Point(w * bounds.width, h * bounds.height);
         })
         widget.item.visible = false;
         self.project.toolLayer.addChild(widget.item);
-        
 
-        this.tool.onMouseDown=function(ev){
-            
+        /**
+         * Handles the mouse down event.
+         * @param {Object} ev - The event object.
+         */
+        this.tool.onMouseDown = function (ev) {
+
         }
-        this.tool.onMouseDrag=function(ev){
-            
+
+        /**
+         * Handles the mouse drag event.
+         * @param {Object} ev - The event object.
+         */
+        this.tool.onMouseDrag = function (ev) {
+
         }
-        this.tool.onMouseMove=function(ev){
+
+        /**
+         * Handles the mouse move event.
+         * @param {Object} ev - The event object.
+         */
+        this.tool.onMouseMove = function (ev) {
             widget.setLineOrientation(ev.point);
         }
-        this.tool.onMouseUp = function(){
-            
+
+        /**
+         * Handles the mouse up event.
+         */
+        this.tool.onMouseUp = function () {
+
         }
-        this.tool.extensions.onKeyDown=function(ev){
-            if(ev.key=='escape'){
+
+        /**
+         * Handles the key down event.
+         * @param {Object} ev - The event object.
+         */
+        this.tool.extensions.onKeyDown = function (ev) {
+            if (ev.key == 'escape') {
                 rotationOverlay.deactivate();
             }
         }
-        this.extensions.onActivate = function(){
-            if(widget.item.visible==false){
-                widget.item.position=paperScope.view.bounds.center;//reset to center when activated, so that if it gets lost off screen it's easy to recover
+
+        /**
+         * Called when the tool is activated.
+         */
+        this.extensions.onActivate = function () {
+            if (widget.item.visible == false) {
+                widget.item.position = paperScope.view.bounds.center; //reset to center when activated, so that if it gets lost off screen it's easy to recover
             }
-            widget.item.visible=true;
+            widget.item.visible = true;
             widget.item.opacity = 1;
         }
-        this.extensions.onDeactivate = function(finished){
-            if(finished){
-                widget.item.visible=false;
+
+        /**
+         * Called when the tool is deactivated.
+         * @param {boolean} finished - Whether the tool finished its operation.
+         */
+        this.extensions.onDeactivate = function (finished) {
+            if (finished) {
+                widget.item.visible = false;
             }
             widget.item.opacity = 0.3;
         }
 
-        function setAngle(angle, pivot){
-            if(!pivot){
+        /**
+         * Sets the angle of the rotation control tool.
+         * @param {number} angle - The angle to set.
+         * @param {Object} [pivot] - The pivot point for the rotation. If not provided, the center of the widget is used as the pivot point.
+         */
+        function setAngle(angle, pivot) {
+            if (!pivot) {
                 let widgetCenter = new OpenSeadragon.Point(widget.item.position.x, widget.item.position.y)
                 pivot = viewer.viewport.pointFromPixel(widgetCenter);
-                
             }
             viewer.viewport.rotateTo(angle, pivot, true);
         }
     }
-    
 }
 
+/**
+ * Creates a widget for controlling the rotation of the map.
+ * @function
+ * @memberof AtkMap
+ * @param {paper.Point} center - The center point of the widget.
+ * @param {function} setAngle - The callback function to set the angle of the map.
+ * @returns {Object} The widget object with properties and methods.
+ */
 function RotationControlWidget(center, setAngle){
     let width = center.x*2;
     let height= center.y*2;
@@ -180,7 +267,7 @@ function RotationControlWidget(center, setAngle){
 
     group.addChild(rotationLineControl);
     group.pivot = circle.bounds.center;//make the center of the circle the pivot for the entire  controller
-    group.position = center;//set position after adding all children so it is applied to all
+    group.position = center;
 
     //define API
     let widget={};
@@ -191,10 +278,21 @@ function RotationControlWidget(center, setAngle){
     widget.rotationLineControl = rotationLineControl;
 
     //add API functions
+    /**
+     * Sets the current rotation angle of the indicator dot.
+     * @method
+     * @param {number} angle - The angle in degrees.
+     */
     widget.setCurrentRotation = (angle)=>{
         // console.log('setCurrentRotation',angle);
         currentRotationIndicator.rotate(angle-currentRotationIndicator.rotation, circle.bounds.center)
     };
+    /**
+     * Sets the orientation and visibility of the line control.
+     * @method
+     * @param {paper.Point} point - The point to align the line control with.
+     * @param {boolean} [makeVisible=false] - A flag to indicate whether to make the line control visible or not.
+     */
     widget.setLineOrientation = (point, makeVisible=false)=>{
         let vector = point.subtract(circle.bounds.center);
         let angle = vector.angle - baseAngle;
