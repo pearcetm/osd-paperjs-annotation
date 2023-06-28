@@ -1,4 +1,11 @@
-//hello world
+/**
+ * Adds a CSS file to the document head if it is not already present.
+ *
+ * @param {string} url - The URL of the CSS file to add.
+ * @param {string} [nameToCheck] - The name pattern to check in the URL. If provided,
+ *    the CSS file will only be added if the pattern is found in the URL.
+ * @returns {void}
+ */
 function addCSS(url, nameToCheck){
     if(nameToCheck){
         let pattern=`\/${nameToCheck}\.(?:min\.)?css`;
