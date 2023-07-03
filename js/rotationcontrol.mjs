@@ -161,7 +161,6 @@ export class RotationControlTool extends ToolBase {
             }
             widget.item.opacity = 0.3;
         }
-
         /**
          * Sets the angle of the rotation control tool.
          * @param {number} angle - The angle to set.
@@ -176,7 +175,6 @@ export class RotationControlTool extends ToolBase {
         }
     }
 }
-
 /**
  * Creates a widget for controlling the rotation of the map.
  * @function
@@ -278,11 +276,6 @@ function RotationControlWidget(center, setAngle){
     widget.rotationLineControl = rotationLineControl;
 
     //add API functions
-    /**
-     * Sets the current rotation angle of the indicator dot.
-     * @method
-     * @param {number} angle - The angle in degrees.
-     */
     widget.setCurrentRotation = (angle)=>{
         // console.log('setCurrentRotation',angle);
         currentRotationIndicator.rotate(angle-currentRotationIndicator.rotation, circle.bounds.center)
