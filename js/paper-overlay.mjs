@@ -53,7 +53,15 @@
             return this._PaperOverlays || (this._PaperOverlays = []);
         }
     });
-    
+    /**
+     * Gets the image data from the viewer.
+     *
+     * @param {number} x - The x coordinate of the top left corner of the image data.
+     * @param {number} y - The y coordinate of the top left corner of the image data.
+     * @param {number} w - The width of the image data.
+     * @param {number} h - The height of the image data.
+     * @returns {ImageData} The image data.
+     */
     OpenSeadragon.Viewer.prototype.getImageData = function(x, y, w, h){
         x = x || 0;
         y = y || 0;
@@ -62,6 +70,13 @@
         return this.drawer.canvas.getContext('2d',{willReadFrequently:true}).getImageData(x, y, w, h);
     }
 
+    /**
+     * Gets a raster object representing the viewport.
+     *
+     * @param {any} view - The view object.
+     * @param {boolean} withImageData - Whether to include image data in the raster object.
+     * @returns {any} The raster object.
+     */
     OpenSeadragon.Viewer.prototype.getViewportRaster = function(view, withImageData = true){
         //TO DO: make this query subregions of the viewport directly instead of always returning the entire thing
         // let view = this.paperjsOverlay && this.paperjsOverlay.paperScope.view;
@@ -85,7 +100,12 @@
        
         return raster;
     }
-
+    /**
+     * Sets the rotation of the view.
+     *
+     * @param {number} degrees - The number of degrees to rotate.
+     * @param {any} center - The center point of the rotation.
+     */
     paper.View.prototype.setRotation = function(degrees, center){
         let degreesToRotate = degrees - (this._rotation || 0)
         this.rotate(degreesToRotate, center);
@@ -108,10 +128,14 @@
 })(window.OpenSeadragon);
 
 export class PaperOverlay{
-
-    // @param opts Object
-    //  overlayType: 'image' to sync to the zoomable image, 'viewport' to stay fixed to the viewer
-
+    
+    
+    /**
+     * Creates an instance of the PaperOverlay.
+     * overlayType: 'image' to sync to the zoomable image, 'viewport' to stay fixed to the viewer
+     * @param {any} viewer - The viewer object.
+     * @param {Object} opts - The options for the overlay.
+     */
     constructor(viewer,opts={overlayType:'image'}){
         let defaultOpts = {
             overlayType: 'image',
@@ -204,6 +228,12 @@ export class PaperOverlay{
         viewer.addOnceHandler('destroy', this.onViewerDestroy)
           
     }
+    /**
+     * Adds a button to the viewer.
+     *
+     * @param {Object} params - The parameters for the button.
+     * @returns {any} The button object.
+     */    
     addViewerButton(params={}){
         const prefixUrl=this.osdViewer.prefixUrl;
         let button = new OpenSeadragon.Button({
@@ -224,19 +254,29 @@ export class PaperOverlay{
         this.osdViewer.buttonGroup.element.appendChild(button.element);
         return button;
     }
-
+    /**
+     * Brings the overlay to the front.
+     */
     bringToFront(){
         this.osdViewer.PaperOverlays.splice(this.osdViewer.PaperOverlays.indexOf(this),1);
         this.osdViewer.PaperOverlays.push(this);
         this.osdViewer.PaperOverlays.forEach(overlay=>this.osdViewer.canvas.appendChild(overlay._canvasdiv));
         this.paperScope.activate();
     }
+    /**
+     * Sends the overlay to the back.
+     */
     sendToBack(){
         this.osdViewer.PaperOverlays.splice(this.osdViewer.PaperOverlays.indexOf(this),1);
         this.osdViewer.PaperOverlays.splice(0,0,this);
         this.osdViewer.PaperOverlays.forEach(overlay=>this.osdViewer.canvas.appendChild(overlay._canvasdiv));
         this.osdViewer.PaperOverlays[this.osdViewer.PaperOverlays.length-1].paperScope.activate();
     }
+    /**
+     * Destroys the overlay.
+     *
+     * @param {boolean} viewerDestroyed - Whether the viewer has been destroyed.
+     */    
     destroy(viewerDestroyed){
         this.destroyed = true;
         this._canvasdiv.remove();
@@ -258,36 +298,83 @@ export class PaperOverlay{
         }
          
     }
+    /**
+     * Clears the overlay.
+     */    
     clear(){
         this.paperScope.project.clear();
     }
     // ----------
+    /**
+     * Gets the canvas element of the overlay.
+     *
+     * @returns {HTMLCanvasElement} The canvas element.
+     */
     canvas() {
         return this._canvas;
     }
     // ----------
+    /**
+     * Adds a class to the canvas element.
+     *
+     * @param {string} c - The class to add.
+     * @returns {PaperOverlay} The PaperOverlay object.
+     */
     addClass(c){
         this._canvas.classList.add(...arguments);
         return this;
     }
+    /**
+     * Removes a class from the canvas element.
+     *
+     * @param {string} c - The class to remove.
+     * @returns {PaperOverlay} The PaperOverlay object.
+     */
     removeClass(c){
         this._canvas.classList.remove(...arguments);
         return this;
     }
+    /**
+     * Sets an attribute of the canvas element.
+     *
+     * @param {string} attr - The attribute to set.
+     * @param {string} value - The value to set the attribute to.
+     * @returns {PaperOverlay} The PaperOverlay object.
+     */
     setAttribute(attr, value){
         this._canvas.setAttribute(attr,value);
         return this;
     }
+    /**
+     * Adds an event listener to the canvas element.
+     *
+     * @param {string} event - The event to listen for.
+     * @param {function} listener - The function to call when the event is triggered.
+     * @returns {PaperOverlay} The PaperOverlay object.
+     */
     addEventListener(event,listener){
         this._canvas.addEventListener(event,listener);
         return this;
     }
+    /**
+     * Removes an event listener from the canvas element.
+     *
+     * @param {string} event - The event to stop listening for.
+     * @param {function} listener - The function that was called when the event was triggered.
+     * @returns {PaperOverlay} The PaperOverlay object.
+     */    
     removeEventListener(event,listener){
         this._canvas.removeEventListener(event,listener);
         return this;
     }
     // returns: mouseNavEnabled status BEFORE the call (for reverting)
     // raises 'mouse-nav-enabled' event
+    /**
+     * Sets whether mouse navigation is enabled in the viewer.
+     *
+     * @param {boolean} enabled - Whether to enable mouse navigation.
+     * @returns {boolean} Whether mouse navigation was enabled before the call.
+     */
     setOSDMouseNavEnabled(enabled=true){
         let wasMouseNavEnabled = this.osdViewer.isMouseNavEnabled();
         this.osdViewer.setMouseNavEnabled(enabled);
@@ -297,6 +384,11 @@ export class PaperOverlay{
         return wasMouseNavEnabled;
     }
     // ----------
+    /**
+     * Enables or disables automatic rescaling of items.
+     *
+     * @param {boolean} shouldHandle - Whether to enable automatic rescaling.
+     */
     autoRescaleItems(shouldHandle=false){
         let _this=this;
         this.ps.view.off('zoom-changed',_rescale);
@@ -307,13 +399,20 @@ export class PaperOverlay{
         }
     }
     //-----------
+    /**
+     * Rescales all items in the overlay.
+     */
     rescaleItems(){
         this._paperProject.getItems({match:function(o){return o.rescale}}).forEach(function(item){
             item.applyRescale();
         });
     }
     //------------
-    _resize() {
+    /**
+     * Resizes the overlay.
+     */
+    _resize()
+     {
         let update=false;
         if (this._containerWidth !== this.osdViewer.container.clientWidth) {
             this._containerWidth = this.osdViewer.container.clientWidth;
@@ -333,6 +432,9 @@ export class PaperOverlay{
             this.paperScope.view.update();
         }
     }
+    /**
+     * Updates the paper view.
+     */
     _updatePaperView() {
         let viewportZoom = this.osdViewer.viewport.getZoom(true);
         let oldZoom = this.paperScope.view.zoom;
@@ -358,6 +460,12 @@ let counter = (function () {
     }
 })();
 
+/**
+ * Gets the content width of the viewer.
+ *
+ * @param {any} input - The viewer object or an event object.
+ * @returns {number} The content width of the viewer.
+ */
 function getViewerContentWidth(input){
     if(input.contentSize){
         return input.contentSize.x;

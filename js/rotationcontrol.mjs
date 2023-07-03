@@ -1,189 +1,146 @@
 import { ToolBase } from './papertools/base.mjs';
-import { PaperOverlay } from './paper-overlay.mjs';
-import { addCSS } from './addcss.mjs';
+import {PaperOverlay} from './paper-overlay.mjs';
+import {addCSS} from './addcss.mjs';
+addCSS('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css','font-awesome/6.1.1/css/all');
+addCSS(`${import.meta.url.match(/(.*?)js\/[^\/]*$/)[1]}css/osd-button.css`,'osd-button');
 
-addCSS('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css', 'font-awesome/6.1.1/css/all');
-addCSS(`${import.meta.url.match(/(.*?)js\/[^\/]*$/)[1]}css/osd-button.css`, 'osd-button');
-
-/**
- * Represents an overlay for rotation control in a viewer.
- */
-export class RotationControlOverlay {
-  /**
-   * Creates a RotationControlOverlay instance.
-   * @param {object} viewer - The viewer object.
-   */
-  constructor(viewer) {
+export class RotationControlOverlay{
     /**
-     * The PaperOverlay instance associated with the rotation control overlay.
-     * @type {PaperOverlay}
+     * Creates an instance of the RotationControlOverlay.
+     *
+     * @param {any} viewer - The viewer object.
      */
-    this.overlay = new PaperOverlay(viewer, { overlayType: 'viewport' });
-
+    constructor(viewer){
+        let overlay=this.overlay = new PaperOverlay(viewer,{overlayType:'viewport'})
+        let tool = this.tool = new RotationControlTool(this.overlay.paperScope, this);
+        this.dummyTool = new this.overlay.paperScope.Tool();//to capture things like mouseMove, keyDown etc (when actual tool is not active)
+        this.dummyTool.activate();
+        this._mouseNavEnabledAtActivation = true;
+        overlay.addViewerButton({
+            faIconClasses:'fa-solid fa-rotate',
+            tooltip:'Rotate image',
+            onClick:()=>{
+                tool.active ? this.deactivate() : this.activate();
+            }
+        });
+     
+    }
     /**
-     * The RotationControlTool instance associated with the rotation control overlay.
-     * @type {RotationControlTool}
+     * Activates the rotation control.
      */
-    this.tool = new RotationControlTool(this.overlay.paperScope, this);
-
+    activate(){
+        this._mouseNavEnabledAtActivation=this.overlay.osdViewer.isMouseNavEnabled();
+        this.tool.activate();
+        this.tool.active=true;
+        this.overlay.bringToFront();
+    }
     /**
-     * A dummy tool used to capture events when the actual tool is not active.
-     * @type {ToolBase}
+     * Deactivates the rotation control.
      */
-    this.dummyTool = new this.overlay.paperScope.Tool();
-
-    this.dummyTool.activate();
-
-    /**
-     * Stores the state of mouse navigation at the time of activation.
-     * @type {boolean}
-     * @private
-     */
-    this._mouseNavEnabledAtActivation = true;
-
-    this.overlay.addViewerButton({
-      faIconClasses: 'fa-solid fa-rotate',
-      tooltip: 'Rotate image',
-      onClick: () => {
-        tool.active ? this.deactivate() : this.activate();
-      }
-    });
-  }
-
-  /**
-   * Activates the rotation control overlay.
-   */
-  activate() {
-    this._mouseNavEnabledAtActivation = this.overlay.osdViewer.isMouseNavEnabled();
-    this.tool.activate();
-    this.tool.active = true;
-    this.overlay.bringToFront();
-  }
-
-  /**
-   * Deactivates the rotation control overlay.
-   */
-  deactivate() {
-    this.tool.deactivate(true);
-    this.dummyTool.activate();
-    this.overlay.osdViewer.setMouseNavEnabled(this._mouseNavEnabledAtActivation);
-    this.tool.active = false;
-    this.overlay.sendToBack();
-  }
+    deactivate(){
+        this.tool.deactivate(true);
+        this.dummyTool.activate();
+        this.overlay.osdViewer.setMouseNavEnabled(this._mouseNavEnabledAtActivation);
+        this.tool.active=false;
+        this.overlay.sendToBack();
+    }
+    
 }
-/**
- * Represents a tool for controlling rotation.
- * @extends ToolBase
- */
-export class RotationControlTool extends ToolBase {
+export class RotationControlTool extends ToolBase{
     /**
-     * Creates a new RotationControlTool.
-     * @param {Object} paperScope - The paper scope.
-     * @param {Object} rotationOverlay - The rotation overlay.
+     * Creates an instance of the RotationControlTool.
+     *
+     * @param {any} paperScope - The paper scope object.
+     * @param {any} rotationOverlay - The rotation overlay object.
      */
-    constructor(paperScope, rotationOverlay) {
+    constructor(paperScope, rotationOverlay){
         super(paperScope);
-        let self = this;
+        let self=this;
         let bounds = paperScope.view.bounds;
         let widget = new RotationControlWidget(paperScope.view.bounds.center, setAngle);
 
         let viewer = paperScope.overlay.osdViewer;
-        viewer.addHandler('rotate', (ev) => widget.setCurrentRotation(ev.degrees));
-        paperScope.view.on('resize', function (ev) {
+    /**
+     * Event handler for the 'rotate' event.
+     *
+     * @event RotationControlTool#rotate
+     * @type {object}
+     * @property {number} degrees - The rotation angle in degrees.
+     */
+        viewer.addHandler('rotate', (ev)=>widget.setCurrentRotation(ev.degrees));
+        paperScope.view.on('resize',function(ev){
             let pos = widget.item.position;
             let w = pos.x / bounds.width;
             let h = pos.y / bounds.height;
-            bounds = paperScope.view.bounds; //new bounds after the resize
+            bounds = paperScope.view.bounds;//new bounds after the resize
             widget.item.position = new paper.Point(w * bounds.width, h * bounds.height);
         })
         widget.item.visible = false;
         self.project.toolLayer.addChild(widget.item);
+        
 
-        /**
-         * Handles the mouse down event.
-         * @param {Object} ev - The event object.
-         */
-        this.tool.onMouseDown = function (ev) {
-
+        this.tool.onMouseDown=function(ev){
+            
         }
-
-        /**
-         * Handles the mouse drag event.
-         * @param {Object} ev - The event object.
-         */
-        this.tool.onMouseDrag = function (ev) {
-
+        this.tool.onMouseDrag=function(ev){
+            
         }
-
-        /**
-         * Handles the mouse move event.
-         * @param {Object} ev - The event object.
-         */
-        this.tool.onMouseMove = function (ev) {
+        this.tool.onMouseMove=function(ev){
             widget.setLineOrientation(ev.point);
         }
-
-        /**
-         * Handles the mouse up event.
-         */
-        this.tool.onMouseUp = function () {
-
+        this.tool.onMouseUp = function(){
+            
         }
-
-        /**
-         * Handles the key down event.
-         * @param {Object} ev - The event object.
-         */
-        this.tool.extensions.onKeyDown = function (ev) {
-            if (ev.key == 'escape') {
+        this.tool.extensions.onKeyDown=function(ev){
+            if(ev.key=='escape'){
                 rotationOverlay.deactivate();
             }
         }
-
-        /**
-         * Called when the tool is activated.
-         */
-        this.extensions.onActivate = function () {
-            if (widget.item.visible == false) {
-                widget.item.position = paperScope.view.bounds.center; //reset to center when activated, so that if it gets lost off screen it's easy to recover
+        this.extensions.onActivate = function(){
+            if(widget.item.visible==false){
+                widget.item.position=paperScope.view.bounds.center;//reset to center when activated, so that if it gets lost off screen it's easy to recover
             }
-            widget.item.visible = true;
+            widget.item.visible=true;
             widget.item.opacity = 1;
         }
-
-        /**
-         * Called when the tool is deactivated.
-         * @param {boolean} finished - Whether the tool finished its operation.
-         */
-        this.extensions.onDeactivate = function (finished) {
-            if (finished) {
-                widget.item.visible = false;
+        this.extensions.onDeactivate = function(finished){
+            if(finished){
+                widget.item.visible=false;
             }
             widget.item.opacity = 0.3;
         }
         /**
-         * Sets the angle of the rotation control tool.
+         * Sets the angle of the rotation.
+         *
          * @param {number} angle - The angle to set.
-         * @param {Object} [pivot] - The pivot point for the rotation. If not provided, the center of the widget is used as the pivot point.
+         * @param {any} pivot - The pivot point for the rotation.
          */
-        function setAngle(angle, pivot) {
-            if (!pivot) {
+        function setAngle(angle, pivot){
+            if(!pivot){
                 let widgetCenter = new OpenSeadragon.Point(widget.item.position.x, widget.item.position.y)
                 pivot = viewer.viewport.pointFromPixel(widgetCenter);
+                
             }
             viewer.viewport.rotateTo(angle, pivot, true);
         }
     }
+    
 }
 /**
- * Creates a widget for controlling the rotation of the map.
- * @function
- * @memberof AtkMap
+ * Creates a rotation control widget.
+ *
  * @param {paper.Point} center - The center point of the widget.
- * @param {function} setAngle - The callback function to set the angle of the map.
- * @returns {Object} The widget object with properties and methods.
+ * @param {Function} setAngle - The function to set the rotation angle.
+ * @returns {object} The rotation control widget object.
  */
 function RotationControlWidget(center, setAngle){
+    /**
+   * @typedef {object} Widget
+   * @property {paper.Group} item - The group containing all the elements of the widget.
+   * @property {paper.Path.Circle} circle - The central region with crosshair and cardinal points.
+   * @property {Array<paper.Path.Rectangle>} cardinalControls - The controls for north, east, south, west.
+   * @property {paper.Group} rotationLineControl - The line with arrows indicating the spot for grabbing to perform rotation.
+   */
     let width = center.x*2;
     let height= center.y*2;
     let radius = Math.min(width/5, height/5, 30);
@@ -265,9 +222,15 @@ function RotationControlWidget(center, setAngle){
 
     group.addChild(rotationLineControl);
     group.pivot = circle.bounds.center;//make the center of the circle the pivot for the entire  controller
-    group.position = center;
+    group.position = center;//set position after adding all children so it is applied to all
 
     //define API
+
+    /**
+   * The rotation control widget object.
+   *
+   * @type {Widget}
+   */ 
     let widget={};
     //add items
     widget.item = group;
@@ -276,15 +239,20 @@ function RotationControlWidget(center, setAngle){
     widget.rotationLineControl = rotationLineControl;
 
     //add API functions
+    /**
+   * Sets the current rotation angle.
+   *
+   * @param {number} angle - The angle to set.
+   */
     widget.setCurrentRotation = (angle)=>{
         // console.log('setCurrentRotation',angle);
         currentRotationIndicator.rotate(angle-currentRotationIndicator.rotation, circle.bounds.center)
     };
     /**
-     * Sets the orientation and visibility of the line control.
-     * @method
-     * @param {paper.Point} point - The point to align the line control with.
-     * @param {boolean} [makeVisible=false] - A flag to indicate whether to make the line control visible or not.
+     * Sets the orientation of the line control.
+     *
+     * @param {paper.Point} point - The point representing the orientation.
+     * @param {boolean} [makeVisible=false] - Whether to make the control visible.
      */
     widget.setLineOrientation = (point, makeVisible=false)=>{
         let vector = point.subtract(circle.bounds.center);
@@ -297,6 +265,13 @@ function RotationControlWidget(center, setAngle){
 
     //add intrinsic item-level controls
     cardinalControls.forEach(control=>{
+    /**
+     * Event handler for clicking on a cardinal direction control.
+     *
+     * @event Widget#click
+     * @type {object}
+     * @property {paper.MouseEvent} event - The mouse event.
+     */
         control.onClick = function(){
             setAngle(control._angle);
         }

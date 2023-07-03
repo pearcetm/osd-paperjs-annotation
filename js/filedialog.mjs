@@ -1,16 +1,14 @@
 import { EditableContent } from "./utils/editablecontent.mjs";
-/**
- * Represents a file dialog for saving and loading feature collections.
- */
+
 export class FileDialog{
 
     /**
      * Creates an instance of the FileDialog.
      *
-     * @param {any} atk - The ATK object.
+     * @param {any} atk - The AnnotationToolKit object.
      * @param {object} opts - Additional options for the file dialog.
      */
-    constructor(atk, opts){        
+    constructor(atk, opts){
         let _this=this;
         this.element = $(fileDialogHtml()).appendTo('body');
         this.element.dialog({closeOnEscape:false,autoOpen:false,modal:false,open:initDlg,width:'auto','appendTo':opts.appendTo});
@@ -30,14 +28,11 @@ export class FileDialog{
         function getFileName(){
             return atk.viewer.world.getItemAt(0) ? atk.viewer.world.getItemAt(0).source.name : '';
         }
-        /**
-         * Initializes the dialog by clearing the feature collection list and finalize section.
-         */
         function initDlg(){
             _this.element.find('.featurecollection-list').empty();
             _this.element.find('.finalize').empty();
         }
-        /**
+                /**
          * Sets up the feature collection list in the dialog.
          *
          * @param {Array} fcarray - An array of feature collections.
@@ -56,35 +51,15 @@ export class FileDialog{
             return list;
         }
         /**
-         * Loads a GeoJSON file and sets up the feature collection list based on the loaded data.
+         * Loads a GeoJSON file.
          */
         function loadGeoJSON(){
             initDlg();
-            /**
-             * Represents a file input element for selecting GeoJSON files.
-             *
-             * @type {jQuery}
-             */
             let finput = $('<input>',{type:'file',accept:'text/geojson,.geojson,text/json,.json'});
             finput.on('change',function(){
-                /**
-                 * The selected file.
-                 *
-                 * @type {File}
-                 */            
-            // console.log('File picked',this.files[0]);
+                // console.log('File picked',this.files[0]);
                 let file = this.files[0];
-                /**
-                 * Represents a FileReader object for reading file data.
-                 *
-                 * @type {FileReader}
-                 */                
                 let fr = new FileReader();
-                /**
-                 * The parsed GeoJSON data.
-                 *
-                 * @type {Array|Object}
-                 */    
                 let geoJSON=[];
                 fr.onload=function(){
                     try{
@@ -124,67 +99,61 @@ export class FileDialog{
             })
             finput.trigger('click');
         }
-        
         /**
          * Loads the feature collections from the local storage.
-         * @function
-         * @memberof AtkMap
-         * @param {Object} atk - The AtkMap object that contains the features.
-         * @returns {void}
          */
-        function localstorageLoad(atk){
-            initDlg(); // Initialize the dialog box
-            let geoJSON=[]; // An array to store the GeoJSON data
-            let filename=getFileName(); // Get the file name from the AtkMap object
-            let lskeys=Object.keys(window.localStorage); // Get the keys from the local storage
-            let list = _this.element.find('.featurecollection-list').empty(); // Find and empty the feature collection list element
-            let div=$('<div>',{class:'localstorage-key-list'}).appendTo(list); // Create a div element for the local storage key list and append it to the list element
-            let items=lskeys.sort((a,b)=>a.localeCompare(b)).map(key=>$('<div>',{class:'localstorage-key',style:`order: ${key==filename?0:1}`}).text(key)); // Create an array of div elements for each local storage key, sorted by name and ordered by matching the file name
-            div.append(items); // Append the items to the div element
-            $(list).find('.localstorage-key').on('click',function(){ // Add a click event handler to each local storage key element
-                let lsdata = window.localStorage.getItem($(this).text()); // Get the data from the local storage for the clicked key
-                if(!lsdata){ // If no data is found
-                    alert(`No data found in local storage for key=${$(this).text()}`); // Alert the user
-                    return; // Return from the function
+        function localstorageLoad(){
+            initDlg();
+            let geoJSON=[];
+            let filename=getFileName();
+            let lskeys=Object.keys(window.localStorage);
+            let list = _this.element.find('.featurecollection-list').empty();
+            let div=$('<div>',{class:'localstorage-key-list'}).appendTo(list);
+            let items=lskeys.sort((a,b)=>a.localeCompare(b)).map(key=>$('<div>',{class:'localstorage-key',style:`order: ${key==filename?0:1}`}).text(key));
+            div.append(items);
+            $(list).find('.localstorage-key').on('click',function(){
+                let lsdata = window.localStorage.getItem($(this).text());
+                if(!lsdata){
+                    alert(`No data found in local storage for key=${$(this).text()}`);
+                    return;
                 }
                 try{
-                    geoJSON = JSON.parse(lsdata); // Try to parse the data as JSON and store it in the geoJSON array
-                }catch(e){ // If an error occurs
-                    alert('Bad data - JSON could not be parsed'); // Alert the user
-                    return; // Return from the function
+                    geoJSON = JSON.parse(lsdata);
+                }catch(e){
+                    alert('Bad data - JSON could not be parsed');
+                    return;
                 }
-                setupFeatureCollectionList(geoJSON); // Setup the feature collection list with the geoJSON data
-                let replace = $('<button>').appendTo(_this.element.find('.finalize')).text('Replace existing layers'); // Create a button to replace the existing layers with the geoJSON data and append it to the finalize element
-                replace.on('click',function(){ atk.addFeatureCollections(geoJSON, true); }); // Add a click event handler to the button that calls the addFeatureCollections method of the AtkMap object with true as the second argument
-                let add = $('<button>').appendTo(_this.element.find('.finalize')).text('Add new layers'); // Create a button to add new layers with the geoJSON data and append it to the finalize element
-                add.on('click',function(){ atk.addFeatureCollections(geoJSON, false); }); // Add a click event handler to the button that calls the addFeatureCollections method of the AtkMap object with false as the second argument
+                setupFeatureCollectionList(geoJSON);
+                let replace = $('<button>').appendTo(_this.element.find('.finalize')).text('Replace existing layers');
+                replace.on('click',function(){ atk.addFeatureCollections(geoJSON, true); });
+                let add = $('<button>').appendTo(_this.element.find('.finalize')).text('Add new layers');
+                add.on('click',function(){ atk.addFeatureCollections(geoJSON, false); });
             })
             
             
         }
-
         /**
          * Saves the feature collections as a GeoJSON file.
-         * @function
-         * @memberof AtkMap
-         */
+         */        
         function saveGeoJSON(){
-            initDlg(); // Initialize the dialog box
-            let fcs = atk.toGeoJSON(); // Convert the features to GeoJSON format
-            let list = setupFeatureCollectionList(fcs); // Create a list of feature collections
-            let finishbutton = setupFinalize('Create file','Choose file name:',getFileName()+'-FeatureCollections.json'); // Create a button to finalize the file name
-            finishbutton.on('click',function(){ // Add a click event handler to the button
-                $(this).parent().find('.download-link').remove(); // Remove any existing download links
+            initDlg();
+            let fcs = atk.toGeoJSON();
+            let list = setupFeatureCollectionList(fcs);
+            let finishbutton = setupFinalize('Create file','Choose file name:',getFileName()+'-FeatureCollections.json');
+            finishbutton.on('click',function(){
+                $(this).parent().find('.download-link').remove();
                 
-                let toSave=list.find('input:checked').toArray().map(function(cb){return $(cb).data('fc')}); // Get the selected feature collections
-                let txt = JSON.stringify(toSave); // Convert them to JSON string
-                let blob = new Blob([txt],{type:'text/json'}); // Create a blob object with the JSON string
-                let filename=$(this).data('label');  // Get the file name from the button data
-                let dl = $('<div>',{class:'download-link'}).insertAfter(this); // Create a div element for the download link
-                $('<a>',{href:window.URL.createObjectURL(blob),download:filename,target:'_blank'}).appendTo(dl).text('Download file'); // Create an anchor element with the blob URL and append it to the div element
+                let toSave=list.find('input:checked').toArray().map(function(cb){return $(cb).data('fc')});
+                let txt = JSON.stringify(toSave);
+                let blob = new Blob([txt],{type:'text/json'});
+                let filename=$(this).data('label'); 
+                let dl = $('<div>',{class:'download-link'}).insertAfter(this);
+                $('<a>',{href:window.URL.createObjectURL(blob),download:filename,target:'_blank'}).appendTo(dl).text('Download file');
             })
         }
-
+        /**
+         * Exports the feature collections as an SVG file.
+         */        
         function exportSVG(){
             initDlg();
             let fcs = atk.toGeoJSON();
@@ -207,71 +176,52 @@ export class FileDialog{
             })
         }
         /**
-         * Exports the feature collections as a SVG file.
-         * @function
-         * @memberof AtkMap
+         * Exports the feature collections as a PNG file.
          */
-        function exportSVG(){
-            initDlg(); // Initialize the dialog box
-            let fcs = atk.toGeoJSON(); // Convert the features to GeoJSON format
-            let list = setupFeatureCollectionList(fcs); // Create a list of feature collections
-            let finishbutton = setupFinalize('Create file','Choose file name:',getFileName()+'-FeatureCollections.svg'); // Create a button to finalize the file name
-            finishbutton.on('click',function(){ // Add a click event handler to the button
-                $(this).parent().find('.download-link').remove(); // Remove any existing download links
-                let toSave=list.find('input:checked').toArray().map(function(cb){return $(cb).data('fc')}); // Get the selected feature collections
-                if(toSave.length>0){ // Check if there are any feature collections to save
-                    let p = new paper.PaperScope(); // Create a new paper scope object
-                    p.setup(); // Setup the paper scope
-                    toSave.forEach(function(s){ // For each feature collection
-                        p.project.addLayer(s.layer.clone({insert:false,deep:true})); // Add a cloned layer to the paper project
+        function exportPNG(){
+            initDlg();
+            let fcs = atk.getFeatureCollectionLayers();
+            let list = setupFeatureCollectionList(fcs);
+            let finishbutton = setupFinalize('Create file','Choose file name:',getFileName()+'-raster.png');
+            finishbutton.on('click',function(){
+                $(this).parent().find('.download-link').remove();
+                let toSave=list.find('input:checked').toArray().map(function(cb){return $(cb).data('fc')});
+                if(toSave.length>0){
+                    let p = new paper.PaperScope();
+                    p.setup();
+                    toSave.forEach(function(s){
+                        p.project.activeLayer.addChildren(s.layer.clone({insert:false,deep:true}).children);
                     })
-                    let blob = new Blob([p.project.exportSVG({asString:true,bounds:'content'})],{type:'text/svg'}); // Create a blob object with the SVG string
-                    let filename=$(this).data('label');  // Get the file name from the button data
-                    let dl = $('<div>',{class:'download-link'}).insertAfter(this); // Create a div element for the download link
-                    $('<a>',{href:window.URL.createObjectURL(blob),download:filename,target:'_blank'}).appendTo(dl).text('Download file'); // Create an anchor element with the blob URL and append it to the div element
+                    // let blob = new Blob([p.project.activeLayer.rasterize({insert:false}).toDataURL()],{type:'image/png'});
+                    let filename=$(this).data(label);
+                    let dl = $('<div>',{class:'download-link'}).insertAfter(this);
+                    $('<a>',{href:p.project.activeLayer.rasterize({insert:false}).toDataURL(),download:filename,target:'_blank'}).appendTo(dl).text('Download file');
                 }
             })
         }
-
         /**
-         * Exports the feature collections as a SVG file.
-         * @function
-         * @memberof AtkMap
-         * @param {Object} atk - The AtkMap object that contains the features.
-         * @returns {void}
-         */
-        function exportSVG(atk){
-            initDlg(); // Initialize the dialog box
-            let fcs = atk.toGeoJSON(); // Convert the features to GeoJSON format
-            let list = setupFeatureCollectionList(fcs); // Create a list of feature collections
-            let finishbutton = setupFinalize('Create file','Choose file name:',getFileName()+'-FeatureCollections.svg'); // Create a button to finalize the file name
-            finishbutton.on('click',function(){ // Add a click event handler to the button
-                $(this).parent().find('.download-link').remove(); // Remove any existing download links
-                let toSave=list.find('input:checked').toArray().map(function(cb){return $(cb).data('fc')}); // Get the selected feature collections
-                if(toSave.length>0){ // Check if there are any feature collections to save
-                    let p = new paper.PaperScope(); // Create a new paper scope object
-                    p.setup(); // Setup the paper scope
-                    toSave.forEach(function(s){ // For each feature collection
-                        p.project.addLayer(s.layer.clone({insert:false,deep:true})); // Add a cloned layer to the paper project
-                    })
-                    let blob = new Blob([p.project.exportSVG({asString:true,bounds:'content'})],{type:'text/svg'}); // Create a blob object with the SVG string
-                    let filename=$(this).data('label');  // Get the file name from the button data
-                    let dl = $('<div>',{class:'download-link'}).insertAfter(this); // Create a div element for the download link
-                    $('<a>',{href:window.URL.createObjectURL(blob),download:filename,target:'_blank'}).appendTo(dl).text('Download file'); // Create an anchor element with the blob URL and append it to the div element
-                }
+         * Stores the feature collections in the local storage.
+         */        
+        function localstorageStore(){
+            initDlg();
+            let fcs = atk.toGeoJSON();
+            let list = setupFeatureCollectionList(fcs);
+            let finishbutton=setupFinalize('Save data','Local storage key:',getFileName(),true)
+            finishbutton.on('click',function(){
+                let toSave=list.find('input:checked').toArray().map(function(cb){return $(cb).data('fc')});
+                let txt = JSON.stringify(toSave);
+                let filename=$(this).data('label');
+                window.localStorage.setItem(filename,txt);
             })
         }
-
-
         /**
-         * Creates a button to finalize the file name and an optional editable content element.
-         * @function
-         * @memberof AtkMap
+         * Sets up the finalize button.
+         *
          * @param {string} buttonText - The text to display on the button.
-         * @param {string} [editableLabel] - The label for the editable content element. If omitted, no editable content element is created.
-         * @param {string} [editableContent] - The initial content for the editable content element. If omitted, no editable content element is created.
-         * @param {boolean} [localstorage] - A flag to indicate whether to use local storage for the editable content element. If true, the element will have a class 'key-exists' if the content matches a key in local storage.
-         * @returns {jQuery} The button element with data attributes 'label' and 'ec'.
+         * @param {string} editableLabel - The label for the editable content.
+         * @param {string} editableContent - The initial content for the editable content.
+         * @param {boolean} localstorage - Whether to test for local storage.
+         * @returns {jQuery} The finish button element.
          */
         function setupFinalize(buttonText,editableLabel,editableContent,localstorage){
             function testLocalstorage(localstorage, text, div){
@@ -296,10 +246,9 @@ export class FileDialog{
             return finishbutton;
         }
         /**
-         * Returns a HTML string for the file dialog.
-         * @function
-         * @memberof AtkMap
-         * @returns {string} The HTML string for the file dialog.
+         * Returns the HTML for the file dialog.
+         *
+         * @returns {string} The HTML for the file dialog.
          */
         function fileDialogHtml(){
             return `
@@ -327,15 +276,29 @@ export class FileDialog{
                 </div>`;
         }
     }
+    /**
+     * Shows the file dialog.
+     */
     show(){
         this.element.dialog('open');
     }
+    /**
+     * Hides the file dialog.
+     */
     hide(){
         this.element.dialog('close');
     }
+    /**
+     * Toggles the visibility of the file dialog.
+     */
     toggle(){
         this.element.dialog('isOpen') ? this.element.dialog('close') : this.element.dialog('open');
     }
+    /**
+     * Calls a method on the dialog element.
+     *
+     * @param {...any} args - The arguments to pass to the method.
+     */
     dialog(...args){
         this.element.dialog(...args)
     }

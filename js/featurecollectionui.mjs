@@ -1,7 +1,17 @@
 import { FeatureUI } from './featureui.mjs';
 import { EditableContent } from './utils/editablecontent.mjs';
 
+/**
+ * A user interface for managing feature collections.
+ * @class
+ */
 export class FeatureCollectionUI{
+    /**
+     * Create a new FeatureCollectionUI instance.
+     * @constructor
+     * @param {paper.Layer} layer - The paper layer object.
+     * @param {object} init - The initialization options.
+     */
     constructor(layer,init){
         let self=this;
         // this.toolbar = init.toolbar;
@@ -43,20 +53,34 @@ export class FeatureCollectionUI{
         // expose this object as a property of the paper.js layer
         this.layer.featureCollectionUI = this;
 
-
+        /**
+         * Get the features in the feature collection.
+         * @returns {FeatureUI[]} The array of features.
+         */
         this.features = function(){
             return self._featurelist.find('.feature').map(function(_,el){
                 return $(el).data('feature');
             }).toArray();
         }
-        
+        /**
+         * Remove the feature collection UI element.
+         */
         this.remove = function(){
             self.element.remove();
         }
+        /**
+         * Get the number of features in the feature collection.
+         * @returns {number} The number of features.
+         */
         this.numFeatures = function(){
             return self.features().length;
         }
 
+        /**
+         * Add a feature to the feature collection UI element.
+         * @param {FeatureUI} f - The feature to add.
+         * @returns {jQuery} The jQuery object of the feature element.
+         */
         this._addFeature=function(f){
             f.paperItem.updateFillOpacity();
             self._featurelist.append(f.element);
@@ -64,6 +88,10 @@ export class FeatureCollectionUI{
             self._sortableDebounce = window.setTimeout(()=>$(`${init.guiSelector} .features-list .feature`).length>100 ? self._featurelist.sortable('disable') : self._featurelist.sortable('refresh'), 15);
             return f.element; 
         }
+        /**
+         * Create a new feature and add it to the paper layer.
+         * @returns {paper.Item} The paper item object of the new feature.
+         */
         this.createFeature=function(){
             //define a new feature
             let props = this.layer.defaultStyle;
@@ -91,9 +119,17 @@ export class FeatureCollectionUI{
             setFillOpacity:setFillOpacity,
         }
 
+        /**
+         * Set the opacity of the paper layer.
+         * @param {number} o - The opacity value between 0 and 1.
+         */
         function setOpacity(o){
             self.layer.opacity = o;
         }
+        /**
+         * Set the fill opacity of the paper layer.
+         * @param {number} o - The fill opacity value between 0 and 1.
+         */
         function setFillOpacity(o){
             self.layer.fillOpacity = o;
         }
@@ -143,12 +179,27 @@ export class FeatureCollectionUI{
 
         return this;
     }
+    /**
+     * Get the label of the feature collection.
+     * @returns {string} The label of the feature collection.
+     */
     get label(){
         return this.layer.displayName;
     }
+    /**
+     * Set the label of the feature collection.
+     * @param {string} l - The new label of the feature collection.
+     * @returns {string} The new label of the feature collection.
+     */
     set label(l){
         return this.setLabel(l)
     }
+    /**
+     * Set the label of the feature collection with a source.
+     * @param {string} text - The new label of the feature collection.
+     * @param {string} source - The source of the label (e.g. 'user-defined' or 'initializing').
+     * @returns {string} The new label of the feature collection.
+     */
     setLabel(text,source){
         let l = new String(text);
         l.source=source;
@@ -156,13 +207,23 @@ export class FeatureCollectionUI{
         this.updateLabel();
         return l;
     }
+    /**
+     * Update the label of the feature collection in the UI element.
+     */
     updateLabel(){
         this._editableName.setText(this.label);
     }
+    /**
+     * Toggle the visibility of the feature collection UI element and the paper layer.
+     */
     toggleVisibility(){
         this.element.toggleClass('annotation-hidden');
         this.layer.visible = !this.element.hasClass('annotation-hidden');
     }
+    /**
+     * Remove the paper layer associated with the feature collection.
+     * @param {boolean} [confirm=true] - Whether to confirm before removing or not.
+     */
     removeLayer(confirm = true){
         if(confirm && window.confirm('Remove this layer?')==true){
             this.layer.remove();
@@ -170,6 +231,9 @@ export class FeatureCollectionUI{
 
         }
     }
+    /**
+     * Handle the edit clicked event on the UI element.
+     */
     editClicked(){
         let header = this.element.find('.annotation-header');
         header.addClass('editing');
@@ -181,6 +245,10 @@ export class FeatureCollectionUI{
         selection.removeAllRanges();
         selection.addRange(range);  
     }
+    /**
+     * Open the style editor for the feature collection.
+     * @param {object} ev - The event object.
+     */
     openStyleEditor(ev){
         let heard = this.layer.project.emit('edit-style',{item:this.layer});
         if(!heard){
@@ -189,6 +257,10 @@ export class FeatureCollectionUI{
     }
 }
 
+/**
+ * Create an HTML element for the feature collection UI.
+ * @returns {jQuery} The jQuery object of the HTML element.
+ */
 function makeFeatureCollectionElement(){
     let html = `
     <div class='feature-collection'>

@@ -65,7 +65,18 @@ paper.PaperScope.prototype.createFeatureCollectionLayer = createFeatureCollectio
 paper.PaperScope.prototype.scaleByCurrentZoom = function (v) { return v / this.view.getZoom(); };
 paper.PaperScope.prototype.getActiveTool = function(){ return this.tool ? this.tool._toolObject : null; }        
 
+/**
+ * A class for creating and managing annotation tools on an OpenSeadragon viewer.
+ * @class
+ * @extends OpenSeadragon.EventSource
+ */
 class AnnotationToolkit extends OpenSeadragon.EventSource{
+    /**
+     * Create a new AnnotationToolkit instance.
+     * @constructor
+     * @param {OpenSeadragon.Viewer} openSeadragonViewer - The OpenSeadragon viewer object.
+     * @param {object} [opts] - The configuration options.
+     */
     constructor(openSeadragonViewer, opts) {
         super();
         // TO DO: make the options object actually do something
@@ -112,15 +123,25 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
         paper.Item.fromAnnotationItem = AnnotationItemFactory.itemFromAnnotationItem;
     }
 
-
+    /**
+     * Get the default style for the annotation items.
+     * @returns {object} The default style object.
+     */
     get defaultStyle(){
         return this._defaultStyle;
     }
-
+    /**
+     * Add an annotation UI to the toolkit.
+     * @param {object} [opts={}] - The options for the annotation UI.
+     * @returns {AnnotationUI} The annotation UI object.
+     */
     addAnnotationUI(opts = {}){
         if (!this._annotationUI) this._annotationUI = new AnnotationUI(this, opts);
         return this._annotationUI;
     }
+    /**
+     * Destroy the toolkit and its components.
+     */
     destroy() {
         this.raiseEvent('before-destroy');
         let tool=this.overlay.paperScope && this.overlay.paperScope.getActiveTool();
@@ -130,6 +151,9 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
         this._annotationUI && this._annotationUI.destroy();
         this.overlay.destroy();
     }
+    /**
+     * Close the toolkit and remove its feature collections.
+     */
     close() {
         this.raiseEvent('before-close');
         let tool=this.overlay.paperScope && this.overlay.paperScope.getActiveTool();
@@ -137,20 +161,41 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
 
         this.addFeatureCollections([],true);
     }
+    /**
+     * Set the global visibility of the toolkit.
+     * @param {boolean} [show=false] - Whether to show or hide the toolkit.
+     */
     setGlobalVisibility(show = false){
         this.overlay.paperScope.view._element.setAttribute('style', 'visibility:' + (show ? 'visible;' : 'hidden;'));
     }
+    /**
+     * Add feature collections to the toolkit from GeoJSON objects.
+     * @param {object[]} featureCollections - The array of GeoJSON objects representing feature collections.
+     * @param {boolean} replaceCurrent - Whether to replace the current feature collections or not.
+     */
     addFeatureCollections(featureCollections,replaceCurrent){
         this.loadGeoJSON(featureCollections,replaceCurrent);
         this.overlay.rescaleItems();
         this.overlay.paperScope.project.emit('items-changed');
     }
+    /**
+     * Get the feature collection layers in the toolkit.
+     * @returns {paper.Layer[]} The array of paper layer objects representing feature collections.
+     */
     getFeatureCollectionLayers(){
         return this.overlay.paperScope.project.layers.filter(l=>l.isGeoJSONFeatureCollection);
     }
+    /**
+     * Get the features in the toolkit.
+     * @returns {paper.Item[]} The array of paper item objects representing features.
+     */
     getFeatures(){
         return this.overlay.paperScope.project.getItems({match:i=>i.isGeoJSONFeature});
     }
+    /**
+     * Convert the feature collections in the toolkit to GeoJSON objects.
+     * @returns {object[]} The array of GeoJSON objects representing feature collections.
+     */
     toGeoJSON(){
         //find all featureCollection items and convert to GeoJSON compatible structures
         return this.overlay.paperScope.project.getItems({match:i=>i.isGeoJSONFeatureCollection}).map(layer=>{
@@ -166,9 +211,20 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
             return geoJSON;
         })
     }
+    /**
+     * Convert the feature collections in the toolkit to a JSON string.
+     * @param {function} [replacer] - The replacer function for JSON.stringify().
+     * @param {number|string} [space] - The space argument for JSON.stringify().
+     * @returns {string} The JSON string representing the feature collections.
+     */
     toGeoJSONString(replacer,space){
         return JSON.stringify(this.toGeoJSON(),replacer,space);
     }
+    /**
+     * Load feature collections from GeoJSON objects and add them to the toolkit.
+     * @param {object[]} geoJSON - The array of GeoJSON objects representing feature collections.
+     * @param {boolean} replaceCurrent - Whether to replace the current feature collections or not.
+     */
     loadGeoJSON(geoJSON, replaceCurrent){
         if(replaceCurrent){
             this.overlay.paperScope.project.getItems({match:i=>i.isGeoJSONFeatureCollection}).forEach(layer=>layer.remove());
@@ -201,6 +257,10 @@ export {AnnotationToolkit as AnnotationToolkit};
 
 // private functions
 
+/**
+ * Create a compound path from a path item.
+ * @returns {paper.CompoundPath} The compound path object.
+ */
 function toCompoundPath() {
     if (this.constructor !== paper.CompoundPath) {
         let np = new paper.CompoundPath({ children: [this], fillRule: 'evenodd' });
@@ -210,6 +270,10 @@ function toCompoundPath() {
     }
     return this;
 }
+/**
+ * Apply bounds to a path item.
+ * @param {paper.Item[]} boundingItems - The array of paper items to use as bounds.
+ */
 function applyBounds(boundingItems) {
     if (boundingItems.length == 0)
         return;
@@ -234,6 +298,10 @@ function applyBounds(boundingItems) {
     }
 
 }
+/**
+ * Select a paper item and emit events.
+ * @param {boolean} [keepOtherSelectedItems=false] - Whether to keep other selected items or not.
+ */
 function paperItemSelect(keepOtherSelectedItems) {
     if(!keepOtherSelectedItems){
         this.project._scope.findSelectedItems().forEach(item => item.deselect());
@@ -242,6 +310,10 @@ function paperItemSelect(keepOtherSelectedItems) {
     this.emit('selected');
     this.project.emit('item-selected', { item: this });
 }
+/**
+ * Deselect a paper item and emit events.
+ * @param {boolean} [keepOtherSelectedItems=false] - Whether to keep other selected items or not.
+ */
 function paperItemDeselect(keepOtherSelectedItems) {
     if(!keepOtherSelectedItems){
         this.project._scope.findSelectedItems().forEach(item => item.deselect(true));
@@ -251,20 +323,41 @@ function paperItemDeselect(keepOtherSelectedItems) {
     this.emit('deselected');
     this.project.emit('item-deselected', { item: this });
 }
+/**
+ * Toggle the selection of a paper item and emit events.
+ * @param {boolean} [keepOtherSelectedItems=false] - Whether to keep other selected items or not.
+ */
 function paperItemToggle(keepOtherSelectedItems) {
     this.selected ? this.deselect(keepOtherSelectedItems) : this.select(keepOtherSelectedItems);
 }
 
+/**
+ * Find the selected new item in the project scope.
+ * @returns {paper.Item} The selected new item, or null if none exists.
+ */
 function findSelectedNewItem() {
     //to do: change this to use type=='Feature' and geometry==null to match GeoJSON spec and AnnotationItemPlaceholder definition
     return this.project.getItems({ selected:true, match: function (i) { return i.isGeoJSONFeature && i.initializeGeoJSONFeature; } })[0];
 }
+/**
+ * Find the selected items in the project scope.
+ * @returns {paper.Item[]} The array of selected items, or an empty array if none exists.
+ */
 function findSelectedItems() {
     return this.project.getItems({ selected: true, match: function (i) { return i.isGeoJSONFeature; } });
 }
+/**
+ * Find the first selected item in the project scope.
+ * @returns {paper.Item} The first selected item, or null if none exists.
+ */
 function findSelectedItem() {
     return this.findSelectedItems()[0];
 }
+/**
+ * Create a new feature collection layer in the project scope.
+ * @param {string} [displayLabel=null] - The display label for the feature collection layer.
+ * @returns {paper.Layer} The paper layer object representing the feature collection.
+ */
 function createFeatureCollectionLayer(displayLabel=null) {
     let layer = new paper.Layer();
     this.project.addLayer(layer);
@@ -276,18 +369,32 @@ function createFeatureCollectionLayer(displayLabel=null) {
     return layer;
 }
 
+/**
+ * Update the fill opacity of a paper item and its descendants.
+ */
 function updateFillOpacity(){
     this._computedFillOpacity = this.hierarchy.filter(item=>'fillOpacity' in item && (item._multiplyOpacity||item==this)).reduce((prod,item)=>prod*item.fillOpacity,1);
     if(this.fillColor){
         this.fillColor.alpha = this._computedFillOpacity;
     }
 }
+/**
+ * Update the stroke opacity of a paper item and its descendants.
+ */
 function updateStrokeOpacity(){
     if(this.strokeColor){
         this.strokeColor.alpha = this.hierarchy.filter(item=>'strokeOpacity' in item && (item._multiplyOpacity||item==this)).reduce((prod,item)=>prod*item.strokeOpacity,1);
     }
 }
-
+/**
+ * Define the fill opacity property for a paper style object.
+ * The fill opacity property controls the opacity of the fill color in a style object.
+ * @returns {object} The property descriptor object.
+ * @property {function} set - The setter function for the fill opacity property.
+ *   @param {number} o - The fill opacity value. Should be a number between 0 and 1.
+ * @property {function} get - The getter function for the fill opacity property.
+ *   @returns {number} The fill opacity value. If not set, returns 1 (fully opaque).
+ */
 function fillOpacityPropertyDef(){
     return {
         set: function opacity(o){
@@ -298,6 +405,15 @@ function fillOpacityPropertyDef(){
         }
     }
 }
+/**
+ * Define the stroke opacity property for a paper style object.
+ * The stroke opacity property controls the opacity of the stroke color in a style object.
+ * @returns {object} The property descriptor object.
+ * @property {function} set - The setter function for the stroke opacity property.
+ *   @param {number} o - The stroke opacity value. Should be a number between 0 and 1.
+ * @property {function} get - The getter function for the stroke opacity property.
+ *   @returns {number} The stroke opacity value. If not set, returns 1 (fully opaque).
+ */
 function strokeOpacityPropertyDef(){
     return {
         set: function opacity(o){
@@ -308,6 +424,15 @@ function strokeOpacityPropertyDef(){
         }
     }
 }
+/**
+ * Define the fill opacity property for a paper item object.
+ * The fill opacity property defines the opacity of the fill color used in a paper item object's style.
+ * @returns {object} The property descriptor object.
+ * @property {function} set - The setter function for the fill opacity property.
+ *   @param {number} opacity - The opacity value for the fill color.
+ * @property {function} get - The getter function for the fill opacity property.
+ *   @returns {number} The opacity value of the fill color.
+ */
 function itemFillOpacityPropertyDef(){
     return {
         set: function opacity(o){
@@ -319,6 +444,15 @@ function itemFillOpacityPropertyDef(){
         }
     }
 }
+/**
+ * Define the fill opacity property for a paper view object.
+ * The fill opacity property defines the opacity of the fill color used in a paper view object's style.
+ * @returns {object} The property descriptor object.
+ * @property {function} set - The setter function for the fill opacity property.
+ *   @param {number} opacity - The opacity value for the fill color.
+ * @property {function} get - The getter function for the fill opacity property.
+ *   @returns {number} The opacity value of the fill color.
+ */
 function viewFillOpacityPropertyDef(){
     return {
         set: function opacity(o){
@@ -331,6 +465,15 @@ function viewFillOpacityPropertyDef(){
     }
 }
 
+/**
+ * Define the stroke opacity property for a paper item object.
+ * The stroke opacity property defines the opacity of the stroke color used in a paper item object's style.
+ * @returns {object} The property descriptor object.
+ * @property {function} set - The setter function for the stroke opacity property.
+ *   @param {number} opacity - The opacity value for the stroke color.
+ * @property {function} get - The getter function for the stroke opacity property.
+ *   @returns {number} The opacity value of the stroke color.
+ */
 function itemStrokeOpacityPropertyDef(){
     return {
         set: function opacity(o){
@@ -342,6 +485,15 @@ function itemStrokeOpacityPropertyDef(){
         }
     }
 }
+/**
+ * Define the rescale property for a paper style object.
+ * The rescale property defines the scaling factor applied to a paper style object.
+ * @returns {object} The property descriptor object.
+ * @property {function} set - The setter function for the rescale property.
+ *   @param {number} rescale - The scaling factor value.
+ * @property {function} get - The getter function for the rescale property.
+ *   @returns {number} The scaling factor value.
+ */
 function rescalePropertyDef(){
     return {
         set: function rescale(o){
@@ -352,6 +504,16 @@ function rescalePropertyDef(){
         }
     }
 }
+
+/**
+ * Define the rescale property for a paper item object.
+ * The rescale property defines the scaling factor applied to a paper item object's style.
+ * @returns {object} The property descriptor object.
+ * @property {function} set - The setter function for the rescale property.
+ *   @param {number} rescale - The scaling factor value.
+ * @property {function} get - The getter function for the rescale property.
+ *   @returns {number} The scaling factor value.
+ */
 function itemRescalePropertyDef(){
     return {
         set: function rescale(o){
@@ -362,6 +524,16 @@ function itemRescalePropertyDef(){
         }
     }
 }
+
+/**
+ * Define the display name property for a paper item object.
+ * The display name property defines the name used to identify a paper item object.
+ * @returns {object} The property descriptor object.
+ * @property {function} set - The setter function for the display name property.
+ *   @param {string} input - The display name value.
+ * @property {function} get - The getter function for the display name property.
+ *   @returns {string} The display name value.
+ */
 function displayNamePropertyDef(){
     return {
         set: function displayName(input){
@@ -380,6 +552,14 @@ function displayNamePropertyDef(){
         }
     }
 }
+
+/**
+ * Define the hierarchy property for a paper item or project object.
+ * The hierarchy property represents the parent-child relationship of paper item or project objects.
+ * @returns {object} The property descriptor object.
+ * @property {function} get - The getter function for the hierarchy property.
+ *   @returns {paper.Item[]} The array of paper item objects representing the hierarchy.
+ */
 function hierarchyDef(){
     return {
         get: function hierarchy(){
@@ -387,6 +567,13 @@ function hierarchyDef(){
         }
     }
 }
+/**
+ * Define the descendants property for a paper item or project object.
+ * The descendants property represents all the descendants (children and their children) of a paper item or project object.
+ * @returns {object} The property descriptor object.
+ * @property {function} get - The getter function for the descendants property.
+ *   @returns {paper.Item[]} The array of paper item objects representing the descendants.
+ */
 function descendantsDef(){
     return {
         get: function descendants(){
@@ -394,6 +581,13 @@ function descendantsDef(){
         }
     }
 }
+/**
+ * Define the descendants property for a paper compound path object.
+ * The descendants property represents the compound path object itself as its only descendant.
+ * @returns {object} The property descriptor object.
+ * @property {function} get - The getter function for the descendants property.
+ *   @returns {paper.Item[]} The array containing only the compound path object.
+ */
 function descendantsDefCompoundPath(){
     return {
         get: function descendants(){
@@ -401,6 +595,13 @@ function descendantsDefCompoundPath(){
         }
     }
 }
+/**
+ * Define the descendants property for a paper project object.
+ * The descendants property represents all the descendants (layers and their children) of a paper project object.
+ * @returns {object} The property descriptor object.
+ * @property {function} get - The getter function for the descendants property.
+ *   @returns {paper.Item[]} The array of paper item objects representing the descendants.
+ */
 function descendantsDefProject(){
     return {
         get: function descendants(){
@@ -408,6 +609,10 @@ function descendantsDefProject(){
         }
     }
 }
+/**
+ * Define the set method for a paper style object.
+ * @param {object|paper.Style} style - The style object to set.
+ */
 function styleSet(style){
 
     var isStyle = style instanceof paper.Style,
@@ -424,7 +629,10 @@ function styleSet(style){
     }
 	
 }
-
+/**
+ * Convert a paper style object to a JSON object.
+ * @returns {object} The JSON object representing the style.
+ */
 function styleToJSON(){
     let output={};
     Object.keys(this._values).forEach(key=>{
@@ -432,10 +640,19 @@ function styleToJSON(){
     })
     return output;
 }
+/**
+ * Get the image data of a paper view element.
+ * @returns {ImageData} The image data object of the view element.
+ */
 function paperViewGetImageData(){
     return this.element.getContext('2d').getImageData(0,0,this.element.width, this.element.height);
 }
 
+/**
+ * Get the insert children method definition for a paper group object.
+ * The insert children method emits events when children are added to the paper group object.
+ * @returns {function} The insert children method that emits events when children are added.
+ */
 function getInsertChildrenDef(){
     let origInsertChildren = paper.Group.prototype.insertChildren.original || paper.Group.prototype.insertChildren;
     function insertChildren(){ 
@@ -452,6 +669,13 @@ function getInsertChildrenDef(){
     insertChildren.original = origInsertChildren;
     return insertChildren;
 }
+
+/**
+ * Define the fill opacity property for a paper style object.
+ * @returns {object} The property descriptor object with the following properties:
+ * - get: A function that returns the fill opacity value (a number between 0 and 1).
+ * - set: A function that sets the fill opacity value (a number between 0 and 1).
+ */
 function textItemContentPropertyDef(){
     let _set = paper.TextItem.prototype._setContent || Object.getOwnPropertyDescriptor(paper.TextItem.prototype, 'content').set;
     paper.TextItem.prototype._setContent = _set;

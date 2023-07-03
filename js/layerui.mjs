@@ -1,7 +1,17 @@
 import { FeatureCollectionUI } from './featurecollectionui.mjs';
 
+/**
+ * A user interface for managing layers of feature collections.
+ * @class
+ * @extends OpenSeadragon.EventSource
+ */
 export class LayerUI extends OpenSeadragon.EventSource{
 
+    /**
+     * Create a new LayerUI instance.
+     * @constructor
+     * @param {paper.PaperScope} paperScope - The paper scope object.
+     */
     constructor(paperScope){
         super();
         let self=this;
@@ -69,7 +79,10 @@ export class LayerUI extends OpenSeadragon.EventSource{
         self.element.find('input.annotation-fill-opacity').on('input',function(){
             self.paperScope.view.fillOpacity = this.value;
         }).trigger('input');
-
+        /**
+         * Set the opacity of the feature collections.
+         * @param {number} o - The opacity value between 0 and 1.
+         */
         function setOpacity(o){
             let status = self.element.find('.feature-collection').toArray().reduce(function(ac,el){
                 el = $(el)
@@ -118,31 +131,58 @@ export class LayerUI extends OpenSeadragon.EventSource{
         }
         
     }
+    /**
+     * Hide the layer UI element.
+     * @method
+     */
     hide(){
         this.element.hide();
         this.raiseEvent('hide');
     }
+    /**
+     * Show the layer UI element.
+     * @method
+     */
     show(){
         this.element.show();
         this.raiseEvent('show');
     }
+    /**
+     * Toggle the visibility of the layer UI element.
+     * @method
+     */
     toggle(){
         this.element.is(':visible') ? this.hide() : this.show();
     }
-    
+    /**
+     * Deactivate the layer UI element.
+     * @method
+     */
     deactivate(){
         this.element.addClass('deactivated');
     }
+    /**
+     * Activate the layer UI element.
+     * @method
+     */
     activate(){
         this.element.removeClass('deactivated');
     }
-    
+    /**
+     * Destroy the layer UI element.
+     * @method
+     */
     destroy(){
         this.raiseEvent('destroy');
         this.element.remove();
     }
     
     //private
+
+    /**
+     * Handle the feature collection added event.
+     * @param {object} ev - The event object.
+     */
     _onFeatureCollectionAdded(ev){
         let layer = ev.layer;
         
@@ -156,6 +196,10 @@ export class LayerUI extends OpenSeadragon.EventSource{
     
 
 }
+/**
+ * Create an HTML element for the layer UI.
+ * @returns {jQuery} The jQuery object of the HTML element.
+ */
 function makeHTMLElement(){
     let html = `
         <div class="annotation-ui-mainwindow" title="Annotations">

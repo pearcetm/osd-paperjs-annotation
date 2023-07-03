@@ -1,5 +1,14 @@
 import {EditableContent} from './utils/editablecontent.mjs';
+/**
+ * A user interface for managing features.
+ * @class
+ */
 export class FeatureUI{
+    /**
+     * Create a new FeatureUI instance.
+     * @constructor
+     * @param {paper.Item} paperItem - The paper item object.
+     */
     constructor(paperItem){
         
         let self=this;
@@ -96,12 +105,27 @@ export class FeatureUI{
         this.label ? this.updateLabel() : this.setLabel('Creating...', 'initializing');
         
     }
+    /**
+     * Get the label of the feature.
+     * @returns {string} The label of the feature.
+     */
     get label(){
         return this.paperItem.displayName;
     }
+    /**
+     * Set the label of the feature.
+     * @param {string} l - The new label of the feature.
+     * @returns {string} The new label of the feature.
+     */
     set label(l){
         return this.setLabel(l)
     }
+    /**
+     * Set the label of the feature with a source.
+     * @param {string} text - The new label of the feature.
+     * @param {string} source - The source of the label (e.g. 'user-defined' or 'initializing').
+     * @returns {string} The new label of the feature.
+     */
     setLabel(text,source){
         let l = new String(text);
         l.source=source;
@@ -109,18 +133,30 @@ export class FeatureUI{
         this.updateLabel();
         return l;
     }
+    /**
+     * Update the label of the feature in the UI element.
+     */
     updateLabel(){
         // this._element.find('.feature-item.name').text(this.label);//.trigger('value-changed',[l]);
         this._editableName.setText(this.label);
     }
+    /**
+     * Remove the paper item associated with the feature.
+     */
     removeItem(){        
         //clean up paperItem
         this.paperItem.remove();
         this.paperItem.deselect();
     }
+    /**
+     * Remove the UI element associated with the feature.
+     */
     remove(){
         this._element.remove().trigger('removed');
     }
+    /**
+     * Handle the edit clicked event on the UI element.
+     */
     editClicked(){
         let header = this._element.find('.editablecontent');
         header.addClass('editing');
@@ -132,6 +168,11 @@ export class FeatureUI{
         selection.removeAllRanges();
         selection.addRange(range);
     }
+    /**
+     * Use the feature as a bounding element.
+     * @param {boolean} [toggle=false] - Whether to toggle the bounding element status or not.
+     * @returns {boolean} Whether the feature is used as a bounding element or not.
+     */
     useAsBoundingElement(toggle=false){
         if(!this.paperItem.canBeBoundingElement) return false;
         let element = this._element.find('[data-action="bounds"]');
@@ -143,13 +184,20 @@ export class FeatureUI{
         let isActive = element.hasClass('active');
         this.paperItem.isBoundingElement = isActive;
         return isActive;
-    }    
+    }   
+    /**
+     * Open the style editor for the feature.
+     */ 
     openStyleEditor(){
         let heard = this.paperItem.project.emit('edit-style',{item:this.paperItem});
         if(!heard){
             console.warn('No event listeners are registered for paperScope.project for event \'edit-style\'');
         }
     }
+    /**
+     * Center the feature in the viewport.
+     * @param {boolean} [immediately=false] - Whether to center the feature immediately or not.
+     */
     centerItem(immediately = false){
         let viewport = this.paperItem.project.overlay.osdViewer.viewport;
         let bounds = this.paperItem.bounds;
@@ -170,6 +218,10 @@ export class FeatureUI{
     
 }
 
+/**
+ * Create an HTML element for the feature UI.
+ * @returns {jQuery} The jQuery object of the HTML element.
+ */
 function makeFeatureElement(){
     let html = `
     <div class='feature'>

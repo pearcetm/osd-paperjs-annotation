@@ -14,7 +14,13 @@ import {TransformTool} from './papertools/transform.mjs';
 import {RasterTool} from './papertools/raster.mjs';
 
 export class AnnotationToolbar{
-
+  /**
+   * Constructs an AnnotationToolbar instance.
+   *
+   * @param {Object} paperScope - The Paper.js scope object.
+   * @param {string[]} [tools] - An array of tool names to use. If not provided, all available tools will be used.
+   * @throws {Error} Throws an error if `tools` is provided but not an array.
+   */
     constructor(paperScope, tools){
         // tools should be an array of strings, or null/falsey
         if(tools && !Array.isArray(tools)){
@@ -22,10 +28,10 @@ export class AnnotationToolbar{
         }
         this.ui = makeUI();
         this.paperScope=paperScope;
-        
+
         this.currentMode = null;
         this.setModeTimeout = null;
-
+        
         let toolLayer=new paperScope.Layer();
         toolLayer.isGeoJSONFeatureCollection=false;
         toolLayer.name = 'toolLayer';
@@ -45,7 +51,7 @@ export class AnnotationToolbar{
             wand: WandTool,
             linestring : LinestringTool,
             raster: RasterTool,
-        }
+        }   
         this.tools = {};
 
         // if array of tools was passed in, use that. Otherwise use all available ones listed in the toolConstructors dictionary
@@ -77,11 +83,13 @@ export class AnnotationToolbar{
 
         this.setMode();
 
-        //items emit events on the paper project; add listeners to update the toolbar status as needed
+        //items emit events on the paper project; add listeners to update the toolbar status as needed       
         paperScope.project.on({
+            
             'item-replaced':()=>{
                 this.setMode();
             },
+
             'item-selected':()=>{
                 this.setMode()
             },
@@ -98,41 +106,58 @@ export class AnnotationToolbar{
 
     }
     
-    setMode(){
-        let self=this;
+    /**
+     * Sets the current mode of the Annotation Toolbar based on the selection and active tool.
+     *
+     * @memberof AnnotationToolbar
+     * @instance
+     * @function setMode
+     * @throws {Error} Throws an error if the active tool's toolbar control is not found.
+     */
+    setMode() {
+        let self = this;
         this.setModeTimeout && clearTimeout(this.setModeTimeout);
-        this.setModeTimeout = setTimeout(()=>{
-            this.setModeTimeout=null;
-            let selection = this.paperScope.findSelectedItems();
-            let activeTool = this.paperScope.getActiveTool();
-            
-            if(selection.length==0){
-                this.currentMode='select';
-            }
-            else if(selection.length==1){
-                let item=selection[0];
-                let def = item.annotationItem || {};
-                let type = def.type;
-                if(def.subtype) type += ':' + def.subtype;
-                let mode = type === null ? 'new' : type;
-                this.currentMode = mode;
-            }
-            else{
-                this.currentMode = 'multiselection'
-            }
-            
-            if(activeTool.getToolbarControl().isEnabledForMode(this.currentMode) == false) {
-                activeTool.deactivate(true)
-                this.tools.default.activate()
-            }
-            Object.values(this.tools).forEach(toolObj=>{
-                let t = toolObj.getToolbarControl();
-                t && ( t.isEnabledForMode(self.currentMode) ? t.button.enable() : t.button.disable() );
-            })
-            activeTool.selectionChanged();
+        this.setModeTimeout = setTimeout(() => {
+        this.setModeTimeout = null;
+        let selection = this.paperScope.findSelectedItems();
+        let activeTool = this.paperScope.getActiveTool();
+        if (selection.length === 0) {
+            this.currentMode = 'select';
+        } else if (selection.length === 1) {
+            let item = selection[0];
+            let def = item.annotationItem || {};
+            let type = def.type;
+            if (def.subtype) type += ':' + def.subtype;
+            let mode = type === null ? 'new' : type;
+            this.currentMode = mode;
+        } else {
+            this.currentMode = 'multiselection';
+        }
+    
+        if (activeTool.getToolbarControl().isEnabledForMode(this.currentMode) === false) {
+            activeTool.deactivate(true);
+            this.tools.default.activate();
+        }
+    
+
+        Object.values(this.tools).forEach(toolObj => {
+            let t = toolObj.getToolbarControl();
+            t && (t.isEnabledForMode(self.currentMode) ? t.button.enable() : t.button.disable());
+        });
+    
+
+        activeTool.selectionChanged();
         }, 0);
     }
-    
+/**
+ * Adds a toolbar control to the Annotation Toolbar.
+ *
+ * @memberof AnnotationToolbar
+ * @instance
+ * @function addToolbarControl
+ * @param {Object} toolbarControl - The toolbar control to be added.
+ * @throws {Error} Throws an error if the toolbar control's button element is not found.
+ */    
     addToolbarControl(toolbarControl){
         toolbarControl.button && toolbarControl.button.element && this.ui.buttongroup.buttons.push(toolbarControl.button)
         toolbarControl.dropdown && this.ui.dropdowns.append(toolbarControl.dropdown);
@@ -144,6 +169,15 @@ export class AnnotationToolbar{
     hide(){
         $(this.ui.buttongroup.element).hide();
     }
+    
+/**
+ * Adds the Annotation Toolbar to an OpenSeadragon viewer.
+ *
+ * @memberof AnnotationToolbar
+ * @instance
+ * @function addToOpenSeadragon
+ * @param {Object} viewer - The OpenSeadragon viewer.
+ */
     addToOpenSeadragon(viewer){
         let bg = new OpenSeadragon.ButtonGroup({buttons:this.ui.buttongroup.buttons,element:this.ui.buttongroup.element});
         viewer.addControl(bg.element,{anchor:OpenSeadragon.ControlAnchor.TOP_LEFT});
@@ -164,6 +198,12 @@ export class AnnotationToolbar{
         $(viewer.controls.topleft).addClass('viewer-controls-topleft');
         $('.toggles .btn').attr('style','');
     }
+/**
+ * Destroys the Annotation Toolbar.
+ *
+ * @memberof AnnotationToolbar
+ * @function destroy
+ */
     destroy(){
         if(this.viewer){
             this.viewer.removeControl(this.ui.buttongroup.element);
@@ -173,7 +213,12 @@ export class AnnotationToolbar{
         this.ui.dropdowns.parent().remove();
     } 
 }
-
+/**
+ * Creates the user interface for the Annotation Toolbar.
+ *
+ * @function makeUI
+ * @returns {Object} The user interface object containing the button group and dropdowns.
+ */
 function makeUI(){
     //make a container div
     let t = $('<div>',{class:'annotation-ui-drawing-toolbar btn-group btn-group-sm mode-selection'});

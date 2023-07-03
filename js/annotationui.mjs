@@ -15,6 +15,22 @@ addCSS(`${import.meta.url.match(/(.*?)js\/[^\/]*$/)[1]}css/editablecontent.css`,
 
 
 class AnnotationUI{
+/**
+ * Creates an instance of AnnotationUI.
+ *
+ * @class
+ * @param {Object} annotationToolkit - The annotation toolkit object.
+ * @param {Object} opts - The options for the AnnotationUI.
+ * @param {boolean} [opts.autoOpen=true] - Determines if the AnnotationUI should be automatically opened.
+ * @param {Array} [opts.featureCollections=[]] - An array of feature collections to load.
+ * @param {boolean} [opts.addButton=true] - Determines if the AnnotationUI button should be added.
+ * @param {boolean} [opts.addToolbar=true] - Determines if the AnnotationToolbar should be added.
+ * @param {string[]} [opts.tools=null] - An array of tool names to use in the AnnotationToolbar. If not provided, all available tools will be used.
+ * @param {boolean} [opts.addLayerDialog=true] - Determines if the LayerUI dialog should be added.
+ * @param {boolean} [opts.addFileButton=true] - Determines if the file button should be added for saving/loading annotations.
+ * @param {boolean} [opts.buttonTogglesToolbar=true] - Determines if the AnnotationToolbar visibility is toggled by the AnnotationUI button.
+ * @param {boolean} [opts.buttonTogglesLayerUI=true] - Determines if the LayerUI visibility is toggled by the AnnotationUI button.
+ */
     constructor(annotationToolkit,opts){
         let defaultOpts = {
             autoOpen:true,
@@ -28,7 +44,6 @@ class AnnotationUI{
             buttonTogglesLayerUI:true,
         }
         opts = this.options = Object.assign(defaultOpts,opts);
-
         let _viewer = this._viewer = annotationToolkit.viewer;//shorter alias
         this._isOpen = !!opts.autoOpen;
 
@@ -44,6 +59,8 @@ class AnnotationUI{
         this._fileDialog = new FileDialog(annotationToolkit,{appendTo:_viewer.element});
         this._filebutton = null;
         if(opts.addFileButton){
+        
+       //Handles the click event of the file button.
             this._filebutton = annotationToolkit.overlay.addViewerButton({
                 onClick:()=>{
                     this._fileDialog.toggle();
@@ -70,7 +87,7 @@ class AnnotationUI{
 
         //Button for controlling LayerUI and/or AnnotationToolbar
         this._button = null;
-        if(opts.addButton){
+        if(opts.addButton){           
             this._button = annotationToolkit.overlay.addViewerButton({
                 onClick:()=>{
                     this._isOpen = !this._isOpen;
@@ -91,7 +108,6 @@ class AnnotationUI{
             annotationToolkit.loadGeoJSON(opts.featureCollections);
         }
     }
-    
     destroy(){
         this._layerUI.destroy();
         this._toolbar.destroy();
@@ -115,8 +131,6 @@ class AnnotationUI{
     get toolbar(){
         return this._toolbar;
     }
-    
-    //private
     _createJqueryUIdialog(){
         let element = this._layerUI.element;
 
