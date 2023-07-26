@@ -1,6 +1,6 @@
 
-import { AnnotationToolkit } from '../js/annotationtoolkit.mjs';
-import { RotationControlOverlay } from '../js/rotationcontrol.mjs';
+import { AnnotationToolkit } from '../src/js/annotationtoolkit.mjs';
+import { RotationControlOverlay } from '../src/js/rotationcontrol.mjs';
 
 let v1 =window.v1 = OpenSeadragon({
     element:'basic-viewer',

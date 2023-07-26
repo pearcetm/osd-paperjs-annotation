@@ -4,7 +4,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width">
-	<title>Documentation Global</title>
+	<title>Documentation Class: RotationControlTool</title>
 
 	<!--[if lt IE 9]>
 	<script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
@@ -79,13 +79,15 @@
 		<div id="main">
 			
 
-	<h1 class="page-title">Global</h1>
+	<h1 class="page-title">Class: RotationControlTool</h1>
 <section>
 
 <header>
     
         <h2>
+            <span class="ancestors"><a href="OSDPaperjsAnnotation.html">OSDPaperjsAnnotation</a>.</span>
         
+        RotationControlTool
         </h2>
         
     
@@ -96,8 +98,102 @@
     <div class="container-overview">
     
         
+<hr>
+<dt>
+    <h4 class="name" id="RotationControlTool"><span class="type-signature"></span>new RotationControlTool(paperScope, rotationOverlay)</h4>
+    
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        Creates an instance of the RotationControlTool.
+    </div>
+    
+
+    
+
+    
+
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params table table-striped">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
 
         
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>paperScope</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">any</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">The paper scope object.</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>rotationOverlay</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">any</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">The rotation overlay object.</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+    
+
+    
 <dl class="details">
     
 
@@ -137,9 +233,34 @@
 </dl>
 
 
-        
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dd>
+
     
     </div>
+
+    
+        <h3 class="subsection-title">Extends</h3>
+
+        
+
+
+    <ul>
+        <li>ToolBase</li>
+    </ul>
+
 
     
 
@@ -160,7 +281,7 @@
             
 <hr>
 <dt>
-    <h4 class="name" id="adaptiveOffsetCurve"><span class="type-signature"></span>adaptiveOffsetCurve(curve, offset)</h4>
+    <h4 class="name" id=".setAngle"><span class="type-signature">&lt;static> </span>setAngle(angle, pivot)</h4>
     
     
 </dt>
@@ -168,7 +289,7 @@
 
     
     <div class="description">
-        Adaptive offset a curve by repeatly apply the approximation proposed by Tiller and Hanson.
+        Sets the angle of the rotation.
     </div>
     
 
@@ -203,10 +324,16 @@
 
         <tr>
             
-                <td class="name"><code>curve</code></td>
+                <td class="name"><code>angle</code></td>
             
 
             <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+
             
             </td>
 
@@ -214,17 +341,23 @@
 
             
 
-            <td class="description last">curve to offset</td>
+            <td class="description last">The angle to set.</td>
         </tr>
 
     
 
         <tr>
             
-                <td class="name"><code>offset</code></td>
+                <td class="name"><code>pivot</code></td>
             
 
             <td class="type">
+            
+                
+<span class="param-type">any</span>
+
+
+
             
             </td>
 
@@ -232,735 +365,13 @@
 
             
 
-            <td class="description last">offset value</td>
+            <td class="description last">The pivot point for the rotation.</td>
         </tr>
 
     
     </tbody>
 </table>
 
-    
-
-    
-<dl class="details">
-    
-
-	
-
-	
-
-	
-
-    
-
-    
-
-    
-
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-
-
-	
-
-	
-
-	
-
-	
-</dl>
-
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</dd>
-
-        
-            
-<hr>
-<dt>
-    <h4 class="name" id="connectAdjacentBezier"><span class="type-signature"></span>connectAdjacentBezier()</h4>
-    
-    
-</dt>
-<dd>
-
-    
-    <div class="description">
-        Connect two adjacent bezier curve, each curve is represented by two segments,create different types of joins or simply removal redundant segment.
-    </div>
-    
-
-    
-
-    
-
-    
-    
-
-    
-<dl class="details">
-    
-
-	
-
-	
-
-	
-
-    
-
-    
-
-    
-
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-
-
-	
-
-	
-
-	
-
-	
-</dl>
-
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</dd>
-
-        
-            
-<hr>
-<dt>
-    <h4 class="name" id="connectBeziers"><span class="type-signature"></span>connectBeziers()</h4>
-    
-    
-</dt>
-<dd>
-
-    
-    <div class="description">
-        Connect all the segments together.
-    </div>
-    
-
-    
-
-    
-
-    
-    
-
-    
-<dl class="details">
-    
-
-	
-
-	
-
-	
-
-    
-
-    
-
-    
-
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-
-
-	
-
-	
-
-	
-
-	
-</dl>
-
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</dd>
-
-        
-            
-<hr>
-<dt>
-    <h4 class="name" id="getPointLineIntersections"><span class="type-signature"></span>getPointLineIntersections()</h4>
-    
-    
-</dt>
-<dd>
-
-    
-    <div class="description">
-        Get the intersection point of point based lines
-    </div>
-    
-
-    
-
-    
-
-    
-    
-
-    
-<dl class="details">
-    
-
-	
-
-	
-
-	
-
-    
-
-    
-
-    
-
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-
-
-	
-
-	
-
-	
-
-	
-</dl>
-
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</dd>
-
-        
-            
-<hr>
-<dt>
-    <h4 class="name" id="makeRoundJoin"><span class="type-signature"></span>makeRoundJoin()</h4>
-    
-    
-</dt>
-<dd>
-
-    
-    <div class="description">
-        Create a round join segment between two adjacent segments.
-    </div>
-    
-
-    
-
-    
-
-    
-    
-
-    
-<dl class="details">
-    
-
-	
-
-	
-
-	
-
-    
-
-    
-
-    
-
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-
-
-	
-
-	
-
-	
-
-	
-</dl>
-
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</dd>
-
-        
-            
-<hr>
-<dt>
-    <h4 class="name" id="normalize"><span class="type-signature"></span>normalize()</h4>
-    
-    
-</dt>
-<dd>
-
-    
-    <div class="description">
-        Normalize a path, always clockwise, non-self-intersection, ignore really small components, and no one-component compound path.
-    </div>
-    
-
-    
-
-    
-
-    
-    
-
-    
-<dl class="details">
-    
-
-	
-
-	
-
-	
-
-    
-
-    
-
-    
-
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-
-
-	
-
-	
-
-	
-
-	
-</dl>
-
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</dd>
-
-        
-            
-<hr>
-<dt>
-    <h4 class="name" id="offsetSegment"><span class="type-signature"></span>offsetSegment(segment, curve, handleNormal, offset)</h4>
-    
-    
-</dt>
-<dd>
-
-    
-    <div class="description">
-        Offset the start/terminal segment of a bezier curve
-    </div>
-    
-
-    
-
-    
-
-    
-    
-        <h5>Parameters:</h5>
-        
-
-<table class="params table table-striped">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>segment</code></td>
-            
-
-            <td class="type">
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">segment to offset</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>curve</code></td>
-            
-
-            <td class="type">
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">curve to offset</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>handleNormal</code></td>
-            
-
-            <td class="type">
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">the normal of the the line formed of two handles</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>offset</code></td>
-            
-
-            <td class="type">
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">offset value</td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-    
-
-    
-<dl class="details">
-    
-
-	
-
-	
-
-	
-
-    
-
-    
-
-    
-
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-
-
-	
-
-	
-
-	
-
-	
-</dl>
-
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</dd>
-
-        
-            
-<hr>
-<dt>
-    <h4 class="name" id="removeIntersection"><span class="type-signature"></span>removeIntersection()</h4>
-    
-    
-</dt>
-<dd>
-
-    
-    <div class="description">
-        Remove self intersection when offset is negative by point direction dectection.
-    </div>
-    
-
-    
-
-    
-
-    
-    
-
-    
-<dl class="details">
-    
-
-	
-
-	
-
-	
-
-    
-
-    
-
-    
-
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-
-
-	
-
-	
-
-	
-
-	
-</dl>
-
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</dd>
-
-        
-            
-<hr>
-<dt>
-    <h4 class="name" id="removeOutsiders"><span class="type-signature"></span>removeOutsiders()</h4>
-    
-    
-</dt>
-<dd>
-
-    
-    <div class="description">
-        Remove impossible segments in negative offset condition.
-    </div>
-    
-
-    
-
-    
-
-    
     
 
     

@@ -4,7 +4,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width">
-	<title>Documentation Global</title>
+	<title>Documentation Namespace: OSDPaperjsAnnotation</title>
 
 	<!--[if lt IE 9]>
 	<script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
@@ -79,13 +79,13 @@
 		<div id="main">
 			
 
-	<h1 class="page-title">Global</h1>
+	<h1 class="page-title">Namespace: OSDPaperjsAnnotation</h1>
 <section>
 
 <header>
     
         <h2>
-        
+        OSDPaperjsAnnotation
         </h2>
         
     
@@ -95,6 +95,8 @@
 <article>
     <div class="container-overview">
     
+        
+            <div class="description">This is a namespace that contains documentation elements belonging to OSDPaperJSAnnotation</div>
         
 
         
@@ -145,6 +147,43 @@
 
     
 
+    
+        <h3 class="subsection-title">Classes</h3>
+
+        <dl>
+            <dt><a href="OSDPaperjsAnnotation.AnnotationToolbar.html">AnnotationToolbar</a></dt>
+            <dd></dd>
+        
+            <dt><a href="OSDPaperjsAnnotation.AnnotationToolkit.html">AnnotationToolkit</a></dt>
+            <dd></dd>
+        
+            <dt><a href="OSDPaperjsAnnotation.AnnotationUI.html">AnnotationUI</a></dt>
+            <dd></dd>
+        
+            <dt><a href="OSDPaperjsAnnotation.FeatureCollectionUI.html">FeatureCollectionUI</a></dt>
+            <dd></dd>
+        
+            <dt><a href="OSDPaperjsAnnotation.FeatureUI.html">FeatureUI</a></dt>
+            <dd></dd>
+        
+            <dt><a href="OSDPaperjsAnnotation.FileDialog.html">FileDialog</a></dt>
+            <dd></dd>
+        
+            <dt><a href="OSDPaperjsAnnotation.LayerUI.html">LayerUI</a></dt>
+            <dd></dd>
+        
+            <dt><a href="OSDPaperjsAnnotation.PaperOverlay.html">PaperOverlay</a></dt>
+            <dd></dd>
+        
+            <dt><a href="OSDPaperjsAnnotation.RotationControlOverlay.html">RotationControlOverlay</a></dt>
+            <dd></dd>
+        
+            <dt><a href="OSDPaperjsAnnotation.RotationControlTool.html">RotationControlTool</a></dt>
+            <dd></dd>
+        
+            <dt><a href="OSDPaperjsAnnotation.RotationControlWidget.html">RotationControlWidget</a></dt>
+            <dd></dd>
+        </dl>
     
 
     
@@ -160,7 +199,7 @@
             
 <hr>
 <dt>
-    <h4 class="name" id="adaptiveOffsetCurve"><span class="type-signature"></span>adaptiveOffsetCurve(curve, offset)</h4>
+    <h4 class="name" id=".addCSS"><span class="type-signature">&lt;static> </span>addCSS(url [, nameToCheck])</h4>
     
     
 </dt>
@@ -168,7 +207,7 @@
 
     
     <div class="description">
-        Adaptive offset a curve by repeatly apply the approximation proposed by Tiller and Hanson.
+        A regular expression pattern to check for in existing CSS links in the document, used to avoid duplicating CSS files. If the pattern is found in the document, the new link is not added. For consistency, the pattern is also checked against the url parameter to make sure it will exist in the document after adding the new link. If the pattern is not found in the url, an error is logged to the console and the file is not addedtest
     </div>
     
 
@@ -191,6 +230,8 @@
         <th>Type</th>
 
         
+        <th>Argument</th>
+        
 
         
 
@@ -203,36 +244,66 @@
 
         <tr>
             
-                <td class="name"><code>curve</code></td>
+                <td class="name"><code>url</code></td>
             
 
             <td class="type">
             
+                
+<span class="param-type">string</span>
+
+
+
+            
             </td>
 
             
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
 
             
 
-            <td class="description last">curve to offset</td>
+            <td class="description last">The URL of the CSS file to add.</td>
         </tr>
 
     
 
         <tr>
             
-                <td class="name"><code>offset</code></td>
+                <td class="name"><code>nameToCheck</code></td>
             
 
             <td class="type">
             
+                
+<span class="param-type">string</span>
+
+
+
+            
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
 
             
 
-            <td class="description last">offset value</td>
+            <td class="description last">The name pattern to check in the URL. If provided,</td>
         </tr>
 
     
@@ -292,728 +363,26 @@
     
 
     
-
+    <h5>Returns:</h5>
     
-</dd>
-
-        
             
-<hr>
-<dt>
-    <h4 class="name" id="connectAdjacentBezier"><span class="type-signature"></span>connectAdjacentBezier()</h4>
-    
-    
-</dt>
-<dd>
 
-    
-    <div class="description">
-        Connect two adjacent bezier curve, each curve is represented by two segments,create different types of joins or simply removal redundant segment.
-    </div>
-    
 
-    
-
-    
-
-    
-    
-
-    
-<dl class="details">
-    
-
-	
-
-	
-
-	
-
-    
-
-    
-
-    
-
-    
-
-	
-
-	
-
-	
-
-	
-
-	
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">void</span>
 
 
 
-	
-
-	
-
-	
-
-	
+    </dd>
 </dl>
 
 
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</dd>
-
         
-            
-<hr>
-<dt>
-    <h4 class="name" id="connectBeziers"><span class="type-signature"></span>connectBeziers()</h4>
-    
-    
-</dt>
-<dd>
-
-    
-    <div class="description">
-        Connect all the segments together.
-    </div>
-    
-
-    
-
-    
-
-    
-    
-
-    
-<dl class="details">
-    
-
-	
-
-	
-
-	
-
-    
-
-    
-
-    
-
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-
-
-	
-
-	
-
-	
-
-	
-</dl>
-
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</dd>
-
-        
-            
-<hr>
-<dt>
-    <h4 class="name" id="getPointLineIntersections"><span class="type-signature"></span>getPointLineIntersections()</h4>
-    
-    
-</dt>
-<dd>
-
-    
-    <div class="description">
-        Get the intersection point of point based lines
-    </div>
-    
-
-    
-
-    
-
-    
-    
-
-    
-<dl class="details">
-    
-
-	
-
-	
-
-	
-
-    
-
-    
-
-    
-
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-
-
-	
-
-	
-
-	
-
-	
-</dl>
-
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</dd>
-
-        
-            
-<hr>
-<dt>
-    <h4 class="name" id="makeRoundJoin"><span class="type-signature"></span>makeRoundJoin()</h4>
-    
-    
-</dt>
-<dd>
-
-    
-    <div class="description">
-        Create a round join segment between two adjacent segments.
-    </div>
-    
-
-    
-
-    
-
-    
-    
-
-    
-<dl class="details">
-    
-
-	
-
-	
-
-	
-
-    
-
-    
-
-    
-
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-
-
-	
-
-	
-
-	
-
-	
-</dl>
-
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</dd>
-
-        
-            
-<hr>
-<dt>
-    <h4 class="name" id="normalize"><span class="type-signature"></span>normalize()</h4>
-    
-    
-</dt>
-<dd>
-
-    
-    <div class="description">
-        Normalize a path, always clockwise, non-self-intersection, ignore really small components, and no one-component compound path.
-    </div>
-    
-
-    
-
-    
-
-    
-    
-
-    
-<dl class="details">
-    
-
-	
-
-	
-
-	
-
-    
-
-    
-
-    
-
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-
-
-	
-
-	
-
-	
-
-	
-</dl>
-
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</dd>
-
-        
-            
-<hr>
-<dt>
-    <h4 class="name" id="offsetSegment"><span class="type-signature"></span>offsetSegment(segment, curve, handleNormal, offset)</h4>
-    
-    
-</dt>
-<dd>
-
-    
-    <div class="description">
-        Offset the start/terminal segment of a bezier curve
-    </div>
-    
-
-    
-
-    
-
-    
-    
-        <h5>Parameters:</h5>
-        
-
-<table class="params table table-striped">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>segment</code></td>
-            
-
-            <td class="type">
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">segment to offset</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>curve</code></td>
-            
-
-            <td class="type">
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">curve to offset</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>handleNormal</code></td>
-            
-
-            <td class="type">
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">the normal of the the line formed of two handles</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>offset</code></td>
-            
-
-            <td class="type">
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">offset value</td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-    
-
-    
-<dl class="details">
-    
-
-	
-
-	
-
-	
-
-    
-
-    
-
-    
-
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-
-
-	
-
-	
-
-	
-
-	
-</dl>
-
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</dd>
-
-        
-            
-<hr>
-<dt>
-    <h4 class="name" id="removeIntersection"><span class="type-signature"></span>removeIntersection()</h4>
-    
-    
-</dt>
-<dd>
-
-    
-    <div class="description">
-        Remove self intersection when offset is negative by point direction dectection.
-    </div>
-    
-
-    
-
-    
-
-    
-    
-
-    
-<dl class="details">
-    
-
-	
-
-	
-
-	
-
-    
-
-    
-
-    
-
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-
-
-	
-
-	
-
-	
-
-	
-</dl>
-
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</dd>
-
-        
-            
-<hr>
-<dt>
-    <h4 class="name" id="removeOutsiders"><span class="type-signature"></span>removeOutsiders()</h4>
-    
-    
-</dt>
-<dd>
-
-    
-    <div class="description">
-        Remove impossible segments in negative offset condition.
-    </div>
-    
-
-    
-
-    
-
-    
-    
-
-    
-<dl class="details">
-    
-
-	
-
-	
-
-	
-
-    
-
-    
-
-    
-
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-
-
-	
-
-	
-
-	
-
-	
-</dl>
-
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
 
     
 </dd>

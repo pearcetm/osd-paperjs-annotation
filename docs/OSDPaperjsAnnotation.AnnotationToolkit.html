@@ -4,7 +4,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width">
-	<title>Documentation Global</title>
+	<title>Documentation Class: AnnotationToolkit</title>
 
 	<!--[if lt IE 9]>
 	<script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
@@ -79,14 +79,18 @@
 		<div id="main">
 			
 
-	<h1 class="page-title">Global</h1>
+	<h1 class="page-title">Class: AnnotationToolkit</h1>
 <section>
 
 <header>
     
         <h2>
+            <span class="ancestors"><a href="OSDPaperjsAnnotation.html">OSDPaperjsAnnotation</a>.</span>
         
+        AnnotationToolkit
         </h2>
+        
+            <div class="class-description">A class for creating and managing annotation tools on an OpenSeadragon viewer.</div>
         
     
 </header>
@@ -96,8 +100,122 @@
     <div class="container-overview">
     
         
+<hr>
+<dt>
+    <h4 class="name" id="AnnotationToolkit"><span class="type-signature"></span>new AnnotationToolkit(openSeadragonViewer [, opts])</h4>
+    
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        Create a new AnnotationToolkit instance.
+    </div>
+    
+
+    
+
+    
+
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params table table-striped">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
 
         
+        <th>Argument</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>openSeadragonViewer</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="OpenSeadragon.Viewer.html">OpenSeadragon.Viewer</a></span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last">The OpenSeadragon viewer object.</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>opts</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">object</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last">The configuration options.</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+    
+
+    
 <dl class="details">
     
 
@@ -137,11 +255,34 @@
 </dl>
 
 
-        
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dd>
+
     
     </div>
 
     
+        <h3 class="subsection-title">Extends</h3>
+
+        
+
+
+    <ul>
+        <li>OpenSeadragon.EventSource</li>
+    </ul>
+
 
     
 
@@ -151,6 +292,72 @@
 
     
 
+    
+
+    
+        <h3 class="subsection-title">Members</h3>
+
+        <dl>
+            
+<hr>
+<dt class="name" id="defaultStyle">
+    <h4 id="defaultStyle"><span class="type-signature"></span>defaultStyle<span class="type-signature"></span></h4>
+
+    
+</dt>
+<dd>
+    
+    <div class="description">
+        Get the default style for the annotation items.
+    </div>
+    
+
+    
+
+    
+<dl class="details">
+    
+
+	
+
+	
+
+	
+
+    
+
+    
+
+    
+
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+
+	
+
+	
+
+	
+</dl>
+
+
+    
+</dd>
+
+        </dl>
     
 
     
@@ -160,7 +367,7 @@
             
 <hr>
 <dt>
-    <h4 class="name" id="adaptiveOffsetCurve"><span class="type-signature"></span>adaptiveOffsetCurve(curve, offset)</h4>
+    <h4 class="name" id="addAnnotationUI"><span class="type-signature"></span>addAnnotationUI( [opts])</h4>
     
     
 </dt>
@@ -168,7 +375,179 @@
 
     
     <div class="description">
-        Adaptive offset a curve by repeatly apply the approximation proposed by Tiller and Hanson.
+        Add an annotation UI to the toolkit.
+    </div>
+    
+
+    
+
+    
+
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params table table-striped">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Argument</th>
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>opts</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">object</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    {}
+                
+                </td>
+            
+
+            <td class="description last">The options for the annotation UI.</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+    
+
+    
+<dl class="details">
+    
+
+	
+
+	
+
+	
+
+    
+
+    
+
+    
+
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+
+	
+
+	
+
+	
+</dl>
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <h5>Returns:</h5>
+    
+            
+<div class="param-desc">
+    The annotation UI object.
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">AnnotationUI</span>
+
+
+
+    </dd>
+</dl>
+
+
+        
+
+    
+</dd>
+
+        
+            
+<hr>
+<dt>
+    <h4 class="name" id="addFeatureCollections"><span class="type-signature"></span>addFeatureCollections(featureCollections, replaceCurrent)</h4>
+    
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        Add feature collections to the toolkit from GeoJSON objects.
     </div>
     
 
@@ -203,10 +582,16 @@
 
         <tr>
             
-                <td class="name"><code>curve</code></td>
+                <td class="name"><code>featureCollections</code></td>
             
 
             <td class="type">
+            
+                
+<span class="param-type">Array.&lt;object></span>
+
+
+
             
             </td>
 
@@ -214,17 +599,23 @@
 
             
 
-            <td class="description last">curve to offset</td>
+            <td class="description last">The array of GeoJSON objects representing feature collections.</td>
         </tr>
 
     
 
         <tr>
             
-                <td class="name"><code>offset</code></td>
+                <td class="name"><code>replaceCurrent</code></td>
             
 
             <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+
             
             </td>
 
@@ -232,7 +623,7 @@
 
             
 
-            <td class="description last">offset value</td>
+            <td class="description last">Whether to replace the current feature collections or not.</td>
         </tr>
 
     
@@ -300,7 +691,7 @@
             
 <hr>
 <dt>
-    <h4 class="name" id="connectAdjacentBezier"><span class="type-signature"></span>connectAdjacentBezier()</h4>
+    <h4 class="name" id="close"><span class="type-signature"></span>close()</h4>
     
     
 </dt>
@@ -308,7 +699,7 @@
 
     
     <div class="description">
-        Connect two adjacent bezier curve, each curve is represented by two segments,create different types of joins or simply removal redundant segment.
+        Close the toolkit and remove its feature collections.
     </div>
     
 
@@ -378,7 +769,7 @@
             
 <hr>
 <dt>
-    <h4 class="name" id="connectBeziers"><span class="type-signature"></span>connectBeziers()</h4>
+    <h4 class="name" id="destroy"><span class="type-signature"></span>destroy()</h4>
     
     
 </dt>
@@ -386,7 +777,7 @@
 
     
     <div class="description">
-        Connect all the segments together.
+        Destroy the toolkit and its components.
     </div>
     
 
@@ -456,7 +847,7 @@
             
 <hr>
 <dt>
-    <h4 class="name" id="getPointLineIntersections"><span class="type-signature"></span>getPointLineIntersections()</h4>
+    <h4 class="name" id="getFeatureCollectionLayers"><span class="type-signature"></span>getFeatureCollectionLayers()</h4>
     
     
 </dt>
@@ -464,7 +855,7 @@
 
     
     <div class="description">
-        Get the intersection point of point based lines
+        Get the feature collection layers in the toolkit.
     </div>
     
 
@@ -526,6 +917,30 @@
     
 
     
+    <h5>Returns:</h5>
+    
+            
+<div class="param-desc">
+    The array of paper layer objects representing feature collections.
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Array.&lt;paper.Layer></span>
+
+
+
+    </dd>
+</dl>
+
+
+        
 
     
 </dd>
@@ -534,7 +949,7 @@
             
 <hr>
 <dt>
-    <h4 class="name" id="makeRoundJoin"><span class="type-signature"></span>makeRoundJoin()</h4>
+    <h4 class="name" id="getFeatures"><span class="type-signature"></span>getFeatures()</h4>
     
     
 </dt>
@@ -542,7 +957,7 @@
 
     
     <div class="description">
-        Create a round join segment between two adjacent segments.
+        Get the features in the toolkit.
     </div>
     
 
@@ -604,84 +1019,30 @@
     
 
     
-
+    <h5>Returns:</h5>
     
-</dd>
-
-        
             
-<hr>
-<dt>
-    <h4 class="name" id="normalize"><span class="type-signature"></span>normalize()</h4>
-    
-    
-</dt>
-<dd>
-
-    
-    <div class="description">
-        Normalize a path, always clockwise, non-self-intersection, ignore really small components, and no one-component compound path.
-    </div>
-    
-
-    
-
-    
-
-    
-    
-
-    
-<dl class="details">
-    
-
-	
-
-	
-
-	
-
-    
-
-    
-
-    
-
-    
-
-	
-
-	
-
-	
-
-	
-
-	
+<div class="param-desc">
+    The array of paper item objects representing features.
+</div>
 
 
 
-	
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Array.&lt;paper.Item></span>
 
-	
 
-	
 
-	
+    </dd>
 </dl>
 
 
-    
-
-    
-
-    
-
-    
-
-    
-
-    
+        
 
     
 </dd>
@@ -690,7 +1051,7 @@
             
 <hr>
 <dt>
-    <h4 class="name" id="offsetSegment"><span class="type-signature"></span>offsetSegment(segment, curve, handleNormal, offset)</h4>
+    <h4 class="name" id="loadGeoJSON"><span class="type-signature"></span>loadGeoJSON(geoJSON, replaceCurrent)</h4>
     
     
 </dt>
@@ -698,7 +1059,7 @@
 
     
     <div class="description">
-        Offset the start/terminal segment of a bezier curve
+        Load feature collections from GeoJSON objects and add them to the toolkit.
     </div>
     
 
@@ -733,10 +1094,16 @@
 
         <tr>
             
-                <td class="name"><code>segment</code></td>
+                <td class="name"><code>geoJSON</code></td>
             
 
             <td class="type">
+            
+                
+<span class="param-type">Array.&lt;object></span>
+
+
+
             
             </td>
 
@@ -744,17 +1111,23 @@
 
             
 
-            <td class="description last">segment to offset</td>
+            <td class="description last">The array of GeoJSON objects representing feature collections.</td>
         </tr>
 
     
 
         <tr>
             
-                <td class="name"><code>curve</code></td>
+                <td class="name"><code>replaceCurrent</code></td>
             
 
             <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+
             
             </td>
 
@@ -762,43 +1135,7 @@
 
             
 
-            <td class="description last">curve to offset</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>handleNormal</code></td>
-            
-
-            <td class="type">
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">the normal of the the line formed of two handles</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>offset</code></td>
-            
-
-            <td class="type">
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">offset value</td>
+            <td class="description last">Whether to replace the current feature collections or not.</td>
         </tr>
 
     
@@ -866,7 +1203,7 @@
             
 <hr>
 <dt>
-    <h4 class="name" id="removeIntersection"><span class="type-signature"></span>removeIntersection()</h4>
+    <h4 class="name" id="setGlobalVisibility"><span class="type-signature"></span>setGlobalVisibility( [show])</h4>
     
     
 </dt>
@@ -874,7 +1211,7 @@
 
     
     <div class="description">
-        Remove self intersection when offset is negative by point direction dectection.
+        Set the global visibility of the toolkit.
     </div>
     
 
@@ -883,6 +1220,76 @@
     
 
     
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params table table-striped">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Argument</th>
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>show</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    false
+                
+                </td>
+            
+
+            <td class="description last">Whether to show or hide the toolkit.</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
     
 
     
@@ -944,7 +1351,7 @@
             
 <hr>
 <dt>
-    <h4 class="name" id="removeOutsiders"><span class="type-signature"></span>removeOutsiders()</h4>
+    <h4 class="name" id="toGeoJSON"><span class="type-signature"></span>toGeoJSON()</h4>
     
     
 </dt>
@@ -952,7 +1359,7 @@
 
     
     <div class="description">
-        Remove impossible segments in negative offset condition.
+        Convert the feature collections in the toolkit to GeoJSON objects.
     </div>
     
 
@@ -1014,6 +1421,231 @@
     
 
     
+    <h5>Returns:</h5>
+    
+            
+<div class="param-desc">
+    The array of GeoJSON objects representing feature collections.
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Array.&lt;object></span>
+
+
+
+    </dd>
+</dl>
+
+
+        
+
+    
+</dd>
+
+        
+            
+<hr>
+<dt>
+    <h4 class="name" id="toGeoJSONString"><span class="type-signature"></span>toGeoJSONString( [replacer] [, space])</h4>
+    
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        Convert the feature collections in the toolkit to a JSON string.
+    </div>
+    
+
+    
+
+    
+
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params table table-striped">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Argument</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>replacer</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last">The replacer function for JSON.stringify().</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>space</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+|
+
+<span class="param-type">string</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last">The space argument for JSON.stringify().</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+    
+
+    
+<dl class="details">
+    
+
+	
+
+	
+
+	
+
+    
+
+    
+
+    
+
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+
+	
+
+	
+
+	
+</dl>
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <h5>Returns:</h5>
+    
+            
+<div class="param-desc">
+    The JSON string representing the feature collections.
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">string</span>
+
+
+
+    </dd>
+</dl>
+
+
+        
 
     
 </dd>

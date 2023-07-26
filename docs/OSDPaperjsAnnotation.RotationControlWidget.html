@@ -4,7 +4,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width">
-	<title>Documentation Global</title>
+	<title>Documentation Class: RotationControlWidget</title>
 
 	<!--[if lt IE 9]>
 	<script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
@@ -79,13 +79,15 @@
 		<div id="main">
 			
 
-	<h1 class="page-title">Global</h1>
+	<h1 class="page-title">Class: RotationControlWidget</h1>
 <section>
 
 <header>
     
         <h2>
+            <span class="ancestors"><a href="OSDPaperjsAnnotation.html">OSDPaperjsAnnotation</a>.</span>
         
+        RotationControlWidget
         </h2>
         
     
@@ -96,8 +98,102 @@
     <div class="container-overview">
     
         
+<hr>
+<dt>
+    <h4 class="name" id="RotationControlWidget"><span class="type-signature"></span>new RotationControlWidget(center, setAngle)</h4>
+    
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        Creates a rotation control widget.
+    </div>
+    
+
+    
+
+    
+
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params table table-striped">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
 
         
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>center</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">paper.Point</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">The center point of the widget.</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>setAngle</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">The function to set the rotation angle.</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+    
+
+    
 <dl class="details">
     
 
@@ -137,7 +233,45 @@
 </dl>
 
 
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <h5>Returns:</h5>
+    
+            
+<div class="param-desc">
+    The rotation control widget object.
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
         
+<span class="param-type">object</span>
+
+
+
+    </dd>
+</dl>
+
+
+        
+
+    
+</dd>
+
     
     </div>
 
@@ -151,6 +285,249 @@
 
     
 
+    
+        <h3 class="subsection-title">Members</h3>
+
+        <dl>
+            
+<hr>
+<dt class="name" id=".widget">
+    <h4 id=".widget"><span class="type-signature">&lt;static> </span>widget<span class="type-signature"></span></h4>
+
+    
+</dt>
+<dd>
+    
+    <div class="description">
+        The rotation control widget object.
+    </div>
+    
+
+    
+
+    
+<dl class="details">
+    
+
+    <h5 class="subsection-title">Properties:</h5>
+
+    <dl>
+
+<table class="props table table-striped">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>item</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">paper.Group</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">The group containing all the elements of the widget.</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>circle</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">paper.Path.Circle</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">The central region with crosshair and cardinal points.</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>cardinalControls</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Array.&lt;paper.Path.Rectangle></span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">The controls for north, east, south, west.</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>rotationLineControl</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">paper.Group</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">The line with arrows indicating the spot for grabbing to perform rotation.</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>setCurrentRotation</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Sets the current rotation angle.</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>setLineOrientation</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Sets the orientation of the line control.</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+</dl>
+
+    
+
+	
+
+	
+
+	
+
+    
+
+    
+
+    
+
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+
+	
+
+	
+
+	
+</dl>
+
+
+    
+        <h5>Example</h5>
+        
+    <pre class="sunlight-highlight-javascript">// Usage example:const centerPoint = new paper.Point(100, 100);const setRotationAngle = (angle) =&gt; {  // Your logic to set the rotation angle};const rotationControl = new OSDPaperjsAnnotation.RotationControlWidget(centerPoint, setRotationAngle);paper.project.activeLayer.addChild(rotationControl.item);// Set the current rotation anglerotationControl.setCurrentRotation(45);// Set the line orientation for controlconst orientationPoint = new paper.Point(150, 150);rotationControl.setLineOrientation(orientationPoint, true);</pre>
+
+
+    
+</dd>
+
+        </dl>
     
 
     
@@ -160,7 +537,7 @@
             
 <hr>
 <dt>
-    <h4 class="name" id="adaptiveOffsetCurve"><span class="type-signature"></span>adaptiveOffsetCurve(curve, offset)</h4>
+    <h4 class="name" id=".widget.setCurrentRotation"><span class="type-signature">&lt;static> </span>widget.setCurrentRotation(angle)</h4>
     
     
 </dt>
@@ -168,7 +545,7 @@
 
     
     <div class="description">
-        Adaptive offset a curve by repeatly apply the approximation proposed by Tiller and Hanson.
+        Sets the current rotation angle.
     </div>
     
 
@@ -203,10 +580,16 @@
 
         <tr>
             
-                <td class="name"><code>curve</code></td>
+                <td class="name"><code>angle</code></td>
             
 
             <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+
             
             </td>
 
@@ -214,25 +597,7 @@
 
             
 
-            <td class="description last">curve to offset</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>offset</code></td>
-            
-
-            <td class="type">
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">offset value</td>
+            <td class="description last">The angle to set.</td>
         </tr>
 
     
@@ -300,7 +665,7 @@
             
 <hr>
 <dt>
-    <h4 class="name" id="connectAdjacentBezier"><span class="type-signature"></span>connectAdjacentBezier()</h4>
+    <h4 class="name" id=".widget.setLineOrientation"><span class="type-signature">&lt;static> </span>widget.setLineOrientation(point [, makeVisible])</h4>
     
     
 </dt>
@@ -308,397 +673,7 @@
 
     
     <div class="description">
-        Connect two adjacent bezier curve, each curve is represented by two segments,create different types of joins or simply removal redundant segment.
-    </div>
-    
-
-    
-
-    
-
-    
-    
-
-    
-<dl class="details">
-    
-
-	
-
-	
-
-	
-
-    
-
-    
-
-    
-
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-
-
-	
-
-	
-
-	
-
-	
-</dl>
-
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</dd>
-
-        
-            
-<hr>
-<dt>
-    <h4 class="name" id="connectBeziers"><span class="type-signature"></span>connectBeziers()</h4>
-    
-    
-</dt>
-<dd>
-
-    
-    <div class="description">
-        Connect all the segments together.
-    </div>
-    
-
-    
-
-    
-
-    
-    
-
-    
-<dl class="details">
-    
-
-	
-
-	
-
-	
-
-    
-
-    
-
-    
-
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-
-
-	
-
-	
-
-	
-
-	
-</dl>
-
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</dd>
-
-        
-            
-<hr>
-<dt>
-    <h4 class="name" id="getPointLineIntersections"><span class="type-signature"></span>getPointLineIntersections()</h4>
-    
-    
-</dt>
-<dd>
-
-    
-    <div class="description">
-        Get the intersection point of point based lines
-    </div>
-    
-
-    
-
-    
-
-    
-    
-
-    
-<dl class="details">
-    
-
-	
-
-	
-
-	
-
-    
-
-    
-
-    
-
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-
-
-	
-
-	
-
-	
-
-	
-</dl>
-
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</dd>
-
-        
-            
-<hr>
-<dt>
-    <h4 class="name" id="makeRoundJoin"><span class="type-signature"></span>makeRoundJoin()</h4>
-    
-    
-</dt>
-<dd>
-
-    
-    <div class="description">
-        Create a round join segment between two adjacent segments.
-    </div>
-    
-
-    
-
-    
-
-    
-    
-
-    
-<dl class="details">
-    
-
-	
-
-	
-
-	
-
-    
-
-    
-
-    
-
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-
-
-	
-
-	
-
-	
-
-	
-</dl>
-
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</dd>
-
-        
-            
-<hr>
-<dt>
-    <h4 class="name" id="normalize"><span class="type-signature"></span>normalize()</h4>
-    
-    
-</dt>
-<dd>
-
-    
-    <div class="description">
-        Normalize a path, always clockwise, non-self-intersection, ignore really small components, and no one-component compound path.
-    </div>
-    
-
-    
-
-    
-
-    
-    
-
-    
-<dl class="details">
-    
-
-	
-
-	
-
-	
-
-    
-
-    
-
-    
-
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-
-
-	
-
-	
-
-	
-
-	
-</dl>
-
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</dd>
-
-        
-            
-<hr>
-<dt>
-    <h4 class="name" id="offsetSegment"><span class="type-signature"></span>offsetSegment(segment, curve, handleNormal, offset)</h4>
-    
-    
-</dt>
-<dd>
-
-    
-    <div class="description">
-        Offset the start/terminal segment of a bezier curve
+        Sets the orientation of the line control.
     </div>
     
 
@@ -721,7 +696,11 @@
         <th>Type</th>
 
         
+        <th>Argument</th>
+        
 
+        
+        <th>Default</th>
         
 
         <th class="last">Description</th>
@@ -733,234 +712,82 @@
 
         <tr>
             
-                <td class="name"><code>segment</code></td>
+                <td class="name"><code>point</code></td>
             
 
             <td class="type">
             
+                
+<span class="param-type">paper.Point</span>
+
+
+
+            
             </td>
 
             
+                <td class="attributes">
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last">segment to offset</td>
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last">The point representing the orientation.</td>
         </tr>
 
     
 
         <tr>
             
-                <td class="name"><code>curve</code></td>
+                <td class="name"><code>makeVisible</code></td>
             
 
             <td class="type">
             
-            </td>
+                
+<span class="param-type">boolean</span>
 
-            
 
-            
 
-            <td class="description last">curve to offset</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>handleNormal</code></td>
-            
-
-            <td class="type">
             
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
-            
+                
 
-            <td class="description last">the normal of the the line formed of two handles</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>offset</code></td>
-            
-
-            <td class="type">
-            
-            </td>
-
+                
+                </td>
             
 
             
+                <td class="default">
+                
+                    false
+                
+                </td>
+            
 
-            <td class="description last">offset value</td>
+            <td class="description last">Whether to make the control visible.</td>
         </tr>
 
     
     </tbody>
 </table>
 
-    
-
-    
-<dl class="details">
-    
-
-	
-
-	
-
-	
-
-    
-
-    
-
-    
-
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-
-
-	
-
-	
-
-	
-
-	
-</dl>
-
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</dd>
-
-        
-            
-<hr>
-<dt>
-    <h4 class="name" id="removeIntersection"><span class="type-signature"></span>removeIntersection()</h4>
-    
-    
-</dt>
-<dd>
-
-    
-    <div class="description">
-        Remove self intersection when offset is negative by point direction dectection.
-    </div>
-    
-
-    
-
-    
-
-    
-    
-
-    
-<dl class="details">
-    
-
-	
-
-	
-
-	
-
-    
-
-    
-
-    
-
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-
-
-	
-
-	
-
-	
-
-	
-</dl>
-
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</dd>
-
-        
-            
-<hr>
-<dt>
-    <h4 class="name" id="removeOutsiders"><span class="type-signature"></span>removeOutsiders()</h4>
-    
-    
-</dt>
-<dd>
-
-    
-    <div class="description">
-        Remove impossible segments in negative offset condition.
-    </div>
-    
-
-    
-
-    
-
-    
     
 
     

@@ -4,7 +4,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width">
-	<title>Documentation Global</title>
+	<title>Documentation Class: FeatureUI</title>
 
 	<!--[if lt IE 9]>
 	<script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
@@ -79,14 +79,18 @@
 		<div id="main">
 			
 
-	<h1 class="page-title">Global</h1>
+	<h1 class="page-title">Class: FeatureUI</h1>
 <section>
 
 <header>
     
         <h2>
+            <span class="ancestors"><a href="OSDPaperjsAnnotation.html">OSDPaperjsAnnotation</a>.</span>
         
+        FeatureUI
         </h2>
+        
+            <div class="class-description">A user interface for managing features.</div>
         
     
 </header>
@@ -96,8 +100,78 @@
     <div class="container-overview">
     
         
+<hr>
+<dt>
+    <h4 class="name" id="FeatureUI"><span class="type-signature"></span>new FeatureUI(paperItem)</h4>
+    
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        Create a new FeatureUI instance.
+    </div>
+    
+
+    
+
+    
+
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params table table-striped">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
 
         
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>paperItem</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">paper.Item</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">The paper item object.</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+    
+
+    
 <dl class="details">
     
 
@@ -137,7 +211,21 @@
 </dl>
 
 
-        
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dd>
+
     
     </div>
 
@@ -151,6 +239,130 @@
 
     
 
+    
+        <h3 class="subsection-title">Members</h3>
+
+        <dl>
+            
+<hr>
+<dt class="name" id="label">
+    <h4 id="label"><span class="type-signature"></span>label<span class="type-signature"></span></h4>
+
+    
+</dt>
+<dd>
+    
+    <div class="description">
+        Get the label of the feature.
+    </div>
+    
+
+    
+
+    
+<dl class="details">
+    
+
+	
+
+	
+
+	
+
+    
+
+    
+
+    
+
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+
+	
+
+	
+
+	
+</dl>
+
+
+    
+</dd>
+
+        
+            
+<hr>
+<dt class="name" id="label">
+    <h4 id="label"><span class="type-signature"></span>label<span class="type-signature"></span></h4>
+
+    
+</dt>
+<dd>
+    
+    <div class="description">
+        Set the label of the feature.
+    </div>
+    
+
+    
+
+    
+<dl class="details">
+    
+
+	
+
+	
+
+	
+
+    
+
+    
+
+    
+
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+
+	
+
+	
+
+	
+</dl>
+
+
+    
+</dd>
+
+        </dl>
     
 
     
@@ -160,7 +372,7 @@
             
 <hr>
 <dt>
-    <h4 class="name" id="adaptiveOffsetCurve"><span class="type-signature"></span>adaptiveOffsetCurve(curve, offset)</h4>
+    <h4 class="name" id="centerItem"><span class="type-signature"></span>centerItem( [immediately])</h4>
     
     
 </dt>
@@ -168,7 +380,7 @@
 
     
     <div class="description">
-        Adaptive offset a curve by repeatly apply the approximation proposed by Tiller and Hanson.
+        Center the feature in the viewport.
     </div>
     
 
@@ -191,7 +403,11 @@
         <th>Type</th>
 
         
+        <th>Argument</th>
+        
 
+        
+        <th>Default</th>
         
 
         <th class="last">Description</th>
@@ -203,36 +419,40 @@
 
         <tr>
             
-                <td class="name"><code>curve</code></td>
+                <td class="name"><code>immediately</code></td>
             
 
             <td class="type">
             
-            </td>
+                
+<span class="param-type">boolean</span>
 
-            
 
-            
 
-            <td class="description last">curve to offset</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>offset</code></td>
-            
-
-            <td class="type">
             
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last">offset value</td>
+            
+                <td class="default">
+                
+                    false
+                
+                </td>
+            
+
+            <td class="description last">Whether to center the feature immediately or not.</td>
         </tr>
 
     
@@ -300,7 +520,7 @@
             
 <hr>
 <dt>
-    <h4 class="name" id="connectAdjacentBezier"><span class="type-signature"></span>connectAdjacentBezier()</h4>
+    <h4 class="name" id="editClicked"><span class="type-signature"></span>editClicked()</h4>
     
     
 </dt>
@@ -308,7 +528,7 @@
 
     
     <div class="description">
-        Connect two adjacent bezier curve, each curve is represented by two segments,create different types of joins or simply removal redundant segment.
+        Handle the edit clicked event on the UI element.
     </div>
     
 
@@ -378,7 +598,7 @@
             
 <hr>
 <dt>
-    <h4 class="name" id="connectBeziers"><span class="type-signature"></span>connectBeziers()</h4>
+    <h4 class="name" id="openStyleEditor"><span class="type-signature"></span>openStyleEditor()</h4>
     
     
 </dt>
@@ -386,7 +606,7 @@
 
     
     <div class="description">
-        Connect all the segments together.
+        Open the style editor for the feature.
     </div>
     
 
@@ -456,7 +676,7 @@
             
 <hr>
 <dt>
-    <h4 class="name" id="getPointLineIntersections"><span class="type-signature"></span>getPointLineIntersections()</h4>
+    <h4 class="name" id="remove"><span class="type-signature"></span>remove()</h4>
     
     
 </dt>
@@ -464,7 +684,7 @@
 
     
     <div class="description">
-        Get the intersection point of point based lines
+        Remove the UI element associated with the feature.
     </div>
     
 
@@ -534,7 +754,7 @@
             
 <hr>
 <dt>
-    <h4 class="name" id="makeRoundJoin"><span class="type-signature"></span>makeRoundJoin()</h4>
+    <h4 class="name" id="removeItem"><span class="type-signature"></span>removeItem()</h4>
     
     
 </dt>
@@ -542,7 +762,7 @@
 
     
     <div class="description">
-        Create a round join segment between two adjacent segments.
+        Remove the paper item associated with the feature.
     </div>
     
 
@@ -612,7 +832,7 @@
             
 <hr>
 <dt>
-    <h4 class="name" id="normalize"><span class="type-signature"></span>normalize()</h4>
+    <h4 class="name" id="setLabel"><span class="type-signature"></span>setLabel(text, source)</h4>
     
     
 </dt>
@@ -620,85 +840,7 @@
 
     
     <div class="description">
-        Normalize a path, always clockwise, non-self-intersection, ignore really small components, and no one-component compound path.
-    </div>
-    
-
-    
-
-    
-
-    
-    
-
-    
-<dl class="details">
-    
-
-	
-
-	
-
-	
-
-    
-
-    
-
-    
-
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-
-
-	
-
-	
-
-	
-
-	
-</dl>
-
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</dd>
-
-        
-            
-<hr>
-<dt>
-    <h4 class="name" id="offsetSegment"><span class="type-signature"></span>offsetSegment(segment, curve, handleNormal, offset)</h4>
-    
-    
-</dt>
-<dd>
-
-    
-    <div class="description">
-        Offset the start/terminal segment of a bezier curve
+        Set the label of the feature with a source.
     </div>
     
 
@@ -733,10 +875,16 @@
 
         <tr>
             
-                <td class="name"><code>segment</code></td>
+                <td class="name"><code>text</code></td>
             
 
             <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+
             
             </td>
 
@@ -744,17 +892,23 @@
 
             
 
-            <td class="description last">segment to offset</td>
+            <td class="description last">The new label of the feature.</td>
         </tr>
 
     
 
         <tr>
             
-                <td class="name"><code>curve</code></td>
+                <td class="name"><code>source</code></td>
             
 
             <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+
             
             </td>
 
@@ -762,43 +916,7 @@
 
             
 
-            <td class="description last">curve to offset</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>handleNormal</code></td>
-            
-
-            <td class="type">
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">the normal of the the line formed of two handles</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>offset</code></td>
-            
-
-            <td class="type">
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">offset value</td>
+            <td class="description last">The source of the label (e.g. 'user-defined' or 'initializing').</td>
         </tr>
 
     
@@ -858,6 +976,30 @@
     
 
     
+    <h5>Returns:</h5>
+    
+            
+<div class="param-desc">
+    The new label of the feature.
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">string</span>
+
+
+
+    </dd>
+</dl>
+
+
+        
 
     
 </dd>
@@ -866,7 +1008,7 @@
             
 <hr>
 <dt>
-    <h4 class="name" id="removeIntersection"><span class="type-signature"></span>removeIntersection()</h4>
+    <h4 class="name" id="updateLabel"><span class="type-signature"></span>updateLabel()</h4>
     
     
 </dt>
@@ -874,7 +1016,7 @@
 
     
     <div class="description">
-        Remove self intersection when offset is negative by point direction dectection.
+        Update the label of the feature in the UI element.
     </div>
     
 
@@ -944,7 +1086,7 @@
             
 <hr>
 <dt>
-    <h4 class="name" id="removeOutsiders"><span class="type-signature"></span>removeOutsiders()</h4>
+    <h4 class="name" id="useAsBoundingElement"><span class="type-signature"></span>useAsBoundingElement( [toggle])</h4>
     
     
 </dt>
@@ -952,7 +1094,7 @@
 
     
     <div class="description">
-        Remove impossible segments in negative offset condition.
+        Use the feature as a bounding element.
     </div>
     
 
@@ -961,6 +1103,76 @@
     
 
     
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params table table-striped">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Argument</th>
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>toggle</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    false
+                
+                </td>
+            
+
+            <td class="description last">Whether to toggle the bounding element status or not.</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
     
 
     
@@ -1014,6 +1226,30 @@
     
 
     
+    <h5>Returns:</h5>
+    
+            
+<div class="param-desc">
+    Whether the feature is used as a bounding element or not.
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">boolean</span>
+
+
+
+    </dd>
+</dl>
+
+
+        
 
     
 </dd>

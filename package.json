@@ -1,4 +1,3 @@
-
 {
   "name": "osd-paperjs-annotation",
   "description": "",
@@ -20,5 +19,8 @@
   "bugs": {
     "url": "https://github.com/pearcetm/osd-paperjs-annotation/issues"
   },
-  "homepage": "https://github.com/pearcetm/osd-paperjs-annotation"
+  "homepage": "https://github.com/pearcetm/osd-paperjs-annotation",
+  "devDependencies": {
+    "webpack-stream": "^7.0.0"
+  }
 }

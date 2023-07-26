@@ -4,7 +4,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width">
-	<title>Documentation Global</title>
+	<title>Documentation Class: FileDialog</title>
 
 	<!--[if lt IE 9]>
 	<script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
@@ -79,14 +79,18 @@
 		<div id="main">
 			
 
-	<h1 class="page-title">Global</h1>
+	<h1 class="page-title">Class: FileDialog</h1>
 <section>
 
 <header>
     
         <h2>
+            <span class="ancestors"><a href="OSDPaperjsAnnotation.html">OSDPaperjsAnnotation</a>.</span>
         
+        FileDialog
         </h2>
+        
+            <div class="class-description">The FileDialog class provides options for saving and loading feature collections as GeoJSON, exporting them as SVG or PNG files,and storing them in local storage. It is designed to work with the AnnotationToolKit (atk) object to manage annotations.</div>
         
     
 </header>
@@ -96,8 +100,102 @@
     <div class="container-overview">
     
         
+<hr>
+<dt>
+    <h4 class="name" id="FileDialog"><span class="type-signature"></span>new FileDialog(atk, opts)</h4>
+    
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        Creates an instance of the FileDialog class, which allows users to save and load feature collections in various formats.
+    </div>
+    
+
+    
+
+    
+
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params table table-striped">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
 
         
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>atk</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">any</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">The AnnotationToolKit object.</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>opts</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">object</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Additional options for the file dialog.</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+    
+
+    
 <dl class="details">
     
 
@@ -137,7 +235,21 @@
 </dl>
 
 
-        
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dd>
+
     
     </div>
 
@@ -160,7 +272,7 @@
             
 <hr>
 <dt>
-    <h4 class="name" id="adaptiveOffsetCurve"><span class="type-signature"></span>adaptiveOffsetCurve(curve, offset)</h4>
+    <h4 class="name" id=".exportPNG"><span class="type-signature">&lt;static> </span>exportPNG()</h4>
     
     
 </dt>
@@ -168,7 +280,163 @@
 
     
     <div class="description">
-        Adaptive offset a curve by repeatly apply the approximation proposed by Tiller and Hanson.
+        Exports the feature collections as a PNG file and provides a download link. This function prepares the selected feature collections and exports them as a rasterized PNG file.It generates a download link for the user to save the file in PNG format.
+    </div>
+    
+
+    
+
+    
+
+    
+    
+
+    
+<dl class="details">
+    
+
+	
+
+	
+
+	
+
+    
+
+    
+
+    
+
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+
+	
+
+	
+
+	
+</dl>
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dd>
+
+        
+            
+<hr>
+<dt>
+    <h4 class="name" id=".exportSVG"><span class="type-signature">&lt;static> </span>exportSVG()</h4>
+    
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        Exports the feature collections as an SVG file and provides a download link. This function prepares the selected feature collections and exports them as an SVG file.It generates a download link for the user to save the file in SVG format.
+    </div>
+    
+
+    
+
+    
+
+    
+    
+
+    
+<dl class="details">
+    
+
+	
+
+	
+
+	
+
+    
+
+    
+
+    
+
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+
+	
+
+	
+
+	
+</dl>
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dd>
+
+        
+            
+<hr>
+<dt>
+    <h4 class="name" id="dialog"><span class="type-signature">&lt;static> </span>FileDialog#dialog(args)</h4>
+    
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        Calls a method on the dialog element.
     </div>
     
 
@@ -191,6 +459,8 @@
         <th>Type</th>
 
         
+        <th>Argument</th>
+        
 
         
 
@@ -203,36 +473,34 @@
 
         <tr>
             
-                <td class="name"><code>curve</code></td>
+                <td class="name"><code>args</code></td>
             
 
             <td class="type">
             
-            </td>
+                
+<span class="param-type">any</span>
 
-            
 
-            
 
-            <td class="description last">curve to offset</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>offset</code></td>
-            
-
-            <td class="type">
             
             </td>
 
             
+                <td class="attributes">
+                
+
+                
+
+                
+                    &lt;repeatable><br>
+                
+                </td>
+            
 
             
 
-            <td class="description last">offset value</td>
+            <td class="description last">The arguments to pass to the method.</td>
         </tr>
 
     
@@ -300,7 +568,7 @@
             
 <hr>
 <dt>
-    <h4 class="name" id="connectAdjacentBezier"><span class="type-signature"></span>connectAdjacentBezier()</h4>
+    <h4 class="name" id=".fileDialogHtml"><span class="type-signature">&lt;static> </span>fileDialogHtml()</h4>
     
     
 </dt>
@@ -308,7 +576,183 @@
 
     
     <div class="description">
-        Connect two adjacent bezier curve, each curve is represented by two segments,create different types of joins or simply removal redundant segment.
+        Returns the HTML for the file dialog. This function generates the HTML markup for the file dialog, including the buttons and feature collection list.
+    </div>
+    
+
+    
+
+    
+
+    
+    
+
+    
+<dl class="details">
+    
+
+	
+
+	
+
+	
+
+    
+
+    
+
+    
+
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+
+	
+
+	
+
+	
+</dl>
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <h5>Returns:</h5>
+    
+            
+<div class="param-desc">
+    The HTML for the file dialog.
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">string</span>
+
+
+
+    </dd>
+</dl>
+
+
+        
+
+    
+</dd>
+
+        
+            
+<hr>
+<dt>
+    <h4 class="name" id=".Hidesthefiledialog."><span class="type-signature">&lt;static> </span>Hides the file dialog.()</h4>
+    
+    
+</dt>
+<dd>
+
+    
+
+    
+
+    
+
+    
+    
+
+    
+<dl class="details">
+    
+
+	
+
+	
+
+	
+
+    
+
+    
+
+    
+
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+
+	
+
+	
+
+	
+</dl>
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dd>
+
+        
+            
+<hr>
+<dt>
+    <h4 class="name" id=".loadGeoJSON"><span class="type-signature">&lt;static> </span>loadGeoJSON()</h4>
+    
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        Loads a GeoJSON file and displays its content in the file dialog. This function triggers the file input and loads the GeoJSON file selected by the user.It then parses the GeoJSON data, sets up the feature collection list, and provides options to add or replace existing layers.
     </div>
     
 
@@ -378,7 +822,7 @@
             
 <hr>
 <dt>
-    <h4 class="name" id="connectBeziers"><span class="type-signature"></span>connectBeziers()</h4>
+    <h4 class="name" id=".localstorageLoad"><span class="type-signature">&lt;static> </span>localstorageLoad()</h4>
     
     
 </dt>
@@ -386,7 +830,7 @@
 
     
     <div class="description">
-        Connect all the segments together.
+        Loads the feature collections from local storage and displays them in the file dialog. This function retrieves the feature collections stored in local storageand sets up the feature collection list in the file dialog, providing options to add or replace existing layers.
     </div>
     
 
@@ -456,7 +900,7 @@
             
 <hr>
 <dt>
-    <h4 class="name" id="getPointLineIntersections"><span class="type-signature"></span>getPointLineIntersections()</h4>
+    <h4 class="name" id=".saveGeoJSON"><span class="type-signature">&lt;static> </span>saveGeoJSON()</h4>
     
     
 </dt>
@@ -464,7 +908,7 @@
 
     
     <div class="description">
-        Get the intersection point of point based lines
+        Saves the feature collections as a GeoJSON file and provides a download link. This function prepares the selected feature collections in GeoJSON format,creates a Blob, and generates a download link for the user to save the file.
     </div>
     
 
@@ -534,7 +978,7 @@
             
 <hr>
 <dt>
-    <h4 class="name" id="makeRoundJoin"><span class="type-signature"></span>makeRoundJoin()</h4>
+    <h4 class="name" id=".setupFeatureCollectionList"><span class="type-signature">&lt;static> </span>setupFeatureCollectionList(fcarray)</h4>
     
     
 </dt>
@@ -542,163 +986,7 @@
 
     
     <div class="description">
-        Create a round join segment between two adjacent segments.
-    </div>
-    
-
-    
-
-    
-
-    
-    
-
-    
-<dl class="details">
-    
-
-	
-
-	
-
-	
-
-    
-
-    
-
-    
-
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-
-
-	
-
-	
-
-	
-
-	
-</dl>
-
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</dd>
-
-        
-            
-<hr>
-<dt>
-    <h4 class="name" id="normalize"><span class="type-signature"></span>normalize()</h4>
-    
-    
-</dt>
-<dd>
-
-    
-    <div class="description">
-        Normalize a path, always clockwise, non-self-intersection, ignore really small components, and no one-component compound path.
-    </div>
-    
-
-    
-
-    
-
-    
-    
-
-    
-<dl class="details">
-    
-
-	
-
-	
-
-	
-
-    
-
-    
-
-    
-
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-
-
-	
-
-	
-
-	
-
-	
-</dl>
-
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</dd>
-
-        
-            
-<hr>
-<dt>
-    <h4 class="name" id="offsetSegment"><span class="type-signature"></span>offsetSegment(segment, curve, handleNormal, offset)</h4>
-    
-    
-</dt>
-<dd>
-
-    
-    <div class="description">
-        Offset the start/terminal segment of a bezier curve
+        Sets up the feature collection list in the dialog. This function populates the file dialog with a list of available feature collections.
     </div>
     
 
@@ -733,10 +1021,16 @@
 
         <tr>
             
-                <td class="name"><code>segment</code></td>
+                <td class="name"><code>fcarray</code></td>
             
 
             <td class="type">
+            
+                
+<span class="param-type">Array</span>
+
+
+
             
             </td>
 
@@ -744,61 +1038,7 @@
 
             
 
-            <td class="description last">segment to offset</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>curve</code></td>
-            
-
-            <td class="type">
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">curve to offset</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>handleNormal</code></td>
-            
-
-            <td class="type">
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">the normal of the the line formed of two handles</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>offset</code></td>
-            
-
-            <td class="type">
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">offset value</td>
+            <td class="description last">An array of feature collections.</td>
         </tr>
 
     
@@ -858,6 +1098,30 @@
     
 
     
+    <h5>Returns:</h5>
+    
+            
+<div class="param-desc">
+    The feature collection list element.
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">jQuery</span>
+
+
+
+    </dd>
+</dl>
+
+
+        
 
     
 </dd>
@@ -866,7 +1130,7 @@
             
 <hr>
 <dt>
-    <h4 class="name" id="removeIntersection"><span class="type-signature"></span>removeIntersection()</h4>
+    <h4 class="name" id=".setupFinalize"><span class="type-signature">&lt;static> </span>setupFinalize(buttonText, editableLabel, editableContent, localstorage)</h4>
     
     
 </dt>
@@ -874,8 +1138,228 @@
 
     
     <div class="description">
-        Remove self intersection when offset is negative by point direction dectection.
+        Sets up the finalize button for performing actions and handling local storage. This function configures the finalize button,allowing users to specify a label or key and checks for local storage availability.
     </div>
+    
+
+    
+
+    
+
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params table table-striped">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>buttonText</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">The text to display on the button.</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>editableLabel</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">The label for the editable content.</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>editableContent</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">The initial content for the editable content.</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>localstorage</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Whether to test for local storage.</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+    
+
+    
+<dl class="details">
+    
+
+	
+
+	
+
+	
+
+    
+
+    
+
+    
+
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+
+	
+
+	
+
+	
+</dl>
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <h5>Returns:</h5>
+    
+            
+<div class="param-desc">
+    The finish button element.
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">jQuery</span>
+
+
+
+    </dd>
+</dl>
+
+
+        
+
+    
+</dd>
+
+        
+            
+<hr>
+<dt>
+    <h4 class="name" id=".Showsthefiledialog."><span class="type-signature">&lt;static> </span>Shows the file dialog.()</h4>
+    
+    
+</dt>
+<dd>
+
     
 
     
@@ -944,16 +1428,12 @@
             
 <hr>
 <dt>
-    <h4 class="name" id="removeOutsiders"><span class="type-signature"></span>removeOutsiders()</h4>
+    <h4 class="name" id=".Togglesthevisibilityofthefiledialog."><span class="type-signature">&lt;static> </span>Toggles the visibility of the file dialog.()</h4>
     
     
 </dt>
 <dd>
 
-    
-    <div class="description">
-        Remove impossible segments in negative offset condition.
-    </div>
     
 
     
