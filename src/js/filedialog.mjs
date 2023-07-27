@@ -39,7 +39,7 @@ class FileDialog{
         /**
          * Sets up the feature collection list in the dialog. This function populates the file dialog with a list of available feature collections.
          *
-         * @function
+         * @instance
          * @memberof OSDPaperjsAnnotation.FileDialog
          * @param {Array} fcarray - An array of feature collections.
          * @returns {jQuery} The feature collection list element.
@@ -60,7 +60,7 @@ class FileDialog{
          * Loads a GeoJSON file and displays its content in the file dialog. This function triggers the file input and loads the GeoJSON file selected by the user.
          * It then parses the GeoJSON data, sets up the feature collection list, and provides options to add or replace existing layers.
          *
-         * @function
+         * @instance
          * @memberof OSDPaperjsAnnotation.FileDialog
          */
         function loadGeoJSON(){
@@ -113,7 +113,7 @@ class FileDialog{
          * Loads the feature collections from local storage and displays them in the file dialog. This function retrieves the feature collections stored in local storage
          * and sets up the feature collection list in the file dialog, providing options to add or replace existing layers.
          *
-         * @function
+         * @instance
          * @memberof OSDPaperjsAnnotation.FileDialog
          */
         function localstorageLoad(){
@@ -150,7 +150,7 @@ class FileDialog{
          * Saves the feature collections as a GeoJSON file and provides a download link. This function prepares the selected feature collections in GeoJSON format,
          * creates a Blob, and generates a download link for the user to save the file.
          *
-         * @function
+         * @instance
          * @memberof OSDPaperjsAnnotation.FileDialog
          */
         function saveGeoJSON(){
@@ -173,7 +173,7 @@ class FileDialog{
          * Exports the feature collections as an SVG file and provides a download link. This function prepares the selected feature collections and exports them as an SVG file.
          * It generates a download link for the user to save the file in SVG format.
          *
-         * @function
+         * @instance
          * @memberof OSDPaperjsAnnotation.FileDialog
          */      
         function exportSVG(){
@@ -201,7 +201,7 @@ class FileDialog{
          * Exports the feature collections as a PNG file and provides a download link. This function prepares the selected feature collections and exports them as a rasterized PNG file.
          * It generates a download link for the user to save the file in PNG format.
          *
-         * @function
+         * @instance
          * @memberof OSDPaperjsAnnotation.FileDialog
          */
         function exportPNG(){
@@ -226,8 +226,9 @@ class FileDialog{
             })
         }
         /**
-         * @memberof OSDPaperjsAnnotation.FileDialog
          * Stores the feature collections in the local storage.
+         * @memberof OSDPaperjsAnnotation.FileDialog
+         * @instance 
          */        
         function localstorageStore(){
             initDlg();
@@ -245,8 +246,7 @@ class FileDialog{
          * Sets up the finalize button for performing actions and handling local storage. This function configures the finalize button,
          * allowing users to specify a label or key and checks for local storage availability.
          *
-         * @function
-         * @memberof OSDPaperjsAnnotation.FileDialog
+         * @memberof OSDPaperjsAnnotation.FileDialog#
          * @param {string} buttonText - The text to display on the button.
          * @param {string} editableLabel - The label for the editable content.
          * @param {string} editableContent - The initial content for the editable content.
@@ -278,8 +278,7 @@ class FileDialog{
         /**
          * Returns the HTML for the file dialog. This function generates the HTML markup for the file dialog, including the buttons and feature collection list.
          *
-         * @function
-         * @memberof OSDPaperjsAnnotation.FileDialog
+         * @memberof OSDPaperjsAnnotation.FileDialog#
          * @returns {string} The HTML for the file dialog.
          */
         function fileDialogHtml(){
@@ -309,33 +308,33 @@ class FileDialog{
         }
     }
     /**
-     * @memberof OSDPaperjsAnnotation.FileDialog
-     * @function
      * Shows the file dialog.
+     * @memberof OSDPaperjsAnnotation.FileDialog#
+     * @function show
      */
     show(){
         this.element.dialog('open');
     }
     /**
-     * @memberof OSDPaperjsAnnotation.FileDialog
-     * @function
      * Hides the file dialog.
+     * @memberof OSDPaperjsAnnotation.FileDialog#
+     * @function hide
      */
     hide(){
         this.element.dialog('close');
     }
     /**
-     * @memberof OSDPaperjsAnnotation.FileDialog
-     * @function
      * Toggles the visibility of the file dialog.
+     * @memberof OSDPaperjsAnnotation.FileDialog#
+     * @function toggle
      */
     toggle(){
         this.element.dialog('isOpen') ? this.element.dialog('close') : this.element.dialog('open');
     }
     /**
      * Calls a method on the dialog element.
-     * @function
-     * @memberof OSDPaperjsAnnotation.FileDialog
+     * @memberof OSDPaperjsAnnotation.FileDialog#
+     * @method dialog
      * @param {...any} args - The arguments to pass to the method.
      */
     dialog(...args){

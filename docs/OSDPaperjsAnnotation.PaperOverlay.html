@@ -1,129 +1,74 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
-	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width">
-	<title>Documentation Class: PaperOverlay</title>
+    <meta charset="utf-8">
+    <title>JSDoc: Class: PaperOverlay</title>
 
-	<!--[if lt IE 9]>
-	<script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-	<![endif]-->
-	<link type="text/css" rel="stylesheet" href="styles/sunlight.default.css">
-
-	<link type="text/css" rel="stylesheet" href="styles/site.simplex.css">
-
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
 </head>
 
 <body>
 
-<div class="navbar navbar-default navbar-fixed-top ">
-<div class="container">
-	<div class="navbar-header">
-		<a class="navbar-brand" href="index.html">Documentation</a>
-		<button class="navbar-toggle" type="button" data-toggle="collapse" data-target="#topNavigation">
-			<span class="icon-bar"></span>
-			<span class="icon-bar"></span>
-			<span class="icon-bar"></span>
-        </button>
-	</div>
-	<div class="navbar-collapse collapse" id="topNavigation">
-		<ul class="nav navbar-nav">
-			
-			<li class="dropdown">
-				<a href="namespaces.list.html" class="dropdown-toggle" data-toggle="dropdown">Namespaces<b class="caret"></b></a>
-				<ul class="dropdown-menu ">
-					<li><a href="OSDPaperjsAnnotation.html">OSDPaperjsAnnotation</a></li>
-				</ul>
-			</li>
-			
-			<li class="dropdown">
-				<a href="classes.list.html" class="dropdown-toggle" data-toggle="dropdown">Classes<b class="caret"></b></a>
-				<ul class="dropdown-menu ">
-					<li><a href="OSDPaperjsAnnotation.AnnotationToolbar.html">OSDPaperjsAnnotation.AnnotationToolbar</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolkit.html">OSDPaperjsAnnotation.AnnotationToolkit</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUI.html">OSDPaperjsAnnotation.AnnotationUI</a></li><li><a href="OSDPaperjsAnnotation.FeatureCollectionUI.html">OSDPaperjsAnnotation.FeatureCollectionUI</a></li><li><a href="OSDPaperjsAnnotation.FeatureUI.html">OSDPaperjsAnnotation.FeatureUI</a></li><li><a href="OSDPaperjsAnnotation.FileDialog.html">OSDPaperjsAnnotation.FileDialog</a></li><li><a href="OSDPaperjsAnnotation.LayerUI.html">OSDPaperjsAnnotation.LayerUI</a></li><li><a href="OSDPaperjsAnnotation.PaperOverlay.html">OSDPaperjsAnnotation.PaperOverlay</a></li><li><a href="OSDPaperjsAnnotation.RotationControlOverlay.html">OSDPaperjsAnnotation.RotationControlOverlay</a></li><li><a href="OSDPaperjsAnnotation.RotationControlTool.html">OSDPaperjsAnnotation.RotationControlTool</a></li><li><a href="OSDPaperjsAnnotation.RotationControlWidget.html">OSDPaperjsAnnotation.RotationControlWidget</a></li>
-				</ul>
-			</li>
-			
-			<li class="dropdown">
-				<a href="global.html" class="dropdown-toggle" data-toggle="dropdown">Global<b class="caret"></b></a>
-				<ul class="dropdown-menu ">
-					<li><a href="global.html#adaptiveOffsetCurve">adaptiveOffsetCurve</a></li><li><a href="global.html#connectAdjacentBezier">connectAdjacentBezier</a></li><li><a href="global.html#connectBeziers">connectBeziers</a></li><li><a href="global.html#getPointLineIntersections">getPointLineIntersections</a></li><li><a href="global.html#makeRoundJoin">makeRoundJoin</a></li><li><a href="global.html#normalize">normalize</a></li><li><a href="global.html#offsetSegment">offsetSegment</a></li><li><a href="global.html#removeIntersection">removeIntersection</a></li><li><a href="global.html#removeOutsiders">removeOutsiders</a></li>
-				</ul>
-			</li>
-			
-		</ul>
-        
-            <div class="col-sm-3 col-md-3">
-                <form class="navbar-form" role="search">
-                    <div class="input-group">
-                        <input type="text" class="form-control" placeholder="Search" name="q" id="search-input">
-                        <div class="input-group-btn">
-                            <button class="btn btn-default" id="search-submit"><i class="glyphicon glyphicon-search"></i></button>
-                        </div>
-                    </div>
-                </form>
-            </div>
-        
-	</div>
+<div id="main">
 
-</div>
-</div>
+    <h1 class="page-title">Class: PaperOverlay</h1>
+
+    
 
 
-<div class="container" id="toc-content">
-<div class="row">
 
-	
-	<div class="col-md-8">
-	
-		<div id="main">
-			
 
-	<h1 class="page-title">Class: PaperOverlay</h1>
 <section>
 
 <header>
     
-        <h2>
-            <span class="ancestors"><a href="OSDPaperjsAnnotation.html">OSDPaperjsAnnotation</a>.</span>
-        
-        PaperOverlay
-        </h2>
+        <h2><span class="attribs"><span class="type-signature"></span></span>
+            <span class="ancestors"><a href="OSDPaperjsAnnotation.html">OSDPaperjsAnnotation</a>.</span>PaperOverlay<span class="signature">(viewer, opts)</span><span class="type-signature"></span></h2>
         
             <div class="class-description">Represents a PaperOverlay associated with an OpenSeadragon Viewer.A PaperOverlay is a Paper.js overlay that can be either synced to the zoomable image or fixed to the viewer.</div>
         
     
 </header>
 
-
 <article>
     <div class="container-overview">
     
         
-<hr>
-<dt>
-    <h4 class="name" id="PaperOverlay"><span class="type-signature"></span>new PaperOverlay(viewer, opts)</h4>
-    
-    
-</dt>
-<dd>
 
     
-    <div class="description">
-        Creates an instance of the PaperOverlay.overlayType: 'image' to sync to the zoomable image, 'viewport' to stay fixed to the viewer
-    </div>
+    <h2>Constructor</h2>
+    
+
+    
+    <h4 class="name" id="PaperOverlay"><span class="type-signature"></span>new PaperOverlay<span class="signature">(viewer, opts)</span><span class="type-signature"></span></h4>
     
 
     
 
+
+
+<div class="description">
+    Creates an instance of the PaperOverlay.overlayType: 'image' to sync to the zoomable image, 'viewport' to stay fixed to the viewer
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
     
 
-    
-    
-        <h5>Parameters:</h5>
-        
-
-<table class="params table table-striped">
+<table class="params">
     <thead>
     <tr>
         
@@ -154,7 +99,6 @@
 <span class="param-type">any</span>
 
 
-
             
             </td>
 
@@ -178,7 +122,6 @@
 <span class="param-type">Object</span>
 
 
-
             
             </td>
 
@@ -193,17 +136,16 @@
     </tbody>
 </table>
 
-    
 
-    
-<dl class="details">
-    
+
+
+
 
     <h5 class="subsection-title">Properties:</h5>
 
-    <dl>
+    
 
-<table class="props table table-striped">
+<table class="props">
     <thead>
     <tr>
         
@@ -213,7 +155,7 @@
         <th>Type</th>
 
         
-        <th>Argument</th>
+        <th>Attributes</th>
         
 
         
@@ -236,7 +178,6 @@
             
                 
 <span class="param-type">string</span>
-
 
 
             
@@ -276,7 +217,6 @@
 <span class="param-type">number</span>
 
 
-
             
             </td>
 
@@ -307,8 +247,7 @@
             <td class="type">
             
                 
-<span class="param-type"><a href="OpenSeadragon.Viewer.html">OpenSeadragon.Viewer</a></span>
-
+<span class="param-type">OpenSeadragon.Viewer</span>
 
 
             
@@ -344,7 +283,6 @@
 <span class="param-type">string</span>
 
 
-
             
             </td>
 
@@ -376,7 +314,6 @@
             
                 
 <span class="param-type">number</span>
-
 
 
             
@@ -412,7 +349,6 @@
 <span class="param-type">number</span>
 
 
-
             
             </td>
 
@@ -444,7 +380,6 @@
             
                 
 <span class="param-type">HTMLElement</span>
-
 
 
             
@@ -480,7 +415,6 @@
 <span class="param-type">HTMLCanvasElement</span>
 
 
-
             
             </td>
 
@@ -512,7 +446,6 @@
             
                 
 <span class="param-type">paper.PaperScope</span>
-
 
 
             
@@ -548,7 +481,6 @@
 <span class="param-type">paper.PaperScope</span>
 
 
-
             
             </td>
 
@@ -580,7 +512,6 @@
             
                 
 <span class="param-type">paper.Project</span>
-
 
 
             
@@ -616,7 +547,6 @@
 <span class="param-type">function</span>
 
 
-
             
             </td>
 
@@ -648,7 +578,6 @@
             
                 
 <span class="param-type">function</span>
-
 
 
             
@@ -684,7 +613,6 @@
 <span class="param-type">function</span>
 
 
-
             
             </td>
 
@@ -716,7 +644,6 @@
             
                 
 <span class="param-type">function</span>
-
 
 
             
@@ -752,7 +679,6 @@
 <span class="param-type">function</span>
 
 
-
             
             </td>
 
@@ -776,63 +702,73 @@
     
     </tbody>
 </table>
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="paper-overlay.js.html">paper-overlay.js</a>, <a href="paper-overlay.js.html#line140">line 140</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
 </dl>
 
-    
-
-	
-
-	
-
-	
-
-    
-
-    
-
-    
-
-    
-
-	
-
-	
-
-	
-
-	
-
-	
 
 
 
-	
-
-	
-
-	
-
-	
-</dl>
 
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
-</dd>
+
+
+
+
+
+
+
 
     
     </div>
+
+    
 
     
 
@@ -849,408 +785,35 @@
     
         <h3 class="subsection-title">Methods</h3>
 
-        <dl>
-            
-<hr>
-<dt>
-    <h4 class="name" id=".getViewerContentWidth"><span class="type-signature">&lt;static> </span>getViewerContentWidth(input)</h4>
-    
-    
-</dt>
-<dd>
-
-    
-    <div class="description">
-        Gets the content width of the viewer.
-    </div>
-    
-
-    
-
-    
-
-    
-    
-        <h5>Parameters:</h5>
         
-
-<table class="params table table-striped">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>input</code></td>
             
 
-            <td class="type">
-            
-                
-<span class="param-type">any</span>
-
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">The viewer object or an event object.</td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
     
 
     
-<dl class="details">
-    
-
-	
-
-	
-
-	
-
+    <h4 class="name" id="addClass"><span class="type-signature"></span>addClass<span class="signature">(c)</span><span class="type-signature"> &rarr; {PaperOverlay}</span></h4>
     
 
     
 
-    
-
-    
-
-	
-
-	
-
-	
-
-	
-
-	
 
 
-
-	
-
-	
-
-	
-
-	
-</dl>
-
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <h5>Returns:</h5>
-    
-            
-<div class="param-desc">
-    The content width of the viewer.
+<div class="description">
+    This method allows you to add CSS classes to the canvas element of the overlay.Adding classes can be useful for styling the overlay or associating specific styles with it.
 </div>
 
 
 
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">number</span>
 
 
 
-    </dd>
-</dl>
 
 
-        
 
-    
-</dd>
-
-        
-            
-<hr>
-<dt>
-    <h4 class="name" id="getImageData"><span class="type-signature">&lt;static> </span>OpenSeadragon.Viewer#getImageData(x, y, w, h)</h4>
-    
-    
-</dt>
-<dd>
-
-    
-    <div class="description">
-        Gets the image data from the viewer.
-    </div>
+    <h5>Parameters:</h5>
     
 
-    
-
-    
-
-    
-    
-        <h5>Parameters:</h5>
-        
-
-<table class="params table table-striped">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>x</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">number</span>
-
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">The x coordinate of the top left corner of the image data.</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>y</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">number</span>
-
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">The y coordinate of the top left corner of the image data.</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>w</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">number</span>
-
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">The width of the image data.</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>h</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">number</span>
-
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">The height of the image data.</td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-    
-
-    
-<dl class="details">
-    
-
-	
-
-	
-
-	
-
-    
-
-    
-
-    
-
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-
-
-	
-
-	
-
-	
-
-	
-</dl>
-
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <h5>Returns:</h5>
-    
-            
-<div class="param-desc">
-    The image data.
-</div>
-
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">ImageData</span>
-
-
-
-    </dd>
-</dl>
-
-
-        
-
-    
-</dd>
-
-        
-            
-<hr>
-<dt>
-    <h4 class="name" id="addClass"><span class="type-signature"></span>addClass(c)</h4>
-    
-    
-</dt>
-<dd>
-
-    
-    <div class="description">
-        This method allows you to add CSS classes to the canvas element of the overlay.Adding classes can be useful for styling the overlay or associating specific styles with it.
-    </div>
-    
-
-    
-
-    
-
-    
-    
-        <h5>Parameters:</h5>
-        
-
-<table class="params table table-striped">
+<table class="params">
     <thead>
     <tr>
         
@@ -1281,7 +844,6 @@
 <span class="param-type">string</span>
 
 
-
             
             </td>
 
@@ -1296,17 +858,12 @@
     </tbody>
 </table>
 
-    
 
-    
+
+
+
+
 <dl class="details">
-    
-
-	
-
-	
-
-	
 
     
 
@@ -1316,42 +873,53 @@
 
     
 
-	
+    
 
-	
+    
 
-	
+    
 
-	
+    
 
-	
+    
 
+    
 
+    
 
-	
+    
 
-	
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="paper-overlay.js.html">paper-overlay.js</a>, <a href="paper-overlay.js.html#line343">line 343</a>
+    </li></ul></dd>
+    
 
-	
+    
 
-	
+    
+
+    
 </dl>
 
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
-    <h5>Returns:</h5>
-    
-            
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
 <div class="param-desc">
     The PaperOverlay object itself, allowing for method chaining.
 </div>
@@ -1367,42 +935,44 @@
 <span class="param-type">PaperOverlay</span>
 
 
-
     </dd>
 </dl>
 
-
-        
-
     
-</dd>
+
+
+
+
 
         
             
-<hr>
-<dt>
-    <h4 class="name" id="addEventListener"><span class="type-signature"></span>addEventListener(event, listener)</h4>
-    
-    
-</dt>
-<dd>
-
-    
-    <div class="description">
-        This method allows you to add custom event listeners to the canvas element of the overlay.You can listen for various events, such as mouse clicks or custom events, and perform actions accordingly.
-    </div>
-    
 
     
 
     
+    <h4 class="name" id="addEventListener"><span class="type-signature"></span>addEventListener<span class="signature">(event, listener)</span><span class="type-signature"> &rarr; {PaperOverlay}</span></h4>
+    
 
     
-    
-        <h5>Parameters:</h5>
-        
 
-<table class="params table table-striped">
+
+
+<div class="description">
+    This method allows you to add custom event listeners to the canvas element of the overlay.You can listen for various events, such as mouse clicks or custom events, and perform actions accordingly.
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
     <thead>
     <tr>
         
@@ -1433,7 +1003,6 @@
 <span class="param-type">string</span>
 
 
-
             
             </td>
 
@@ -1457,7 +1026,6 @@
 <span class="param-type">function</span>
 
 
-
             
             </td>
 
@@ -1472,17 +1040,12 @@
     </tbody>
 </table>
 
-    
 
-    
+
+
+
+
 <dl class="details">
-    
-
-	
-
-	
-
-	
 
     
 
@@ -1492,42 +1055,53 @@
 
     
 
-	
+    
 
-	
+    
 
-	
+    
 
-	
+    
 
-	
+    
 
+    
 
+    
 
-	
+    
 
-	
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="paper-overlay.js.html">paper-overlay.js</a>, <a href="paper-overlay.js.html#line377">line 377</a>
+    </li></ul></dd>
+    
 
-	
+    
 
-	
+    
+
+    
 </dl>
 
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
-    <h5>Returns:</h5>
-    
-            
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
 <div class="param-desc">
     The PaperOverlay object itself, allowing for method chaining.
 </div>
@@ -1543,42 +1117,44 @@
 <span class="param-type">PaperOverlay</span>
 
 
-
     </dd>
 </dl>
 
-
-        
-
     
-</dd>
+
+
+
+
 
         
             
-<hr>
-<dt>
-    <h4 class="name" id="addViewerButton"><span class="type-signature"></span>addViewerButton(params)</h4>
-    
-    
-</dt>
-<dd>
-
-    
-    <div class="description">
-        Adds a button to the viewer. The button is created with the provided parameters.
-    </div>
-    
 
     
 
     
+    <h4 class="name" id="addViewerButton"><span class="type-signature"></span>addViewerButton<span class="signature">(params)</span><span class="type-signature"> &rarr; {any}</span></h4>
+    
 
     
-    
-        <h5>Parameters:</h5>
-        
 
-<table class="params table table-striped">
+
+
+<div class="description">
+    Adds a button to the viewer. The button is created with the provided parameters.
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
     <thead>
     <tr>
         
@@ -1609,7 +1185,6 @@
 <span class="param-type">Object</span>
 
 
-
             
             </td>
 
@@ -1618,10 +1193,10 @@
             
 
             <td class="description last">The parameters for the button.
-                <h6 class="method-params-label method-subparams-label">Properties</h6>
+                <h6>Properties</h6>
                 
 
-<table class="params table table-striped">
+<table class="params">
     <thead>
     <tr>
         
@@ -1652,7 +1227,6 @@
 <span class="param-type">string</span>
 
 
-
             
             </td>
 
@@ -1674,7 +1248,6 @@
             
                 
 <span class="param-type">string</span>
-
 
 
             
@@ -1700,7 +1273,6 @@
 <span class="param-type">string</span>
 
 
-
             
             </td>
 
@@ -1722,17 +1294,12 @@
     </tbody>
 </table>
 
-    
 
-    
+
+
+
+
 <dl class="details">
-    
-
-	
-
-	
-
-	
 
     
 
@@ -1742,42 +1309,53 @@
 
     
 
-	
+    
 
-	
+    
 
-	
+    
 
-	
+    
 
-	
+    
 
+    
 
+    
 
-	
+    
 
-	
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="paper-overlay.js.html">paper-overlay.js</a>, <a href="paper-overlay.js.html#line248">line 248</a>
+    </li></ul></dd>
+    
 
-	
+    
 
-	
+    
+
+    
 </dl>
 
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
-    <h5>Returns:</h5>
-    
-            
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
 <div class="param-desc">
     The button object.
 </div>
@@ -1793,42 +1371,44 @@
 <span class="param-type">any</span>
 
 
-
     </dd>
 </dl>
 
-
-        
-
     
-</dd>
+
+
+
+
 
         
             
-<hr>
-<dt>
-    <h4 class="name" id="autoRescaleItems"><span class="type-signature"></span>autoRescaleItems(shouldHandle)</h4>
-    
-    
-</dt>
-<dd>
-
-    
-    <div class="description">
-        This method allows you to enable or disable automatic rescaling of items within the overlaybased on the zoom level of the OpenSeadragon viewer.When enabled, items in the overlay will be rescaled automatically as the viewer's zoom level changes.
-    </div>
-    
 
     
 
     
+    <h4 class="name" id="autoRescaleItems"><span class="type-signature"></span>autoRescaleItems<span class="signature">(shouldHandle)</span><span class="type-signature"></span></h4>
+    
 
     
-    
-        <h5>Parameters:</h5>
-        
 
-<table class="params table table-striped">
+
+
+<div class="description">
+    This method allows you to enable or disable automatic rescaling of items within the overlaybased on the zoom level of the OpenSeadragon viewer.When enabled, items in the overlay will be rescaled automatically as the viewer's zoom level changes.
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
     <thead>
     <tr>
         
@@ -1861,7 +1441,6 @@
 <span class="param-type">boolean</span>
 
 
-
             
             </td>
 
@@ -1882,17 +1461,12 @@
     </tbody>
 </table>
 
-    
 
-    
+
+
+
+
 <dl class="details">
-    
-
-	
-
-	
-
-	
 
     
 
@@ -1902,82 +1476,92 @@
 
     
 
-	
+    
 
-	
+    
 
-	
+    
 
-	
+    
 
-	
+    
 
+    
 
+    
 
-	
+    
 
-	
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="paper-overlay.js.html">paper-overlay.js</a>, <a href="paper-overlay.js.html#line423">line 423</a>
+    </li></ul></dd>
+    
 
-	
-	<dt class="tag-see method-doc-label method-doc-details-label">See:</dt>
-	<dd class="tag-see">
-		<ul>
-			<li>rescaleItems</li>
-			</ul>
-	</dd>
-	
+    
 
-	
+    
+    <dt class="tag-see">See:</dt>
+    <dd class="tag-see">
+        <ul>
+            <li>rescaleItems</li>
+        </ul>
+    </dd>
+    
+
+    
 </dl>
 
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
-</dd>
+
+
+
+
+
+
+
+
+
+
+
 
         
             
-<hr>
-<dt>
-    <h4 class="name" id="bringToFront"><span class="type-signature"></span>bringToFront()</h4>
-    
-    
-</dt>
-<dd>
-
-    
-    <div class="description">
-        Brings the overlay to the front, making it appear on top of other overlays.This method changes the z-index of the overlay to bring it forward.The overlay will appear on top of any other overlays that are currently on the viewer.
-    </div>
-    
 
     
 
     
+    <h4 class="name" id="bringToFront"><span class="type-signature"></span>bringToFront<span class="signature">()</span><span class="type-signature"></span></h4>
+    
 
     
-    
 
-    
+
+
+<div class="description">
+    Brings the overlay to the front, making it appear on top of other overlays.This method changes the z-index of the overlay to bring it forward.The overlay will appear on top of any other overlays that are currently on the viewer.
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
 <dl class="details">
-    
-
-	
-
-	
-
-	
 
     
 
@@ -1987,75 +1571,85 @@
 
     
 
-	
+    
 
-	
+    
 
-	
+    
 
-	
+    
 
-	
+    
 
+    
 
+    
 
-	
+    
 
-	
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="paper-overlay.js.html">paper-overlay.js</a>, <a href="paper-overlay.js.html#line274">line 274</a>
+    </li></ul></dd>
+    
 
-	
+    
 
-	
+    
+
+    
 </dl>
 
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
-</dd>
+
+
+
+
+
+
+
+
+
+
+
 
         
             
-<hr>
-<dt>
-    <h4 class="name" id="canvas"><span class="type-signature"></span>canvas()</h4>
-    
-    
-</dt>
-<dd>
-
-    
-    <div class="description">
-        Gets the canvas element of the overlay.
-    </div>
-    
 
     
 
     
+    <h4 class="name" id="canvas"><span class="type-signature"></span>canvas<span class="signature">()</span><span class="type-signature"> &rarr; {HTMLCanvasElement}</span></h4>
+    
 
     
-    
 
-    
+
+
+<div class="description">
+    Gets the canvas element of the overlay.
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
 <dl class="details">
-    
-
-	
-
-	
-
-	
 
     
 
@@ -2065,42 +1659,53 @@
 
     
 
-	
+    
 
-	
+    
 
-	
+    
 
-	
+    
 
-	
+    
 
+    
 
+    
 
-	
+    
 
-	
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="paper-overlay.js.html">paper-overlay.js</a>, <a href="paper-overlay.js.html#line332">line 332</a>
+    </li></ul></dd>
+    
 
-	
+    
 
-	
+    
+
+    
 </dl>
 
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
-    <h5>Returns:</h5>
-    
-            
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
 <div class="param-desc">
     The canvas element.
 </div>
@@ -2116,48 +1721,45 @@
 <span class="param-type">HTMLCanvasElement</span>
 
 
-
     </dd>
 </dl>
 
-
-        
-
     
-</dd>
+
+
+
+
 
         
             
-<hr>
-<dt>
-    <h4 class="name" id="clear"><span class="type-signature"></span>clear()</h4>
-    
-    
-</dt>
-<dd>
-
-    
-    <div class="description">
-        Clears the overlay by removing all paper items from the overlay's Paper.js project.This method removes all Paper.js items (such as paths, shapes, etc.) that have been added to the overlay.After calling this method, the overlay will be empty, and any content that was previously drawn on it will be removed.
-    </div>
-    
 
     
 
     
+    <h4 class="name" id="clear"><span class="type-signature"></span>clear<span class="signature">()</span><span class="type-signature"></span></h4>
+    
 
     
-    
 
-    
+
+
+<div class="description">
+    Clears the overlay by removing all paper items from the overlay's Paper.js project.This method removes all Paper.js items (such as paths, shapes, etc.) that have been added to the overlay.After calling this method, the overlay will be empty, and any content that was previously drawn on it will be removed.
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
 <dl class="details">
-    
-
-	
-
-	
-
-	
 
     
 
@@ -2167,69 +1769,84 @@
 
     
 
-	
+    
 
-	
+    
 
-	
+    
 
-	
+    
 
-	
+    
 
+    
 
+    
 
-	
+    
 
-	
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="paper-overlay.js.html">paper-overlay.js</a>, <a href="paper-overlay.js.html#line323">line 323</a>
+    </li></ul></dd>
+    
 
-	
+    
 
-	
+    
+
+    
 </dl>
 
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
-</dd>
+
+
+
+
+
+
+
+
+
+
+
 
         
             
-<hr>
-<dt>
-    <h4 class="name" id="destroy"><span class="type-signature"></span>destroy(viewerDestroyed)</h4>
-    
-    
-</dt>
-<dd>
-
-    
-    <div class="description">
-        Destroys the overlay and removes it from the viewer.This method cleans up the resources associated with the overlay and removes it from the viewer.
-    </div>
-    
 
     
 
     
+    <h4 class="name" id="destroy"><span class="type-signature"></span>destroy<span class="signature">(viewerDestroyed)</span><span class="type-signature"></span></h4>
+    
 
     
-    
-        <h5>Parameters:</h5>
-        
 
-<table class="params table table-striped">
+
+
+<div class="description">
+    Destroys the overlay and removes it from the viewer.This method cleans up the resources associated with the overlay and removes it from the viewer.
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
     <thead>
     <tr>
         
@@ -2260,7 +1877,6 @@
 <span class="param-type">boolean</span>
 
 
-
             
             </td>
 
@@ -2275,17 +1891,12 @@
     </tbody>
 </table>
 
-    
 
-    
+
+
+
+
 <dl class="details">
-    
-
-	
-
-	
-
-	
 
     
 
@@ -2295,69 +1906,653 @@
 
     
 
-	
+    
 
-	
+    
 
-	
+    
 
-	
+    
 
-	
+    
 
+    
 
+    
 
-	
+    
 
-	
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="paper-overlay.js.html">paper-overlay.js</a>, <a href="paper-overlay.js.html#line299">line 299</a>
+    </li></ul></dd>
+    
 
-	
+    
 
-	
+    
+
+    
 </dl>
 
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
-</dd>
+
+
+
+
+
+
+
+
+
+
+
 
         
             
-<hr>
-<dt>
-    <h4 class="name" id="removeClass"><span class="type-signature"></span>removeClass(c)</h4>
-    
-    
-</dt>
-<dd>
-
-    
-    <div class="description">
-        This method allows you to remove CSS classes from the canvas element of the overlay.Removing classes can be useful for updating the overlay's appearance or changing its associated styles.
-    </div>
-    
 
     
 
     
+    <h4 class="name" id="getImageData"><span class="type-signature"></span>getImageData<span class="signature">(x, y, w, h)</span><span class="type-signature"> &rarr; {ImageData}</span></h4>
+    
 
     
+
+
+
+<div class="description">
+    Gets the image data from the viewer.
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
     
-        <h5>Parameters:</h5>
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
         
 
-<table class="params table table-striped">
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>x</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">The x coordinate of the top left corner of the image data.</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>y</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">The y coordinate of the top left corner of the image data.</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>w</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">The width of the image data.</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>h</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">The height of the image data.</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="paper-overlay.js.html">paper-overlay.js</a>, <a href="paper-overlay.js.html#line53">line 53</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    The image data.
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">ImageData</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="getViewerContentWidth"><span class="type-signature"></span>getViewerContentWidth<span class="signature">(input)</span><span class="type-signature"> &rarr; {number}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    Gets the content width of the viewer.
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>input</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">any</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">The viewer object or an event object.</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="paper-overlay.js.html">paper-overlay.js</a>, <a href="paper-overlay.js.html#line510">line 510</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    The content width of the viewer.
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">number</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="getViewportRaster"><span class="type-signature"></span>getViewportRaster<span class="signature">(view, withImageData)</span><span class="type-signature"> &rarr; {any}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    Gets a raster object representing the viewport.
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>view</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">any</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">The view object.</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>withImageData</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Whether to include image data in the raster object.</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="paper-overlay.js.html">paper-overlay.js</a>, <a href="paper-overlay.js.html#line73">line 73</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    The raster object.
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">any</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="removeClass"><span class="type-signature"></span>removeClass<span class="signature">(c)</span><span class="type-signature"> &rarr; {PaperOverlay}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    This method allows you to remove CSS classes from the canvas element of the overlay.Removing classes can be useful for updating the overlay's appearance or changing its associated styles.
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
     <thead>
     <tr>
         
@@ -2388,7 +2583,6 @@
 <span class="param-type">string</span>
 
 
-
             
             </td>
 
@@ -2403,17 +2597,12 @@
     </tbody>
 </table>
 
-    
 
-    
+
+
+
+
 <dl class="details">
-    
-
-	
-
-	
-
-	
 
     
 
@@ -2423,42 +2612,53 @@
 
     
 
-	
+    
 
-	
+    
 
-	
+    
 
-	
+    
 
-	
+    
 
+    
 
+    
 
-	
+    
 
-	
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="paper-overlay.js.html">paper-overlay.js</a>, <a href="paper-overlay.js.html#line353">line 353</a>
+    </li></ul></dd>
+    
 
-	
+    
 
-	
+    
+
+    
 </dl>
 
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
-    <h5>Returns:</h5>
-    
-            
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
 <div class="param-desc">
     The PaperOverlay object itself, allowing for method chaining.
 </div>
@@ -2474,42 +2674,44 @@
 <span class="param-type">PaperOverlay</span>
 
 
-
     </dd>
 </dl>
 
-
-        
-
     
-</dd>
+
+
+
+
 
         
             
-<hr>
-<dt>
-    <h4 class="name" id="removeEventListener"><span class="type-signature"></span>removeEventListener(event, listener)</h4>
-    
-    
-</dt>
-<dd>
-
-    
-    <div class="description">
-        This method allows you to remove a previously added event listener from the canvas element of the overlay.If the specified event and listener pair match an existing event listener, it will be removed.
-    </div>
-    
 
     
 
     
+    <h4 class="name" id="removeEventListener"><span class="type-signature"></span>removeEventListener<span class="signature">(event, listener)</span><span class="type-signature"> &rarr; {PaperOverlay}</span></h4>
+    
 
     
-    
-        <h5>Parameters:</h5>
-        
 
-<table class="params table table-striped">
+
+
+<div class="description">
+    This method allows you to remove a previously added event listener from the canvas element of the overlay.If the specified event and listener pair match an existing event listener, it will be removed.
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
     <thead>
     <tr>
         
@@ -2540,7 +2742,6 @@
 <span class="param-type">string</span>
 
 
-
             
             </td>
 
@@ -2564,7 +2765,6 @@
 <span class="param-type">function</span>
 
 
-
             
             </td>
 
@@ -2579,17 +2779,12 @@
     </tbody>
 </table>
 
-    
 
-    
+
+
+
+
 <dl class="details">
-    
-
-	
-
-	
-
-	
 
     
 
@@ -2599,42 +2794,53 @@
 
     
 
-	
+    
 
-	
+    
 
-	
+    
 
-	
+    
 
-	
+    
 
+    
 
+    
 
-	
+    
 
-	
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="paper-overlay.js.html">paper-overlay.js</a>, <a href="paper-overlay.js.html#line389">line 389</a>
+    </li></ul></dd>
+    
 
-	
+    
 
-	
+    
+
+    
 </dl>
 
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
-    <h5>Returns:</h5>
-    
-            
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
 <div class="param-desc">
     The PaperOverlay object itself, allowing for method chaining.
 </div>
@@ -2650,48 +2856,45 @@
 <span class="param-type">PaperOverlay</span>
 
 
-
     </dd>
 </dl>
 
-
-        
-
     
-</dd>
+
+
+
+
 
         
             
-<hr>
-<dt>
-    <h4 class="name" id="rescaleItems"><span class="type-signature"></span>rescaleItems()</h4>
-    
-    
-</dt>
-<dd>
-
-    
-    <div class="description">
-        Rescales all items in the overlay according to the current zoom level of the viewer.This method manually rescales all Paper.js items that have the `rescale` property set to true.The rescaling is based on the current zoom level of the viewer, ensuring that the items maintain their relative size on the viewer.
-    </div>
-    
 
     
 
     
+    <h4 class="name" id="rescaleItems"><span class="type-signature"></span>rescaleItems<span class="signature">()</span><span class="type-signature"></span></h4>
+    
 
     
-    
 
-    
+
+
+<div class="description">
+    Rescales all items in the overlay according to the current zoom level of the viewer.This method manually rescales all Paper.js items that have the `rescale` property set to true.The rescaling is based on the current zoom level of the viewer, ensuring that the items maintain their relative size on the viewer.
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
 <dl class="details">
-    
-
-	
-
-	
-
-	
 
     
 
@@ -2701,82 +2904,92 @@
 
     
 
-	
+    
 
-	
+    
 
-	
+    
 
-	
+    
 
-	
+    
 
+    
 
+    
 
-	
+    
 
-	
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="paper-overlay.js.html">paper-overlay.js</a>, <a href="paper-overlay.js.html#line438">line 438</a>
+    </li></ul></dd>
+    
 
-	
-	<dt class="tag-see method-doc-label method-doc-details-label">See:</dt>
-	<dd class="tag-see">
-		<ul>
-			<li>autoRescaleItems</li>
-			</ul>
-	</dd>
-	
+    
 
-	
+    
+    <dt class="tag-see">See:</dt>
+    <dd class="tag-see">
+        <ul>
+            <li>autoRescaleItems</li>
+        </ul>
+    </dd>
+    
+
+    
 </dl>
 
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
-</dd>
+
+
+
+
+
+
+
+
+
+
+
 
         
             
-<hr>
-<dt>
-    <h4 class="name" id="sendToBack"><span class="type-signature"></span>sendToBack()</h4>
-    
-    
-</dt>
-<dd>
-
-    
-    <div class="description">
-        Sends the overlay to the back, making it appear behind other overlays.This method changes the z-index of the overlay to send it backward.The overlay will appear behind any other overlays that are currently on the viewer.
-    </div>
-    
 
     
 
     
+    <h4 class="name" id="sendToBack"><span class="type-signature"></span>sendToBack<span class="signature">()</span><span class="type-signature"></span></h4>
+    
 
     
-    
 
-    
+
+
+<div class="description">
+    Sends the overlay to the back, making it appear behind other overlays.This method changes the z-index of the overlay to send it backward.The overlay will appear behind any other overlays that are currently on the viewer.
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
 <dl class="details">
-    
-
-	
-
-	
-
-	
 
     
 
@@ -2786,69 +2999,84 @@
 
     
 
-	
+    
 
-	
+    
 
-	
+    
 
-	
+    
 
-	
+    
 
+    
 
+    
 
-	
+    
 
-	
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="paper-overlay.js.html">paper-overlay.js</a>, <a href="paper-overlay.js.html#line285">line 285</a>
+    </li></ul></dd>
+    
 
-	
+    
 
-	
+    
+
+    
 </dl>
 
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
-</dd>
+
+
+
+
+
+
+
+
+
+
+
 
         
             
-<hr>
-<dt>
-    <h4 class="name" id="setAttribute"><span class="type-signature"></span>setAttribute(attr, value)</h4>
-    
-    
-</dt>
-<dd>
-
-    
-    <div class="description">
-        This method allows you to set custom attributes on the canvas element of the overlay.Setting attributes can be useful for additional customization or to store metadata related to the overlay.
-    </div>
-    
 
     
 
     
+    <h4 class="name" id="setAttribute"><span class="type-signature"></span>setAttribute<span class="signature">(attr, value)</span><span class="type-signature"> &rarr; {PaperOverlay}</span></h4>
+    
 
     
-    
-        <h5>Parameters:</h5>
-        
 
-<table class="params table table-striped">
+
+
+<div class="description">
+    This method allows you to set custom attributes on the canvas element of the overlay.Setting attributes can be useful for additional customization or to store metadata related to the overlay.
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
     <thead>
     <tr>
         
@@ -2879,7 +3107,6 @@
 <span class="param-type">string</span>
 
 
-
             
             </td>
 
@@ -2903,7 +3130,6 @@
 <span class="param-type">string</span>
 
 
-
             
             </td>
 
@@ -2918,17 +3144,12 @@
     </tbody>
 </table>
 
-    
 
-    
+
+
+
+
 <dl class="details">
-    
-
-	
-
-	
-
-	
 
     
 
@@ -2938,42 +3159,53 @@
 
     
 
-	
+    
 
-	
+    
 
-	
+    
 
-	
+    
 
-	
+    
 
+    
 
+    
 
-	
+    
 
-	
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="paper-overlay.js.html">paper-overlay.js</a>, <a href="paper-overlay.js.html#line365">line 365</a>
+    </li></ul></dd>
+    
 
-	
+    
 
-	
+    
+
+    
 </dl>
 
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
-    <h5>Returns:</h5>
-    
-            
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
 <div class="param-desc">
     The PaperOverlay object itself, allowing for method chaining.
 </div>
@@ -2989,42 +3221,44 @@
 <span class="param-type">PaperOverlay</span>
 
 
-
     </dd>
 </dl>
 
-
-        
-
     
-</dd>
+
+
+
+
 
         
             
-<hr>
-<dt>
-    <h4 class="name" id="setOSDMouseNavEnabled"><span class="type-signature"></span>setOSDMouseNavEnabled(enabled)</h4>
-    
-    
-</dt>
-<dd>
-
-    
-    <div class="description">
-        This method allows you to enable or disable mouse navigation in the viewer associated with the overlay.Mouse navigation includes actions such as panning and zooming.It returns a boolean value indicating whether mouse navigation was enabled before the method call.
-    </div>
-    
 
     
 
     
+    <h4 class="name" id="setOSDMouseNavEnabled"><span class="type-signature"></span>setOSDMouseNavEnabled<span class="signature">(enabled)</span><span class="type-signature"> &rarr; {boolean}</span></h4>
+    
 
     
-    
-        <h5>Parameters:</h5>
-        
 
-<table class="params table table-striped">
+
+
+<div class="description">
+    This method allows you to enable or disable mouse navigation in the viewer associated with the overlay.Mouse navigation includes actions such as panning and zooming.It returns a boolean value indicating whether mouse navigation was enabled before the method call.
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
     <thead>
     <tr>
         
@@ -3057,7 +3291,6 @@
 <span class="param-type">boolean</span>
 
 
-
             
             </td>
 
@@ -3078,17 +3311,12 @@
     </tbody>
 </table>
 
-    
 
-    
+
+
+
+
 <dl class="details">
-    
-
-	
-
-	
-
-	
 
     
 
@@ -3098,42 +3326,53 @@
 
     
 
-	
+    
 
-	
+    
 
-	
+    
 
-	
+    
 
-	
+    
 
+    
 
+    
 
-	
+    
 
-	
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="paper-overlay.js.html">paper-overlay.js</a>, <a href="paper-overlay.js.html#line403">line 403</a>
+    </li></ul></dd>
+    
 
-	
+    
 
-	
+    
+
+    
 </dl>
 
 
-    
 
-    
 
-    
 
-    
 
-    
 
-    
-    <h5>Returns:</h5>
-    
-            
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
 <div class="param-desc">
     Whether mouse navigation was enabled before the call.
 </div>
@@ -3149,17 +3388,16 @@
 <span class="param-type">boolean</span>
 
 
-
     </dd>
 </dl>
 
+    
+
+
+
+
 
         
-
-    
-</dd>
-
-        </dl>
     
 
     
@@ -3172,132 +3410,19 @@
 
 
 
-		</div>
-	</div>
-
-	<div class="clearfix"></div>
-
-	
-		<div class="col-md-3">
-			<div id="toc" class="col-md-3 hidden-xs hidden-sm hidden-md"></div>
-		</div>
-	
-
-</div>
 </div>
 
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="OSDPaperjsAnnotation.html">OSDPaperjsAnnotation</a></li></ul><h3>Classes</h3><ul><li><a href="OSDPaperjsAnnotation.AnnotationToolbar.html">AnnotationToolbar</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolkit.html">AnnotationToolkit</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUI.html">AnnotationUI</a></li><li><a href="OSDPaperjsAnnotation.FeatureCollectionUI.html">FeatureCollectionUI</a></li><li><a href="OSDPaperjsAnnotation.FeatureUI.html">FeatureUI</a></li><li><a href="OSDPaperjsAnnotation.FileDialog.html">FileDialog</a></li><li><a href="OSDPaperjsAnnotation.LayerUI.html">LayerUI</a></li><li><a href="OSDPaperjsAnnotation.PaperOverlay.html">PaperOverlay</a></li><li><a href="OSDPaperjsAnnotation.RotationControlOverlay.html">RotationControlOverlay</a></li><li><a href="OSDPaperjsAnnotation.RotationControlTool.html">RotationControlTool</a></li><li><a href="OSDPaperjsAnnotation.RotationControlWidget.html">RotationControlWidget</a></li></ul><h3>Global</h3><ul><li><a href="global.html#adaptiveOffsetCurve">adaptiveOffsetCurve</a></li><li><a href="global.html#connectAdjacentBezier">connectAdjacentBezier</a></li><li><a href="global.html#connectBeziers">connectBeziers</a></li><li><a href="global.html#getPointLineIntersections">getPointLineIntersections</a></li><li><a href="global.html#makeRoundJoin">makeRoundJoin</a></li><li><a href="global.html#normalize">normalize</a></li><li><a href="global.html#offsetSegment">offsetSegment</a></li><li><a href="global.html#removeIntersection">removeIntersection</a></li><li><a href="global.html#removeOutsiders">removeOutsiders</a></li></ul>
+</nav>
 
-    <div class="modal fade" id="searchResults">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-            <h4 class="modal-title">Search results</h4>
-          </div>
-          <div class="modal-body"></div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-          </div>
-        </div><!-- /.modal-content -->
-      </div><!-- /.modal-dialog -->
-    </div>
-
+<br class="clear">
 
 <footer>
-
-
-<span class="jsdoc-message">
-	Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.6.11</a>
-	
-		on 2023-07-25T20:42:24-04:00
-	
-	using the <a href="https://github.com/docstrap/docstrap">DocStrap template</a>.
-</span>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Thu Jul 27 2023 19:44:30 GMT-0400 (Eastern Daylight Time)
 </footer>
 
-<script src="scripts/docstrap.lib.js"></script>
-<script src="scripts/toc.js"></script>
-
-    <script type="text/javascript" src="scripts/fulltext-search-ui.js"></script>
-
-
-<script>
-$( function () {
-	$( "[id*='$']" ).each( function () {
-		var $this = $( this );
-
-		$this.attr( "id", $this.attr( "id" ).replace( "$", "__" ) );
-	} );
-
-	$( ".tutorial-section pre, .readme-section pre, pre.prettyprint.source" ).each( function () {
-		var $this = $( this );
-
-		var example = $this.find( "code" );
-		exampleText = example.html();
-		var lang = /{@lang (.*?)}/.exec( exampleText );
-		if ( lang && lang[1] ) {
-			exampleText = exampleText.replace( lang[0], "" );
-			example.html( exampleText );
-			lang = lang[1];
-		} else {
-			var langClassMatch = example.parent()[0].className.match(/lang\-(\S+)/);
-			lang = langClassMatch ? langClassMatch[1] : "javascript";
-		}
-
-		if ( lang ) {
-
-			$this
-			.addClass( "sunlight-highlight-" + lang )
-			.addClass( "linenums" )
-			.html( example.html() );
-
-		}
-	} );
-
-	Sunlight.highlightAll( {
-		lineNumbers : false,
-		showMenu : true,
-		enableDoclinks : true
-	} );
-
-	$.catchAnchorLinks( {
-        navbarOffset: 10
-	} );
-	$( "#toc" ).toc( {
-		anchorName  : function ( i, heading, prefix ) {
-			return $( heading ).attr( "id" ) || ( prefix + i );
-		},
-		selectors   : "#toc-content h1,#toc-content h2,#toc-content h3,#toc-content h4",
-		showAndHide : false,
-		smoothScrolling: true
-	} );
-
-	$( "#main span[id^='toc']" ).addClass( "toc-shim" );
-	$( '.dropdown-toggle' ).dropdown();
-
-    $( "table" ).each( function () {
-      var $this = $( this );
-      $this.addClass('table');
-    } );
-
-} );
-</script>
-
-
-
-<!--Navigation and Symbol Display-->
-
-
-<!--Google Analytics-->
-
-
-
-    <script type="text/javascript">
-        $(document).ready(function() {
-            SearcherDisplay.init();
-        });
-    </script>
-
-
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
 </body>
 </html>

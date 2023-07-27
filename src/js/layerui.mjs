@@ -203,9 +203,8 @@ class LayerUI extends OpenSeadragon.EventSource{
 }
 export{LayerUI};
 /**
- *  @memberof OSDPaperjsAnnotation.LayerUI
- *   @function
  *  Create an HTML element for the layer UI.
+ * @memberof OSDPaperjsAnnotation.LayerUI#
  * @returns {jQuery} The jQuery object of the HTML element.
  */
 function makeHTMLElement(){
@@ -240,29 +239,3 @@ function makeHTMLElement(){
     return element;
 }
 
-/**
-    * @memberof OSDPaperjsAnnotation.LayerUI
-    * @typedef HTMLElementProperties  
-    * @property {HTMLElement} element - The HTML element associated with the LayerUI instance.
-    *  @property {HTMLElement} element.querySelector - Selects the first element that matches a specified CSS selector within the `element`.
-    *   @property {NodeList} element.querySelectorAll - Selects all elements that match a specified CSS selector within the `element`.
-    *   @property {string} element.innerHTML - The HTML content inside the `element` as a string.
-    *   @property {DOMTokenList} element.classList - A list of classes of the `element`.
-    *   @property {CSSStyleDeclaration} element.style - The inline styles applied to the `element`.
-    *   @property {string} element.id - The ID attribute of the `element`.
-    *   @property {string} element.tagName - The tag name of the `element`.
-    *   @property {NamedNodeMap} element.attributes - A map of attributes of the `element`.
-    *   @property {Node} element.parentNode - The parent node of the `element`.
-    *   @property {NodeList} element.childNodes - A list of child nodes of the `element`.
-    *   @property {function} element.addEventListener - Adds an event listener to the `element`.
-    *   @property {function} element.removeEventListener - Removes an event listener from the `element`.
-    *   @property {function} element.find - jQuery function to find descendants of the `element`.
-    *   @property {function} element.on - jQuery function to attach event handlers to the `element`.
-    *   @property {function} element.trigger - jQuery function to trigger event handlers for the `element`.
-    *   @property {function} element.attr - jQuery function to get or set attributes of the `element`.
-    *   @property {function} element.toggleClass - jQuery function to toggle classes of the `element`.
-    *   @property {function} element.addClass - jQuery function to add classes to the `element`.
-    *   @property {function} element.removeClass - jQuery function to remove classes from the `element`.
-    *   @property {function} element.css - jQuery function to get or set CSS properties of the `element`.
-    *   @property {function} element.val - jQuery function to get or set the value of form elements in the `element`.
- */

@@ -116,7 +116,7 @@ class RotationControlTool extends ToolBase{
         }
         /**
          * Sets the angle of the rotation.
-         * @memberof OSDPaperjsAnnotation.RotationControlTool
+         * @memberof OSDPaperjsAnnotation.RotationControlTool#
          * @param {number} angle - The angle to set.
          * @param {any} pivot - The pivot point for the rotation.
          */

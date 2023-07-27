@@ -251,7 +251,7 @@ export {AnnotationToolbar};
 
 /**
  * Creates the user interface for the Annotation Toolbar.
- * @memberof OSDPaperjsAnnotation.AnnotationToolbar
+ * @memberof OSDPaperjsAnnotation.AnnotationToolbar#
  * @returns {Object} The user interface object containing the button group and dropdowns.
  */
 function makeUI(){

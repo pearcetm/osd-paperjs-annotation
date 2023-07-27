@@ -106,18 +106,10 @@ class FeatureUI{
         this.label ? this.updateLabel() : this.setLabel('Creating...', 'initializing');
         
     }
-    /**
-     * Get the label of the feature.
-     * @returns {string} The label of the feature.
-     */
+
     get label(){
         return this.paperItem.displayName;
     }
-    /**
-     * Set the label of the feature.
-     * @param {string} l - The new label of the feature.
-     * @returns {string} The new label of the feature.
-     */
     set label(l){
         return this.setLabel(l)
     }
@@ -220,8 +212,9 @@ class FeatureUI{
 }
 export {FeatureUI};
 /**
- * @memberof OSDPaperjsAnnotation.FeatureUI
- * Create an HTML element for the feature UI.
+  * Create an HTML element for the feature UI.
+ * @memberof OSDPaperjsAnnotation.FeatureUI#
+ * @function makeFeatureElement
  * @returns {jQuery} The jQuery object of the HTML element.
  */
 function makeFeatureElement(){

@@ -55,7 +55,8 @@
     });
     /**
      * Gets the image data from the viewer.
-     * @memberof OSDPaperjsAnnotation.PaperOverlay
+     * @memberof OSDPaperjsAnnotation.PaperOverlay#
+     * @function getImageData
      * @param {number} x - The x coordinate of the top left corner of the image data.
      * @param {number} y - The y coordinate of the top left corner of the image data.
      * @param {number} w - The width of the image data.
@@ -72,6 +73,8 @@
 
     /**
      * Gets a raster object representing the viewport.
+     * @memberof OSDPaperjsAnnotation.PaperOverlay#
+     * @function getViewportRaster
      * @param {any} view - The view object.
      * @param {boolean} withImageData - Whether to include image data in the raster object.
      * @returns {any} The raster object.
@@ -101,7 +104,8 @@
     }
     /**
      * Sets the rotation of the view.
-     *
+     * @function setRotation
+     * @memberof OSDPaperjsAnnotation.paperjsOverlay#
      * @param {number} degrees - The number of degrees to rotate.
      * @param {any} center - The center point of the rotation.
      */
@@ -515,7 +519,7 @@ let counter = (function () {
 
 /**
  * Gets the content width of the viewer.
- * @memberof OSDPaperjsAnnotation.PaperOverlay
+ * @memberof OSDPaperjsAnnotation.PaperOverlay#
  * @param {any} input - The viewer object or an event object.
  * @returns {number} The content width of the viewer.
  */
