@@ -1,10 +1,26 @@
 import {AnnotationUITool, AnnotationUIToolbarBase} from './annotationUITool.mjs';
-export class PolygonTool extends AnnotationUITool{
+/**
+ * Represents a polygon annotation tool that allows users to create and manipulate polygons on a canvas.
+ * Inherits functionality from the AnnotationUITool class.
+ * @extends AnnotationUITool
+ * @class
+ * @memberof OSDPaperjsAnnotation
+ */
+class PolygonTool extends AnnotationUITool{
+    /**
+     * Create a new instance of the PolygonTool class.
+     * @param {paper.PaperScope} paperScope - The PaperScope instance to associate with the tool.
+     */
     constructor(paperScope){
         super(paperScope);
         let self = this;
         let tool = this.tool;
         let lastClickTime = 0;
+
+        /**
+         * The drawing group where polygon paths are temporarily stored during creation.
+         * @type {paper.Group}
+         */
         this.drawingGroup = new paper.Group();
         self.project.toolLayer.addChild(self.drawingGroup);
         self.drawingGroup.visible=false;  
@@ -25,7 +41,12 @@ export class PolygonTool extends AnnotationUITool{
                 self.finish();
             }
         }
-              
+        
+        /**
+         * Event handler for the mouse down event.
+         * Handles various actions including initiating polygon drawing and erasing.
+         * @param {paper.MouseEvent} ev - The mouse event object.
+         */
         tool.onMouseDown=function(ev){
             self.draggingSegment=null;
             let now = Date.now();
@@ -79,6 +100,11 @@ export class PolygonTool extends AnnotationUITool{
             
             
         }
+        /**
+         * Event handler for the mouse drag event.
+         * Allows users to continue drawing or dragging polygon segments.
+         * @param {paper.MouseEvent} ev - The mouse event object.
+         */
         tool.onMouseDrag=function(ev){
             let dr = self.drawing();
             if(dr){
@@ -88,6 +114,11 @@ export class PolygonTool extends AnnotationUITool{
                 self.draggingSegment.point = self.draggingSegment.point.add(ev.delta);
             }
         }
+        /**
+         * Event handler for the mouse move event.
+         * Provides visual feedback based on the mouse cursor's position.
+         * @param {paper.MouseEvent} ev - The mouse event.
+         */
         tool.onMouseMove=function(ev){
             let dr = self.drawing();
             let hitResult = self.item && (dr&&dr.path ||self.item).hitTest(ev.point,{fill:false,stroke:true,segments:true,tolerance:(5/self.project.getZoom())})
@@ -99,6 +130,11 @@ export class PolygonTool extends AnnotationUITool{
                 self.project.overlay.removeClass('tool-action').setAttribute('data-tool-action','');
             }  
         }
+        /**
+         * Event handler for the mouse up event.
+         * Finalizes polygon creation, dragging, and other interactions.
+         * @param {paper.MouseEvent} ev - The mouse event.
+         */
         tool.onMouseUp=function(ev){
             let dr = self.drawing();
             if(dr && dr.path.segments.length>1){
@@ -116,6 +152,11 @@ export class PolygonTool extends AnnotationUITool{
             }
             self.saveHistory()
         }
+        /**
+         * Event handler for the key down event.
+         * Handles keyboard shortcuts like toggling erase mode and undo/redo.
+         * @param {paper.KeyEvent} ev - The key event.
+         */
         tool.extensions.onKeyDown=function(ev){
             if(ev.key=='e'){
                 if(self.eraseMode===false){
@@ -134,6 +175,11 @@ export class PolygonTool extends AnnotationUITool{
                 self.redo();
             }
         }
+        /**
+         * Event handler for the key up event.
+         * Handles releasing keys, such as exiting erase mode.
+         * @param {paper.KeyEvent} ev - The key event.
+         */
         tool.extensions.onKeyUp=function(ev){
             if(ev.key=='e' && self.eraseMode=='keyhold'){
                 self.setEraseMode(false);
@@ -142,11 +188,18 @@ export class PolygonTool extends AnnotationUITool{
         }
     
     }
+    /**
+     * Retrieves the current drawing state, including the active path being drawn.
+     * @returns {?{path: paper.Path}} The current drawing state or null if no path is being drawn.
+     */
     drawing(){
         return this.drawingGroup.lastChild && {
             path: this.drawingGroup.lastChild,
         }
     }
+    /**
+     * Finalizes the current polygon drawing and performs necessary cleanup.
+     */
     finish(){
         this.finishCurrentPath();
         this.setEraseMode(false);
@@ -156,6 +209,9 @@ export class PolygonTool extends AnnotationUITool{
         this.drawingGroup.selected=false;      
         this.drawingGroup.visible=false;  
     }
+    /**
+     * Simplifies the polygon by reducing the number of points while preserving shape fidelity.
+     */
     doSimplify(){
         if(!this.item) return;
         
@@ -196,13 +252,19 @@ export class PolygonTool extends AnnotationUITool{
         
     }
     
-    
+    /**
+     * Sets the erase mode, enabling or disabling removal of segments or entire polygons.
+     * @param {boolean} erase - True to enable erase mode, false to disable.
+     */
     setEraseMode(erase){
         this.eraseMode=erase;
         this.item && (this.item.selectedColor = erase ? 'red' : null);
         this.drawingGroup.selectedColor= erase ? 'red' : null;
         this.toolbarControl.setEraseMode(erase);
     }
+    /**
+     * Completes the current polygon path and updates the annotation accordingly.
+     */
     finishCurrentPath(){
         let dr = this.drawing()
         if(!dr || !this.item) return;
@@ -223,6 +285,9 @@ export class PolygonTool extends AnnotationUITool{
             this.drawingGroup.removeChildren();
         // }
     }
+    /**
+     * Saves the current state of the annotation to the history stack for undo/redo functionality.
+     */
     saveHistory(){
         //push current state onto history stack
         const historyLength = 10;
@@ -232,6 +297,9 @@ export class PolygonTool extends AnnotationUITool{
             drawingGroup:this.drawingGroup.children.map(x=>x.clone({insert:false,deep:true})),
         }].concat((this.item.history||[]).slice(idx,historyLength));
     }
+    /**
+     * Undoes the last annotation action, restoring the previous state.
+     */
     undo(){
         console.log('undoing');
         let history=(this.item.history||[]);
@@ -244,6 +312,9 @@ export class PolygonTool extends AnnotationUITool{
             history.position=idx;
         }
     }
+    /**
+     * Redoes the previously undone annotation action, restoring the next state.
+     */
     redo(){
         console.log('redoing');
         let history=(this.item.history||[]);
@@ -257,8 +328,19 @@ export class PolygonTool extends AnnotationUITool{
         }
     }
 }
-
-export class PolygonToolbar extends AnnotationUIToolbarBase{
+export {PolygonTool};
+/**
+ * Represents the toolbar for the PolygonTool, providing UI controls for polygon annotation.
+ * Inherits functionality from the AnnotationUIToolbarBase class.
+ * @extends AnnotationUIToolbarBase
+ * @class
+ * @memberof OSDPaperjsAnnotation.PolygonTool
+ */
+class PolygonToolbar extends AnnotationUIToolbarBase{
+    /**
+     * Create a new instance of the PolygonToolbar class.
+     * @param {PolygonTool} polyTool - The associated PolygonTool instance.
+     */
     constructor(polyTool){
         super(polyTool);
         let self=this;
@@ -284,14 +366,24 @@ export class PolygonToolbar extends AnnotationUIToolbarBase{
             polyTool.redo();
         });
     }
+    /**
+     * Check if the toolbar is enabled for the given mode.
+     * @param {string} mode - The annotation mode.
+     * @returns {boolean} True if enabled, false otherwise.
+     */
     isEnabledForMode(mode){
         return ['new','MultiPolygon'].includes(mode);
     }
+    /**
+     * Set the erase mode for the toolbar, updating UI state.
+     * @param {boolean} erasing - True to enable erase mode, false to disable.
+     */
     setEraseMode(erasing){
         erasing ? this.eraseButton.addClass('active') : this.eraseButton.removeClass('active');
     }
-}
 
+}
+export {PolygonToolbar};
 
 
 class SimplifyJS{

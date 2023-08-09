@@ -1,0 +1,58 @@
+<head>
+    <title>Brush Tool Demo</title>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/openseadragon/4.0.0/openseadragon.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/paper.js/0.12.17/paper-full.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="./demo.css">
+
+    <script type="module">
+        import { BrushTool } from '../src/js/papertools/brush.mjs';
+        import { AnnotationToolbar } from '../src/js/annotationtoolbar.mjs';
+        import{ AnnotationToolkit } from '../src/js/annotationtoolkit.mjs';
+        // Basic viewer setup
+        let viewer = OpenSeadragon({
+            element: 'brush-viewer',
+            prefixUrl: "https://openseadragon.github.io/openseadragon/images/",
+            tileSources: {
+                type: 'image',
+                url: 'https://openseadragon.github.io/example-images/grand-canyon-landscape-overlooking.jpg',
+                buildPyramid: false
+            },
+            minZoomImageRatio: 0.01,
+            visibilityRatio: 0,
+            crossOriginPolicy: 'Anonymous',
+            ajaxWithCredentials: false
+        });
+
+        viewer.addHandler('open', () => {
+            let paperScope = new paper.PaperScope(); // Create a new PaperScope
+            paperScope.setup('brush-canvas'); // Set up Paper.js with the specified canvas ID
+
+            // Create the AnnotationToolkit instance and add feature collections (empty array for now)
+            let annotationToolkit = new AnnotationToolkit(viewer);
+            annotationToolkit.addAnnotationUI({tools:["brush"], addButton:false, addFileButton:false});
+
+            $.get('./demo-annotation.json').then(x => annotationToolkit.addFeatureCollections(x));
+        });
+    </script>
+</head>
+<body>
+    <div class="content">
+        <div class="demo">
+            <h3>Brush Tool Demo</h3>
+            <div id="brush-viewer" class="viewer"></div>
+            <div>
+                <h4>How to use:</h4>
+                <p>Use the brush tool to draw or erase annotations on the image.</p>
+                <p>Choose Brush Settings: In the Brush Toolbar, you can set the brush radius by using the slider provided. Adjust the radius by moving the slider left or right. The brush radius determines the size of the brush strokes when drawing.</p>
+                <p>Toggle Erase Mode (Optional): If you want to switch to Erase Mode, click the "Erase" button in the Brush Toolbar. The button will become active, indicating that you are in Erase Mode. Furthermore, you can click e on your keyboard to turn erase mode on and off.</p>
+                <p>Start Drawing or Erasing: To draw on the canvas, click and drag the mouse pointer to create brush strokes. If you are in Erase Mode, you can use the brush to erase existing shapes by drawing over them.</p>
+                <p>Changing brush radius during drawing: To change the brush radius while drawing, you can use the mouse wheel to increase or decrease the brush size.</p>
+                <p>Finalizing Shape: When you are satisfied with the drawn area, release the mouse click to finalize the shape. </p>             </div>
+        </div>
+    </div>
+
+    <!-- The canvas used for Paper.js -->
+    <canvas id="brush-canvas" style="display:none;"></canvas>
+</body>
+</html>

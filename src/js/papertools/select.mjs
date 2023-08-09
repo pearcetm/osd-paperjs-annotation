@@ -1,5 +1,20 @@
 import {AnnotationUITool, AnnotationUIToolbarBase} from './annotationUITool.mjs';
+
+/**
+ * Represents the SelectTool class that extends the AnnotationUITool.
+ * This tool allows users to select and manipulate GeoJSON feature items on the Paper.js project.
+ * @class
+ */
 export class SelectTool extends AnnotationUITool{
+  /**
+   * Creates an instance of SelectTool.
+   * @constructor
+   * @param {Object} paperScope - The Paper.js paper scope object.
+   * @property {Object} ps - Reference to the Paper.js project scope.
+   * @property {SelectToolbar} toolbarControl - Sets the toolbar control for the SelectTool.
+   * @property {paper.Path.Rectangle} selectionRectangle - The selection rectangle used for area-based selection.
+   * @property {paper.Path.Rectangle} sr2 - A second selection rectangle with a dashed border.
+   */ 
     constructor(paperScope){
         super(paperScope);
         let self=this;
@@ -28,6 +43,17 @@ export class SelectTool extends AnnotationUITool{
             }
         }
        
+        /**
+         * Event handler for mouse up events.
+         *
+         * @param {Event} ev - The mouse up event.
+         * @property {boolean} visible - Hide the selection rectangle.
+         * @property {HitResult} hitResult - The result of the hit test to find the item under the mouse pointer.
+         * @property {boolean} toggleSelection - Indicates whether the 'Control' or 'Meta' key was pressed during the event.
+         * @property {HitResult[]} hitResults - An array of hit test results containing items found within the area.
+         * @property {boolean} keepExistingSelection - Indicates whether the 'Control' or 'Meta' key was pressed during the event.
+         * @property {Item[]} selectedItems - An array of selected items to be deselected.
+         */        
         this.tool.onMouseUp=function(ev){
             selectionRectangle.visible=false;
             sr2.visible=false;
@@ -47,6 +73,13 @@ export class SelectTool extends AnnotationUITool{
                 hitResults.forEach(item=>item.select(true))
             }
         }
+        /**
+         * Event handler for mouse drag events.
+         *
+         * @param {Event} ev - The mouse drag event.
+         * @property {boolean} visible - Show the selection rectangle.
+         * @property {Rectangle} r - The bounding rectangle of the selection area.
+         */
         this.tool.onMouseDrag = function(ev){
             selectionRectangle.visible=true;
             sr2.visible=true;
@@ -56,13 +89,29 @@ export class SelectTool extends AnnotationUITool{
             // console.log(selectionRectangle.visible, selectionRectangle.segments)
         }
     }
+  /**
+   * Gets the selected items that are GeoJSON features.
+   * This method retrieves all the items in the Paper.js project that are considered as GeoJSON features and are currently selected.
+   * @returns {Array<Object>} An array of selected items that are GeoJSON features.
+   */
     getSelectedItems(){
         return this.ps.project.selectedItems.filter(i=>i.isGeoJSONFeature);
     }
+  /**
+   * Checks if there are any GeoJSON feature items in the project.
+   * This method searches through all the items in the Paper.js project and determines if there are any GeoJSON feature items.
+   * @returns {boolean} Returns true if there are GeoJSON feature items, false otherwise.
+   */
     doAnnotationItemsExist(){
         return this.ps.project.getItems({match:i=>i.isGeoJSONFeature}).length>0; 
     }
-    
+
+  /**
+   * Handles mouse movement events and emits selection-related events for items under the cursor.
+   * When the mouse moves within the Paper.js project area, this method detects if it is over any item and triggers related selection events.
+   * It updates the currently hovered item and layer, and applies a CSS class to the project's overlay for highlighting selectable layers.
+   * @param {Object} ev - The mouse move event object containing information about the cursor position.
+   */
     onMouseMove(ev){
         if(ev.item){
             if(this.currentItem != ev.item) (ev.item.emit('selection:mouseenter')||true) 

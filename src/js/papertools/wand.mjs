@@ -3,17 +3,68 @@ import {ColorpickerCursor,getAverageColor} from './style.mjs';
 import {Morph} from '../utils/morph.mjs';
 import { makeMagicWand } from '../utils/magicwand.mjs';
 
-export class WandTool extends AnnotationUITool{
+
+/**
+ * The `WandTool` class represents a powerful tool designed for making selections with a magic wand-like effect. 
+ * It extends the `AnnotationUITool` class to provide advanced selection capabilities within the Paper.js framework.
+ *
+ * This tool allows users to create selections by intelligently selecting areas of similar colors within an image or canvas.
+ * It provides various modes and options for refining the selections and is particularly useful in interactive annotation and design workflows.
+ * The `WandTool` offers a seamless integration of selection, color manipulation, and interaction with the underlying image.
+ *
+ * @extends AnnotationUITool
+ * @class
+ * @memberof OSDPaperjsAnnotation
+ */
+class WandTool extends AnnotationUITool{
+    /**
+     * Creates a new instance of the `WandTool` class, enabling users to make precise selections with sophisticated color-based mechanisms.
+     * This constructor initializes various properties and configurations that control the behavior of the tool.
+     * 
+     * @param {paper.PaperScope} paperScope - The PaperScope instance associated with this tool.
+     */
     constructor(paperScope){
         super(paperScope);
         let self = this;
         let tool = this.tool;   
         this.paperScope = self.project.paperScope;
         
+       /**
+         * Determines whether the reduce mode is active, altering the effect of dragging to create selections.
+         * When reduce mode is enabled, dragging reduces the current selection area instead of expanding it.
+         *
+         * @type {boolean}
+         * @default false
+         */
         this.reduceMode = false;
+       /**
+         * Determines whether the replace mode is active, affecting how the tool interacts with existing selections.
+         * In replace mode, the tool replaces the current selection with the new selection.
+         *
+         * @type {boolean}
+         * @default true
+         */
         this.replaceMode = true;
+        /**
+         * Determines whether the flood mode is active, influencing the behavior of the tool's selection algorithm.
+         * When flood mode is enabled, the tool uses a flood-fill approach to create selections.
+         * Otherwise, it employs a threshold mask approach.
+         *
+         * @type {boolean}
+         * @default true
+         */
         this.floodMode = true;
         
+        /**
+         * An object containing color settings that guide the visual appearance of the tool.
+         *
+         * @type {Object}
+         * @property {paper.Color} pixelAllowed - The color representing allowed pixels within the selection.
+         * @property {paper.Color} pixelNotAllowed - The color representing disallowed pixels within the selection.
+         * @property {paper.Color} currentItem - The color highlighting the currently selected item.
+         * @property {paper.Color} nullColor - The color of transparent pixels (for negative spaces).
+         * @property {paper.Color} defaultColor - The default color used for various UI elements.
+         */
         this.colors = {
             pixelAllowed: new paper.Color({red:0,green:0,blue:100}),
             pixelNotAllowed: new paper.Color({red:100,green:0,blue:0}),
@@ -109,25 +160,46 @@ export class WandTool extends AnnotationUITool{
             }
         }
     }
+    /**
+     * Finishes the wand tool operation and performs necessary cleanup.
+     */
     finish(){
         // if(item) smoothAndSimplify(item);
         this.itemLayer=null;
         this.preview && this.preview.remove();
         this.deactivate();    
     }
+    /**
+     * Sets the threshold value for the magic wand operation.
+     * @param {number} t - The threshold value.
+     */
     setThreshold(t){
         this.threshold=parseInt(t);
     }
+    /**
+     * Sets whether the reduce mode is enabled.
+     * @param {boolean} erase - Whether to enable reduce mode.
+     */
     setReduceMode(erase){
         this.reduceMode=erase;
     }
+    /**
+     * Sets whether the flood mode is enabled.
+     * @param {boolean} flood - Whether to enable flood mode.
+     */
     setFloodMode(flood){
         this.floodMode=flood;
     }
+    /**
+     * Sets whether the replace mode is enabled.
+     * @param {boolean} replace - Whether to enable replace mode.
+     */
     setReplaceMode(replace){
         this.replaceMode=replace;
     }
-    
+    /**
+     * Applies changes based on the magic wand selection.
+     */
     applyChanges(){
         if(this.itemToCreate){
             this.itemToCreate.initializeGeoJSONFeature('MultiPolygon');
@@ -182,7 +254,9 @@ export class WandTool extends AnnotationUITool{
         this.getImageData();
         
     };
-    
+    /**
+     * Retrieves image data for processing the magic wand operation.
+     */
     async getImageData(){
         let self=this;
         let imageData = self.project.overlay.osdViewer.getImageData();
@@ -250,6 +324,10 @@ export class WandTool extends AnnotationUITool{
         } 
         
     }
+    /**
+     * Applies the magic wand effect based on the current mouse point.
+     * @param {paper.Point} eventPoint - The point where the magic wand is applied.
+     */
     applyMagicWand(eventPoint){
         let pt = this.paperScope.view.projectToView(eventPoint);
         //account for pixel density
@@ -299,6 +377,13 @@ export class WandTool extends AnnotationUITool{
         this.rasterPreview(this.imageData.binaryMask,this.imageData.sampleColor || magicWandOutput.sampleColor);
         
     }
+    
+    /**
+     * Rasterize the selection preview based on the binary mask and sample color.
+     *
+     * @param {Uint8ClampedArray} binaryMask - The binary mask of the selection.
+     * @param {Array<number>} sampleColor - The color sampled from the selected item.
+     */
     rasterPreview(binaryMask, sampleColor){
         let self=this;
         let cmap = {0: this.colors.nullColor, 1: this.colors.defaultColor};
@@ -339,8 +424,26 @@ export class WandTool extends AnnotationUITool{
     
     
 }
+export{WandTool};
 
+/**
+ * The `WandToolbar` class represents the user interface toolbar for the `WandTool` class.
+ * This toolbar provides a range of options and controls that users can interact with to configure the behavior of the magic wand tool.
+ * It extends the `AnnotationUIToolbarBase` class to create a cohesive interface for the tool.
+ *
+ * The `WandToolbar` offers features for setting threshold, selection modes, and applying changes, making the magic wand tool a versatile and interactive selection tool.
+ *
+ * @class
+ * @memberof OSDPaperjsAnnotation.WandTool
+ * @extends AnnotationUIToolbarBase
+ */
 class WandToolbar extends AnnotationUIToolbarBase{
+    /**
+     * Creates a new instance of the `WandToolbar` class, providing users with various options to configure the magic wand tool.
+     * This constructor initializes UI elements, buttons, and interactive controls within the toolbar.
+     * 
+     * @param {WandTool} wandTool - The `WandTool` instance associated with this toolbar.
+     */
     constructor(wandTool){
         super(wandTool);
         let html = $('<i>',{class:"fa-solid fa-wand-magic-sparkles fa-rotate-270"})[0];
@@ -411,22 +514,48 @@ class WandToolbar extends AnnotationUIToolbarBase{
             wandTool.finish();
         });
     }
+    /**
+     * Check if the toolbar should be enabled for the given mode.
+     * The toolbar is enabled when the mode is 'new' or 'MultiPolygon'.
+     *
+     * @param {string} mode - The mode to check.
+     * @returns {boolean} True if the toolbar should be enabled for the given mode; otherwise, false.
+     */
     isEnabledForMode(mode){
         return ['new','MultiPolygon'].includes(mode);
     }
-    
+    /**
+     * Set the threshold value in the threshold input element.
+     *
+     * @param {number} thr - The threshold value to set.
+     */
     setThreshold(thr){
         this.thresholdInput.val(thr);
     }
 }
 
-
+/**
+ * Displays an image preview on the web page using the provided data URL.
+ * If a preview image already exists, it is removed and replaced with the new one.
+ * The preview is positioned fixed on the top-left corner of the viewport.
+ * 
+ * @param {string} dataURL - The data URL of the image to display.
+ */
 function imgPreview(dataURL){
     if(window.preview) window.preview.remove();
     window.preview = $('<img>',{style:'position:fixed;left:10px;top:10px;width:260px;',src:dataURL}).appendTo('body');
 }
 
-
+/**
+ * Converts a binary mask to a compound path, tracing contours and creating path objects.
+ * The mask is processed to identify contours and create paths for each contour, forming a compound path.
+ * Contours with an absolute area less than the specified minimum area are filtered out.
+ * 
+ * @param {MagicWand} MagicWand - The MagicWand instance used to trace contours.
+ * @param {Uint8ClampedArray} mask - The binary mask to be converted into paths.
+ * @param {string} border - The type of border to add ('dilate' for dilation, undefined for none).
+ * @returns {paper.CompoundPath} A compound path containing the traced paths from the mask contours.
+ */
 function maskToPath(MagicWand, mask, border){
     let minPathArea = 50;
     let path=new paper.CompoundPath({children:[],fillRule:'evenodd',insert:false});

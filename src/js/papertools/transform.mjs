@@ -1,8 +1,30 @@
 import {AnnotationUITool, AnnotationUIToolbarBase} from './annotationUITool.mjs';
-export class TransformTool extends AnnotationUITool{
+/**
+ * The TransformTool class extends the AnnotationUITool and provides functionality for transforming selected items on the canvas.
+ * @memberof OSDPaperjsAnnotation
+ * @extends AnnotationUITool
+ * @class
+ * @memberof OSDPaperjsAnnotation
+ */
+class TransformTool extends AnnotationUITool{
+        /**
+     * Create a new TransformTool instance.
+     * @memberof OSDPaperjsAnnotation.TransformTool
+     * @constructor
+     * @param {paper.PaperScope} paperScope - The Paper.js scope for the tool.
+     *The constructor initializes the TransformTool by calling the base class (AnnotationUITool) constructor and sets up the necessary toolbar control (TransformToolbar).
+     * @property {paper.PaperScope} ps - The Paper.js scope associated with the project.
+     * @property {string} _mode - The current mode of the TransformTool.
+     * @property {paper.Item[]} _moving - An array of items currently being moved or transformed.
+     * @property {paper.Group} _transformTool - The TransformTool object that contains transformation controls.
+     */
     constructor(paperScope){
         super(paperScope);
         let self=this;
+        /**
+         * The Paper.js scope associated with the project.
+         * @type {paper.PaperScope}
+         */
         this.ps = this.project.paperScope;
         this._mode = 'transform';
         this._moving = [];
@@ -24,7 +46,25 @@ export class TransformTool extends AnnotationUITool{
     // getSelectedItems(){
     //     return this.ps.project.selectedItems.filter(i=>i.isGeoJSONFeature);
     // }
-    
+
+    /**
+     * A function that creates and initializes the TransformTool object with the specified zoom level.
+     * This function sets up the corners for resizing, the rotation handle, and translation controls.
+     * @param {number} currentZoom - The current zoom level of the canvas.
+     * @property {paper.Group} _transformTool - The TransformTool object that contains transformation controls.
+     * @property {object} _transformTool.corners - An object containing corner control points for resizing the bounding box.
+     * @property {paper.Shape.Rectangle} _transformTool.corners.topLeft - The control point for the top-left corner.
+     * @property {paper.Shape.Rectangle} _transformTool.corners.topRight - The control point for the top-right corner.
+     * @property {paper.Shape.Rectangle} _transformTool.corners.bottomRight - The control point for the bottom-right corner.
+     * @property {paper.Shape.Rectangle} _transformTool.corners.bottomLeft - The control point for the bottom-left corner.
+     * @property {paper.Shape.Circle} _transformTool.rotationHandle - The control point for rotating the bounding box.
+     * @property {function} _transformTool.setBounds - A function that (re)positions the tool handles (corners, rotation control).
+     * @property {function} _transformTool.transformItems - A function that applies transformation to selected items and sets up new objects for transforming.
+     * @property {function} _transformTool.onMouseDown - This function is triggered when the mouse button is pressed on the transform tool. It marks that the tool is in the dragging state.
+     * @property {function} _transformTool.onMouseUp - This function is triggered when the mouse button is released on the transform tool. It marks that the tool is not in the dragging state.
+     * @property {function} _transformTool.onMouseDrag - This function is triggered when the mouse is moved while a mouse button is pressed on the transform tool. It handles the dragging behavior of the transform tool. Depending on the state (resizing or translating), it resizes or translates the selected items accordingly.
+     * @property {function} _transformTool.onMouseMove - This function is triggered when the mouse is moved on the transform tool. It updates the visual appearance of the transform tool, highlighting relevant handles and controls based on the mouse position.
+     */
     makeTransformToolObject(currentZoom){
         let self=this;
         let cSize=12;//control size
@@ -212,6 +252,10 @@ export class TransformTool extends AnnotationUITool{
         }
         this._transformTool.visible=false;
     }
+    /**
+     * A function that enables the TransformTool object for transforming selected items.
+     * This function activates the TransformTool, bringing it to the front, and sets up items for transformation.
+     */
     enableTransformToolObject(){
         this.project.toolLayer.bringToFront();
         this._transformTool.visible=true;
@@ -219,11 +263,21 @@ export class TransformTool extends AnnotationUITool{
         // this._transformTool.transformItems(this.getSelectedItems());
         
     }
+    /**
+     * A function that disables the TransformTool object after transforming selected items.
+     * This function deactivates the TransformTool, sends it to the back, and resets item matrices.
+     */
     disableTransformToolObject(){
         this.project.toolLayer.sendToBack();
         this._transformTool.transformItems([]);
         this._transformTool.visible=false;
     }
+    /**
+     * A function that performs a hit test on the canvas to find the item under the specified coordinates.
+     * This function is used to determine the item selected for transformation.
+     * @param {paper.Point} coords - The coordinates to perform the hit test.
+     * @returns {paper.HitResult} - The result of the hit test, containing the selected item.
+     */
     hitTest(coords){
         let hitResult = this.ps.project.hitTest(coords,{
             fill:true,
@@ -238,8 +292,19 @@ export class TransformTool extends AnnotationUITool{
         return hitResult;
     }
 }
-
+export{TransformTool};
+/**
+ * The TransformToolbar class extends the AnnotationUIToolbarBase and provides functionality for the transform tool's toolbar.
+ * @memberof OSDPaperjsAnnotation.TransformTool
+ * @extends AnnotationUIToolbarBase
+ */
 class TransformToolbar extends AnnotationUIToolbarBase{
+    /**
+     * Create a new TransformToolbar instance.
+     * @memberof OSDPaperjsAnnotation.TransformToolbar
+     * @constructor
+     * @param {TransformTool} tool - The TransformTool instance associated with the toolbar.
+     */
     constructor(tool){
         super(tool);
         $(this.dropdown).addClass('transform-dropdown');
@@ -247,6 +312,13 @@ class TransformToolbar extends AnnotationUIToolbarBase{
         this.button.configure(html,'Transform Tool');
         
     }
+    /**
+     * Checks if the transform tool is enabled for the specified mode.
+     * The transform tool is enabled when there are selected items on the canvas.
+     * @method
+     * @param {string} mode - The current mode.
+     * @returns {boolean} - True if the transform tool is enabled for the mode, otherwise false.
+     */
     isEnabledForMode(mode){
         return this.tool.project.paperScope.findSelectedItems().length>0 && [
             'select',

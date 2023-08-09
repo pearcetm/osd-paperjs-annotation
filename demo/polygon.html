@@ -1,0 +1,77 @@
+<head>
+    <title>Polygon Tool Demo</title>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/openseadragon/4.0.0/openseadragon.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/paper.js/0.12.17/paper-full.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="./demo.css">
+
+    <script type="module">
+        import { AnnotationToolbar } from '../src/js/annotationtoolbar.mjs';
+        import{ AnnotationToolkit } from '../src/js/annotationtoolkit.mjs';
+        // Basic viewer setup
+        let viewer = OpenSeadragon({
+            element: 'brush-viewer',
+            prefixUrl: "https://openseadragon.github.io/openseadragon/images/",
+            tileSources: {
+                type: 'image',
+                url: 'https://openseadragon.github.io/example-images/grand-canyon-landscape-overlooking.jpg',
+                buildPyramid: false
+            },
+            minZoomImageRatio: 0.01,
+            visibilityRatio: 0,
+            crossOriginPolicy: 'Anonymous',
+            ajaxWithCredentials: false
+        });
+
+        viewer.addHandler('open', () => {
+            let paperScope = new paper.PaperScope(); // Create a new PaperScope
+            paperScope.setup('brush-canvas'); // Set up Paper.js with the specified canvas ID
+
+            // Create the AnnotationToolkit instance and add feature collections 
+            let annotationToolkit = new AnnotationToolkit(viewer);
+            annotationToolkit.addAnnotationUI({tools:["polygon"], addButton:false, addFileButton:false});
+
+            $.get('./demo-annotation.json').then(x => annotationToolkit.addFeatureCollections(x));
+        });
+    </script>
+</head>
+<body>
+    <div class="content">
+        <div class="demo">
+            <h3>Polygon Tool Demo</h3>
+            <div id="brush-viewer" class="viewer"></div>
+            <div>
+                    <h4>How to Use the Polygon Tool:</h4>
+                    <p>
+                        The Polygon Tool allows you to draw and edit polygons on the map. Follow these steps to use it effectively:
+                    </p>
+                    <ol>
+                        <li><strong>Adding a New Polygon:</strong> To start drawing a new polygon, first add a new feature, select the "Polygon Tool" icon from the toolbar (polygon icon). Click anywhere on the map to add the first point of the polygon. Then, click or drag to add additional points to the polygon. To complete the polygon, click on the first point again, or simply double-click anywhere on the map.</li>
+                        <li><strong>Editing a Polygon:</strong> To edit an existing polygon, click and drag any of its points to move them to a new location. To remove a point and reshape the polygon, click on the point and press the 'Delete' key.</li>
+                        <li><strong>Erasing:</strong> To erase parts of a polygon, enable the "Eraser" mode by clicking the "Eraser" button in the toolbar. Then, click on a segment of the polygon to remove it.</li>
+                        <li><strong>Simplifying:</strong> To simplify the polygon and reduce the number of points, click the "Simplify" button in the toolbar. This will remove redundant points while maintaining the overall shape of the polygon.</li>
+                        <li><strong>Undo and Redo:</strong> To undo or redo your actions, use the keyboard shortcuts 'Ctrl + Z' and 'Ctrl + Shift + Z', respectively.</li>
+                    </ol>
+                    <p>
+                        The Polygon Tool makes it easy to draw and modify complex shapes on the map.
+                    </p>
+                </div>
+                <div>
+                    <h4>Keyboard Shortcuts:</h4>
+                    <ul>
+                        <li><strong>Click:</strong> Click to add new points to the polygon.</li>
+                        <li><strong>Double-click:</strong> Double-click to finish drawing the polygon.</li>
+                        <li><strong>Click and Drag:</strong> Click and drag to add or move points.</li>
+                        <li><strong>Delete:</strong> Press the 'Delete' key to remove a selected point.</li>
+                        <li><strong>Ctrl + Z:</strong> Undo your last action.</li>
+                        <li><strong>Ctrl + Shift + Z:</strong> Redo your last undone action.</li>
+                    </ul>
+                </div>
+                <div>
+                </div>
+            </div>
+
+    <!-- The canvas used for Paper.js -->
+    <canvas id="brush-canvas" style="display:none;"></canvas>
+</body>
+</html>

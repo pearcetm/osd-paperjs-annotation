@@ -2,7 +2,7 @@
  * 
  * A regular expression pattern to check for in existing CSS links in the document, used to avoid duplicating CSS files. If the pattern is found in the document, the new link is not added. For consistency, the pattern is also checked against the url parameter to make sure it will exist in the document after adding the new link. If the pattern is not found in the url, an error is logged to the console and the file is not added
  * test
- * @memberof OSDPaperjsAnnotation
+ * @memberof OSDPaperjsAnnotation#
  * @param {string} url - The URL of the CSS file to add.
  * @param {string} [nameToCheck] - The name pattern to check in the URL. If provided,
  * @returns {void}

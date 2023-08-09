@@ -1,0 +1,66 @@
+<head>
+    <title>Raster Tool Demo</title>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/openseadragon/4.0.0/openseadragon.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/paper.js/0.12.17/paper-full.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="./demo.css">
+
+    <script type="module">
+        import { AnnotationToolbar } from '../src/js/annotationtoolbar.mjs';
+        import{ AnnotationToolkit } from '../src/js/annotationtoolkit.mjs';
+        // Basic viewer setup
+        let viewer = OpenSeadragon({
+            element: 'brush-viewer',
+            prefixUrl: "https://openseadragon.github.io/openseadragon/images/",
+            tileSources: {
+                type: 'image',
+                url: 'https://openseadragon.github.io/example-images/grand-canyon-landscape-overlooking.jpg',
+                buildPyramid: false
+            },
+            minZoomImageRatio: 0.01,
+            visibilityRatio: 0,
+            crossOriginPolicy: 'Anonymous',
+            ajaxWithCredentials: false
+        });
+
+        viewer.addHandler('open', () => {
+            let paperScope = new paper.PaperScope(); // Create a new PaperScope
+            paperScope.setup('brush-canvas'); // Set up Paper.js with the specified canvas ID
+
+            // Create the AnnotationToolkit instance and add feature collections 
+            let annotationToolkit = new AnnotationToolkit(viewer);
+            annotationToolkit.addAnnotationUI({tools:["raster"], addButton:false, addFileButton:false});
+
+            $.get('./demo-annotation.json').then(x => annotationToolkit.addFeatureCollections(x));
+        });
+    </script>
+</head>
+<body>
+    <div class="content">
+        <div class="demo">
+            <h3>Raster Tool Demo</h3>
+            <div id="brush-viewer" class="viewer"></div>
+            <div>
+                <h4>How to Use the Raster Tool:</h4>
+                <p>
+                    The Raster Tool allows you to convert selected vector-based items into raster images on the map. Follow these steps to use it effectively:
+                </p>
+                <ol>
+                    <li><strong>Select Items:</strong> Before using the Raster Tool, ensure that you have selected the feature you want to convert to raster images. You can select multiple items at once by holding down the 'Shift' key and clicking on each item.</li>
+                    <li><strong>Activating the Tool:</strong> Select the "Raster Tool" icon from the toolbar (an image icon). This will enable the tool for the selected items.</li>
+                    <li><strong>Convert to Raster:</strong> Click the "Convert to raster" button in the tool's dropdown menu. This action will convert the selected vector-based items into raster images.</li>
+                    <li><strong>Warning:</strong> Keep in mind that converting items to raster images cannot be undone. Make sure you have a backup of the original vector-based items before proceeding with the conversion.</li>
+                </ol>
+            </div>
+            <div>
+                <h4>Note:</h4>
+                <p>
+                    Raster images are pixel-based, and once vector-based items are converted, they lose their scalability and editing capabilities. Use the Raster Tool carefully and strategically for the best results in your map annotations.
+                </p>
+            </div>
+        </div>
+
+    <!-- The canvas used for Paper.js -->
+    <canvas id="brush-canvas" style="display:none;"></canvas>
+</body>
+</html>

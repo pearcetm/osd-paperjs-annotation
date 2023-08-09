@@ -1,5 +1,18 @@
 import {AnnotationUITool, AnnotationUIToolbarBase} from './annotationUITool.mjs';
-export class StyleTool extends AnnotationUITool{
+
+/**
+ * Represents a tool for modifying the visual styles of annotation items, including color and opacity.
+ * Inherits functionality from the AnnotationUITool class.
+ * @extends AnnotationUITool
+ * @class
+ * @memberof OSDPaperjsAnnotation
+ */
+ class StyleTool extends AnnotationUITool{
+    /**
+     * Create a new instance of the StyleTool class.
+     * @param {paper.PaperScope} paperScope - The PaperScope instance to associate with the tool.
+     * @constructor
+     */
     constructor(paperScope){
         super(paperScope);
         let self =  this;
@@ -55,6 +68,11 @@ export class StyleTool extends AnnotationUITool{
             this.activateForItem(ev.item);
         })
     }
+
+    /**
+     * Activate the StyleTool for a specific annotation item.
+     * @param {paper.Item} item - The item for which the StyleTool should be activated.
+     */
     activateForItem(item){
         this.targetItems = item;
         this._ignoreNextSelectionChange=true;
@@ -63,6 +81,9 @@ export class StyleTool extends AnnotationUITool{
         this._ignoreNextSelectionChange=false;
         // console.log('finished activateForItem')
     }
+    /**
+     * Event handler for selection changes, updating the target items and the toolbar display.
+     */
     onSelectionChanged(){
         if(!this._ignoreNextSelectionChange){
             // console.log('onSelctionChanged handled')
@@ -74,6 +95,7 @@ export class StyleTool extends AnnotationUITool{
         }
         this._ignoreNextSelectionChange=false;
     }
+
     get defaultTarget(){
         return this.project.paperScope.project;
     }
@@ -100,7 +122,11 @@ export class StyleTool extends AnnotationUITool{
             return t==this.defaultTarget ? 'Default style' : t.displayName;
         }
     }
-    
+
+    /**
+     * Activate the color picker interface, allowing users to pick a color from the canvas.
+     * @returns {Promise<paper.Color>} - A Promise that resolves to the selected color.
+     */
     pickColor(){
         let self=this;
         self.captureUserInput(true);
@@ -119,7 +145,9 @@ export class StyleTool extends AnnotationUITool{
         })
 
     }
-    
+    /**
+     * Cancel the color picker interface and reject the associated Promise.
+     */
     cancelColorpicker(){
         // console.log('canceling colorpicker')
         this.cursor.addTo(this.project.toolLayer);
@@ -129,6 +157,11 @@ export class StyleTool extends AnnotationUITool{
         
         this._colorpickerPromise && this._colorpickerPromise.reject('Canceled');
     }
+    /**
+     * Create a masked image of the item for use in color sampling.
+     * @param {paper.Item} item - The item to create the masked image from.
+     * @returns {paper.Group} - A Group containing the masked image.
+     */
     createMaskedImage(item){
         let mask = item.clone();
         let grp = new paper.Group([mask]);
@@ -158,6 +191,11 @@ export class StyleTool extends AnnotationUITool{
         grp.position.x = grp.position.x+500;
         return grp;   
     }
+
+    /**
+     * Apply the given stroke width to the target items.
+     * @param {number} value - The stroke width value to apply.
+     */
     applyStrokeWidth(value){
         // console.log('applyStrokeWidth',this.targetItems,value);
         this.targetItems.forEach(item=>{
@@ -173,6 +211,12 @@ export class StyleTool extends AnnotationUITool{
             
         })
     }
+
+     /**
+     * Apply the given opacity value to fill or stroke properties of the target items.
+     * @param {number} opacity - The opacity value to apply.
+     * @param {string} property - The property to apply the opacity to (e.g., 'fillOpacity', 'strokeOpacity').
+     */
     applyOpacity(opacity,property){
         this.targetItems.forEach(item=>{
             let style = item.defaultStyle || item.style;
@@ -182,11 +226,24 @@ export class StyleTool extends AnnotationUITool{
             }
         });
     }
+
+    /**
+     * Apply the given color value to the specified type (fill or stroke) of the target items.
+     * @param {string} value - The color value to apply.
+     * @param {string} type - The type of color to apply (either 'fill' or 'stroke').
+     * @param {paper.Item} item - The specific item to apply the color to (optional).
+     */
     applyColor(value,type,item){
         if(type=='fill') this.applyFillColor(value,item);
         else if(type=='stroke') this.applyStrokeColor(value,item);
         else console.warn(`Cannot apply color change - type "${type}" not recognized`)
     }
+
+    /**
+     * Apply the given fill color value to the target items.
+     * @param {string} value - The fill color value to apply.
+     * @param {paper.Item} item - The specific item to apply the color to (optional).
+     */
     applyFillColor(value,item){
         (item?[item]:this.targetItems).forEach(item=>{
             let color = new paper.Color(value);
@@ -199,6 +256,11 @@ export class StyleTool extends AnnotationUITool{
         })
         
     }
+    /**
+     * Apply the given stroke color value to the target items.
+     * @param {string} value - The stroke color value to apply.
+     * @param {paper.Item} item - The specific item to apply the color to (optional).
+     */
     applyStrokeColor(value,item){
         (item?[item]:this.targetItems).forEach(item=>{
             let color = new paper.Color(value);
@@ -214,8 +276,20 @@ export class StyleTool extends AnnotationUITool{
     }
 
 }
+export{StyleTool};
 
-export class StyleToolbar extends AnnotationUIToolbarBase{
+/**
+ * Represents the toolbar for the StyleTool class. Provides user interface elements for modifying annotation styles.
+ * Inherits functionality from the AnnotationUIToolbarBase class.
+ * @extends AnnotationUIToolbarBase
+ * @class
+ * @memberof OSDPaperjsAnnotation.StyleTool
+ */
+class StyleToolbar extends AnnotationUIToolbarBase{
+    /**
+     * Create a new instance of the StyleToolbar class.
+     * @param {StyleTool} tool - The associated StyleTool instance.
+     */
     constructor(tool){
         super(tool);
         let self=this;
@@ -313,6 +387,10 @@ export class StyleToolbar extends AnnotationUIToolbarBase{
         })
     }
     
+    /**
+     * Handle color selection based on area average.
+     * @param {string} type - The type of style ('fill' or 'stroke').
+     */
     fromAverage(type){
         console.log('fromAverage called')
         let self=this;
@@ -324,9 +402,19 @@ export class StyleToolbar extends AnnotationUIToolbarBase{
         });
         Promise.all(promises).then(()=>self.updateDisplay());
     }
+
+    /**
+     * Check if the toolbar is enabled for the given mode.
+     * @param {string} mode - The current annotation mode.
+     * @returns {boolean} - True if the toolbar is enabled for the mode, otherwise false.
+     */
     isEnabledForMode(mode){
         return true;
     }
+    /**
+     * Generate the HTML structure of the UI elements.
+     * @returns {string} - The HTML structure of the UI.
+     */
     uiHTML(){
         let html=`
             <div class="style-toolbar">
@@ -352,12 +440,18 @@ export class StyleToolbar extends AnnotationUIToolbarBase{
         `;
         return html;
     }
+    /**
+     * Update the displayed description of the target items.
+     */
     updateTargetDescription(){
         let targetDescription = this.tool.targetDescription;
         let allSelected = this.tool.targetItems.every(item=>item.selected && item.isGeoJSONFeature);
         let element = $(this.dropdown).find('.style-item').text(targetDescription);
         allSelected ? element.addClass('selected') : element.removeClass('selected');
     }
+    /**
+     * Update the displayed style settings in the toolbar.
+     */
     updateDisplay(){
         this._hierarchy = [];
         let targets = this.tool.targetItemStyles;
@@ -407,6 +501,10 @@ export class StyleToolbar extends AnnotationUIToolbarBase{
             $(this.dropdown).find('input[type="number"]').val('');
         }
     }
+    /**
+     * Set the color and text of the Fill button.
+     * @param {paper.Color} [color] - The color to set for the Fill button. Defaults to white.
+     */
     setFillButtonColor(color = new paper.Color('white')){
         // let val = color ? color.toCSS(true) : 'none';
         // let textcolor = color ? getContrastYIQ(color.toCSS(true)) : 'black';
@@ -417,6 +515,10 @@ export class StyleToolbar extends AnnotationUIToolbarBase{
         $(this.dropdown).find('[data-type="fill"] .preview .color').css({'background-color':val,'outline-color':textcolor});
         $(this.dropdown).find('input[type="color"][data-type="fill"]').val(val);
     }
+    /**
+     * Set the color and text of the Stroke button.
+     * @param {paper.Color} [color] - The color to set for the Stroke button. Defaults to black.
+     */
     setStrokeButtonColor(color = new paper.Color('black')){
         // let val = color ? color.toCSS(true) : 'none';
         // let textcolor = color ? getContrastYIQ(color.toCSS(true)) : 'black';
@@ -427,17 +529,35 @@ export class StyleToolbar extends AnnotationUIToolbarBase{
         $(this.dropdown).find('[data-type="stroke"] .preview .color').css({'background-color':val,'outline-color':textcolor});
         $(this.dropdown).find('input[type="color"][data-type="stroke"]').val(val);
     }
+    /**
+     * Set the opacity of the Fill button.
+     * @param {number} val - The opacity value to set for the Fill button.
+     */
     setFillButtonOpacity(val){
         $(this.dropdown).find('[data-type="fill"] .preview .bg').css({'opacity':val});
         $(this.dropdown).find('[data-type="fill"][data-action="opacity"]').val(val);
     }
+    /**
+     * Set the opacity of the Stroke button.
+     * @param {number} val - The opacity value to set for the Stroke button.
+     */
     setStrokeButtonOpacity(val){
         $(this.dropdown).find('[data-type="stroke"] .preview .bg').css({'opacity':val});
         $(this.dropdown).find('[data-type="stroke"][data-action="opacity"]').val(val);
     }
 }
+export {StyleToolbar};
 
-export function ColorpickerCursor(cursorCellSize,cursorGridSize,parent){
+
+/**
+ * Represents a color picker cursor for selecting colors from an image.
+ * @function
+ * @param {number} cursorCellSize - The size of the individual color cells in the cursor.
+ * @param {number} cursorGridSize - The size of the grid in the cursor.
+ * @param {paper.Layer} parent - The parent layer to which the cursor group will be added.
+ * @memberof OSDPaperjsAnnotation.StyleTool#
+ */
+ function ColorpickerCursor(cursorCellSize,cursorGridSize,parent){
     let cursor = new paper.Group({visible:false, applyMatrix:false});
     this.element = cursor;
     parent.addChild(cursor);
@@ -478,6 +598,10 @@ export function ColorpickerCursor(cursorCellSize,cursorGridSize,parent){
     b.sendToBack();//this sets b as the first child, requiring 1-based indexing of grid in mousemove handler
     cursor.applyRescale = function(){cursor.children.forEach(child=>child.applyRescale());}
 
+    /**
+     * Update the position of the color picker cursor and retrieve colors from the image.
+     * @param {paper.Point} point - The point in the view where the cursor is positioned.
+     */
     this.updatePosition = function(point){
         cursor.position=point;
 
@@ -527,8 +651,17 @@ export function ColorpickerCursor(cursorCellSize,cursorGridSize,parent){
     }
     return this;
 }
+export {ColorpickerCursor};
 
-export async function getAverageColor(itemToAverage){
+/**
+ * Represents a utility function to calculate the average color of an item on the screen.
+ * @async
+ * @function
+ * @param {paper.Item} itemToAverage - The item for which to calculate the average color.
+ * @returns {Promise<paper.Color>} - A promise that resolves with the calculated average color.
+ * @memberof OSDPaperjsAnnotation.StyleTool#
+ */
+ async function getAverageColor(itemToAverage){
     
     let raster = ((itemToAverage.project && itemToAverage.project.overlay) || itemToAverage.overlay).osdViewer.getViewportRaster(itemToAverage.view);
     return new Promise(function(resolve,reject){
@@ -544,10 +677,20 @@ export async function getAverageColor(itemToAverage){
     });
     
 };
-
+export {getAverageColor};
 //local functions
 
 // Calculate best text color for contrast from background - https://stackoverflow.com/a/11868398
+/**
+ * Calculate the best text color for contrast from a given background color.
+ * This function uses the YIQ color model to determine the best text color (black or white)
+ * based on the luminance of the background color.
+ *
+ * @private
+ * @param {string} hexcolor - The background color in hexadecimal format.
+ * @returns {string} - The recommended text color ('black' or 'white') for contrast.
+ * @memberof OSDPaperjsAnnotation
+ */
 function getContrastYIQ(hexcolor){
     hexcolor = hexcolor.replace("#", "");
     var r = parseInt(hexcolor.substr(0,2),16);

@@ -1,5 +1,21 @@
 import {AnnotationUITool, AnnotationUIToolbarBase} from './annotationUITool.mjs';
-export class RectangleTool extends AnnotationUITool{
+
+/**
+ * The RectangleTool class extends the AnnotationUITool and provides functionality for creating and modifying rectangles.
+ * @extends AnnotationUITool
+ * @class
+ * @memberof OSDPaperjsAnnotation
+ */
+class RectangleTool extends AnnotationUITool{
+    /**
+     * Create a new RectangleTool instance.
+     *@memberof OSDPaperjsAnnotation.RectangleTool
+     *@param {paper.PaperScope} paperScope - The Paper.js scope for the tool.
+    * @property {string} mode - The current mode of the RectangleTool.
+    * @property {paper.Path.Rectangle|null} creating - The currently creating rectangle.
+    * @property {paper.Point|null} refPoint - The reference point used for resizing rectangles.
+    * @property {paper.Point|null} ctrlPoint - The control point used for resizing rectangles.
+    */
     constructor(paperScope){
         super(paperScope);
         let self=this;
@@ -12,11 +28,27 @@ export class RectangleTool extends AnnotationUITool{
         crosshairTool.addChildren([h1,h2,v1,v2]);
         this.project.toolLayer.addChild(crosshairTool);
         
+        /**
+         * The current mode of the RectangleTool, which can be 'creating', 'corner-drag', 'fill-drag', or 'modifying'.
+         * @type {string}
+         */
         this.mode = null;
+        /**
+         * The currently creating rectangle during the drawing process.
+         * @type {paper.Path.Rectangle|null}
+         */
         this.creating = null;
         
         this.setToolbarControl(new RectToolbar(this));
 
+    /**
+     * Handles the mouse down event within the Paper.js project.
+     * If an item is being created, it initializes the GeoJSON feature and updates the toolbar instructions.
+     * If an existing rectangle is clicked, it sets the mode accordingly for corner dragging or fill dragging.
+     * @memberof OSDPaperjsAnnotation.RectangleTool#
+     * @function onMouseDown
+     * @param {Object} ev - The mouse down event object containing information about the cursor position.
+     */
         this.tool.onMouseDown=function(ev){
             if(self.itemToCreate){
                 self.itemToCreate.initializeGeoJSONFeature('Point', 'Rectangle');
@@ -49,6 +81,13 @@ export class RectangleTool extends AnnotationUITool{
                 }
             }
         }
+    /**
+     * Handles the mouse drag event within the Paper.js project.
+     * Depending on the mode, it updates the rectangle being created, resized, or moved.
+     * @memberof OSDPaperjsAnnotation.RectangleTool#
+     * @function onMouseDrag
+     * @param {Object} ev - The mouse drag event object containing information about the cursor position and movement.
+     */
         this.tool.onMouseDrag=function(ev){
             let refPt, currPt, angle;
             let center = self.item.center;
@@ -89,6 +128,13 @@ export class RectangleTool extends AnnotationUITool{
             let corners = [r.topLeft, r.topRight, r.bottomRight, r.bottomLeft].map(p=>p.rotate(angle,center));
             self.item.children[0].set({segments:corners})
         }
+    /**
+     * Handles the mouse move event within the Paper.js project.
+     * If in modifying mode, it checks if the cursor is over a corner for resizing or over the fill for moving.
+     * @memberof OSDPaperjsAnnotation.RectangleTool#
+     * @function onMouseMove
+     * @param {Object} ev - The mouse move event object containing information about the cursor position.
+     */
         this.tool.onMouseMove=function(ev){
             setCursorPosition(this,ev.point);
             if(self.mode == 'modifying'){
@@ -105,7 +151,14 @@ export class RectangleTool extends AnnotationUITool{
                     self.project.overlay.removeClass('rectangle-tool-move');
                 }
             }
-        }
+        }   
+        
+        /**
+        * @memberof OSDPaperjsAnnotation.RectangleTool#
+        * @function onMouseUp
+        * Handles the mouse up event within the Paper.js project.
+        * It sets the mode to 'modifying' and hides the crosshair tool.
+        */
         this.tool.onMouseUp = function(){
             self.mode='modifying';
             crosshairTool.visible=false;
@@ -166,16 +219,37 @@ export class RectangleTool extends AnnotationUITool{
     }
     
 }
+
+export {RectangleTool};
+
+/**
+ * The RectToolbar class extends the AnnotationUIToolbarBase and provides a toolbar for the RectangleTool.
+ * @extends AnnotationUIToolbarBase
+ * @memberof OSDPaperjsAnnotation.RectangleTool#
+ */
 class RectToolbar extends AnnotationUIToolbarBase{
+    /**
+     * Create a new RectToolbar instance.
+     * @param {RectangleTool} tool - The RectangleTool instance.
+     */
     constructor(tool){
         super(tool);
         let html = $('<i>',{class:'fa-solid fa-vector-square'})[0];
         this.button.configure(html,'Rectangle Tool');
         this.instructions = $('<span>').text('Click and drag to create a rectangle').appendTo(this.dropdown);
     }
+    /**
+     * Check if the toolbar is enabled for the specified mode.
+     * @param {string} mode - The mode to check.
+     * @returns {boolean} True if the toolbar is enabled for the mode, false otherwise.
+     */
     isEnabledForMode(mode){
         return ['new','Point:Rectangle'].includes(mode);
     }
+    /**
+     * Update the instructions text based on the mode.
+     * @param {string} mode - The current mode.
+     */
     updateInstructions(mode){
         this.instructions.text(mode=='new'?'Click and drag to create a rectangle' : mode=='Point:Rectangle' ? 'Drag a corner to resize' : '???' )
     }

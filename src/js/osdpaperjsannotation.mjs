@@ -9,6 +9,22 @@ import { PaperOffset } from './paper-offset.mjs';
 import { PaperOverlay } from './paper-overlay.mjs';
 import { RotationControlOverlay } from './rotationcontrol.mjs';
 import { RotationControlTool } from './rotationcontrol.mjs';
+import { AnnotationUITool } from './papertools/annotationUITool.mjs';
+import { ToolBase } from './papertools/base.mjs';
+import { BrushTool } from './papertools/brush.mjs';
+import { DefaultTool } from './papertools/default.mjs';
+import { EllipseTool } from './papertools/ellipse.mjs';
+import { LinestringTool } from './papertools/linestring.mjs';
+import { PointTool } from './papertools/point.mjs';
+import { PointTextTool } from './papertools/pointtext.mjs';
+import { PolygonTool } from './papertools/polygon.mjs';
+import { RasterTool } from './papertools/raster.mjs';
+import { RectangleTool } from './papertools/rectangle.mjs';
+import { SelectTool } from './papertools/select.mjs';
+import { StyleTool } from './papertools/style.mjs';
+import { TransformTool } from './papertools/transform.mjs';
+import { WandTool } from './papertools/wand.mjs';
+
 /**
  *
  * This is a namespace that contains documentation elements belonging to OSDPaperJSAnnotation
@@ -27,6 +43,21 @@ OSDPaperjsAnnotation = {
     PaperOffset: PaperOffset,
     PaperOverlay: PaperOverlay,
     RotationControlOverlay: RotationControlOverlay,
-    RotationControlTool: RotationControlTool
+    RotationControlTool: RotationControlTool,
+    AnnotationUITool: AnnotationUITool,
+    ToolBase:ToolBase,
+    BrushTool: BrushTool,
+    DefaultTool:DefaultTool,
+    EllipseTool:EllipseTool,
+    LinestringTool:LinestringTool,
+    PointTool:PointTool,
+    PointTextTool:PointTextTool,
+    PolygonTool:PolygonTool,
+    RasterTool:RasterTool,
+    RectangleTool:RectangleTool,
+    SelectTool:SelectTool,
+    StyleTool:StyleTool,
+    TransformTool:TransformTool,
+    WandTool:WandTool
 
 }
