@@ -171,6 +171,12 @@ class AnnotationItem{
 }
 export{AnnotationItem};
 
+/**
+ * Array of valid geometry types for GeoJSON.
+ * @type {string[]}
+ * @description This array contains valid geometry types that can be used in GeoJSON features.
+ * @memberof module:annotationitem
+ */
 const GeometryTypes = ['Point', 'LineString', 'Polygon', 'MultiPoint', 'MultiLineString', 'MultiPolygon', 'GeometryCollection', null];
 
 const _constructors = [];
@@ -238,6 +244,13 @@ export class AnnotationItemFactory{
 
 }
 
+/**
+ * Convert a Paper.js item into an AnnotationItem.
+ * @memberof module:annotationitem
+ * @param {AnnotationItem} annotationItem - The AnnotationItem instance.
+ * @description This function takes an AnnotationItem instance and converts the associated paper item into an
+ * AnnotationItem by enhancing it with special properties and behaviors.
+ */
 function convertPaperItemToAnnotation(annotationItem){
     let item = annotationItem.paperItem;
     let constructor = annotationItem.constructor;
@@ -266,7 +279,14 @@ function convertPaperItemToAnnotation(annotationItem){
     }
 }
 
-
+/**
+ * Enhance the `replaceWith` functionality of Paper.js items.
+ * @memberof module:annotationitem
+ * @param {paper.Item} newItem - The new item to replace with.
+ * @returns {paper.Item} The replaced item.
+ * @description This function enhances the `replaceWith` functionality of Paper.js items by providing additional
+ * behaviors and properties for the replacement item.
+ */
 function enhancedReplaceWith(newItem){
     if(!newItem.isGeoJSONFeature){
         console.warn('An item with isGeoJSONFeature==false was used to replace an item.');
