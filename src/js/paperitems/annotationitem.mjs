@@ -173,6 +173,7 @@ export{AnnotationItem};
 
 /**
  * Array of valid geometry types for GeoJSON.
+ * @constant
  * @type {string[]}
  * @description This array contains valid geometry types that can be used in GeoJSON features.
  * @memberof module:annotationitem
@@ -246,7 +247,7 @@ export class AnnotationItemFactory{
 
 /**
  * Convert a Paper.js item into an AnnotationItem.
- * @memberof module:annotationitem
+ * @memberof module:annotationitem#
  * @param {AnnotationItem} annotationItem - The AnnotationItem instance.
  * @description This function takes an AnnotationItem instance and converts the associated paper item into an
  * AnnotationItem by enhancing it with special properties and behaviors.
@@ -281,7 +282,7 @@ function convertPaperItemToAnnotation(annotationItem){
 
 /**
  * Enhance the `replaceWith` functionality of Paper.js items.
- * @memberof module:annotationitem
+ * @memberof module:annotationitem#
  * @param {paper.Item} newItem - The new item to replace with.
  * @returns {paper.Item} The replaced item.
  * @description This function enhances the `replaceWith` functionality of Paper.js items by providing additional
