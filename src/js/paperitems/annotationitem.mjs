@@ -1,4 +1,24 @@
-export class AnnotationItem{
+/**
+ * @module annotationitem
+ * @description Represents annotation items for maps.
+ */
+
+/**
+ * Represents an annotation item that can be used in a map.
+ * @class
+ * @memberof OSDPaperjsAnnotation
+ * @memberof module:annotationitem
+ */
+class AnnotationItem{
+    /**
+     * Creates a new AnnotationItem instance.
+     * @param {Object} feature - The GeoJSON feature containing annotation data.
+     * @throws {string} Throws an error if the GeoJSON geometry type is invalid.
+     * @property {paper.Item|null} _paperItem - The associated paper item of the annotation.
+     * @property {Object} _props - The properties of the annotation.
+     * @property {Object} userdata - The userdata field of the annotation properties.
+     * @description This constructor initializes a new annotation item based on the provided GeoJSON feature. It validates the GeoJSON geometry type and sets up the associated paper item and properties.
+     */
     constructor(feature){
         if(GeometryTypes.includes( (feature.geometry && feature.geometry.type) || feature.geometry ) === false){
             throw('Bad GeoJSON Geometry type');
@@ -7,34 +27,75 @@ export class AnnotationItem{
         this._props = feature.properties;
         this.userdata = Object.assign({}, this._props.userdata);//ensure userdata field exists
     }
+    /**
+     * Retrieves the supported types by the annotation item.
+     * @static
+     * @returns {Object} An object with type and subtype properties.
+     * @description This static method provides information about the supported types by the annotation item class.
+     */
     static get supportsType(){
         return {
             type: undefined,
             subtype: undefined,
         }
     }
+    /**
+     * Retrieves the coordinates of the annotation item.
+     * @returns {Array} An array of coordinates.
+     * @description This method returns an array of coordinates representing the position of the annotation item.
+     */
     getCoordinates(){
         return []
     }
+    /**
+     * Retrieves the properties of the annotation item.
+     * @returns {Object} The properties object.
+     * @description This method returns the properties associated with the annotation item.
+     */
     getProperties(){
         return {}
     }
+    /**
+     * Retrieves the style properties of the annotation item.
+     * @returns {Object} The style properties in JSON format.
+     * @description This method returns the style properties of the annotation item in JSON format.
+     */
     getStyleProperties(){
         return this.paperItem.style.toJSON();
     }
     // static getGeometry(){}
     static onTransform(){}
 
+    /**
+     * Retrieves the supported types by the annotation item.
+     * @returns {Object} An object with type and subtype properties.
+     * @description This method provides information about the supported types by the annotation item instance.
+     */
     get supportsType(){
         return this.constructor.supportsType;
     }
+    /**
+     * Retrieves the label of the annotation item.
+     * @returns {string} The label.
+     * @description This method returns the label associated with the annotation item. It looks for the
+     * display name of the associated paper item or falls back to the subtype or type from supported types.
+     */
     getLabel(){
         return this.paperItem.displayName || this.constructor.supportsType.subtype || this.constructor.supportsType.type;
     }
-
+    /**
+     * Retrieves the type of the annotation item.
+     * @type {string}
+     * @description This property returns the type from the supported types associated with the annotation item.
+     */
     get type(){
         return this.constructor.supportsType.type;
     }
+    /**
+     * Retrieves the subtype of the annotation item.
+     * @type {string}
+     * @description This property returns the subtype from the supported types associated with the annotation item.
+     */
     get subtype(){
         return this.constructor.supportsType.subtype;
     }
@@ -42,6 +103,14 @@ export class AnnotationItem{
     get paperItem(){
         return this._paperItem;
     }
+    
+    /**
+     * 
+     * Sets the associated paper item of the annotation item.
+     * @param {paper.Item|null} paperItem - The paper item.
+     * @description This method sets the associated paper item of the annotation item. It also applies special properties
+     * to the paper item to convert it into an annotation item.
+     */
     set paperItem(paperItem){
         this._paperItem = paperItem;
         //apply special properties that make the paper.Item an AnnotationItem
@@ -49,11 +118,22 @@ export class AnnotationItem{
     }
 
     // default implmentation; can be overridden for custom behavior by subclasses
+    /**
+     * Sets the style properties of the annotation item.
+     * @param {Object} properties - The style properties to set.
+     * @description This method sets the style properties of the annotation item using the provided properties object.
+     */
     setStyle(properties){
         this._paperItem && this._paperItem.style.set(properties);
     }
 
     // default implementation; can be overridden for custom behavior by subclasses
+    /**
+     * Converts the annotation item to a GeoJSON feature.
+     * @returns {Object} The GeoJSON feature.
+     * @description This method converts the annotation item into a GeoJSON feature object. It includes the geometry,
+     * properties, style, and other relevant information.
+     */
     toGeoJSONFeature(){
         let geoJSON = {
             type:'Feature',
@@ -70,6 +150,12 @@ export class AnnotationItem{
     }
 
     // default implementation; can be overridden for custom behavior by subclasses
+    /**
+     * Converts the annotation item to a GeoJSON geometry.
+     * @returns {Object} The GeoJSON geometry.
+     * @description This method converts the annotation item into a GeoJSON geometry object, which includes the type,
+     * properties, and coordinates of the annotation.
+     */
     toGeoJSONGeometry(){
         let geom = {
             type: this.type,
@@ -83,6 +169,7 @@ export class AnnotationItem{
     }
 
 }
+export{AnnotationItem};
 
 const GeometryTypes = ['Point', 'LineString', 'Polygon', 'MultiPoint', 'MultiLineString', 'MultiPolygon', 'GeometryCollection', null];
 

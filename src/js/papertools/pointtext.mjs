@@ -118,7 +118,7 @@ export{PointTextTool};
 /**
  * The PointTextToolbar class enhances the PointTextTool by providing an interactive toolbar for text annotation controls.
  * This class extends the AnnotationUIToolbarBase to manage the toolbar's behavior.
- *@class
+ * @class
  * @memberof OSDPaperjsAnnotation.PointTextTool
  * 
  * 
