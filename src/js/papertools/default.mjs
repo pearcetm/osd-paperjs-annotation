@@ -10,27 +10,20 @@ import {AnnotationUITool, AnnotationUIToolbarBase} from './annotationUITool.mjs'
 class DefaultTool extends AnnotationUITool{
     /**
      * Create a DefaultTool instance for image navigation and annotation interaction.
-     *
      * @constructor
      * @param {paper.PaperScope} paperScope - The Paper.js scope for the tool.
      */
     constructor(paperScope){
         super(paperScope);
         /**
+         * @private
          * Initialize the default toolbar control associated with the tool.
          */
         this.setToolbarControl(new DefaultToolbar(this));
     }
-    // getToolbarControl(){}//override this so no button gets added
-    /**
-     * Callback function triggered when the tool is deactivated.
-     * To be implemented in subclasses.
-     */
+
     onDeactivate(){}
-    /**
-     * Callback function triggered when the tool is activated.
-     * To be implemented in subclasses.
-     */
+
     onActivate(){} 
 }
 export{DefaultTool};
@@ -41,6 +34,7 @@ export{DefaultTool};
  *
  * @class
  * @extends AnnotationUIToolbarBase
+ * @memberof OSDPaperjsAnnotation.DefaultTool
  */
 class DefaultToolbar extends AnnotationUIToolbarBase{
     /**
@@ -53,11 +47,13 @@ class DefaultToolbar extends AnnotationUIToolbarBase{
         super(tool);
         /**
          * HTML representation of the button icon for the toolbar.
+         * @private
          * @type {HTMLElement}
          */
         let html = $('<i>',{class:'fa-solid fa-hand'})[0];
         /**
          * Button control for image navigation.
+         * @private
          * @type {OpenSeadragon.Button}
          */
         this.button.configure(html,'Image Navigation Tool');

@@ -1,11 +1,11 @@
 import {AnnotationUITool, AnnotationUIToolbarBase} from './annotationUITool.mjs';
 import {PaperOffset} from '../paper-offset.mjs';
 /**
- * Represents a Brush Tool in the Annotation Toolkit program.
- * This tool allows users to draw freehand shapes on the canvas and modify existing shapes.
+ * Represents a brush tool for creating and modifying annotations.
  * @class
  * @memberof OSDPaperjsAnnotation
  * @extends AnnotationUITool
+ * @description The `BrushTool` constructor initialize a brush tool for creating and modifying annotations. It inherits from the `AnnotationUITool` class and includes methods to configure the tool's behavior, set the radius, set erase mode, and handle mouse events for drawing and erasing.
  */
  class BrushTool extends AnnotationUITool{
     /**
@@ -18,6 +18,7 @@ import {PaperOffset} from '../paper-offset.mjs';
    * @property {number} radius - The current radius of the brush tool.
    * @property {paper.Shape.Circle} cursor - The Paper.js Shape.Circle representing the cursor.
    * @property {paper.Group} pathGroup - The Paper.js Group containing the drawing path and the cursor.
+   * @description This constructor initializes a new brush tool instance with configurable properties, including the erase mode, draw and erase colors, brush radius, and user interaction handlers.
    */
     constructor(paperScope){
         super(paperScope);
@@ -44,10 +45,6 @@ import {PaperOffset} from '../paper-offset.mjs';
         self.project.toolLayer.addChild(this.pathGroup);
         self.project.toolLayer.addChild(cursor);
 
-        /**
-         * Event handler for the onActivate event.
-         * @inner
-         */
         this.extensions.onActivate = function(){
             cursor.radius = radius/self.project.getZoom();
             cursor.strokeWidth=1/self.project.getZoom();
@@ -55,28 +52,20 @@ import {PaperOffset} from '../paper-offset.mjs';
             tool.minDistance=3/self.project.getZoom();
             tool.maxDistance=10/self.project.getZoom();
         }
-        /**
-         * Event handler for the onDeactivate event.
-         * @inner
-         * @param {boolean} finished - Indicates whether the deactivation was completed.
-         */
         this.extensions.onDeactivate = function(finished){
             cursor.visible=false;
             if(finished){
                 self.finish();
             } 
         }
-        /**
-         * Finish the brush tool.
-         * @inner
-         */
+
         this.finish = function(){
             this.deactivate();
         }
         /**
          * Set the radius of the brush tool.
-         * @inner
          * @param {number} r - The new radius value for the brush.
+         * @description This method sets the radius of the brush tool, affecting the size of the brush strokes.
          */
         this.setRadius=function(r){
             radius = r;
@@ -84,16 +73,20 @@ import {PaperOffset} from '../paper-offset.mjs';
         }
         /**
          * Set the erase mode of the brush tool.
-         * @inner
          * @param {boolean} erase - A flag indicating whether the tool should be in Erase Mode or Draw Mode.
+         * @description This method toggles the erase mode of the brush tool, changing whether it adds or subtracts strokes.
          */
         this.setEraseMode=function(erase){
             this.eraseMode=erase;
             cursor.fillColor= erase ? eraseColor : drawColor;
             this.toolbarControl.setEraseMode(this.eraseMode);
-        }
-        
-              
+        }  
+        /**
+         * Handle the mouse down event for the brush tool.
+         * @param {paper.MouseEvent} ev - The mouse down event.
+         * @private
+         * @description This method handles the mouse down event for the brush tool, initializing a new path and determining whether to draw or erase strokes.
+         */
         tool.onMouseDown=function(ev){
             ev.preventDefault();
             ev.stopPropagation();
@@ -120,9 +113,21 @@ import {PaperOffset} from '../paper-offset.mjs';
                 self.pathGroup.lastChild.strokeColor=drawColor;
             }
         }
+    /**
+     * Handle the mouse move event for the brush tool.
+     * @param {paper.MouseEvent} ev - The mouse move event.
+     * @private
+     * @description This method handles the mouse move event for the brush tool, updating the cursor's position.
+     */
         tool.onMouseMove=function(ev){
             cursor.position=ev.point;
         }
+        /**
+         * Handle the mouse drag event for the brush tool.
+         * @param {paper.MouseEvent} ev - The mouse drag event.
+         * @private
+         * @description This method handles the mouse drag event for the brush tool, adding points to the path and smoothing the drawn stroke.
+         */
         tool.onMouseDrag=function(ev){
             cursor.position=ev.point;
             if(self.item){
@@ -130,9 +135,22 @@ import {PaperOffset} from '../paper-offset.mjs';
                 self.pathGroup.lastChild.smooth({ type: 'continuous' })
             }
         }
+        /**
+         * Handle the mouse up event for the brush tool.
+         * @param {paper.MouseEvent} ev - The mouse up event.
+         * @private
+         * @description This method handles the mouse up event for the brush tool, finalizing the drawn area.
+         */
         tool.onMouseUp=function(ev){
             self.modifyArea();
         }
+
+        /**
+         * Handle the mouse wheel event for the brush tool.
+         * @param {paper.MouseEvent} ev - The mouse wheel event.
+         * @private
+         * @description This method handles the mouse wheel event for the brush tool, adjusting the brush radius.
+         */
         tool.onMouseWheel = function(ev){
             // console.log('Wheel event',ev);
             ev.preventDefault();
@@ -140,7 +158,12 @@ import {PaperOffset} from '../paper-offset.mjs';
             if(ev.deltaY==0) return;//ignore lateral "scrolls"
             self.toolbarControl.updateBrushRadius({larger:ev.deltaY < 0});
         }
-
+        /**
+         * Handle the key down event for the brush tool.
+         * @param {paper.KeyEvent} ev - The key down event.
+         * @private
+         * @description This method handles the key down event for the brush tool, toggling the erase mode using the 'e' key.
+         */
         tool.extensions.onKeyDown=function(ev){
             if(ev.key=='e'){
                 if(self.eraseMode===false){
@@ -151,6 +174,12 @@ import {PaperOffset} from '../paper-offset.mjs';
                 }
             }
         }
+        /**
+         * Handle the key up event for the brush tool.
+         * @param {paper.KeyEvent} ev - The key up event.
+         * @private
+         * @description This method handles the key up event for the brush tool, releasing the erase mode when the 'e' key is released.
+         */
         tool.extensions.onKeyUp=function(ev){
             if(ev.key=='e' && self.eraseMode=='keyhold'){
                 self.setEraseMode(false);
@@ -207,7 +236,7 @@ export {BrushTool};
  * Represents the Brush Tool's toolbar in the Annotation Toolkit program.
  * This toolbar provides options to set the brush radius and toggle Erase Mode.
  * @extends AnnotationUIToolbarBase
- * @memberof OSDPaperjsAnnotation
+ * @memberof OSDPaperjsAnnotation.BrushTool
  */
 class BrushToolbar extends AnnotationUIToolbarBase{
     /**

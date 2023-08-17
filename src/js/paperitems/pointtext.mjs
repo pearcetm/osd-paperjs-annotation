@@ -1,6 +1,19 @@
 import { AnnotationItem } from "./annotationitem.mjs";
 
-export class PointText extends AnnotationItem{
+/**
+ * Represents a point with text annotation item.
+ * @class
+ * @memberof OSDPaperjsAnnotation
+ * @extends AnnotationItem
+ * @description The `PointText` class represents a point with text annotation item. It inherits from the `AnnotationItem` class and provides methods to work with point text annotations.
+ */
+class PointText extends AnnotationItem{
+     /**
+     * Create a new PointText instance.
+     * @param {Object} geoJSON - The GeoJSON object containing annotation data.
+     * @property {paper.Group} _paperItem - The associated paper item representing the point with text.
+     * @description This constructor initializes a new point with text annotation item based on the provided GeoJSON object.
+     */
     constructor(geoJSON){
         super(geoJSON);
 
@@ -84,6 +97,11 @@ export class PointText extends AnnotationItem{
         });
 
     }
+    /**
+     * Set the style properties of the point with text.
+     * @param {Object} props - The style properties to set.
+     * @description This method sets the style properties of the point with text using the provided properties object.
+     */
     setStyle(props){
         //override default implementation so it doesn't overwrite the rescale properties
         // let rescale = props.rescale;
@@ -92,31 +110,58 @@ export class PointText extends AnnotationItem{
         this.paperItem.style.set(props);
         // this.paperItem.children[0].style.set(props);
     }
+    /**
+     * Get the text item associated with the point.
+     * @returns {paper.PointText} The associated text item.
+     */
     get textitem(){
         return this.paperItem.children[1];
     }
 
-
+    /**
+     * Get the supported annotation types for the class.
+     * @static
+     * @returns {Object} The supported annotation types.
+     */
     static get supportsType(){
         return {
             type: 'Point',
             subtype:'PointText',
         }
-    }
+    }   
+
+    /**
+    * Get the coordinates of the point.
+    * @returns {Array<number>} The coordinates of the point.
+    */
     getCoordinates(){
         let item = this.paperItem;
         let circle = item.children[0];
         return [circle.bounds.center.x, circle.bounds.center.y];
     }
+    /**
+     * Get the properties of the point.
+     * @returns {Object} The properties of the point.
+     */
     getProperties(){
         let item = this.paperItem;
         return {
             content: item.children[1].content,
         };
     }
+    /**
+     * Get the style properties of the point.
+     * @returns {Object} The style properties of the point.
+     */
     getStyleProperties(){
         return this.paperItem.children[0].style.toJSON();
     }
+    /**
+     * Handle transformation operations on the point.
+     * @static
+     * @param {string} operation - The type of transformation operation.
+     * @description This static method handles transformation operations on the point annotation.
+     */
     static onTransform(){
         let operation = arguments[0];
         switch(operation){
@@ -151,3 +196,5 @@ export class PointText extends AnnotationItem{
     }
     
 }
+export{PointText};
+

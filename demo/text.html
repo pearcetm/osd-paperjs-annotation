@@ -31,7 +31,7 @@
             let annotationToolkit = new AnnotationToolkit(viewer);
             annotationToolkit.addAnnotationUI({tools:["text", "style"], addButton:false, addFileButton:false});
 
-            $.get('./demo-annotation.json').then(x => annotationToolkit.addFeatureCollections(x));
+            $.get('./test.json').then(x => annotationToolkit.addFeatureCollections(x));
         });
     </script>
 </head>

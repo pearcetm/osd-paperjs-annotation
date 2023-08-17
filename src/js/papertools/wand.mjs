@@ -538,7 +538,7 @@ class WandToolbar extends AnnotationUIToolbarBase{
  * Displays an image preview on the web page using the provided data URL.
  * If a preview image already exists, it is removed and replaced with the new one.
  * The preview is positioned fixed on the top-left corner of the viewport.
- * 
+ * @private
  * @param {string} dataURL - The data URL of the image to display.
  */
 function imgPreview(dataURL){
@@ -550,7 +550,7 @@ function imgPreview(dataURL){
  * Converts a binary mask to a compound path, tracing contours and creating path objects.
  * The mask is processed to identify contours and create paths for each contour, forming a compound path.
  * Contours with an absolute area less than the specified minimum area are filtered out.
- * 
+ * @private
  * @param {MagicWand} MagicWand - The MagicWand instance used to trace contours.
  * @param {Uint8ClampedArray} mask - The binary mask to be converted into paths.
  * @param {string} border - The type of border to add ('dilate' for dilation, undefined for none).

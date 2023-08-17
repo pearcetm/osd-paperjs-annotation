@@ -193,14 +193,12 @@ class AnnotationToolbar{
 
 /**
  * Shows the Annotation Toolbar.
- *
  */
     show(){
         $(this.ui.buttongroup.element).show();
     }
 /**
  * Hides the Annotation Toolbar.
- *
  */
     hide(){
         $(this.ui.buttongroup.element).hide();
@@ -251,7 +249,7 @@ export {AnnotationToolbar};
 
 /**
  * Creates the user interface for the Annotation Toolbar.
- * @memberof OSDPaperjsAnnotation.AnnotationToolbar#
+ * @private
  * @returns {Object} The user interface object containing the button group and dropdowns.
  */
 function makeUI(){

@@ -8,19 +8,22 @@ import {AnnotationUITool, AnnotationUIToolbarBase} from './annotationUITool.mjs'
  */
 class PolygonTool extends AnnotationUITool{
     /**
-     * Create a new instance of the PolygonTool class.
-     * @param {paper.PaperScope} paperScope - The PaperScope instance to associate with the tool.
+     * Creates an instance of PolygonTool.
+     * @constructor
+     * @param {Object} paperScope - The Paper.js paper scope object, which provides context for working with Paper.js functionalities.
+     * @description Initializes the PolygonTool by calling the base class (AnnotationUITool) constructor and setting up event handlers for drawing and editing polygons.
+     * @property {paper.Tool} tool - The Paper.js Tool object associated with the PolygonTool.
+     * @property {paper.Group} drawingGroup - The Paper.js Group used for drawing polygons.
+     * @property {paper.Segment} draggingSegment - The currently dragged segment during editing.
+     * @property {boolean} eraseMode - A flag indicating whether the tool is in erase mode.
+     * @property {Object} simplifying - A flag indicating whether the tool is simplifying the drawn polygon.
+     * @property {SimplifyJS} simplifier - An instance of the SimplifyJS library used for polygon simplification.
      */
     constructor(paperScope){
         super(paperScope);
         let self = this;
         let tool = this.tool;
         let lastClickTime = 0;
-
-        /**
-         * The drawing group where polygon paths are temporarily stored during creation.
-         * @type {paper.Group}
-         */
         this.drawingGroup = new paper.Group();
         self.project.toolLayer.addChild(self.drawingGroup);
         self.drawingGroup.visible=false;  
@@ -30,12 +33,23 @@ class PolygonTool extends AnnotationUITool{
         this.simplifier = new SimplifyJS();
         this.setToolbarControl(new PolygonToolbar(this));  
         
+        /**
+         * Event handler when the tool is activated.
+         * Configures the tool settings and displays the drawing group on activation.
+         * @private
+         */
         this.extensions.onActivate = function(){
             tool.minDistance=4/self.project.getZoom();
             tool.maxDistance=20/self.project.getZoom();
             self.drawingGroup.visible=true;
             self.drawingGroup.selected=true;
         }
+        /**
+         * Event handler when the tool is deactivated.
+         * Finalizes the current interaction if finished is true.
+         * @private
+         * @param {boolean} finished - A flag indicating whether the tool interaction is finished.
+         */
         this.extensions.onDeactivate= function(finished){
             if(finished){
                 self.finish();
@@ -45,6 +59,7 @@ class PolygonTool extends AnnotationUITool{
         /**
          * Event handler for the mouse down event.
          * Handles various actions including initiating polygon drawing and erasing.
+         * @private
          * @param {paper.MouseEvent} ev - The mouse event object.
          */
         tool.onMouseDown=function(ev){
@@ -103,6 +118,7 @@ class PolygonTool extends AnnotationUITool{
         /**
          * Event handler for the mouse drag event.
          * Allows users to continue drawing or dragging polygon segments.
+         * @private
          * @param {paper.MouseEvent} ev - The mouse event object.
          */
         tool.onMouseDrag=function(ev){
@@ -117,6 +133,7 @@ class PolygonTool extends AnnotationUITool{
         /**
          * Event handler for the mouse move event.
          * Provides visual feedback based on the mouse cursor's position.
+         * @private
          * @param {paper.MouseEvent} ev - The mouse event.
          */
         tool.onMouseMove=function(ev){
@@ -133,6 +150,7 @@ class PolygonTool extends AnnotationUITool{
         /**
          * Event handler for the mouse up event.
          * Finalizes polygon creation, dragging, and other interactions.
+         * @private
          * @param {paper.MouseEvent} ev - The mouse event.
          */
         tool.onMouseUp=function(ev){
@@ -155,6 +173,7 @@ class PolygonTool extends AnnotationUITool{
         /**
          * Event handler for the key down event.
          * Handles keyboard shortcuts like toggling erase mode and undo/redo.
+         * @private
          * @param {paper.KeyEvent} ev - The key event.
          */
         tool.extensions.onKeyDown=function(ev){
@@ -178,6 +197,7 @@ class PolygonTool extends AnnotationUITool{
         /**
          * Event handler for the key up event.
          * Handles releasing keys, such as exiting erase mode.
+         * @private
          * @param {paper.KeyEvent} ev - The key event.
          */
         tool.extensions.onKeyUp=function(ev){

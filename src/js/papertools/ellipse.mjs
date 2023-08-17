@@ -5,6 +5,7 @@ import {AnnotationUITool, AnnotationUIToolbarBase} from './annotationUITool.mjs'
  * @class
  * @memberof OSDPaperjsAnnotation
  * @extends AnnotationUITool
+ * @description The `EllipseToolbar` class provides a user interface toolbar for the ellipse annotation tool. It inherits from the `AnnotationUIToolbarBase` class and includes methods to configure, enable, and update instructions for the ellipse tool.
  */
 class EllipseTool extends AnnotationUITool{
   /**
@@ -40,7 +41,7 @@ class EllipseTool extends AnnotationUITool{
          * If the tool is in 'creating' mode, it initializes a new ellipse shape and starts tracking mouse movements.
          * If the tool is in 'segment-drag' mode, it prepares the ellipse for resizing by selecting the appropriate control point.
          * If the tool is in 'modifying' mode, it checks if the user clicked on an existing ellipse to initiate the dragging process.
-         * @function onMouseDown
+         * @private
          * @memberof OSDPaperjsAnnotation.EllipseTool#
          * @param {paper.MouseEvent} ev - The Paper.js MouseEvent object.
          */
@@ -80,8 +81,7 @@ class EllipseTool extends AnnotationUITool{
          * When the user drags the mouse after initiating an ellipse creation or modification, this method is called.
          * If the tool is in 'creating' mode, it dynamically updates the temporary ellipse shape based on the drag distance.
          * If the tool is in 'segment-drag' mode, it resizes the ellipse based on the drag distance and user input.
-         * @function onMouseDrag
-         * @memberof OSDPaperjsAnnotation.EllipseTool#
+         * @private
          * @param {paper.MouseEvent} ev - The Paper.js MouseEvent object.
          */
         this.tool.onMouseDrag=function(ev){
@@ -144,8 +144,7 @@ class EllipseTool extends AnnotationUITool{
          * This method is called when the user moves the mouse cursor over the canvas.
          * It provides visual feedback to the user by displaying crosshair lines intersecting at the cursor position.
          * Additionally, it checks if the user is in 'modifying' mode and hovering over a control point to show a resize cursor.
-         * @function onMouseMove
-         * @memberof OSDPaperjsAnnotation.EllipseTool#
+         * @private
          * @param {paper.MouseEvent} ev - The Paper.js MouseEvent object.
          */
         this.tool.onMouseMove=function(ev){
@@ -164,8 +163,7 @@ class EllipseTool extends AnnotationUITool{
          * Event handler for mouse up events.
          * This method is called when the user releases the mouse click after creating or modifying an ellipse.
          * It finalizes the ellipse creation or modification process and updates the tool's mode accordingly.
-         * @function onMouseUp
-         * @memberof OSDPaperjsAnnotation.EllipseTool#
+         * @private
          */
         this.tool.onMouseUp = function(){
             self.mode='modifying';
@@ -208,8 +206,7 @@ class EllipseTool extends AnnotationUITool{
          * Sets the cursor position and updates the crosshairTool to provide visual feedback.
          * This function calculates the position of the crosshair lines based on the current cursor position.
          * The crosshairTool displays lines intersecting at the cursor position, providing a reference for alignment and positioning.
-         * @function setCursorPosition
-         * @memberof OSDPaperjsAnnotation.EllipseTool#
+         * @private
          * @param {paper.Tool} tool - The Paper.js Tool instance.
          * @param {paper.Point} point - The current cursor position in Paper.js coordinate system.
          */
@@ -236,16 +233,39 @@ class EllipseTool extends AnnotationUITool{
 }
 export{EllipseTool};
 
+/**
+ * Represents an ellipse annotation tool's user interface toolbar.
+ * @class
+ * @memberof OSDPaperjsAnnotation.EllipseTool
+ * @extends AnnotationUIToolbarBase
+ * @description The `EllipseToolbar` class provides a user interface toolbar for the ellipse annotation tool. It inherits from the `AnnotationUIToolbarBase` class and includes methods to configure, enable, and update instructions for the ellipse tool.
+ */
 class EllipseToolbar extends AnnotationUIToolbarBase{
+    /**
+     * Create a new EllipseToolbar instance.
+     * @param {AnnotationTool} tool - The annotation tool associated with the toolbar.
+     * @description This constructor initializes a new `EllipseToolbar` instance by providing the associated annotation tool.
+     */
     constructor(tool){
         super(tool);
         let html = $('<i>',{class:'fa-regular fa-circle'})[0];
         this.button.configure(html,'Ellipse Tool');
         this.instructions = $('<span>').text('Click and drag to create an ellipse').appendTo(this.dropdown);
     }
+     /**
+     * Check if the ellipse tool is enabled for the given mode.
+     * @param {string} mode - The mode of the annotation tool.
+     * @returns {boolean} Returns `true` if the mode is 'new' or 'Point:Ellipse', otherwise `false`.
+     * @description This method checks if the ellipse tool is enabled for the given mode by comparing it with the supported modes.
+     */
     isEnabledForMode(mode){
         return ['new','Point:Ellipse'].includes(mode);
     }
+    /**
+     * Update the instructions based on the annotation tool's mode.
+     * @param {string} mode - The mode of the annotation tool.
+     * @description This method updates the instructions text based on the annotation tool's mode. It provides appropriate instructions for different modes.
+     */
     updateInstructions(mode){
         this.instructions.text(mode=='new'?'Click and drag to create an ellipse' : mode=='Point:Ellipse' ? 'Drag a point to resize' : '???' )
     }

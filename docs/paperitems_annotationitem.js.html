@@ -27,15 +27,9 @@
     <section>
         <article>
             <pre class="prettyprint source linenums"><code>/**
- * @module annotationitem
- * @description Represents annotation items for maps.
- */
-
-/**
  * Represents an annotation item that can be used in a map.
  * @class
  * @memberof OSDPaperjsAnnotation
- * @memberof module:annotationitem
  */
 class AnnotationItem {
   /**
@@ -202,15 +196,35 @@ export { AnnotationItem };
  * Array of valid geometry types for GeoJSON.
  * @constant
  * @type {string[]}
+ * @private
  * @description This array contains valid geometry types that can be used in GeoJSON features.
- * @memberof module:annotationitem
  */
 const GeometryTypes = ['Point', 'LineString', 'Polygon', 'MultiPoint', 'MultiLineString', 'MultiPolygon', 'GeometryCollection', null];
+
+/**
+ * Array of registered constructors for creating AnnotationItem instances.
+ * @private
+ * @type {Function[]}
+ * @description This array stores the registered constructors that can be used to create AnnotationItem instances.
+ */
 const _constructors = [];
-export class AnnotationItemFactory {
+
+/**
+ * Represents a factory for creating and managing AnnotationItem instances.
+ * @class
+ * @memberof OSDPaperjsAnnotation
+ */
+class AnnotationItemFactory {
   constructor() {
     // this._constructors=[];
   }
+  /**
+   * Register a constructor to the AnnotationItemFactory.
+   * @static
+   * @param {Function} ctor - The constructor function for creating AnnotationItem instances.
+   * @throws {string} Throws an error if the provided constructor does not implement the necessary API.
+   * @description This static method registers a constructor to the AnnotationItemFactory. It checks whether the constructor implements the required static accessor supportsType.
+   */
   static register(ctor) {
     //to do: add logic to test whether the object has implemented the necessary API
     if (ctor.supportsType === AnnotationItem.supportsType) {
@@ -221,6 +235,13 @@ export class AnnotationItemFactory {
       _constructors.push(ctor);
     }
   }
+  /**
+   * Get a constructor for creating an AnnotationItem instance based on a GeoJSON feature.
+   * @static
+   * @param {Object} geoJSON - The GeoJSON feature object.
+   * @returns {Function|undefined} A constructor function or undefined if no matching constructor is found.
+   * @description This static method retrieves a constructor from the registered constructors based on the provided GeoJSON feature. It matches the geometry type and subtype to determine the appropriate constructor.
+   */
   static getConstructor(geoJSON) {
     if (!('geometry' in geoJSON &amp;&amp; 'properties' in geoJSON)) {
       console.error('Invalid GeoJSON Feature object. Returning undefined.');
@@ -235,7 +256,13 @@ export class AnnotationItemFactory {
     let constructors = _constructors.filter(c => c.supportsType.type == geomType &amp;&amp; c.supportsType.subtype === geomSubtype);
     return constructors.slice(-1)[0]; //return the most recent constructor that supports this type
   }
-
+  /**
+   * Create an AnnotationItem instance from a GeoJSON feature.
+   * @static
+   * @param {Object} geoJSON - The GeoJSON feature object.
+   * @returns {paper.Item|undefined} A paper.Item instance or undefined if no matching constructor is found.
+   * @description This static method creates an AnnotationItem instance from a GeoJSON feature. It retrieves a matching constructor based on the GeoJSON geometry type and subtype, and then creates an AnnotationItem instance using that constructor.
+   */
   static itemFromGeoJSON(geoJSON) {
     if (GeometryTypes.includes(geoJSON.type)) {
       geoJSON = {
@@ -250,6 +277,13 @@ export class AnnotationItemFactory {
       return annotationItem.paperItem;
     }
   }
+  /**
+   * Create an AnnotationItem instance from an existing AnnotationItem.
+   * @static
+   * @param {paper.Item} item - The paper.Item instance associated with an AnnotationItem.
+   * @returns {paper.Item|undefined} A paper.Item instance created from the AnnotationItem, or undefined if the item is not associated with an AnnotationItem.
+   * @description This static method creates a new paper.Item instance based on an existing AnnotationItem. It retrieves the underlying AnnotationItem and converts it to a GeoJSON feature. Then, it creates a new paper.Item using the `itemFromGeoJSON` method of the AnnotationItemFactory.
+   */
   static itemFromAnnotationItem(item) {
     if (!item.annotationItem) {
       error('Only paper.Items constructed by AnnotationItem implementations are supported');
@@ -263,10 +297,11 @@ export class AnnotationItemFactory {
     return AnnotationItemFactory.itemFromGeoJSON(geoJSON);
   }
 }
+export { AnnotationItemFactory };
 
 /**
  * Convert a Paper.js item into an AnnotationItem.
- * @memberof module:annotationitem#
+ * @private
  * @param {AnnotationItem} annotationItem - The AnnotationItem instance.
  * @description This function takes an AnnotationItem instance and converts the associated paper item into an
  * AnnotationItem by enhancing it with special properties and behaviors.
@@ -299,7 +334,7 @@ function convertPaperItemToAnnotation(annotationItem) {
 
 /**
  * Enhance the `replaceWith` functionality of Paper.js items.
- * @memberof module:annotationitem#
+ * @private
  * @param {paper.Item} newItem - The new item to replace with.
  * @returns {paper.Item} The replaced item.
  * @description This function enhances the `replaceWith` functionality of Paper.js items by providing additional
@@ -336,13 +371,13 @@ function enhancedReplaceWith(newItem) {
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-annotationitem.html">annotationitem</a></li></ul><h3>Namespaces</h3><ul><li><a href="OSDPaperjsAnnotation.html">OSDPaperjsAnnotation</a></li></ul><h3>Classes</h3><ul><li><a href="DefaultToolbar.html">DefaultToolbar</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolbar.html">AnnotationToolbar</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolkit.html">AnnotationToolkit</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUI.html">AnnotationUI</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUITool.html">AnnotationUITool</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUITool.AnnotationUIToolbarBase.html">AnnotationUIToolbarBase</a></li><li><a href="OSDPaperjsAnnotation.BrushTool.html">BrushTool</a></li><li><a href="OSDPaperjsAnnotation.BrushToolbar.html">BrushToolbar</a></li><li><a href="OSDPaperjsAnnotation.DefaultTool.html">DefaultTool</a></li><li><a href="OSDPaperjsAnnotation.EllipseTool.html">EllipseTool</a></li><li><a href="OSDPaperjsAnnotation.FeatureCollectionUI.html">FeatureCollectionUI</a></li><li><a href="OSDPaperjsAnnotation.FeatureUI.html">FeatureUI</a></li><li><a href="OSDPaperjsAnnotation.FileDialog.html">FileDialog</a></li><li><a href="OSDPaperjsAnnotation.LayerUI.html">LayerUI</a></li><li><a href="OSDPaperjsAnnotation.LinestringTool.html">LinestringTool</a></li><li><a href="OSDPaperjsAnnotation.LinestringTool.LinestringToolbar.html">LinestringToolbar</a></li><li><a href="OSDPaperjsAnnotation.PaperOverlay.html">PaperOverlay</a></li><li><a href="OSDPaperjsAnnotation.PointTextTool.html">PointTextTool</a></li><li><a href="OSDPaperjsAnnotation.PointTextTool.PointTextToolbar.html">PointTextToolbar</a></li><li><a href="OSDPaperjsAnnotation.PointTool.html">PointTool</a></li><li><a href="OSDPaperjsAnnotation.PolygonTool.html">PolygonTool</a></li><li><a href="OSDPaperjsAnnotation.PolygonTool.PolygonToolbar.html">PolygonToolbar</a></li><li><a href="OSDPaperjsAnnotation.RasterTool.html">RasterTool</a></li><li><a href="OSDPaperjsAnnotation.RasterTool.RasterToolbar.html">RasterToolbar</a></li><li><a href="OSDPaperjsAnnotation.RectangleTool.html">RectangleTool</a></li><li><a href="OSDPaperjsAnnotation.RectangleTool_RectToolbar.html">RectToolbar</a></li><li><a href="OSDPaperjsAnnotation.RotationControlOverlay.html">RotationControlOverlay</a></li><li><a href="OSDPaperjsAnnotation.RotationControlTool.html">RotationControlTool</a></li><li><a href="OSDPaperjsAnnotation.RotationControlWidget.html">RotationControlWidget</a></li><li><a href="OSDPaperjsAnnotation.StyleTool.html">StyleTool</a></li><li><a href="OSDPaperjsAnnotation.StyleTool.StyleToolbar.html">StyleToolbar</a></li><li><a href="OSDPaperjsAnnotation.ToolBase.html">ToolBase</a></li><li><a href="OSDPaperjsAnnotation.TransformTool.html">TransformTool</a></li><li><a href="OSDPaperjsAnnotation.TransformTool.TransformToolbar.html">TransformToolbar</a></li><li><a href="OSDPaperjsAnnotation.WandTool.html">WandTool</a></li><li><a href="OSDPaperjsAnnotation.WandTool.WandToolbar.html">WandToolbar</a></li><li><a href="SelectTool.html">SelectTool</a></li><li><a href="module-annotationitem.AnnotationItem.html">AnnotationItem</a></li></ul><h3>Global</h3><ul><li><a href="global.html#adaptiveOffsetCurve">adaptiveOffsetCurve</a></li><li><a href="global.html#connectAdjacentBezier">connectAdjacentBezier</a></li><li><a href="global.html#connectBeziers">connectBeziers</a></li><li><a href="global.html#getPointLineIntersections">getPointLineIntersections</a></li><li><a href="global.html#imgPreview">imgPreview</a></li><li><a href="global.html#makeRoundJoin">makeRoundJoin</a></li><li><a href="global.html#maskToPath">maskToPath</a></li><li><a href="global.html#normalize">normalize</a></li><li><a href="global.html#offsetSegment">offsetSegment</a></li><li><a href="global.html#removeIntersection">removeIntersection</a></li><li><a href="global.html#removeOutsiders">removeOutsiders</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="OSDPaperjsAnnotation.html">OSDPaperjsAnnotation</a></li></ul><h3>Classes</h3><ul><li><a href="OSDPaperjsAnnotation.AnnotationItem.html">AnnotationItem</a></li><li><a href="OSDPaperjsAnnotation.AnnotationItemFactory.html">AnnotationItemFactory</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolbar.html">AnnotationToolbar</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolkit.html">AnnotationToolkit</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUI.html">AnnotationUI</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUITool.html">AnnotationUITool</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUITool.AnnotationUIToolbarBase.html">AnnotationUIToolbarBase</a></li><li><a href="OSDPaperjsAnnotation.BrushTool.html">BrushTool</a></li><li><a href="OSDPaperjsAnnotation.BrushTool.BrushToolbar.html">BrushToolbar</a></li><li><a href="OSDPaperjsAnnotation.DefaultTool.html">DefaultTool</a></li><li><a href="OSDPaperjsAnnotation.DefaultTool.DefaultToolbar.html">DefaultToolbar</a></li><li><a href="OSDPaperjsAnnotation.Ellipse.html">Ellipse</a></li><li><a href="OSDPaperjsAnnotation.EllipseTool.html">EllipseTool</a></li><li><a href="OSDPaperjsAnnotation.EllipseTool.EllipseToolbar.html">EllipseToolbar</a></li><li><a href="OSDPaperjsAnnotation.FeatureCollectionUI.html">FeatureCollectionUI</a></li><li><a href="OSDPaperjsAnnotation.FeatureUI.html">FeatureUI</a></li><li><a href="OSDPaperjsAnnotation.FileDialog.html">FileDialog</a></li><li><a href="OSDPaperjsAnnotation.LayerUI.html">LayerUI</a></li><li><a href="OSDPaperjsAnnotation.Linestring.html">Linestring</a></li><li><a href="OSDPaperjsAnnotation.LinestringTool.html">LinestringTool</a></li><li><a href="OSDPaperjsAnnotation.LinestringTool.LinestringToolbar.html">LinestringToolbar</a></li><li><a href="OSDPaperjsAnnotation.MultiLinestring.html">MultiLinestring</a></li><li><a href="OSDPaperjsAnnotation.MultiPolygon.html">MultiPolygon</a></li><li><a href="OSDPaperjsAnnotation.PaperOverlay.html">PaperOverlay</a></li><li><a href="OSDPaperjsAnnotation.Placeholder.html">Placeholder</a></li><li><a href="OSDPaperjsAnnotation.Point.html">Point</a></li><li><a href="OSDPaperjsAnnotation.PointText.html">PointText</a></li><li><a href="OSDPaperjsAnnotation.PointTextTool.html">PointTextTool</a></li><li><a href="OSDPaperjsAnnotation.PointTextTool.PointTextToolbar.html">PointTextToolbar</a></li><li><a href="OSDPaperjsAnnotation.PointTool.html">PointTool</a></li><li><a href="OSDPaperjsAnnotation.PointTool.PointToolbar.html">PointToolbar</a></li><li><a href="OSDPaperjsAnnotation.PolygonTool.html">PolygonTool</a></li><li><a href="OSDPaperjsAnnotation.PolygonTool.PolygonToolbar.html">PolygonToolbar</a></li><li><a href="OSDPaperjsAnnotation.Raster.html">Raster</a></li><li><a href="OSDPaperjsAnnotation.RasterTool.html">RasterTool</a></li><li><a href="OSDPaperjsAnnotation.RasterTool.RasterToolbar.html">RasterToolbar</a></li><li><a href="OSDPaperjsAnnotation.Rectangle.html">Rectangle</a></li><li><a href="OSDPaperjsAnnotation.RectangleTool.html">RectangleTool</a></li><li><a href="OSDPaperjsAnnotation.RectangleTool_RectToolbar.html">RectToolbar</a></li><li><a href="OSDPaperjsAnnotation.RotationControlOverlay.html">RotationControlOverlay</a></li><li><a href="OSDPaperjsAnnotation.RotationControlTool.html">RotationControlTool</a></li><li><a href="OSDPaperjsAnnotation.RotationControlWidget.html">RotationControlWidget</a></li><li><a href="OSDPaperjsAnnotation.StyleTool.html">StyleTool</a></li><li><a href="OSDPaperjsAnnotation.StyleTool.StyleToolbar.html">StyleToolbar</a></li><li><a href="OSDPaperjsAnnotation.ToolBase.html">ToolBase</a></li><li><a href="OSDPaperjsAnnotation.TransformTool.html">TransformTool</a></li><li><a href="OSDPaperjsAnnotation.TransformTool.TransformToolbar.html">TransformToolbar</a></li><li><a href="OSDPaperjsAnnotation.WandTool.html">WandTool</a></li><li><a href="OSDPaperjsAnnotation.WandTool.WandToolbar.html">WandToolbar</a></li><li><a href="SelectTool.html">SelectTool</a></li></ul><h3>Global</h3><ul><li><a href="global.html#adaptiveOffsetCurve">adaptiveOffsetCurve</a></li><li><a href="global.html#connectAdjacentBezier">connectAdjacentBezier</a></li><li><a href="global.html#connectBeziers">connectBeziers</a></li><li><a href="global.html#getPointLineIntersections">getPointLineIntersections</a></li><li><a href="global.html#makeRoundJoin">makeRoundJoin</a></li><li><a href="global.html#normalize">normalize</a></li><li><a href="global.html#offsetSegment">offsetSegment</a></li><li><a href="global.html#removeIntersection">removeIntersection</a></li><li><a href="global.html#removeOutsiders">removeOutsiders</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Mon Aug 14 2023 00:17:48 GMT-0400 (Eastern Daylight Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Thu Aug 17 2023 01:20:21 GMT-0400 (Eastern Daylight Time)
 </footer>
 
 <script> prettyPrint(); </script>

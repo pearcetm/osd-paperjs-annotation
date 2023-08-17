@@ -1,6 +1,20 @@
 import { AnnotationItem } from "./annotationitem.mjs";
 
-export class Ellipse extends AnnotationItem{
+/**
+ * Represents an ellipse annotation item.
+ * @class
+ * @memberof OSDPaperjsAnnotation
+ * @extends AnnotationItem
+ * @description The `Ellipse` class represents an ellipse annotation item. It inherits from the `AnnotationItem` class and provides methods to work with ellipse annotations.
+ */
+class Ellipse extends AnnotationItem{
+    /**
+     * Create a new Ellipse instance.
+     * @param {Object} geoJSON - The GeoJSON object containing annotation data.
+     * @throws {string} Throws an error if the GeoJSON type or subtype is invalid.
+     * @property {paper.CompoundPath} _paperItem - The associated paper item representing the ellipse.
+     * @description This constructor initializes a new ellipse annotation item based on the provided GeoJSON object.
+     */
     constructor(geoJSON){
         super(geoJSON);
 
@@ -37,16 +51,33 @@ export class Ellipse extends AnnotationItem{
 
         this.paperItem = poly;
     }
+    /**
+     * Retrieves the supported types by the Ellipse annotation item.
+     * @static
+     * @returns {Object} An object with type and subtype properties.
+     * @description This static method provides information about the supported types by the Ellipse annotation item class.
+     */
     static get supportsType(){
         return {
             type: 'Point',
             subtype: 'Ellipse'
         }
     }
+    /**
+     * Retrieves the coordinates of the center of the ellipse.
+     * @returns {Array} An array containing the x and y coordinates of the center.
+     * @description This method returns an array of coordinates representing the position of the center of the ellipse.
+     */
     getCoordinates(){
         let item = this.paperItem;
         return [item.position.x, item.position.y];
     }
+    
+    /**
+     * Retrieves the properties of the ellipse.
+     * @returns {Object} The properties object.
+     * @description This method returns the properties associated with the ellipse.
+     */
     getProperties(){
         let item = this.paperItem;
         let path = item.children[0];
@@ -69,7 +100,12 @@ export class Ellipse extends AnnotationItem{
             angle: angle
         };
     }
-
+    /**
+     * Handle transformation operations on the ellipse item.
+     * @static
+     * @param {...string} operation - The transformation operation.
+     * @description This static method handles transformation operations on the ellipse item, such as rotation.
+     */
     static onTransform(){
         let operation = arguments[0];
         switch(operation){
@@ -101,3 +137,4 @@ export class Ellipse extends AnnotationItem{
     }
 
 }
+export{Ellipse};

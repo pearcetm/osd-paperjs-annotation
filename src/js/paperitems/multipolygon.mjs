@@ -1,7 +1,20 @@
 import { AnnotationItem } from "./annotationitem.mjs";
 
-
-export class MultiPolygon extends AnnotationItem{
+/**
+ * Represents a multi-polygon annotation item.
+ * @class
+ * @memberof OSDPaperjsAnnotation
+ * @extends AnnotationItem
+ * @description The `MultiPolygon` class represents a multi-polygon annotation item. It inherits from the `AnnotationItem` class and provides methods to work with multi-polygon annotations.
+ */
+class MultiPolygon extends AnnotationItem{
+    /**
+     * Create a new MultiPolygon instance.
+     * @param {Object} geoJSON - The GeoJSON object containing annotation data.
+     * @throws {string} Throws an error if the GeoJSON type is invalid.
+     * @property {paper.CompoundPath} _paperItem - The associated paper item representing the multi-polygon.
+     * @description This constructor initializes a new multi-polygon annotation item based on the provided GeoJSON object.
+     */
     constructor(geoJSON){
         super(geoJSON);
 
@@ -30,11 +43,22 @@ export class MultiPolygon extends AnnotationItem{
 
         this.paperItem = poly;
     }
+    /**
+     * Retrieves the supported types by the MultiPolygon annotation item.
+     * @static
+     * @returns {Object} An object with type property.
+     * @description This static method provides information about the supported type by the MultiPolygon annotation item class.
+     */
     static get supportsType(){
         return {
             type: 'MultiPolygon'
         }
     }
+    /**
+     * Retrieves the coordinates of the multi-polygon.
+     * @returns {Array} An array of arrays representing the coordinates of the polygons and holes.
+     * @description This method returns an array of arrays representing the coordinates of the polygons and their holes in the multi-polygon.
+     */
     getCoordinates(){
         //filter out invalid children with less than 3 points
         let polygons = this.paperItem.children.filter(c=>c.area > 0 && c.segments.length>2);
@@ -55,8 +79,14 @@ export class MultiPolygon extends AnnotationItem{
         })
         return out;
     }
+    /**
+     * Retrieves the properties of the multi-polygon.
+     * @returns {undefined}
+     * @description This method returns `undefined` since the MultiPolygon class does not have specific properties.
+     */
     getProperties(){
         return;
     }
     
 }
+export{MultiPolygon};

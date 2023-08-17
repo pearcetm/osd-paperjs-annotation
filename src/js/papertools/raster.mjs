@@ -12,7 +12,6 @@ class RasterTool extends AnnotationUITool{
    * @memberof OSDPaperjsAnnotation.RasterTool
    * @constructor
    * @param {paper.PaperScope} paperScope - The Paper.js scope for the tool.
-   * The constructor initializes the RasterTool by calling the base class (AnnotationUITool) constructor and sets up the necessary toolbar control (RasterToolbar).
    */
     constructor(paperScope){
         super(paperScope);
@@ -23,8 +22,18 @@ class RasterTool extends AnnotationUITool{
      * Rasterizes the current annotation item. It converts the vector annotation to a pixel-based raster.
      * After rasterization, it replaces the original annotation with the rasterized version.
      * The rasterized version includes both the raster image and the original annotation's geoJSON data.
-     * @memberof OSDPaperjsAnnotation.RasterTool#
-     * @method rasterize
+     * @property {function} onLoad The function performs rasterization and replacement of the vector annotation with the rasterized version.
+     * @property {Object} geoJSON geoJSON data representing the rasterized annotation item.
+     * @property {string} geoJSON.type - The type of the geoJSON object (e.g., 'Feature').
+     * @property {Object} geoJSON.geometry - The geometry information of the geoJSON object.
+     * @property {string} geoJSON.geometry.type - The type of the geometry (e.g., 'GeometryCollection').
+     * @property {Object} geoJSON.geometry.properties - Additional properties of the geometry.
+     * @property {string} geoJSON.geometry.properties.subtype - The subtype of the geometry (e.g., 'Raster').
+     * @property {Object} geoJSON.geometry.properties.raster - The raster data of the geometry.
+     * @property {paper.Raster} geoJSON.geometry.properties.raster.data - The pixel-based raster data.
+     * @property {Object} geoJSON.geometries - The list of geometries in the geometry collection.
+     * @property {Object} geoJSON.properties - The properties of the geoJSON object.
+     *
      */
     rasterize(){
         let self = this;
@@ -36,8 +45,7 @@ class RasterTool extends AnnotationUITool{
         /**
          * Handles the raster's onLoad event, which triggers after the raster image has loaded.
          * The function performs rasterization and replacement of the vector annotation with the rasterized version.
-         * @function onLoad
-         * @memberof OSDPaperjsAnnotation.RasterTool#
+         * @private
          * @param {Event} event - The onLoad event triggered by the raster image load.
          */
             raster.onLoad = function(){
@@ -50,20 +58,6 @@ class RasterTool extends AnnotationUITool{
                 
                 let subraster = this.getSubRaster(newBounds);
                 subraster.selectedColor = null;
-            /**
-           * The geoJSON data representing the rasterized annotation item.
-           * @type {Object}
-           * @property {string} type - The type of the geoJSON object (e.g., 'Feature').
-           * @property {Object} geometry - The geometry information of the geoJSON object.
-           * @property {string} geometry.type - The type of the geometry (e.g., 'GeometryCollection').
-           * @property {Object} geometry.properties - Additional properties of the geometry.
-           * @property {string} geometry.properties.subtype - The subtype of the geometry (e.g., 'Raster').
-           * @property {Object} geometry.properties.raster - The raster data of the geometry.
-           * @property {paper.Raster} geometry.properties.raster.data - The pixel-based raster data.
-           * @property {Object} geometries - The list of geometries in the geometry collection.
-           * @property {Object} properties - The properties of the geoJSON object.
-           * @memberof OSDPaperjsAnnotation.RasterTool#
-           */
                 let geoJSON = {
                     type:'Feature',
                     geometry:{
@@ -99,12 +93,10 @@ export {RasterTool};
  * @memberof OSDPaperjsAnnotation.RasterTool
  */
 class RasterToolbar extends AnnotationUIToolbarBase{
-      /**
-   * Creates a new RasterToolbar instance.
-   * @constructor
-   * @param {RasterTool} tool - The RasterTool instance.
+   /**
    * The constructor sets up the toolbar UI with a button to trigger rasterization.
-   * It also adds a warning message regarding the irreversible nature of rasterization.
+   * It also adds a warning message regarding the irreversible nature of rasterization.   * @constructor
+   * @param {RasterTool} tool - The RasterTool instance.
    */
     constructor(tool){
         super(tool);
@@ -116,7 +108,7 @@ class RasterToolbar extends AnnotationUIToolbarBase{
 
         button.on('click',()=>tool.rasterize())
     }
-      /**
+    /**
    * Checks if the RasterTool is enabled for the given mode.
    * @function
    * @param {string} mode - The mode of the annotation, such as 'MultiPolygon', 'Point:Rectangle', or 'Point:Ellipse'.

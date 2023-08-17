@@ -1,13 +1,8 @@
-/**
- * @module annotationitem
- * @description Represents annotation items for maps.
- */
 
 /**
  * Represents an annotation item that can be used in a map.
  * @class
  * @memberof OSDPaperjsAnnotation
- * @memberof module:annotationitem
  */
 class AnnotationItem{
     /**
@@ -175,17 +170,35 @@ export{AnnotationItem};
  * Array of valid geometry types for GeoJSON.
  * @constant
  * @type {string[]}
+ * @private
  * @description This array contains valid geometry types that can be used in GeoJSON features.
- * @memberof module:annotationitem
  */
 const GeometryTypes = ['Point', 'LineString', 'Polygon', 'MultiPoint', 'MultiLineString', 'MultiPolygon', 'GeometryCollection', null];
 
+/**
+ * Array of registered constructors for creating AnnotationItem instances.
+ * @private
+ * @type {Function[]}
+ * @description This array stores the registered constructors that can be used to create AnnotationItem instances.
+ */
 const _constructors = [];
 
-export class AnnotationItemFactory{
+/**
+ * Represents a factory for creating and managing AnnotationItem instances.
+ * @class
+ * @memberof OSDPaperjsAnnotation
+ */
+class AnnotationItemFactory{
     constructor(){
         // this._constructors=[];
     }
+    /**
+     * Register a constructor to the AnnotationItemFactory.
+     * @static
+     * @param {Function} ctor - The constructor function for creating AnnotationItem instances.
+     * @throws {string} Throws an error if the provided constructor does not implement the necessary API.
+     * @description This static method registers a constructor to the AnnotationItemFactory. It checks whether the constructor implements the required static accessor supportsType.
+     */
     static register(ctor){
         //to do: add logic to test whether the object has implemented the necessary API
         if(ctor.supportsType === AnnotationItem.supportsType){
@@ -196,7 +209,13 @@ export class AnnotationItemFactory{
             _constructors.push(ctor);
         }
     }
-    
+    /**
+     * Get a constructor for creating an AnnotationItem instance based on a GeoJSON feature.
+     * @static
+     * @param {Object} geoJSON - The GeoJSON feature object.
+     * @returns {Function|undefined} A constructor function or undefined if no matching constructor is found.
+     * @description This static method retrieves a constructor from the registered constructors based on the provided GeoJSON feature. It matches the geometry type and subtype to determine the appropriate constructor.
+     */
     static getConstructor(geoJSON){
         if(!('geometry' in geoJSON && 'properties' in geoJSON)){
             console.error('Invalid GeoJSON Feature object. Returning undefined.');
@@ -214,7 +233,13 @@ export class AnnotationItemFactory{
         
         return constructors.slice(-1)[0]; //return the most recent constructor that supports this type
     }
-
+    /**
+     * Create an AnnotationItem instance from a GeoJSON feature.
+     * @static
+     * @param {Object} geoJSON - The GeoJSON feature object.
+     * @returns {paper.Item|undefined} A paper.Item instance or undefined if no matching constructor is found.
+     * @description This static method creates an AnnotationItem instance from a GeoJSON feature. It retrieves a matching constructor based on the GeoJSON geometry type and subtype, and then creates an AnnotationItem instance using that constructor.
+     */
     static itemFromGeoJSON(geoJSON){
         if(GeometryTypes.includes(geoJSON.type)){
             geoJSON = {
@@ -229,7 +254,13 @@ export class AnnotationItemFactory{
             return annotationItem.paperItem;
         }
     }
-
+    /**
+     * Create an AnnotationItem instance from an existing AnnotationItem.
+     * @static
+     * @param {paper.Item} item - The paper.Item instance associated with an AnnotationItem.
+     * @returns {paper.Item|undefined} A paper.Item instance created from the AnnotationItem, or undefined if the item is not associated with an AnnotationItem.
+     * @description This static method creates a new paper.Item instance based on an existing AnnotationItem. It retrieves the underlying AnnotationItem and converts it to a GeoJSON feature. Then, it creates a new paper.Item using the `itemFromGeoJSON` method of the AnnotationItemFactory.
+     */
     static itemFromAnnotationItem(item){
         if(!item.annotationItem){
             error('Only paper.Items constructed by AnnotationItem implementations are supported');
@@ -245,9 +276,13 @@ export class AnnotationItemFactory{
 
 }
 
+export{AnnotationItemFactory};
+
+
+
 /**
  * Convert a Paper.js item into an AnnotationItem.
- * @memberof module:annotationitem#
+ * @private
  * @param {AnnotationItem} annotationItem - The AnnotationItem instance.
  * @description This function takes an AnnotationItem instance and converts the associated paper item into an
  * AnnotationItem by enhancing it with special properties and behaviors.
@@ -282,7 +317,7 @@ function convertPaperItemToAnnotation(annotationItem){
 
 /**
  * Enhance the `replaceWith` functionality of Paper.js items.
- * @memberof module:annotationitem#
+ * @private
  * @param {paper.Item} newItem - The new item to replace with.
  * @returns {paper.Item} The replaced item.
  * @description This function enhances the `replaceWith` functionality of Paper.js items by providing additional

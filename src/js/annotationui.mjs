@@ -55,9 +55,6 @@ class AnnotationUI {
   
     /**
      * AnnotationToolbar: UI for interactive tools
-     * @instance
-     * @property {function} show - Shows the AnnotationToolbar.
-     * @property {function} hide - Hides the AnnotationToolbar.
      * @property {function} addToOpenSeadragon - Adds the AnnotationToolbar to the OpenSeadragon viewer.
      */
     this._toolbar = new AnnotationToolbar(annotationToolkit.overlay.paperScope, opts.tools);
@@ -68,7 +65,6 @@ class AnnotationUI {
 
     /**
      * FileDialog: UI for loading/saving data
-     * @instance
      * @property {function} toggle - Toggles the FileDialog visibility.
      * @property {function} show - Shows the FileDialog.
      * @property {function} hide - Hides the FileDialog.
@@ -87,16 +83,6 @@ class AnnotationUI {
     }
 
 
-    /**
-     * LayerUI: UI for managing collections/features
-     * @instance
-     * @property {function} show - Shows the LayerUI.
-     * @property {function} hide - Hides the LayerUI.
-     * @property {function} addToOpenSeadragon - Adds the LayerUI to the OpenSeadragon viewer.
-     * @property {string} filename - The filename to be displayed in the LayerUI.
-     * @property {Element} positioningElement - The positioning element for the LayerUI.
-     * @property {AnnotationToolbar} toolbar - The AnnotationToolbar associated with the LayerUI.
-     */
     let dialogOpts = {
       filename: _viewer.world.getItemAt(0) && this._viewer.world.getItemAt(0).source.name,
       positioningElement: (this, _viewer.navigator || this._viewer).element,
@@ -113,7 +99,6 @@ class AnnotationUI {
 
     /**
      * Button for controlling LayerUI and/or AnnotationToolbar
-     * @instance
      * @property {function} show - Shows the LayerUI and AnnotationToolbar.
      * @property {function} hide - Hides the LayerUI and AnnotationToolbar.
      * @property {function} toggle - Toggles the visibility of LayerUI and AnnotationToolbar.

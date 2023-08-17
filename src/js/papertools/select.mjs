@@ -5,16 +5,19 @@ import {AnnotationUITool, AnnotationUIToolbarBase} from './annotationUITool.mjs'
  * This tool allows users to select and manipulate GeoJSON feature items on the Paper.js project.
  * @class
  */
-export class SelectTool extends AnnotationUITool{
-  /**
-   * Creates an instance of SelectTool.
-   * @constructor
-   * @param {Object} paperScope - The Paper.js paper scope object.
-   * @property {Object} ps - Reference to the Paper.js project scope.
-   * @property {SelectToolbar} toolbarControl - Sets the toolbar control for the SelectTool.
-   * @property {paper.Path.Rectangle} selectionRectangle - The selection rectangle used for area-based selection.
-   * @property {paper.Path.Rectangle} sr2 - A second selection rectangle with a dashed border.
-   */ 
+class SelectTool extends AnnotationUITool{
+    /**
+     * Creates an instance of SelectTool.
+     * @constructor
+     * @param {Object} paperScope - The Paper.js paper scope object.
+     * @property {Object} ps - Reference to the Paper.js project scope.
+     * @property {SelectToolbar} toolbarControl - Sets the toolbar control for the SelectTool.
+     * @property {paper.Path.Rectangle} selectionRectangle - The selection rectangle used for area-based selection.
+     * @property {paper.Path.Rectangle} sr2 - A second selection rectangle with a dashed border.
+     * @description This tool provides the ability to select and manipulate GeoJSON feature items on the canvas. Users can select items by clicking
+     * on them or by performing area-based selection through click-and-drag. It also emits selection-related events for interaction and provides
+     * functions to retrieve selected items and check for the existence of GeoJSON feature items.
+     */
     constructor(paperScope){
         super(paperScope);
         let self=this;
@@ -45,7 +48,7 @@ export class SelectTool extends AnnotationUITool{
        
         /**
          * Event handler for mouse up events.
-         *
+         * @private
          * @param {Event} ev - The mouse up event.
          * @property {boolean} visible - Hide the selection rectangle.
          * @property {HitResult} hitResult - The result of the hit test to find the item under the mouse pointer.
@@ -75,7 +78,7 @@ export class SelectTool extends AnnotationUITool{
         }
         /**
          * Event handler for mouse drag events.
-         *
+         * @private
          * @param {Event} ev - The mouse drag event.
          * @property {boolean} visible - Show the selection rectangle.
          * @property {Rectangle} r - The bounding rectangle of the selection area.
@@ -128,6 +131,13 @@ export class SelectTool extends AnnotationUITool{
             this.currentLayer = null;
         }   
     }
+    /**
+     * Performs a hit test on a specific point and returns hit results for GeoJSON feature items.
+     * This method performs a hit test on the provided point and filters the results to include only GeoJSON feature items.
+     * It also adjusts the hit result if the initial hit is not on the GeoJSON feature itself, but on a child item.
+     * @param {Object} ev - The mouse event object containing the point to perform the hit test on.
+     * @returns {HitResult} The hit result object containing information about the hit test.
+     */
     hitTestPoint(ev){
         let hitResult = this.ps.project.hitTest(ev.point,{
             fill:true,
@@ -141,6 +151,14 @@ export class SelectTool extends AnnotationUITool{
         }
         return hitResult;
     }
+    /**
+     * Performs a hit test within an area and returns hit results for GeoJSON feature items.
+     * This method performs a hit test within the provided area and returns hit results that include only GeoJSON feature items.
+     * It supports options for testing against fully contained or overlapping items.
+     * @param {Object} ev - The mouse event object containing the area for hit testing.
+     * @param {boolean} [onlyFullyContained=false] - Flag to indicate if hit test should be performed only on fully contained items.
+     * @returns {HitResult[]} An array of hit results containing GeoJSON feature items within the specified area.
+     */
     hitTestArea(ev,onlyFullyContained){
         let options = {
             match:item=>item.isGeoJSONFeature,
@@ -156,6 +174,8 @@ export class SelectTool extends AnnotationUITool{
         return hitResult;
     }
 }
+export{SelectTool};
+
 
 class SelectToolbar extends AnnotationUIToolbarBase{
     constructor(tool){

@@ -1,6 +1,19 @@
 import { AnnotationItem } from "./annotationitem.mjs";
 
-export class Point extends AnnotationItem{
+/**
+ * Represents a point annotation item.
+ * @class
+ * @memberof OSDPaperjsAnnotation
+ * @extends AnnotationItem
+ * @description The `Point` class represents a point annotation item. It inherits from the `AnnotationItem` class and provides methods to work with point annotations.
+ */
+class Point extends AnnotationItem{
+    /**
+     * Create a new Point instance.
+     * @param {Object} geoJSON - The GeoJSON object containing annotation data.
+     * @property {paper.Group} _paperItem - The associated paper item representing the point.
+     * @description This constructor initializes a new point annotation item based on the provided GeoJSON object. It creates a visual representation of a point annotation with an icon and a circle.
+     */
     constructor(geoJSON){
         super(geoJSON);
 
@@ -70,6 +83,11 @@ export class Point extends AnnotationItem{
         });
         
     }
+    /**
+     * Set the style properties of the point.
+     * @param {Object} props - The style properties to set.
+     * @description This method sets the style properties of the point using the provided properties object.
+     */
     setStyle(props){
         //override default implementation so it doesn't overwrite the rescale properties
         // let rescale = props.rescale;
@@ -79,19 +97,41 @@ export class Point extends AnnotationItem{
         // this.paperItem.children[0].style.set(props);
     }
     
+    /**
+     * Retrieves the supported types by the Point annotation item.
+     * @static
+     * @returns {Object} An object with type property set to 'Point'.
+     * @description This static method provides information that the Point annotation item has a type of 'Point'.
+     */
     static get supportsType(){
         return {
             type: 'Point'
         }
     }
+    /**
+     * Retrieves the coordinates of the point.
+     * @returns {Array} An array containing the x and y coordinates.
+     * @description This method returns an array of coordinates representing the position of the point.
+     */
     getCoordinates(){
         let item = this.paperItem;
         let circle = item.children[0];
         return [circle.bounds.center.x, circle.bounds.center.y];
     }
+    /**
+     * Retrieves the style properties of the point.
+     * @returns {Object} The style properties in JSON format.
+     * @description This method returns the style properties of the point in JSON format.
+     */
     getStyleProperties(){
         return this.paperItem.children[0].style.toJSON();
     }
+    /**
+     * Perform actions during a transformation on the point.
+     * @static
+     * @param {string} operation - The type of transformation operation.
+     * @description This static method performs actions during a transformation on the point, such as rotation or scaling. It handles both rotation and scaling transformations of the point annotation.
+     */
     static onTransform(){
         let operation = arguments[0];
         switch(operation){
@@ -125,18 +165,33 @@ export class Point extends AnnotationItem{
         }
     }
 
+    /**
+     * Get the icon text for the point's icon.
+     * @private
+     * @returns {string} - The icon text.
+     */
     get iconText(){
         if(!this._iconText){
             this._makeIcon();
         }
         return this._iconText;
     }
+    /**
+     * Get the icon font family for the point's icon.
+     * @private
+     * @returns {string} - The icon font family.
+     */
     get iconFontFamily(){
         if(!this._iconFontFamily){
             this._makeIcon();
         }
         return this._iconFontFamily;
     }
+    /**
+     * Get the icon font weight for the point's icon.
+     * @private
+     * @returns {string} - The icon font weight.
+     */
     get iconFontWeight(){
         if(!this._iconFontWeight){
             this._makeIcon();
@@ -145,6 +200,13 @@ export class Point extends AnnotationItem{
     }
 
     //private
+    /**
+     * Generate the icon text, font family, and font weight for the point's icon.
+     * @private
+     * @memberof OSDPaperjsAnnotation.Point
+     * @returns {void}
+     * @description This private method generates the necessary text content, font family, and font weight for the point's icon. It uses a hidden DOM element to extract the computed styles and content of the FontAwesome icon, which is then used to populate the icon properties.
+     */
     _makeIcon(){
         //to-do: make the class(es) used to select a fontawesome icon a configurable option
         let domText = $('<i>', { class: 'fa-solid fa-map-pin', style: 'visibility:hidden;' }).appendTo('body');
@@ -156,3 +218,4 @@ export class Point extends AnnotationItem{
     }
     
 }
+export{Point};

@@ -24,7 +24,21 @@ import { AnnotationItem } from './annotationitem.mjs';
  * 
  **/
 
-export class Raster extends AnnotationItem{
+/**
+ * Represents a raster annotation item.
+ * @class
+ * @memberof OSDPaperjsAnnotation
+ * @extends AnnotationItem
+ * @description The `Raster` class represents a raster annotation item. It inherits from the `AnnotationItem` class and provides methods to work with raster annotations.
+ */
+class Raster extends AnnotationItem{
+    /**
+     * Create a new Raster instance.
+     * @param {Object} geoJSON - The GeoJSON object containing annotation data.
+     * @throws {string} Throws an error if the GeoJSON type or subtype is invalid.
+     * @property {paper.Group} _paperItem - The associated paper item representing the raster.
+     * @description This constructor initializes a new raster annotation item based on the provided GeoJSON object.
+     */
     constructor(geoJSON){
         super(geoJSON);
         if (geoJSON.geometry.type !== 'GeometryCollection' || geoJSON.geometry.properties.subtype !== 'Raster') {
@@ -88,12 +102,22 @@ export class Raster extends AnnotationItem{
         
         this.paperItem = grp;
     }
+    /**
+     * Retrieves the supported types by the Raster annotation item.
+     * @static
+     * @returns {Object} An object with type and subtype properties.
+     * @description This static method provides information about the supported types by the Raster annotation item class.
+     */
     static get supportsType(){
         return {
             type: 'GeometryCollection',
             subtype: 'Raster'
         }
     }
+    /**
+     * Convert the raster annotation to a GeoJSON geometry.
+     * @returns {Object} The GeoJSON representation of the raster annotation.
+     */
     toGeoJSONGeometry(){
         let item = this.paperItem;
         let clipGroup = item.children[0];
@@ -124,5 +148,6 @@ export class Raster extends AnnotationItem{
         return geom;
     }
 }
+export{Raster};
 
 const rasterColor = new paper.Color(0,0,0,0);

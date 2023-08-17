@@ -79,7 +79,7 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
      * Create a new AnnotationToolkit instance.
      * @constructor
      * @param {OpenSeadragon.Viewer} openSeadragonViewer - The OpenSeadragon viewer object.
-     * @param {object} [opts] - The configuration options.
+     * @param {object} [opts] - The configuration options(not yet supported).
      */
     constructor(openSeadragonViewer, opts) {
         super();

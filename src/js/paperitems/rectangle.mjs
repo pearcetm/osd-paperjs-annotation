@@ -1,6 +1,20 @@
 import { AnnotationItem } from "./annotationitem.mjs";
 
-export class Rectangle extends AnnotationItem{
+/**
+ * Represents a rectangle annotation item.
+ * @class
+ * @memberof OSDPaperjsAnnotation
+ * @extends AnnotationItem
+ * @description The `Rectangle` class represents a rectangle annotation item. It inherits from the `AnnotationItem` class and provides methods to work with rectangle annotations.
+ */
+class Rectangle extends AnnotationItem{
+    /**
+     * Create a new Rectangle instance.
+     * @param {Object} geoJSON - The GeoJSON object containing annotation data.
+     * @throws {string} Throws an error if the GeoJSON type or subtype is invalid.
+     * @property {paper.CompoundPath} _paperItem - The associated paper item representing the rectangle.
+     * @description This constructor initializes a new rectangle annotation item based on the provided GeoJSON object.
+     */
     constructor(geoJSON){
         super(geoJSON);
 
@@ -39,16 +53,32 @@ export class Rectangle extends AnnotationItem{
 
         this.paperItem = poly;
     }
+    /**
+     * Retrieves the supported types by the Rectangle annotation item.
+     * @static
+     * @returns {Object} An object with type and subtype properties.
+     * @description This static method provides information about the supported types by the Rectangle annotation item class.
+     */
     static get supportsType(){
         return {
             type: 'Point',
             subtype: 'Rectangle'
         }
     }
+    /**
+     * Retrieves the coordinates of the rectangle.
+     * @returns {Array} An array containing the x and y coordinates of the rectangle.
+     * @description This method returns an array containing the x and y coordinates of the rectangle.
+     */
     getCoordinates(){
         let item = this.paperItem;
         return [item.position.x, item.position.y];
     }
+    /**
+     * Retrieves the properties of the rectangle.
+     * @returns {Object} An object containing the width, height, and angle of the rectangle.
+     * @description This method returns an object containing the width, height, and angle properties of the rectangle.
+     */
     getProperties(){
         let item = this.paperItem;
         let path = item.children[0];
@@ -65,6 +95,13 @@ export class Rectangle extends AnnotationItem{
         };
     }
 
+    /**
+     * Perform transformation on the rectangle.
+     * @static
+     * @param {string} operation - The transformation operation to perform (rotate or scale).
+     * @param {*} arguments - The arguments specific to the operation.
+     * @description This static method performs transformation on the rectangle based on the specified operation and arguments.
+     */
     static onTransform(){
         let operation = arguments[0];
         switch(operation){
@@ -122,3 +159,4 @@ export class Rectangle extends AnnotationItem{
     }
 
 }
+export{Rectangle};

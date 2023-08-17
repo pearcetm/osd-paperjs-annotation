@@ -21,10 +21,7 @@ class TransformTool extends AnnotationUITool{
     constructor(paperScope){
         super(paperScope);
         let self=this;
-        /**
-         * The Paper.js scope associated with the project.
-         * @type {paper.PaperScope}
-         */
+
         this.ps = this.project.paperScope;
         this._mode = 'transform';
         this._moving = [];

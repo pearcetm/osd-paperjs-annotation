@@ -15,13 +15,6 @@ class PointTextTool extends AnnotationUITool{
  * @param {paper.PaperScope} paperScope - The Paper.js scope for the tool.
  *
  * @property {paper.PointText} cursor - The visual representation of the text cursor.
- * @property {Function} extensions.onActivate - Callback function to activate the PointTextTool, showing the cursor and handling item creation or modification.
- * @property {Function} extensions.onDeactivate - Callback function to deactivate the PointTextTool, hiding the cursor and resetting overlay classes.
- * @property {Function} onSelectionChanged - Callback function to update the cursor visibility based on item creation status and update the text input.
- * @property {Function} tool.onMouseMove - Event handler for cursor movement on mouse move, updating the cursor position and overlay classes for dragging.
- * @property {Function} tool.onMouseDown - Event handler for mouse down, responsible for creating or initiating dragging of items.
- * @property {Function} tool.onMouseDrag - Event handler for mouse drag, used for dragging items.
- * @property {Function} tool.onMouseUp - Event handler for mouse up, triggered after dragging items.
  */
     constructor(paperScope){
         super(paperScope);
@@ -53,7 +46,18 @@ class PointTextTool extends AnnotationUITool{
         cursor.visible=false;
         this.project.toolLayer.addChild(cursor);
         
+        /**
+         * Set the toolbar control for the PointTextTool.
+         * This function sets the toolbar control using the provided instance of PointTextToolbar.
+         * @private
+         * @param {PointTextToolbar} toolbarControl - The toolbar control instance to be set.
+         */
         this.setToolbarControl(new PointTextToolbar(this));
+        /**
+         * Activate event handler for the PointTextTool.
+         * This function is called when the tool is activated, and it handles the setup of cursor visibility and interaction behavior.
+         * @private
+         */
         this.extensions.onActivate=function(){
             self.project.paperScope.project.activeLayer.addChild(cursor);
             if(self.itemToCreate){
@@ -64,6 +68,11 @@ class PointTextTool extends AnnotationUITool{
                 self._updateTextInput();
             }
         }
+        /**
+         * Deactivate event handler for the PointTextTool.
+         * This function is called when the tool is deactivated, and it handles cursor visibility and interaction cleanup.
+         * @private
+         */
         this.extensions.onDeactivate=function(){
             self.project.toolLayer.addChild(cursor);
             cursor.visible=false;
@@ -73,6 +82,13 @@ class PointTextTool extends AnnotationUITool{
             cursor.visible = !!this.itemToCreate;
             self._updateTextInput();
         }
+        /**
+         * Handle the mouse move event for the PointTextTool.
+         * This function is called when the user moves the mouse.
+         * It updates the position of the cursor and changes the overlay class to indicate potential grabbing.
+         * @private
+         * @param {paper.MouseEvent} ev - The mouse event containing the move information.
+         */
         tool.onMouseMove=function(ev){
             cursor.position = ev.point;
             if(ev.item && self.item.hitTest(ev.point)){
@@ -82,6 +98,13 @@ class PointTextTool extends AnnotationUITool{
                 self.project.overlay.removeClass('point-tool-grab');
             }   
         }
+        /**
+         * Handle the mouse down event for the PointTextTool.
+         * This function is called when the user presses the mouse button.
+         * It either initializes a new PointText or prepares for dragging an existing item.
+         * @param {paper.MouseEvent} ev - The mouse event containing the click information.
+         * @private
+         */
         tool.onMouseDown=function(ev){
             if(self.itemToCreate){
                 self.itemToCreate.initializeGeoJSONFeature('Point','PointText');
@@ -98,11 +121,25 @@ class PointTextTool extends AnnotationUITool{
                 }
             }
         }
+        /**
+         * Handle the mouse drag event for the PointTextTool.
+         * This function is called when the user drags the mouse.
+         * It updates the position of the cursor and moves the PointText item if dragging is active.
+         * @private
+         * @param {paper.MouseEvent} ev - The mouse event containing the drag information.
+         */
         tool.onMouseDrag=function(ev){
             if(dragging){
                 self.item && (self.item.position = self.item.position.add(ev.delta))
             }
         }
+        /**
+         * Handle the mouse up event for the PointTextTool.
+         * This function is called when the user releases the mouse button.
+         * It stops dragging and updates the overlay class to indicate non-dragging state.
+         * @private
+         * @param {paper.MouseEvent} ev - The mouse event containing the release information.
+         */
         tool.onMouseUp=function(ev){
             dragging=false;
             self.project.overlay.removeClass('point-tool-grabbing');

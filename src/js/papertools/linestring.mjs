@@ -9,45 +9,13 @@ import {PolygonTool} from './polygon.mjs';
  */
 class LinestringTool extends PolygonTool{
     /**
-    * Create a new LinestringTool instance.
+    * The constructor initializes the LinestringTool by calling the base class (PolygonTool) constructor and sets up the necessary toolbar control (LinestringToolbar).
     * @memberof OSDPaperjsAnnotation.LinestringTool
     * @constructor
     * @param {paper.PaperScope} paperScope - The Paper.js scope for the tool.
-    * The constructor initializes the LinestringTool by calling the base class (PolygonTool) constructor and sets up the necessary toolbar control (LinestringToolbar).
     * @property {paper.Shape.Circle} cursor - The cursor representing the pen for drawing linestrings. It is a Paper.js Circle shape.
     * @property {number} radius - The brush radius for drawing linestrings. This property controls the width of the linestring paths.
     * @property {paper.Path} draggingSegment - The segment that is being dragged during the mouse drag event. It is a Paper.js Path representing the segment.
-
-    * @property {Function} startNewPath - Start a new linestring path when the user clicks the mouse. This function initializes the creation of a new linestring path, sets up a drawing group to hold the path, and listens for user mouse events to add new points to the path.
-
-    * @property {Function} finishCurrentPath - Finish the current linestring path when the user releases the mouse. This function finalizes the current linestring path by adding it to the main item and clears the drawing group.
-
-    * @property {Function} setEraseMode - Enable or disable the erase mode for the linestring tool. This function toggles the erase mode based on the provided boolean value. When erasing, the linestring paths are shown in red.
-
-    * @property {boolean} setEraseMode.erasing - A boolean value indicating whether the erase mode should be enabled or disabled.
-
-    * @property {Function} setRadius - Set the brush radius for the linestring tool. This function updates the brush radius used for drawing linestrings. The new radius is adjusted according to the current zoom level.
-
-    * @property {number} setRadius.r - The new brush radius value to set.
-
-    * @property {Function} onMouseDown - Handle the mouse down event for the linestring tool. This function is called when the user presses the mouse button. It checks for hit items and decides whether to start a new path, delete a segment, or add a new point.
-
-    * @property {paper.MouseEvent} onMouseDown.ev - The mouse event containing the click information.
-
-    * @property {Function} onMouseMove - Handle the mouse move event for the linestring tool. This function is called when the user moves the mouse. It updates the position of the cursor representing the pen and performs any necessary operations during the mouse move.
-
-    * @property {paper.MouseEvent} onMouseDown.ev - The mouse event containing the move information.
-
-    * @property {Function} onMouseDrag - Handle the mouse drag event for the linestring tool.This function is called when the user drags the mouse. It updates the position of the cursor representing the pen and modifies the linestring path during the drag operation.
-    * @property {paper.MouseEvent} onMouseDrag.ev - The mouse event containing the drag information.
-    
-    * @property {Function} onMouseUp - Handle the mouse up event for the linestring tool. This function is called when the user releases the mouse button. It finishes the current linestring path if one is being drawn.
-
-    * @property {paper.MouseEvent} onMouseUp.ev - The mouse event containing the release information.
-
-    * @property {Function} onMouseWheel - Handle the mouse wheel event for the linestring tool. This function is called when the user scrolls the mouse wheel. It updates the brush radius based on the scroll direction to make drawing thicker or thinner lines easier.
-
-    * @property {WheelEvent} onMouseWheel.ev - The wheel event containing the scroll information.
     */
     constructor(paperScope){
         super(paperScope);
@@ -82,13 +50,26 @@ class LinestringTool extends PolygonTool{
                 self.finish();
             } 
         }
-        
+        /**
+         * Set the brush radius for the linestring tool.
+         * This function updates the brush radius used for drawing linestrings.
+         * The new radius is adjusted according to the current zoom level.
+         * @param {number} r - The new brush radius value to set.
+         * 
+         */        
         this.setRadius=function(r){
             this.radius = r;
             this.cursor.radius=r/this.project.getZoom();
         }
 
         // let superOnMouseDown = tool.onMouseDown;
+        /**
+         * Handle the mouse down event for the linestring tool.
+         * This function is called when the user presses the mouse button.
+         * It checks for hit items and decides whether to start a new path, delete a segment, or add a new point.
+         * @private
+         * @param {paper.MouseEvent} ev - The mouse event containing the click information.
+         */
         tool.onMouseDown=function(ev){
             self.draggingSegment=null;
 
@@ -130,21 +111,48 @@ class LinestringTool extends PolygonTool{
         }
 
         let superOnMouseMove = tool.onMouseMove;
+        /**
+         * Handle the mouse move event for the linestring tool.
+         * This function is called when the user moves the mouse.
+         * It updates the position of the cursor representing the pen and performs any necessary operations during the mouse move.
+         * @private
+         * @param {paper.MouseEvent} ev - The mouse event containing the move information.
+         */
         tool.onMouseMove=function(ev){
             self.cursor.position=ev.point;
             superOnMouseMove(ev);
         }
         let superOnMouseDrag = tool.onMouseDrag;
+        /**
+         * Handle the mouse drag event for the linestring tool.
+         * This function is called when the user drags the mouse.
+         * It updates the position of the cursor representing the pen and modifies the linestring path during the drag operation.
+         * @private
+         * @param {paper.MouseEvent} ev - The mouse event containing the drag information.
+         */
         tool.onMouseDrag=function(ev){
             self.cursor.position=ev.point;
             superOnMouseDrag(ev);
             let dr = self.drawing();
             dr && (dr.path.segments = self.simplifier.simplify(dr.path.segments.map(s=>s.point)));
         }
+        /**
+         * Handle the mouse up event for the linestring tool.
+         * This function is called when the user releases the mouse button.
+         * It finishes the current linestring path if one is being drawn.
+         * @private
+         * @param {paper.MouseEvent} ev - The mouse event containing the release information.
+         */
         tool.onMouseUp=function(ev){
             self.finishCurrentPath();
         }
-
+        /**
+         * Handle the mouse wheel event for the linestring tool.
+         * This function is called when the user scrolls the mouse wheel.
+         * It updates the brush radius based on the scroll direction to make drawing thicker or thinner lines easier.
+         * @private
+         * @param {WheelEvent} ev - The wheel event containing the scroll information.
+         */
         tool.onMouseWheel = function(ev){
             // console.log('Wheel event',ev);
             ev.preventDefault();
