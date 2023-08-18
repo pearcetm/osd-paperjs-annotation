@@ -1,0 +1,61 @@
+#dsa-login-screen{
+    background-color:white;
+    color:black;
+    border:thin black solid;
+    border-radius:2px;
+    padding:5px;
+    display:flex;
+    flex-direction:row;
+}
+#dsa-login-screen>*{
+    flex-grow:1;
+}
+#dsa-login-screen .right{
+    flex-grow:0;
+}
+#dsa-login-screen button{
+    color:black;
+}
+#dsa-login-screen.logged-in .logged-out{
+    display:none;
+}
+#dsa-login-screen:not(.logged-in) .logged-in{
+    display:none;
+}
+#dsa-login-screen.login-error::after{
+    content:'Login failed';
+    color:red;
+}
+.dsa-annotation-list::before{
+    content:'View DSA Annotation:';
+    display:block;
+    color:gray;
+    font-weight:bold;
+}
+#dsa-gui{
+    border-bottom:thin black solid;
+    padding: 2px;
+    margin-bottom:2px;
+    max-height:40vh;
+    /* overflow:auto; */
+}
+#dsa-gui .annotation-item{
+    cursor: pointer;
+}
+#dsa-gui .annotation-item.selected{
+    font-weight:bold;
+}
+/* .dsa-annotation-gui{
+    display:grid;
+    grid-template-rows: minmax(0,5em) auto auto;
+} */
+.dsa-annotation-gui[data-mode="current"] .dsa-annotation-picker{
+    display:none;
+}
+.dsa-annotation-gui[data-mode="picker"] .dsa-current-annotation{
+    display:none;
+}
+.dsa-annotation-list{
+    max-height:5em;
+    overflow:auto;
+}

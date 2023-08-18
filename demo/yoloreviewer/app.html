@@ -1,0 +1,55 @@
+<head>
+   <title>YOLO Reviewer</title>
+   <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/openseadragon/4.0.0/openseadragon.min.js"></script>
+   <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/paper.js/0.12.17/paper-full.js"></script>
+   <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+   <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.0/FileSaver.min.js"></script>
+   
+   <script type="module" src="./app.mjs"></script>
+   <link rel="stylesheet" href="../dsa/dsa.css">
+   <link rel="stylesheet" href="./app.css">
+   
+</head>
+<body>
+    <div class="content">
+        <div id="header">
+            <div>Hotkeys: previous(q) - next(e) - cycle category (w) - point(p) -rectangle (r) - new (n)</div>
+            <div class="dsa-ui-container"></div>
+            <div class="magnification-widget">
+                <div class="slider-controls">
+                    <input type="range" min="1" max="100">
+                    
+                    <button data-value="0.5">0.5</button>
+                    <button data-value="1">1</button>
+                    <button data-value="2">2</button>
+                    <button data-value="4">4</button>
+                    <button data-value="10">10</button>
+                    <button data-value="20">20</button>
+                    <button data-value="40">40</button>
+                    <button data-value="80">80</button>
+                
+                </div>
+                <div>Magnification: <span class="current-mag"></span></div>
+            </div>
+        </div>
+        <div id="viewer-container">
+            <div id='viewer' class="viewer"></div>
+        </div>
+        <div id="gui-container">
+            <div id="dsa-gui" class="gui-component"></div>
+            <div id="reviewer-controls" class="gui-component">
+                <div>
+                    On <span class="current-index">-</span> of <span class="total-annotations">-</span> 
+                    <button class="refresh-review">Refresh</button>
+                    <button class="align-to-roi">Align</button> 
+                </div>
+                <div>
+                    <button class="review-previous"><-</button>
+                    <select></select>
+                    <button class="review-next">-></button>
+                </div>
+            </div>
+            <div id="paper-gui"></div>
+        </div>
+    </div>
+</body>

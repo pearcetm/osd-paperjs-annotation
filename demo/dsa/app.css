@@ -1,0 +1,99 @@
+body{
+    background-color:rgb(65, 64, 64);
+}
+.content{
+    text-align:left;
+    position:fixed;
+    top:0;
+    left:0;
+    width:100vw;
+    height:100vh;
+    display:grid;
+    grid-template-rows:auto 1fr;
+    grid-template-columns:1fr auto;
+    background-color:white;
+}
+.content>div{
+    border:thin black solid;
+}
+#header{
+    grid-column:span 2;
+    display:grid;
+    grid-template-columns:auto auto auto 1fr;
+    padding:2px 5px;
+}
+#header .dsa-link{
+    width:20em;
+}
+#current-file:empty::after{
+    content:'No file selected';
+    color:lightgray;
+}
+#gui-container{
+    overflow:hidden;
+    display: grid;
+    grid-template-rows: auto auto 1fr;
+}
+#paper-gui{
+    overflow:hidden;
+}
+#reviewer-controls{
+    display:none;
+}
+.annotation-ui-mainwindow{
+    height:100%;
+    width:20em;
+}
+.annotation-ui-feature-collections{
+    overflow:auto;
+}
+input.dsa-link{
+    width:100%;
+}
+#dsa-dialog{
+    /* min-width:760px; */
+    width:100%;
+}
+
+
+.dsa-contents .collection, .dsa-contents .item{
+    cursor:pointer;
+}
+.dsa-contents .folder-header:hover{
+    background-color:lightgoldenrodyellow;
+}
+.dsa-contents .item:hover{
+    background-color: aliceblue;
+}
+.folder-contents{
+    padding-left:1.2em;
+}
+.folder-contents .folder{
+    order:0;
+}
+.folder-contents .loading::before{
+    content:'Loading...';
+    opacity: 0.6;
+    cursor: pointer;
+}
+.folder-contents:empty::before{
+    content:'No tiled images found';
+    opacity: 0.6;
+    cursor: pointer;
+}
+.folder-contents .item{
+    order:1;
+}
+.folder .fa{
+    padding-right:0.2em;
+}
+.folder.expanded>.folder-header>.fa-folder{
+    display:none;
+}
+.folder:not(.expanded)>.folder-header>.fa-folder-open{
+    display:none;
+}
+
+.gui-component{
+    border-bottom:thin black solid;
+}

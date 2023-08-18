@@ -1,0 +1,85 @@
+<head>
+    <title>Rotation Control Demo</title>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/openseadragon/4.0.0/openseadragon.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/paper.js/0.12.17/paper-full.js"></script>
+    <link rel="stylesheet" href="./demo.css">
+
+
+    <script type="module">
+        // Must be placed inside a module: <script type="module"> for import to work
+        import {RotationControlOverlay} from '../js/rotationcontrol.mjs'
+
+        // Basic viewer setup
+        let viewer = OpenSeadragon({
+            element:'rotating-viewer',
+            prefixUrl: "https://openseadragon.github.io/openseadragon/images/",
+            tileSources: {
+                type: 'image',
+                url:  'https://openseadragon.github.io/example-images/grand-canyon-landscape-overlooking.jpg',
+                buildPyramid: false
+            },
+            minZoomImageRatio:0.01,
+            visibilityRatio:0,
+            crossOriginPolicy: 'Anonymous',
+            ajaxWithCredentials: false
+        });
+
+        //Add a RotationControlOverlay to the viewer
+        viewer.addHandler('open',()=>{
+            new RotationControlOverlay(viewer)
+        });
+    </script>
+ </head>
+ <body>
+     <div class="content">
+         <div class="demo">
+             <h3>Rotation Control Overlay Demo</h3>
+             <div id="rotating-viewer" class="viewer"></div>
+             <div>
+                <h4>How to use:</h4>
+                <p>Toggle the controller using the button on the upper left toolbar.</p>
+                <p>Rotate the image using the following options:
+                    <ul>
+                        <li>Click the control boxes at the cardinal directions (N, E, S, W) to jump to those angles</li>
+                        <li>Click and drag the cross-hair controller to the desired center point for the rotation</li>
+                        <li>Click and drag the indicator dot to directly set the orientation</li>
+                        <li>Click and drag other places on the viewer. A line shows you the axis between the center point and your cursor, for alignment with features in the image. </li>
+                    </ul>
+                </p>
+                <p>
+                    While the controller is active, hold the shift key to zoom/pan the image. The controller will reactivate after the key press.
+                </p>
+                <p>Pressing escape will deactivate the rotation control tool.</p>
+
+                <h4>Code:</h4>
+                <pre>
+                    
+                    // Must be placed inside a module: script with type="module" for import to work
+                    import {RotationControlOverlay} from '../js/rotationcontrol.mjs'
+            
+                    // Basic viewer setup
+                    let viewer = OpenSeadragon({
+                        element:'rotating-viewer',
+                        prefixUrl: "https://openseadragon.github.io/openseadragon/images/",
+                        tileSources: {
+                            type: 'image',
+                            url:  'https://openseadragon.github.io/example-images/grand-canyon-landscape-overlooking.jpg',
+                            buildPyramid: false
+                        },
+                        minZoomImageRatio:0.01,
+                        visibilityRatio:0,
+                        crossOriginPolicy: 'Anonymous',
+                        ajaxWithCredentials: false
+                    });
+            
+                    //Add a RotationControlOverlay to the viewer
+                    viewer.addHandler('open',()=>{
+                        new RotationControlOverlay(viewer)
+                    });
+                    
+                </pre>
+             </div>
+         </div>
+     </div>
+     
+ </body>

@@ -1,0 +1,24 @@
+
+{
+  "name": "osd-paperjs-annotation",
+  "description": "",
+  "version": "0.1.0",
+  "dependencies": {
+    "jsdoc": "4.0.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "generate-docs": "jsdoc -c ./jsdoc-config.json"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pearcetm/osd-paperjs-annotation.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/pearcetm/osd-paperjs-annotation/issues"
+  },
+  "homepage": "https://github.com/pearcetm/osd-paperjs-annotation"
+}

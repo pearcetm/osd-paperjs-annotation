@@ -1,0 +1,6 @@
+*.sublime-workspace
+node_modules
+build/
+sftp-config.json
+.directory
+.DS_Store

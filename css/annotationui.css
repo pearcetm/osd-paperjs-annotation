@@ -1,10 +1,3 @@
-.button-icon{
-    position:absolute;
-    top:calc(50% - 2px);
-    left:50%;
-    transform:translate(-50%, -50%);
-    color:#01010187;
-}
 .ui-dialog{
     z-index:1001; /* Position it above the bootstrap navbar */
     font-size:14px;
@@ -20,12 +13,11 @@
     display:none;
 }
 .annotation-ui-mainwindow{
+    height:100%;
     color:black;
-    /* display:flex; */
-    /* flex-direction:column; */
     overflow:hidden;
     display:grid;
-    grid-template-rows:auto auto auto minmax(4em, 1fr) auto;
+    grid-template-rows: auto auto minmax(4em, 1fr) auto;
 }
 .annotation-visibility-controls{
     display:flex;
@@ -47,13 +39,6 @@
     padding:0.1em 0.5em;
     margin-right:0.3em;
 }
-/* .annotation-visibility-controls .annotation-opacity-container{
-    flex-grow:1;
-} */
-/* .annotation-ui-feature-collections{
-    flex-grow:1;
-    overflow:auto;
-} */
 .annotation-ui label{
     margin:0;
 }
@@ -92,28 +77,39 @@
 .feature-collection:not(.annotation-hidden) [data-action="show"]{
     display:none;
 }
+.feature-collection.annotation-hidden .features{
+    pointer-events:none;
+    opacity:50%;
+}
 .annotation-ui-feature-collections .name{
     font-weight:bold;
 }
 .feature-item{
     margin-left:1em;
 }
-.editablecontent:not(.editing){
+/* .editablecontent:not(.editing){
     cursor:default;
 }
 .editablecontent>[data-action]{
     margin-left:0.2em;
-    font-weight:lighter;
     cursor:pointer;
 }
 .editablecontent.editing>.onhover, .editablecontent:not(:hover) .onhover{
-    /* display:none; */
     visibility:hidden;
 }
 .editablecontent.editing .edit{
     border:thin gray solid;
     background-color:lightblue;
     padding:0 0.3em;
+} */
+.feature-collection [data-action], .feature [data-action]{
+    margin-left:0.2em;
+}
+.hoverable-actions:not(:hover) .onhover{
+    visibility:hidden;
+}
+.hoverable-actions:hover .editablecontent .onhover {
+    visibility:visible;
 }
 .feature-collection.trashed{
     background-color:darkred;
@@ -161,12 +157,7 @@
     pointer-events:none;
     cursor:not-allowed;
 }
-/* .annotation-ui-drawing-toolbar.mode-noselection{
-    visibility:hidden;
-    width: 0;
-    height: 0;
-    overflow: hidden;
-} */
+
 
 .annotation-ui-drawing-toolbar .pseudohidden, .annotation-ui-drawing-toolbar .invisible{
     visibility:hidden;
@@ -195,11 +186,11 @@
 .annotation-ui-drawing-toolbar .dropdowns>*:not(.active){
     display:none;
 }
-.annotation-ui-drawing-toolbar>button.active{
+.annotation-ui-drawing-toolbar>button.active, .annotation-ui-buttonbar>.btn.active{
     color:black;
     background-color:darkgray;
 }
-.annotation-ui-drawing-toolbar>button:not(.active){
+.annotation-ui-drawing-toolbar>button:not(.active), .annotation-ui-buttonbar>.btn:not(.active){
     color:rgb(62, 62, 62);
     background-color:lightgrey;
 }
@@ -213,22 +204,50 @@
     column-gap:1em;
     grid-template-columns:auto;
 }
+/* brush-toolbar styles */
 .dropdown.brush-toolbar{
     grid-template-columns: auto 1fr auto auto;    
 }
-.dropdown.wand-toolbar{
-    grid-template-columns: 5em 1fr auto auto;
-}
+/* end brush-toolbar styles */
+
+/* polygon-toolbar styles */
 .dropdown.polygon-toolbar{
     grid-template-columns: 1fr auto auto auto auto auto;    
 }
+.dropdown.polygon-toolbar button[data-action="simplify"]{
+    margin-right:0.2em;
+}
+/* end polygon-toolbar styles */
+
+/* linestring-toolbar styles */
 .dropdown.linestring-toolbar{
     grid-template-columns: auto 1fr auto auto;
 }
+/* end linestring-toolbar styles */
 canvas.selectable-layer{
     cursor:pointer;
 }
-
+canvas.point-tool-grab{
+    cursor:grab;
+}
+canvas.point-tool-grabbing{
+    cursor:grabbing;
+}
+canvas.rectangle-tool-move{
+    cursor: move;
+}
+canvas.rectangle-tool-resize{
+    cursor:nesw-resize;
+}
+canvas.transform-tool-move{
+    cursor: move;
+}
+canvas.transform-tool-resize{
+    cursor:nesw-resize;
+}
+canvas.transform-tool-rotate{
+    cursor: pointer;
+}
 .tool-action[data-tool-action="segment"]{
     cursor:move;
 }
@@ -240,6 +259,11 @@ canvas.selectable-layer{
 }
 .tool-action[data-tool-action="colorpicker"]{
     cursor:none;
+}
+
+/* wand-toolbar styles */
+.dropdown.wand-toolbar{
+    grid-template-columns: 5em 1fr auto auto;
 }
 
 .wand-toolbar .threshold-container{
@@ -275,88 +299,78 @@ canvas.selectable-layer{
 .wand-toolbar .option-toggle .option:not(.selected){
     display:none;
 }
+/* End wand-toolbar styles */
 
 .viewer-controls-topleft{
     display:flex;
 }
 
+/* style-toolbar styles */
 
-.style-toolbar{
-    display:grid;
-    grid-template-rows:auto;
-    align-items: center;
-}
-.style-toolbar .toprow{
+.style-toolbar .style-row{
     display:grid;
     grid-template-columns:auto auto auto auto;
-    padding-left:1px;
-}
-.style-toolbar .colorpicker-bar{
-    display:grid;
-    grid-template-columns:auto auto auto;
-    gap:0.2em;
-    padding:0.2em;
-    /* padding-left:1px; */
-}
-.style-toolbar .btn{
-    border:thin black solid;
-    padding:2px 0.4em;
-    display:grid;
+    column-gap:0.5em;
     align-items:center;
-    grid-template-columns:auto;
-    column-gap:0.3em;
 }
-.style-toolbar .toprow .btn{
-    grid-template-columns:auto 1fr;
-}
-.style-toolbar .toprow .done{
-    grid-template-columns:auto;
-}
-.style-toolbar .preview{
+.style-toolbar .style-item{
     display:inline-block;
-    height:100%;
-    width:100%;
+    width:7em;
+    white-space: nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    padding-left:0.5em;
+    cursor:pointer;
 }
-.style-toolbar .fill .preview{
-    border:thin transparent solid;
+.style-toolbar .style-item.selected{
+    outline:medium lightskyblue solid;
 }
-/* .colorpicker-bar:not(.stroke-active):not(.fill-active){
-    display:none;
-} */
-.style-toolbar .stroke-width{
-    padding-left:0.4em;
+.style-toolbar .hierarchy-up{
+    cursor:pointer;
+    padding:0 0.5em;
 }
-.style-toolbar .stroke-width input{
+.style-toolbar input[type="number"]{
     width:3.5em;
 }
-/* .style-toolbar:not(.colorpicker-active):not(.colorpicker-active-locked) .colorpicker-bar{
+.style-toolbar .colorpicker-row.hidden{
     display:none;
-} */
-.style-toolbar .default-action{
-    box-shadow: 0px 0px 4px 3px gray;
 }
-.style-toolbar .toprow .active-button{
-    border-bottom-color:transparent;
+.style-toolbar .colorpicker-row{
+    display:grid;
+    grid-template-columns:repeat(4,auto)
 }
-.style-toolbar .toprow>*:not(.active-button){
-    border-color:transparent;
-    border-bottom-color:black;
+.style-toolbar .preview{
+    position:relative;
+    display:block;
+    background: repeating-conic-gradient(#d0d0d0 0% 25%, white 0% 50%) 
+              50% / 20px 20px
 }
-.style-toolbar .toprow>*{
-    border-bottom: thin black solid;
+.style-toolbar .preview::after{
+    /* This is just so the height is set correctly since children are absolute positioned */
+    content:'Preview';
+    visibility:hidden;
 }
-.style-toolbar .style-active-item .collection-label::before{
-    content:'Style: ';
-    font-size:0.8em;
-    font-weight:bold;
-    color:darkgray;
+.style-toolbar .preview .bg{
+    display:block;
+    position:absolute;
+    outline:thin solid black;
+    top:0;
+    left:0;
+    bottom:0;
+    right:0;
 }
-.style-toolbar .style-active-item .collection-label:empty::after{
-    content:'Style for new items';
+.style-toolbar .preview .text{
+    display:block;
+    position:absolute;
+    padding:0 0.2em;
 }
-.style-toolbar .style-active-item .feature-label:not(:empty)::before{
-    content:', ';
+.style-toolbar input[type="range"]{
+    display:inline-block;
 }
+
+/* end style-toolbar styles */
+
+
 .new-feature,.new-feature-collection{
     cursor:pointer;
 }
@@ -367,7 +381,7 @@ canvas.selectable-layer{
 /* Annotation UI File Dialog Styles*/
 .annotation-ui-filedialog{
     display:grid;
-    grid-template-columns: 10fr 15fr 10fr;
+    grid-template-columns: auto auto auto;
 }
 .annotation-ui-filedialog>div{
     padding: 0 0.3em;
@@ -375,9 +389,46 @@ canvas.selectable-layer{
 .annotation-ui-filedialog .featurecollection-selection{
     border-right:thin gray solid;
     border-left:thin gray solid;
+    width:15em;
+    overflow-x:hidden;
+}
+.annotation-ui-filedialog .featurecollection-list{
+    display:flex;
+    flex-direction:column;
+    overflow:auto;
+}
+.annotation-ui-filedialog .localstorage-key-list::before{
+    content:'Saved in local storage:';
+    display:block;
+    color:gray;
+}
+.annotation-ui-filedialog .localstorage-key-list:empty::after{
+    content:'No items were found in local storage';
+    font-style:italic;
+    color:gray;
+}
+.annotation-ui-filedialog .localstorage-key{
+    cursor:pointer;
+}
+.annotation-ui-filedialog .localstorage-key:hover{
+    background-color:lightgoldenrodyellow;
+}
+.annotation-ui-filedialog .localstorage-key-test.key-exists::after{
+    content: '(overwrite)';
+    font-weight:bold;
+    background-color:rgb(190, 99, 66);
+    color:white;
+    padding:0 0.2em;
+}
+.annotation-ui-filedialog .finalize-panel{
+    width:15em;
+    overflow-x:hidden;
 }
 .annotation-ui-filedialog .header{
     white-space: nowrap;
+    border-bottom:thin gray solid;
+    padding-bottom:2px;
+    margin-bottom:2px;
 }
 .annotation-ui-filedialog button{
     display:block;
@@ -394,9 +445,7 @@ canvas.selectable-layer{
 button[disabled]{
     opacity:0.3;
 }
-.dropdown.polygon-toolbar button[data-action="simplify"]{
-    margin-right:0.2em;
-}
+
 .dropdown button[data-action="erase"].active{
     background-color:rgb(187, 86, 86);
 

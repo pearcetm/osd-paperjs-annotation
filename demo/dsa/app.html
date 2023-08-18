@@ -1,0 +1,30 @@
+<head>
+   <title>DSA AnnotationToolkit Demo</title>
+   <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/openseadragon/4.0.0/openseadragon.min.js"></script>
+   <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/paper.js/0.12.17/paper-full.js"></script>
+   <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+   <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.0/FileSaver.min.js"></script>
+   
+   <script type="module" src="./app.mjs"></script>
+   <link rel="stylesheet" href="./dsa.css">
+   <link rel="stylesheet" href="./app.css">
+   
+</head>
+<body>
+    <div class="content">
+        <div id="header">
+            <div>
+                Select files:
+                <input id="file-picker" type='file' accept="image/*" multiple>
+            </div>
+            <div class="dsa-ui-container"></div>
+        </div>
+        <div id="viewer-container">
+            <div id='viewer' class="viewer"></div>
+        </div>
+        <div id="gui-container">
+            <div id="dsa-gui" class="gui-component"></div>
+            <div id="paper-gui"></div>
+        </div>
+    </div>
+</body>
