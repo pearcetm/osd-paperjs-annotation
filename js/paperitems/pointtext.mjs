@@ -68,20 +68,6 @@ export class PointText extends AnnotationItem{
         
         this.paperItem = point;
 
-        // define style getter/setter so that style propagates to/from children
-        Object.defineProperty(point, 'style', {   
-            get: ()=>{ return point.children[0].style },
-            set: style=> { point.children.forEach(child=>child.style = style); }
-        });
-        // override fillOpacity property definition so that style getter/setter doesn't mess with fillOpacity
-        Object.defineProperty(point, 'fillOpacity', {   
-            get: function(){
-                return this._style.fillOpacity;
-            },
-            set: function(opacity){
-                this._style.fillOpacity = opacity;
-            }
-        });
 
     }
     setStyle(props){
