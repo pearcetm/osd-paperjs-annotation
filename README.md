@@ -2,6 +2,10 @@
 
 This project combines the [OpenSeadragon](https://openseadragon.github.io/) zoomable image viewer with [PaperJS](http://paperjs.org/)-based annotations drawn into a synced zoomable overlay.
 
+## API Documentation:
+
+See the [JSDoc documentation pages](https://pearcetm.github.io/osd-paperjs-annotation/docs/OSDPaperjsAnnotation.html) for information about how to use the library.
+
 ## Demo pages:
 
 ### Digital Slide Archive Annotator
