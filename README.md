@@ -8,6 +8,8 @@ See the [JSDoc documentation pages](https://pearcetm.github.io/osd-paperjs-annot
 
 ## Demo pages:
 
+See the [Demo pages](https://pearcetm.github.io/osd-paperjs-annotation/demo/) to try out the functionality.
+
 ### Digital Slide Archive Annotator
 View and annotate slides from any [Digital Slide Archive instance](https://pearcetm.github.io/osd-paperjs-annotation/demo/dsa/app.html). Enter the base URL for the DSA in the box and press the "Open DSA" button. Some archives may have publically available slides to view, but to save changes you will need to be logged in.
 
