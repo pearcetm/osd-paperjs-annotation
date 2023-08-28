@@ -68,6 +68,7 @@ export class PointText extends AnnotationItem{
         
         this.paperItem = point;
 
+
     }
     setStyle(props){
         //override default implementation so it doesn't overwrite the rescale properties
