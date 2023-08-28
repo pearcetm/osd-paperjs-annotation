@@ -1,0 +1,120 @@
+<head>
+    <title>Transform Tool Demo</title>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/openseadragon/4.0.0/openseadragon.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/paper.js/0.12.17/paper-full.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="./demo.css">
+
+    <script type="module">
+        import { AnnotationToolbar } from '../src/js/annotationtoolbar.mjs';
+        import{ AnnotationToolkit } from '../src/js/annotationtoolkit.mjs';
+        // Basic viewer setup
+        let viewer = OpenSeadragon({
+            element: 'brush-viewer',
+            prefixUrl: "https://openseadragon.github.io/openseadragon/images/",
+            tileSources: {
+                type: 'image',
+                url: 'https://openseadragon.github.io/example-images/grand-canyon-landscape-overlooking.jpg',
+                buildPyramid: false
+            },
+            minZoomImageRatio: 0.01,
+            visibilityRatio: 0,
+            crossOriginPolicy: 'Anonymous',
+            ajaxWithCredentials: false
+        });
+
+        viewer.addHandler('open', () => {
+            let paperScope = new paper.PaperScope(); // Create a new PaperScope
+            paperScope.setup('brush-canvas'); // Set up Paper.js with the specified canvas ID
+
+            // Create the AnnotationToolkit instance with annotationUI selecting a tool and add feature collections
+            let annotationToolkit = new AnnotationToolkit(viewer);
+            annotationToolkit.addAnnotationUI({tools:["transform"], addButton:false, addFileButton:false});
+
+            $.get('./demo-annotation.json').then(x => annotationToolkit.addFeatureCollections(x));
+        });
+        
+        let exampleviewer = OpenSeadragon({
+            element: 'example-viewer',
+            prefixUrl: "https://openseadragon.github.io/openseadragon/images/",
+            tileSources: {
+                type: 'image',
+                url: './tissue.jpg',
+                buildPyramid: true
+            },
+            minZoomImageRatio: 0.01,
+            visibilityRatio: 0,
+            maxZoomPixelRatio: 4,
+            crossOriginPolicy: 'Anonymous',
+            ajaxWithCredentials: false
+        });
+
+        exampleviewer.addHandler('open', () => {
+            let exPaperScope = new paper.PaperScope(); // Create a new PaperScope
+            exPaperScope.setup('example-canvas'); // Set up Paper.js with the specified canvas ID
+        
+            // Create the AnnotationToolkit instance for the example viewer
+            let exAnnotationToolkit = new AnnotationToolkit(exampleviewer);
+            exAnnotationToolkit.addAnnotationUI({tools:["transform"], addButton:false, addFileButton:false});
+        
+            $.get('./tissue-annotationtransform.json').then(x => exAnnotationToolkit.addFeatureCollections(x));
+        });
+    </script>
+</head>
+<body>
+    <div class="content">
+        <div class="demo">
+            <h3>Transform Tool Demo</h3>
+            <div id="brush-viewer" class="viewer"></div>
+            <div>
+                <h4>How to Use the Transform Tool:</h4>
+                <p>
+                    The Transform Tool allows you to move, resize, and rotate selected items on the map. Follow these steps to use it effectively:
+                </p>
+                <ol>
+                    <li><strong>Select Items:</strong> Before using the Transform Tool, ensure that you have selected the items you want to transform from the annotation toolkit. You can select multiple items at once by holding down the 'Shift' key and clicking on each item.</li>
+                    <li><strong>Activating the Tool:</strong> Select the "Transform Tool" icon from the toolbar (four arrows pointing in different directions). This will enable the tool for the selected items.</li>
+                    <li><strong>Move Items:</strong> Click and drag any selected item to move it to a new location on the map.</li>
+                    <li><strong>Resize Items:</strong> To resize an item, click and drag any of the corner control points of the bounding box that appears around the item when selected.</li>
+                    <li><strong>Rotate Items:</strong> To rotate an item, click and drag the circular control point located above the bounding box. Rotate the item to the desired angle.</li>
+                    <li><strong>Undo and Redo:</strong> To undo or redo your transformation actions, use the keyboard shortcuts 'Ctrl + Z' and 'Ctrl + Shift + Z', respectively.</li>
+                </ol>
+                <p>
+                    The Transform Tool provides a powerful way to modify selected items on the map, making it easier to arrange and align them as needed.
+                </p>
+            </div>
+            <div>
+                <h4>Keyboard Shortcuts:</h4>
+                <ul>
+                    <li><strong>Click and Drag:</strong> Click and drag any selected item to move it.</li>
+                    <li><strong>Resize:</strong> Click and drag any corner control point of the bounding box to resize the item.</li>
+                    <li><strong>Rotate:</strong> Click and drag the circular control point above the bounding box to rotate the item.</li>
+                    <li><strong>Ctrl + Z:</strong> Undo your last transformation action.</li>
+                    <li><strong>Ctrl + Shift + Z:</strong> Redo your last undone transformation action.</li>
+                </ul>
+            </div>
+            <div>
+            </div>
+        </div>
+        <div class="use-case">
+            <h4>Use Case: Enhancing the utilization of other tools by transforming their annotation on Brain Tissue Images</h4>
+            <p>
+                Explore how the Transform Tool can aid in the analysis of brain tissue images stained with H&E:
+            </p>
+            <ol>
+                <li><strong>Task:</strong> Utilize the Transform Tool to fix the misalisgned grey matter annotation.</li>
+                    <ul>
+                        <li>Select the grey matter annotation from the annotation toolkit.</li>
+                        <li>Use the Transform Tool to align the grey matter annotation to its proper region.</li>
+                        <li>the grey matter annotation first needs to be moved to the left till the annotation edges with the tissue then moved up till the proper area is highlighted, the darker pink shaded area is the grey matter that needs to be properly aligned.</li>
+                    </ul>
+                </li>
+            </ol>
+            <div id="example-viewer" class="viewer"></div>
+        </div>
+
+    <!-- The canvas used for Paper.js -->
+    <canvas id="example-canvas" style="display:none;"></canvas>
+    <canvas id="brush-canvas" style="display:none;"></canvas>
+</body>
+</html>

@@ -1,0 +1,111 @@
+<head>
+    <title>Raster Tool Demo</title>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/openseadragon/4.0.0/openseadragon.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/paper.js/0.12.17/paper-full.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="./demo.css">
+
+    <script type="module">
+        import { AnnotationToolbar } from '../src/js/annotationtoolbar.mjs';
+        import{ AnnotationToolkit } from '../src/js/annotationtoolkit.mjs';
+        // Basic viewer setup
+        let viewer = OpenSeadragon({
+            element: 'brush-viewer',
+            prefixUrl: "https://openseadragon.github.io/openseadragon/images/",
+            tileSources: {
+                type: 'image',
+                url: 'https://openseadragon.github.io/example-images/grand-canyon-landscape-overlooking.jpg',
+                buildPyramid: false
+            },
+            minZoomImageRatio: 0.01,
+            visibilityRatio: 0,
+            crossOriginPolicy: 'Anonymous',
+            ajaxWithCredentials: false
+        });
+
+        viewer.addHandler('open', () => {
+            let paperScope = new paper.PaperScope(); // Create a new PaperScope
+            paperScope.setup('brush-canvas'); // Set up Paper.js with the specified canvas ID
+
+            // Create the AnnotationToolkit instance with annotationUI selecting a tool and add feature collections
+            let annotationToolkit = new AnnotationToolkit(viewer);
+            annotationToolkit.addAnnotationUI({tools:["raster"], addButton:false, addFileButton:false});
+
+            $.get('./demo-annotation.json').then(x => annotationToolkit.addFeatureCollections(x));
+        });
+        
+        let exampleviewer = OpenSeadragon({
+            element: 'example-viewer',
+            prefixUrl: "https://openseadragon.github.io/openseadragon/images/",
+            tileSources: {
+                type: 'image',
+                url: './tissue.jpg',
+                buildPyramid: true
+            },
+            minZoomImageRatio: 0.01,
+            visibilityRatio: 0,
+            crossOriginPolicy: 'Anonymous',
+            ajaxWithCredentials: false
+        });
+
+        exampleviewer.addHandler('open', () => {
+            let exPaperScope = new paper.PaperScope(); // Create a new PaperScope
+            exPaperScope.setup('example-canvas'); // Set up Paper.js with the specified canvas ID
+        
+            // Create the AnnotationToolkit instance for the example viewer
+            let exAnnotationToolkit = new AnnotationToolkit(exampleviewer);
+            exAnnotationToolkit.addAnnotationUI({tools:["raster"], addButton:false, addFileButton:false});
+        
+            $.get('./tissue-annotation.json').then(x => exAnnotationToolkit.addFeatureCollections(x));
+        });
+    </script>
+</head>
+<body>
+    <div class="content">
+        <div class="demo">
+            <h3>Raster Tool Demo</h3>
+            <div id="brush-viewer" class="viewer"></div>
+            <div>
+                <h4>How to Use the Raster Tool:</h4>
+                <p>
+                    The Raster Tool allows you to convert selected vector-based items into raster images on the map. Follow these steps to use it effectively:
+                </p>
+                <ol>
+                    <li><strong>Select Items:</strong> Before using the Raster Tool, ensure that you have selected the feature you want to convert to raster images. You can select multiple items at once by holding down the 'CTRL' key and clicking on each item.</li>
+                    <li><strong>Activating the Tool:</strong> Select the "Raster Tool" icon from the toolbar (an image icon). This will enable the tool for the selected items.</li>
+                    <li><strong>Convert to Raster:</strong> Click the "Convert to raster" button in the tool's dropdown menu. This action will convert the selected vector-based items into raster images.</li>
+                    <li><strong>Warning:</strong> Keep in mind that converting items to raster images cannot be undone. Make sure you have a backup of the original vector-based items before proceeding with the conversion.</li>
+                </ol>
+            </div>
+            <div>
+                <h4>Note:</h4>
+                <p>
+                    Raster images are pixel-based, and once vector-based items are converted, they lose their scalability and editing capabilities. Use the Raster Tool carefully and strategically for the best results in your map annotations.
+                </p>
+            </div>
+            <div class="guided-usage">
+                <h3>Guided Usage: Utilizing the Raster Tool for Annotations</h3>
+                <p>
+                    Explore the capabilities of the Raster Tool to convert vector-based items into raster images for more specific visualization:
+                </p>
+                <ol>
+                    <li><strong>Task:</strong> Enhance your annotation presentation by converting selected vector-based items into raster images.</li>
+                    <li><strong>Use Case:</strong> You've drawn precise vector-based annotations to indicate key features in the brain tissue image. Now you want to convert these annotations into pixel-based images for a more detailed examination.</li>
+                    <li><strong>Solution:</strong> Follow these steps:
+                        <ul>
+                            <li>Select the vector-based items you want to convert into raster images.</li>
+                            <li>Activate the Raster Tool by clicking on the "Raster Tool" icon in the toolbar (represented by an image icon).</li>
+                            <li>In the Raster Tool's dropdown menu, click the "Convert to raster" button. This action will transform the selected vector-based items into raster images.</li>
+                            <li>Be cautious when using this tool since raster images lose their scalability and editing capabilities. Make sure to keep a backup of the original vector-based items.</li>
+                        </ul>
+                    </li>
+                    <li><strong>Example:</strong> we have created precise vector-based annotations to label distinct cell types like blood vessels within the brain tissue. Use the Raster Tool to convert these annotations into raster images.</li>
+                </ol>
+                <div id="example-viewer" class="viewer"></div>
+            </div>
+        </div>
+
+    <!-- The canvas used for Paper.js -->
+    <canvas id="example-canvas" style="display:none;"></canvas>
+    <canvas id="brush-canvas" style="display:none;"></canvas></body>
+</html>

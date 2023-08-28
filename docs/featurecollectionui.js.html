@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: featurecollectionui.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: featurecollectionui.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>import { FeatureUI } from './featureui.mjs';
+import { EditableContent } from './utils/editablecontent.mjs';
+
+/**
+ * A user interface for managing feature collections. The FeatureCollectionUI class provides a user interface to manage feature collections on a paper.Layer object. It allows users to create, edit, and organize features within the collection. The class includes various functionalities, such as adding and removing features, setting opacity and fill opacity for the paper layer, and more.
+ * @class
+ * @memberof OSDPaperjsAnnotation
+ */
+class FeatureCollectionUI {
+  /**
+   * Create a new FeatureCollectionUI instance.
+   * 
+   * @constructor
+   * @property {string} displayName - The display name of the layer.
+   * @property {paper.Item} paperItem - The paper item object.
+   * @property {string} guiSelector - The selector for the GUI element.
+   * @property {jQuery} element - The jQuery object representing the HTML element of the feature collection UI.
+   * @param {paper.Layer} layer - The paper layer object.
+   * @param {object} init - The initialization options.
+   */
+  constructor(layer, init) {
+    let self = this;
+    // this.toolbar = init.toolbar;
+    this.element = makeFeatureCollectionElement();
+    this._editableName = new EditableContent();
+    this.element.find('.annotation-name.name').empty().append(this._editableName.element);
+    this._editableName.onChanged = function (text) {
+      self.label = text;
+    };
+    this._featurelist = this.element.find('.features-list');
+    this._featurelist.sortable({
+      contain: 'parent',
+      connectWith: `${init.guiSelector} .features-list`,
+      update: function () {
+        self._featurelist.children().each(function (idx, c) {
+          self.layer.addChild($(c).data('feature').paperItem);
+        });
+      }
+    });
+    this.layer = layer;
+    this.layer.on({
+      'selection:mouseenter': function () {
+        self.element.addClass('svg-hovered').trigger('mouseover');
+      },
+      'selection:mouseleave': function () {
+        self.element.removeClass('svg-hovered').trigger('mouseout');
+      },
+      'selected': function () {
+        self.element.addClass('selected').trigger('selected');
+      },
+      'deselected': function () {
+        self.element.removeClass('selected').trigger('deselected');
+      },
+      'display-name-changed': function (ev) {
+        self.updateLabel();
+      },
+      'removed': function () {
+        self.remove();
+      },
+      'child-added': function (ev) {
+        let featureUI = ev.item.FeatureUI || new FeatureUI(ev.item);
+        self._addFeature(featureUI);
+      }
+    });
+
+    // expose this object as a property of the paper.js layer
+    this.layer.featureCollectionUI = this;
+
+    /**
+     * Get the features in the feature collection.
+     * @member
+     * @returns {FeatureUI[]} The array of features.
+     */
+    this.features = function () {
+      return self._featurelist.find('.feature').map(function (_, el) {
+        return $(el).data('feature');
+      }).toArray();
+    };
+    this.remove = function () {
+      self.element.remove();
+    };
+    /**
+     * Get the number of features in the feature collection.
+     * @member
+     * @returns {number} The number of features.
+     */
+    this.numFeatures = function () {
+      return self.features().length;
+    };
+
+    /**
+     * Add a feature to the feature collection UI element.
+     * @member
+     * @param {FeatureUI} f - The feature to add.
+     * @returns {jQuery} The jQuery object of the feature element.
+     */
+    this._addFeature = function (f) {
+      f.paperItem.updateFillOpacity();
+      self._featurelist.append(f.element);
+      self._sortableDebounce &amp;&amp; window.clearTimeout(self._sortableDebounce);
+      self._sortableDebounce = window.setTimeout(() => $(`${init.guiSelector} .features-list .feature`).length > 100 ? self._featurelist.sortable('disable') : self._featurelist.sortable('refresh'), 15);
+      return f.element;
+    };
+    /**
+     * Create a new feature and add it to the paper layer using the default style properties of the layer.
+     * This function also creates a geoJSON object for the feature and converts it to a paper item.
+     * @member
+    * @property {paper.Color} fillColor - The fill color of the layer.
+    * @property {paper.Color} strokeColor - The stroke color of the layer.
+    * @property {Object} rescale - The rescale properties of the layer.
+    * @property {number} fillOpacity - The fill opacity of the layer.
+    * @property {number} strokeOpacity - The stroke opacity of the layer.
+    * @property {number} strokeWidth - The stroke width of the layer.
+    * 
+    * @property {string} type - The type of the feature (e.g., "Feature").
+    * @property {Object} geometry - The geometry object.
+    * @property {Object} properties - The properties object containing style information. 
+    * 
+    * @returns {paper.Item} The paper item object of the new feature that was added to the layer.
+     */
+    this.createFeature = function () {
+      //define a new feature
+      let props = this.layer.defaultStyle;
+      let clonedProperties = {
+        fillColor: new paper.Color(props.fillColor),
+        strokeColor: new paper.Color(props.strokeColor),
+        rescale: $.extend(true, {}, props.rescale),
+        fillOpacity: props.fillOpacity,
+        strokeOpacity: props.strokeOpacity,
+        strokeWidth: props.strokeWidth
+      };
+      let style = new paper.Style(clonedProperties);
+      let geoJSON = {
+        type: 'Feature',
+        geometry: null,
+        properties: style
+      };
+      let placeholder = paper.Item.fromGeoJSON(geoJSON);
+      this.layer.addChild(placeholder);
+      return placeholder;
+    };
+    this.ui = {
+      setOpacity: setOpacity,
+      setFillOpacity: setFillOpacity
+    };
+    function setOpacity(o) {
+      self.layer.opacity = o;
+    }
+    function setFillOpacity(o) {
+      self.layer.fillOpacity = o;
+    }
+    self.element.data({
+      featureCollection: self
+    }); //bind reference to self to the element, for use with rearranging/sorting layers
+
+    self.label = this.layer.displayName;
+    if (!self._featurelist.sortable('option', 'disabled') == false) {
+      self._featurelist.sortable('refresh');
+    }
+    self.element.on('click', function (ev) {
+      ev.stopPropagation();
+    });
+    self.element.find('.toggle-list').on('click', function (ev) {
+      let numFeatures = self._featurelist.children().length;
+      self.element.find('.num-annotations').text(numFeatures);
+      self.element.find('.features-summary').attr('data-num-elements', numFeatures);
+      self.element.find('.features').toggleClass('collapsed');
+      ev.stopPropagation();
+      ev.preventDefault();
+    });
+    self.element.find('.annotation-header [data-action]').on('click', function (ev) {
+      //don't bubble up
+      ev.stopPropagation();
+      ev.preventDefault();
+      let action = $(ev.target).data('action');
+      switch (action) {
+        case 'trash':
+          self.removeLayer(true);
+          break;
+        // case 'edit': self.editClicked(); break;
+        case 'style':
+          self.openStyleEditor(ev);
+          break;
+        case 'show':
+          self.toggleVisibility();
+          break;
+        case 'hide':
+          self.toggleVisibility();
+          break;
+        default:
+          console.log('No function set for action:', action);
+      }
+    });
+    self.element.find('.new-feature').on('click', function (ev) {
+      ev.stopPropagation();
+      let item = self.createFeature();
+      item.select();
+    });
+    return this;
+  }
+  get label() {
+    return this.layer.displayName;
+  }
+  set label(l) {
+    return this.setLabel(l);
+  }
+  /**
+   * Set the label of the feature collection with a source.
+   * @param {string} text - The new label of the feature collection.
+   * @param {string} source - The source of the label (e.g. 'user-defined' or 'initializing').
+   * @returns {string} The new label of the feature collection.
+   */
+  setLabel(text, source) {
+    let l = new String(text);
+    l.source = source;
+    this.layer.displayName = l;
+    this.updateLabel();
+    return l;
+  }
+  /**
+   * Update the label of the feature collection in the UI element.
+   */
+  updateLabel() {
+    this._editableName.setText(this.label);
+  }
+  /**
+   * Toggle the visibility of the feature collection UI element and the paper layer.
+   */
+  toggleVisibility() {
+    this.element.toggleClass('annotation-hidden');
+    this.layer.visible = !this.element.hasClass('annotation-hidden');
+  }
+  /**
+   * Remove the paper layer associated with the feature collection.
+   * @param {boolean} [confirm=true] - Whether to confirm before removing or not.
+   */
+  removeLayer(confirm = true) {
+    if (confirm &amp;&amp; window.confirm('Remove this layer?') == true) {
+      this.layer.remove();
+    } else {}
+  }
+  /**
+   * Handle the edit clicked event on the UI element.
+   */
+  editClicked() {
+    let header = this.element.find('.annotation-header');
+    header.addClass('editing');
+    let ce = header.find('.edit').attr('contenteditable', true).focus();
+    ce.data('previous-text', ce.text());
+    let range = document.createRange();
+    range.selectNodeContents(ce[0]);
+    let selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+  }
+  /**
+   * Open the style editor for the feature collection.
+   * @function 
+   * @param {object} ev - The event object.
+   */
+  openStyleEditor(ev) {
+    let heard = this.layer.project.emit('edit-style', {
+      item: this.layer
+    });
+    if (!heard) {
+      console.warn('No event listeners are registered for paperScope.project for event \'edit-style\'');
+    }
+  }
+}
+export { FeatureCollectionUI };
+
+/**
+ * Create an HTML element for the feature collection UI.
+ * @private
+ * @returns {jQuery} The jQuery object of the HTML element.
+ */
+function makeFeatureCollectionElement() {
+  let html = `
+    &lt;div class='feature-collection'>
+        &lt;div class='annotation-header hoverable-actions'>
+            &lt;span class="visibility-toggle">&lt;span class="fa fa-eye" data-action="hide">&lt;/span>&lt;span class="fa fa-eye-slash" data-action="show">&lt;/span>&lt;/span>
+            &lt;span class='annotation-name name'>&lt;/span>
+            &lt;span class='onhover fa-solid fa-palette' data-action='style' title='Open style editor'>&lt;/span>
+            &lt;span class='onhover fa-solid fa-trash-can' data-action='trash' title='Remove feature collection'>&lt;/span>
+        &lt;/div>
+        &lt;div class="flex-row features">
+            &lt;div class="toggle-list btn-group btn-group-sm">&lt;button class="btn btn-default">&lt;span class='fa-solid fa-caret-down' data-action="collapse-down">&lt;/span>&lt;span class='fa-solid fa-caret-up' data-action="collapse-up">&lt;/span>&lt;/button>&lt;/div>
+            &lt;div class="annotation-details">
+                &lt;div>
+                    &lt;div class='features-summary feature-item name'>&lt;span class='num-annotations'>&lt;/span> annotation element&lt;span class='pluralize'>&lt;/span>&lt;/div>
+                    &lt;div class='features-list'>&lt;/div>
+                &lt;/div>
+                &lt;div class='new-feature feature'>&lt;span class='fa fa-plus' data-action="add-feature">&lt;/span>Add feature&lt;/div>
+            &lt;/div>
+        &lt;/div>
+    &lt;/div>
+    `;
+  return $(html);
+}</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="OSDPaperjsAnnotation.html">OSDPaperjsAnnotation</a></li></ul><h3>Classes</h3><ul><li><a href="OSDPaperjsAnnotation.AnnotationItem.html">AnnotationItem</a></li><li><a href="OSDPaperjsAnnotation.AnnotationItemFactory.html">AnnotationItemFactory</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolbar.html">AnnotationToolbar</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolkit.html">AnnotationToolkit</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUI.html">AnnotationUI</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUITool.html">AnnotationUITool</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUITool.AnnotationUIToolbarBase.html">AnnotationUIToolbarBase</a></li><li><a href="OSDPaperjsAnnotation.BrushTool.html">BrushTool</a></li><li><a href="OSDPaperjsAnnotation.BrushTool.BrushToolbar.html">BrushToolbar</a></li><li><a href="OSDPaperjsAnnotation.DefaultTool.html">DefaultTool</a></li><li><a href="OSDPaperjsAnnotation.DefaultTool.DefaultToolbar.html">DefaultToolbar</a></li><li><a href="OSDPaperjsAnnotation.Ellipse.html">Ellipse</a></li><li><a href="OSDPaperjsAnnotation.EllipseTool.html">EllipseTool</a></li><li><a href="OSDPaperjsAnnotation.EllipseTool.EllipseToolbar.html">EllipseToolbar</a></li><li><a href="OSDPaperjsAnnotation.FeatureCollectionUI.html">FeatureCollectionUI</a></li><li><a href="OSDPaperjsAnnotation.FeatureUI.html">FeatureUI</a></li><li><a href="OSDPaperjsAnnotation.FileDialog.html">FileDialog</a></li><li><a href="OSDPaperjsAnnotation.LayerUI.html">LayerUI</a></li><li><a href="OSDPaperjsAnnotation.Linestring.html">Linestring</a></li><li><a href="OSDPaperjsAnnotation.LinestringTool.html">LinestringTool</a></li><li><a href="OSDPaperjsAnnotation.LinestringTool.LinestringToolbar.html">LinestringToolbar</a></li><li><a href="OSDPaperjsAnnotation.MultiLinestring.html">MultiLinestring</a></li><li><a href="OSDPaperjsAnnotation.MultiPolygon.html">MultiPolygon</a></li><li><a href="OSDPaperjsAnnotation.PaperOverlay.html">PaperOverlay</a></li><li><a href="OSDPaperjsAnnotation.Placeholder.html">Placeholder</a></li><li><a href="OSDPaperjsAnnotation.Point.html">Point</a></li><li><a href="OSDPaperjsAnnotation.PointText.html">PointText</a></li><li><a href="OSDPaperjsAnnotation.PointTextTool.html">PointTextTool</a></li><li><a href="OSDPaperjsAnnotation.PointTextTool.PointTextToolbar.html">PointTextToolbar</a></li><li><a href="OSDPaperjsAnnotation.PointTool.html">PointTool</a></li><li><a href="OSDPaperjsAnnotation.PointTool.PointToolbar.html">PointToolbar</a></li><li><a href="OSDPaperjsAnnotation.PolygonTool.html">PolygonTool</a></li><li><a href="OSDPaperjsAnnotation.PolygonTool.PolygonToolbar.html">PolygonToolbar</a></li><li><a href="OSDPaperjsAnnotation.Raster.html">Raster</a></li><li><a href="OSDPaperjsAnnotation.RasterTool.html">RasterTool</a></li><li><a href="OSDPaperjsAnnotation.RasterTool.RasterToolbar.html">RasterToolbar</a></li><li><a href="OSDPaperjsAnnotation.Rectangle.html">Rectangle</a></li><li><a href="OSDPaperjsAnnotation.RectangleTool.html">RectangleTool</a></li><li><a href="OSDPaperjsAnnotation.RectangleTool_RectToolbar.html">RectToolbar</a></li><li><a href="OSDPaperjsAnnotation.RotationControlOverlay.html">RotationControlOverlay</a></li><li><a href="OSDPaperjsAnnotation.RotationControlTool.html">RotationControlTool</a></li><li><a href="OSDPaperjsAnnotation.RotationControlWidget.html">RotationControlWidget</a></li><li><a href="OSDPaperjsAnnotation.StyleTool.html">StyleTool</a></li><li><a href="OSDPaperjsAnnotation.StyleTool.StyleToolbar.html">StyleToolbar</a></li><li><a href="OSDPaperjsAnnotation.ToolBase.html">ToolBase</a></li><li><a href="OSDPaperjsAnnotation.TransformTool.html">TransformTool</a></li><li><a href="OSDPaperjsAnnotation.TransformTool.TransformToolbar.html">TransformToolbar</a></li><li><a href="OSDPaperjsAnnotation.WandTool.html">WandTool</a></li><li><a href="OSDPaperjsAnnotation.WandTool.WandToolbar.html">WandToolbar</a></li><li><a href="SelectTool.html">SelectTool</a></li></ul><h3>Global</h3><ul><li><a href="global.html#adaptiveOffsetCurve">adaptiveOffsetCurve</a></li><li><a href="global.html#connectAdjacentBezier">connectAdjacentBezier</a></li><li><a href="global.html#connectBeziers">connectBeziers</a></li><li><a href="global.html#getPointLineIntersections">getPointLineIntersections</a></li><li><a href="global.html#getViewerContentWidth">getViewerContentWidth</a></li><li><a href="global.html#makeRoundJoin">makeRoundJoin</a></li><li><a href="global.html#normalize">normalize</a></li><li><a href="global.html#offsetSegment">offsetSegment</a></li><li><a href="global.html#removeIntersection">removeIntersection</a></li><li><a href="global.html#removeOutsiders">removeOutsiders</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Tue Aug 22 2023 17:04:11 GMT-0400 (Eastern Daylight Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
