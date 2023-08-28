@@ -46,7 +46,6 @@ class AnnotationUITool extends ToolBase{
     }
     /**
      * Deactivate the annotation tool, stopping its interaction.
-     *
      * @param {boolean} finishToolAction - Whether the tool action should be completed before deactivating.
      */
     deactivate(finishToolAction){
@@ -59,7 +58,6 @@ class AnnotationUITool extends ToolBase{
     }
     /**
      * Get the associated toolbar control for the tool.
-     *
      * @returns {AnnotationUIToolbarBase} The toolbar control instance.
      */
     getToolbarControl(){

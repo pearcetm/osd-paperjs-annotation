@@ -27,11 +27,36 @@
             let paperScope = new paper.PaperScope(); // Create a new PaperScope
             paperScope.setup('brush-canvas'); // Set up Paper.js with the specified canvas ID
 
-            // Create the AnnotationToolkit instance and add feature collections 
+            // Create the AnnotationToolkit instance with annotationUI selecting a tool and add feature collections
             let annotationToolkit = new AnnotationToolkit(viewer);
             annotationToolkit.addAnnotationUI({tools:["point"], addButton:false, addFileButton:false});
 
             $.get('./demo-annotation.json').then(x => annotationToolkit.addFeatureCollections(x));
+        });
+        
+        let exampleviewer = OpenSeadragon({
+            element: 'example-viewer',
+            prefixUrl: "https://openseadragon.github.io/openseadragon/images/",
+            tileSources: {
+                type: 'image',
+                url: './tissue.jpg',
+                buildPyramid: true
+            },
+            minZoomImageRatio: 0.01,
+            visibilityRatio: 0,
+            crossOriginPolicy: 'Anonymous',
+            ajaxWithCredentials: false
+        });
+
+        exampleviewer.addHandler('open', () => {
+            let exPaperScope = new paper.PaperScope(); // Create a new PaperScope
+            exPaperScope.setup('example-canvas'); // Set up Paper.js with the specified canvas ID
+        
+            // Create the AnnotationToolkit instance for the example viewer
+            let exAnnotationToolkit = new AnnotationToolkit(exampleviewer);
+            exAnnotationToolkit.addAnnotationUI({tools:["point"], addButton:false, addFileButton:false});
+        
+            $.get('./tissue-annotation.json').then(x => exAnnotationToolkit.addFeatureCollections(x));
         });
     </script>
 </head>
@@ -61,9 +86,28 @@
                     The Point Tool is designed to work with other annotation items created using supported tools. It allows you to interact with these annotations and efficiently manage them on the map.
                 </p>
             </div>
+            <div class="guided-usage">
+                <h4>Guided Usage: Annotating Brain Tissue Regions with the Point Tool</h4>
+                <p>
+                    Explore how the Point Tool aids in annotating brain tissue regions for detailed analysis and documentation:
+                </p>
+                <ol>
+                    <li><strong>Task:</strong> Use the Point Tool to mark regions of interest within brain tissue images.</li>
+                    <li><strong>Use Case:</strong> You're analyzing microscopic brain tissue images and need to identify locations of specific cellular structures and abnormalities.</li>
+                    <li><strong>Solution:</strong> Employ the Point Tool effectively for accurate annotations:
+                        <ul>
+                            <li>Select the "Point Tool" icon in the toolbar (map pin icon).</li>
+                            <li>Click on significant points within the brain tissue to mark areas of interest, such as cell clusters or anomalies.</li>
+                            <li>For precision, reposition points by clicking and dragging them to desired positions.</li>
+                        </ul>
+                    </li>
+                    <li><strong>Example:</strong> We want to examine the locations of where blood vessels can appear on a brain tissue. We already have annotations of blood vessels, but since we dont want to consider their size or shape lets replace those polygon annotations with point annotations! This aids in recording locations for further research and analysis on where specfic cells might appear.</li>
+                </ol>
+                <div id="example-viewer" class="viewer"></div>
+            </div>
         </div>
 
     <!-- The canvas used for Paper.js -->
-    <canvas id="brush-canvas" style="display:none;"></canvas>
-</body>
+    <canvas id="example-canvas" style="display:none;"></canvas>
+    <canvas id="brush-canvas" style="display:none;"></canvas></body>
 </html>

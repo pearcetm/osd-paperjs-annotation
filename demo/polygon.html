@@ -27,11 +27,36 @@
             let paperScope = new paper.PaperScope(); // Create a new PaperScope
             paperScope.setup('brush-canvas'); // Set up Paper.js with the specified canvas ID
 
-            // Create the AnnotationToolkit instance and add feature collections 
+            // Create the AnnotationToolkit instance with annotationUI selecting a tool and add feature collections
             let annotationToolkit = new AnnotationToolkit(viewer);
             annotationToolkit.addAnnotationUI({tools:["polygon"], addButton:false, addFileButton:false});
 
             $.get('./demo-annotation.json').then(x => annotationToolkit.addFeatureCollections(x));
+        });
+        
+        let exampleviewer = OpenSeadragon({
+            element: 'example-viewer',
+            prefixUrl: "https://openseadragon.github.io/openseadragon/images/",
+            tileSources: {
+                type: 'image',
+                url: './tissue.jpg',
+                buildPyramid: true
+            },
+            minZoomImageRatio: 0.01,
+            visibilityRatio: 0,
+            crossOriginPolicy: 'Anonymous',
+            ajaxWithCredentials: false
+        });
+
+        exampleviewer.addHandler('open', () => {
+            let exPaperScope = new paper.PaperScope(); // Create a new PaperScope
+            exPaperScope.setup('example-canvas'); // Set up Paper.js with the specified canvas ID
+        
+            // Create the AnnotationToolkit instance for the example viewer
+            let exAnnotationToolkit = new AnnotationToolkit(exampleviewer);
+            exAnnotationToolkit.addAnnotationUI({tools:["polygon"], addButton:false, addFileButton:false});
+        
+            $.get('./tissue-annotation.json').then(x => exAnnotationToolkit.addFeatureCollections(x));
         });
     </script>
 </head>
@@ -69,9 +94,23 @@
                 </div>
                 <div>
                 </div>
+                <div class="guided-usage">
+                    <h3>Guided Usage: Utilizing the Polygon Tool for Annotations</h3>
+                    <p>
+                        Discover the potential of the Polygon Tool for creating and editing polygons to highlight intricate features on the map:
+                    </p>
+                    <ol>
+                        <li><strong>Task:</strong> Utilize the Polygon Tool to accurately draw and modify polygons on the map.</li>
+                        <li><strong>Use Case:</strong> You've identified complex regions within the brain tissue image that you want to highlight for further analysis. The Polygon Tool enables you to create precise polygons to outline these areas.</li>
+                        <li><strong>Solution:</strong> Follow these steps to effectively use the Polygon Tool:
+                        </li>
+                        <li><strong>Example:</strong> You've observed a blood vessel within the grey matter (black area highlighted) of the brain tissue. Utilize the Polygon Tool to create polygons around these blood vessels, allowing you to create new annotation for them.</li>
+                    </ol>
+                    <div id="example-viewer" class="viewer"></div>
+                </div>
             </div>
 
     <!-- The canvas used for Paper.js -->
-    <canvas id="brush-canvas" style="display:none;"></canvas>
-</body>
+    <canvas id="example-canvas" style="display:none;"></canvas>
+    <canvas id="brush-canvas" style="display:none;"></canvas></body>
 </html>

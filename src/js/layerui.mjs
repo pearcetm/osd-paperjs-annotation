@@ -85,6 +85,7 @@ class LayerUI extends OpenSeadragon.EventSource{
         }).trigger('input');
         /**
          * Set the opacity of the feature collections.
+         * @private
          * @param {number} o - The opacity value between 0 and 1.
          */
         function setOpacity(o){
@@ -137,7 +138,7 @@ class LayerUI extends OpenSeadragon.EventSource{
     }
     /**
      * Hide the layer UI element.
-     * @method
+     * 
      */
     hide(){
         this.element.hide();
@@ -145,7 +146,7 @@ class LayerUI extends OpenSeadragon.EventSource{
     }
     /**
      * Show the layer UI element.
-     * @method
+     * 
      */
     show(){
         this.element.show();
@@ -153,28 +154,24 @@ class LayerUI extends OpenSeadragon.EventSource{
     }
     /**
      * Toggle the visibility of the layer UI element.
-     * @method
      */
     toggle(){
         this.element.is(':visible') ? this.hide() : this.show();
     }
     /**
      * Deactivate the layer UI element.
-     * @method
      */
     deactivate(){
         this.element.addClass('deactivated');
     }
     /**
      * Activate the layer UI element.
-     * @method
      */
     activate(){
         this.element.removeClass('deactivated');
     }
     /**
      * Destroy the layer UI element.
-     * @method
      */
     destroy(){
         this.raiseEvent('destroy');
@@ -204,7 +201,7 @@ class LayerUI extends OpenSeadragon.EventSource{
 export{LayerUI};
 /**
  *  Create an HTML element for the layer UI.
- * @memberof OSDPaperjsAnnotation.LayerUI#
+ * @private
  * @returns {jQuery} The jQuery object of the HTML element.
  */
 function makeHTMLElement(){

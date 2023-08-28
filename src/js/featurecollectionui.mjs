@@ -62,7 +62,7 @@ class FeatureCollectionUI{
 
         /**
          * Get the features in the feature collection.
-         * @instance
+         * @member
          * @returns {FeatureUI[]} The array of features.
          */
         this.features = function(){
@@ -75,7 +75,7 @@ class FeatureCollectionUI{
         }
         /**
          * Get the number of features in the feature collection.
-         * @instance
+         * @member
          * @returns {number} The number of features.
          */
         this.numFeatures = function(){
@@ -84,7 +84,7 @@ class FeatureCollectionUI{
 
         /**
          * Add a feature to the feature collection UI element.
-         * @instance
+         * @member
          * @param {FeatureUI} f - The feature to add.
          * @returns {jQuery} The jQuery object of the feature element.
          */
@@ -98,7 +98,7 @@ class FeatureCollectionUI{
         /**
          * Create a new feature and add it to the paper layer using the default style properties of the layer.
          * This function also creates a geoJSON object for the feature and converts it to a paper item.
-         * @instance
+         * @member
         * @property {paper.Color} fillColor - The fill color of the layer.
         * @property {paper.Color} strokeColor - The stroke color of the layer.
         * @property {Object} rescale - The rescale properties of the layer.
@@ -264,7 +264,7 @@ export {FeatureCollectionUI};
 
 /**
  * Create an HTML element for the feature collection UI.
- * @memberof OSDPaperjsAnnotation.FeatureCollectionUI#
+ * @private
  * @returns {jQuery} The jQuery object of the HTML element.
  */
 function makeFeatureCollectionElement(){

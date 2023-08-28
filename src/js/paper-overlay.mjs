@@ -519,7 +519,6 @@ let counter = (function () {
 
 /**
  * Gets the content width of the viewer.
- * @memberof OSDPaperjsAnnotation.PaperOverlay#
  * @param {any} input - The viewer object or an event object.
  * @returns {number} The content width of the viewer.
  */

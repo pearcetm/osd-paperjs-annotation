@@ -237,14 +237,8 @@ function RotationControlWidget(center, setAngle){
     * @property {paper.Path.Circle} circle - The central region with crosshair and cardinal points.
     * @property {Array<paper.Path.Rectangle>} cardinalControls - The controls for north, east, south, west.
     * @property {paper.Group} rotationLineControl - The line with arrows indicating the spot for grabbing to perform rotation.
-    * @property {Function} setCurrentRotation - Sets the current rotation angle.
-    * @property {Function} setLineOrientation - Sets the orientation of the line control.
     * @example
     * // Usage example:
-    * const centerPoint = new paper.Point(100, 100);
-    * const setRotationAngle = (angle) => {
-    *   // Your logic to set the rotation angle
-    * };
     * const rotationControl = new OSDPaperjsAnnotation.RotationControlWidget(centerPoint, setRotationAngle);
     * paper.project.activeLayer.addChild(rotationControl.item);
     * 
@@ -265,7 +259,8 @@ function RotationControlWidget(center, setAngle){
     //add API functions
     /**
    * Sets the current rotation angle.
-   * @memberof OSDPaperjsAnnotation.RotationControlWidget
+   * @memberof OSDPaperjsAnnotation.RotationControlWidget#
+   * @method setCurrentRotation
    * @param {number} angle - The angle to set.
    */
     widget.setCurrentRotation = (angle)=>{
@@ -274,7 +269,8 @@ function RotationControlWidget(center, setAngle){
     };
     /**
      * Sets the orientation of the line control.
-     * @memberof OSDPaperjsAnnotation.RotationControlWidget
+     * @memberof OSDPaperjsAnnotation.RotationControlWidget#
+     * @method setLineOrientation
      * @param {paper.Point} point - The point representing the orientation.
      * @param {boolean} [makeVisible=false] - Whether to make the control visible.
      */

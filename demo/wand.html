@@ -27,11 +27,36 @@
             let paperScope = new paper.PaperScope(); // Create a new PaperScope
             paperScope.setup('brush-canvas'); // Set up Paper.js with the specified canvas ID
 
-            // Create the AnnotationToolkit instance and add feature collections (empty array for now)
+            // Create the AnnotationToolkit instance with annotationUI selecting a tool and add feature collections
             let annotationToolkit = new AnnotationToolkit(viewer);
             annotationToolkit.addAnnotationUI({tools:["wand"], addButton:false, addFileButton:false});
 
             $.get('./demo-annotation.json').then(x => annotationToolkit.addFeatureCollections(x));
+        });
+        
+        let exampleviewer = OpenSeadragon({
+            element: 'example-viewer',
+            prefixUrl: "https://openseadragon.github.io/openseadragon/images/",
+            tileSources: {
+                type: 'image',
+                url: './tissue.jpg',
+                buildPyramid: true
+            },
+            minZoomImageRatio: 0.01,
+            visibilityRatio: 0,
+            crossOriginPolicy: 'Anonymous',
+            ajaxWithCredentials: false
+        });
+
+        exampleviewer.addHandler('open', () => {
+            let exPaperScope = new paper.PaperScope(); // Create a new PaperScope
+            exPaperScope.setup('example-canvas'); // Set up Paper.js with the specified canvas ID
+        
+            // Create the AnnotationToolkit instance for the example viewer
+            let exAnnotationToolkit = new AnnotationToolkit(exampleviewer);
+            exAnnotationToolkit.addAnnotationUI({tools:["wand"], addButton:false, addFileButton:false});
+        
+            $.get('./tissue-annotation.json').then(x => exAnnotationToolkit.addFeatureCollections(x));
         });
     </script>
 </head>
@@ -62,8 +87,28 @@
                         The Wand Tool works best for selecting areas with distinct color boundaries. Experiment with different threshold settings and click actions to achieve accurate selections.
                     </p>
                 </div>
+                <div class="use-case">
+                    <h4>Use Case: Annotating White Matter in Brain Tissue Images</h4>
+                    <p>
+                        Discover how the Magic Wand Tool can aid in annotating the white matter regions in brain tissue images:
+                    </p>
+                    <ol>
+                        <li><strong>Task:</strong> Use the Magic Wand Tool to accurately select and annotate white matter regions in brain tissue images stained with H&E.</li>
+                        <li><strong>Use Case:</strong> You're conducting a histological study on brain tissue sections to differentiate between white matter and gray matter regions.</li>
+                        <li><strong>Solution:</strong> Leverage the Magic Wand Tool for precise annotation of all the white matter on the WSI of the brain tissue:
+                            <ul>
+                                <li>Select add feature from the annotation toolkit then select the Wand tool from the toolbar.</li>
+                                <li>There are two ways to optimially use the wand tool in this case. Either by having the fill rule as "Continguous" or "anywhere".</li>
+                                <li>Continguous fill rule: after setting the fill rule to continuous click on the white matter area of the WSI, while holding down you mouse button move either left or right to adjust the treshold, you will be able to see a highlight of the areas that would be annotated, lift up your mouse click then press apply changes, repeat until all the white matter is highlighted.(we already have the grey matter annotated, the white matter are the areas that aren't annotated).</li>
+                                <li>Everywhere fill rule: Same steps as continuous but you would only have to do the proccess once since it will highlight all regions not just ones attatched to the colors of your clickpoint.</li>
+                            </ul>
+                        </li>
+                    </ol>
+                    <div id="example-viewer" class="viewer"></div>
+                </div>
 
     <!-- The canvas used for Paper.js -->
+    <canvas id="example-canvas" style="display:none;"></canvas>
     <canvas id="brush-canvas" style="display:none;"></canvas>
 </body>
 </html>

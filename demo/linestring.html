@@ -27,11 +27,36 @@
             let paperScope = new paper.PaperScope(); // Create a new PaperScope
             paperScope.setup('brush-canvas'); // Set up Paper.js with the specified canvas ID
 
-            // Create the AnnotationToolkit instance and add feature collections (empty array for now)
+            // Create the AnnotationToolkit instance with annotationUI selecting a tool and add feature collections
             let annotationToolkit = new AnnotationToolkit(viewer);
             annotationToolkit.addAnnotationUI({tools:["linestring"], addButton:false, addFileButton:false});
 
             $.get('./demo-annotation.json').then(x => annotationToolkit.addFeatureCollections(x));
+        });
+        
+        let exampleviewer = OpenSeadragon({
+            element: 'example-viewer',
+            prefixUrl: "https://openseadragon.github.io/openseadragon/images/",
+            tileSources: {
+                type: 'image',
+                url: './tissue.jpg',
+                buildPyramid: true
+            },
+            minZoomImageRatio: 0.01,
+            visibilityRatio: 0,
+            crossOriginPolicy: 'Anonymous',
+            ajaxWithCredentials: false
+        });
+
+        exampleviewer.addHandler('open', () => {
+            let exPaperScope = new paper.PaperScope(); // Create a new PaperScope
+            exPaperScope.setup('example-canvas'); // Set up Paper.js with the specified canvas ID
+        
+            // Create the AnnotationToolkit instance for the example viewer
+            let exAnnotationToolkit = new AnnotationToolkit(exampleviewer);
+            exAnnotationToolkit.addAnnotationUI({tools:["linestring"], addButton:false, addFileButton:false});
+        
+            $.get('./tissue-annotation.json').then(x => exAnnotationToolkit.addFeatureCollections(x));
         });
     </script>
 </head>
@@ -66,9 +91,29 @@
             </div>
             <div>
             </div>
+            <div class="guided-usage">
+                <h4>Guided Usage: Analyzing Cellular Structures with the Linestring Tool</h4>
+                <p>
+                    Discover how the Linestring Tool assists in detailed analysis of cellular structures within H&E stained brain tissue images:
+                </p>
+                <ol>
+                    <li><strong>Task:</strong> Utilize the Linestring Tool to identify and annotate specific cellular boundaries and structures within H&E stained brain tissue sections.</li>
+                    <li><strong>Use Case:</strong> You're studying cellular morphology and density variations in brain tissue samples to identify potential abnormalities.</li>
+                    <li><strong>Solution:</strong> Leverage the Linestring Tool for accurate and granular annotations:
+                        <ul>
+                            <li>Select add feature from the toolkit then select the "Linestring Tool" icon in the toolbar (pen nib icon).</li>
+                            <li>Click to mark the boundaries of distinct cellular structures.</li>
+                            <li>Connect points to outline cells, highlighting regions of interest.</li>
+                            <li>Adjust pen width to emphasize cell borders or intricate details.</li>
+                        </ul>
+                    </li>
+                    <li><strong>Example:</strong> Use the Linestring Tool to annotate the empty area inside the brain tissue (in the top midleft where there are some blood vessels laying around). This aids in annotating the cellular and tissue boundaries of the brain</li>
+                </ol>
+                <div id="example-viewer" class="viewer"></div>
+            </div>
         </div>
 
     <!-- The canvas used for Paper.js -->
-    <canvas id="brush-canvas" style="display:none;"></canvas>
-</body>
+    <canvas id="example-canvas" style="display:none;"></canvas>
+    <canvas id="brush-canvas" style="display:none;"></canvas></body>
 </html>

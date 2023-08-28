@@ -27,11 +27,36 @@
             let paperScope = new paper.PaperScope(); // Create a new PaperScope
             paperScope.setup('brush-canvas'); // Set up Paper.js with the specified canvas ID
 
-            // Create the AnnotationToolkit instance and add feature collections (empty array for now)
+            // Create the AnnotationToolkit instance with annotationUI selecting a tool and add feature collections
             let annotationToolkit = new AnnotationToolkit(viewer);
             annotationToolkit.addAnnotationUI({tools:["select"], addButton:false, addFileButton:false});
 
             $.get('./demo-annotation.json').then(x => annotationToolkit.addFeatureCollections(x));
+        });
+        
+        let exampleviewer = OpenSeadragon({
+            element: 'example-viewer',
+            prefixUrl: "https://openseadragon.github.io/openseadragon/images/",
+            tileSources: {
+                type: 'image',
+                url: './tissue.jpg',
+                buildPyramid: true
+            },
+            minZoomImageRatio: 0.01,
+            visibilityRatio: 0,
+            crossOriginPolicy: 'Anonymous',
+            ajaxWithCredentials: false
+        });
+
+        exampleviewer.addHandler('open', () => {
+            let exPaperScope = new paper.PaperScope(); // Create a new PaperScope
+            exPaperScope.setup('example-canvas'); // Set up Paper.js with the specified canvas ID
+        
+            // Create the AnnotationToolkit instance for the example viewer
+            let exAnnotationToolkit = new AnnotationToolkit(exampleviewer);
+            exAnnotationToolkit.addAnnotationUI({tools:["select"], addButton:false, addFileButton:false});
+        
+            $.get('./tissue-annotation.json').then(x => exAnnotationToolkit.addFeatureCollections(x));
         });
     </script>
 </head>
@@ -40,6 +65,7 @@
         <div class="demo">
             <h3>Select Tool Demo</h3>
             <div id="brush-viewer" class="viewer"></div>
+
             <div>
                 <h4>How to Use the Select Tool:</h4>
                 <p>
@@ -64,9 +90,24 @@
             <div>
             </div>
         </div>
+        <div class="guided-usage">
+            <h3>Guided Usage: Example Select Tool Scenario</h3>
+            <p>
+                Imagine you are examining a WSI of a brain tissue with various notable annotations. Lets use the Select Tool to accomplish these tasks:
+                    <li>Task 1: Select one blood vessel by simply clicking on the select tool then clicking the blood vessel on the viewer.</li>
+                    <li>Task 2: Select a blood vessel and the grey matter annotation by click and drag.</li>
+                    <li>Task 3: select two blood vessels without selecting the grey matter (hint use ctrl+click to select multiple items)</li>
+            </p>
+            <div id="example-viewer" class="viewer"></div>
+
+        </div>
     </div>
 
+
     <!-- The canvas used for Paper.js -->
+    <canvas id="example-canvas" style="display:none;"></canvas>
     <canvas id="brush-canvas" style="display:none;"></canvas>
 </body>
 </html>
+
+

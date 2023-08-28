@@ -27,11 +27,36 @@
             let paperScope = new paper.PaperScope(); // Create a new PaperScope
             paperScope.setup('brush-canvas'); // Set up Paper.js with the specified canvas ID
 
-            // Create the AnnotationToolkit instance and add feature collections (empty array for now)
+            // Create the AnnotationToolkit instance with annotationUI selecting a tool and add feature collections
             let annotationToolkit = new AnnotationToolkit(viewer);
             annotationToolkit.addAnnotationUI({tools:["ellipse"], addButton:false, addFileButton:false});
 
             $.get('./demo-annotation.json').then(x => annotationToolkit.addFeatureCollections(x));
+        });
+        
+        let exampleviewer = OpenSeadragon({
+            element: 'example-viewer',
+            prefixUrl: "https://openseadragon.github.io/openseadragon/images/",
+            tileSources: {
+                type: 'image',
+                url: './tissue.jpg',
+                buildPyramid: true
+            },
+            minZoomImageRatio: 0.01,
+            visibilityRatio: 0,
+            crossOriginPolicy: 'Anonymous',
+            ajaxWithCredentials: false
+        });
+
+        exampleviewer.addHandler('open', () => {
+            let exPaperScope = new paper.PaperScope(); // Create a new PaperScope
+            exPaperScope.setup('example-canvas'); // Set up Paper.js with the specified canvas ID
+        
+            // Create the AnnotationToolkit instance for the example viewer
+            let exAnnotationToolkit = new AnnotationToolkit(exampleviewer);
+            exAnnotationToolkit.addAnnotationUI({tools:["ellipse"], addButton:false, addFileButton:false});
+        
+            $.get('./tissue-annotation.json').then(x => exAnnotationToolkit.addFeatureCollections(x));
         });
     </script>
 </head>
@@ -48,9 +73,26 @@
                 <p>Proportional Scaling: While dragging the control point, if the user holds the "Command" or "Control" key (on Mac or Windows, respectively), the ellipse will scale proportionally. This means both the horizontal and vertical radii of the ellipse will change proportionally, preserving the elliptical shape.</p>
                 <p>Non-proportional Scaling: If the user drags the control point without holding the "Command" or "Control" key, the ellipse will scale non-proportionally. This means only one radius (either horizontal or vertical) will change, allowing the user to deform the ellipse into an ellipse-like shape.</p>            </div>
         </div>
+        <div class="use-case">
+            <h4>Use Case: Analyzing Brain Lesions with the Ellipse Tool</h4>
+            <p>
+                Discover how the Ellipse Tool assists in identifying and analyzing features within H&E stained brain tissue images:
+            </p>
+            <ol>
+                <li><strong>Task:</strong> Utilize the Ellipse Tool to mark and annotate several blood vessels on the viewer.</li>
+                    <ul>
+                        <li>Select add feature from the annotation toolkit, then select the "Ellipse Tool" icon in the toolbar.</li>
+                        <li>Click and drag to create ellipses around blood vessels. There are two blood vessels already annotated to visually aid you in identifying blood vessels</li>
+                        <li>Use proportional scaling to maintain accurate measurements if needed.</li>
+                        <li>Compare sizes and shapes of blood vessel across tissue sections for abnormalities.</li>
+                    </ul>
+            </ol>
+            <div id="example-viewer" class="viewer"></div>
+        </div>
     </div>
 
+
     <!-- The canvas used for Paper.js -->
-    <canvas id="brush-canvas" style="display:none;"></canvas>
-</body>
+    <canvas id="example-canvas" style="display:none;"></canvas>
+    <canvas id="brush-canvas" style="display:none;"></canvas></body>
 </html>

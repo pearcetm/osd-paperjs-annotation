@@ -27,11 +27,36 @@
             let paperScope = new paper.PaperScope(); // Create a new PaperScope
             paperScope.setup('brush-canvas'); // Set up Paper.js with the specified canvas ID
 
-            // Create the AnnotationToolkit instance and add feature collections (empty array for now)
+            // Create the AnnotationToolkit instance with annotationUI selecting a tool and add feature collections
             let annotationToolkit = new AnnotationToolkit(viewer);
             annotationToolkit.addAnnotationUI({tools:["style"], addButton:false, addFileButton:false});
 
             $.get('./demo-annotation.json').then(x => annotationToolkit.addFeatureCollections(x));
+        });
+        
+        let exampleviewer = OpenSeadragon({
+            element: 'example-viewer',
+            prefixUrl: "https://openseadragon.github.io/openseadragon/images/",
+            tileSources: {
+                type: 'image',
+                url: './tissue.jpg',
+                buildPyramid: true
+            },
+            minZoomImageRatio: 0.01,
+            visibilityRatio: 0,
+            crossOriginPolicy: 'Anonymous',
+            ajaxWithCredentials: false
+        });
+
+        exampleviewer.addHandler('open', () => {
+            let exPaperScope = new paper.PaperScope(); // Create a new PaperScope
+            exPaperScope.setup('example-canvas'); // Set up Paper.js with the specified canvas ID
+        
+            // Create the AnnotationToolkit instance for the example viewer
+            let exAnnotationToolkit = new AnnotationToolkit(exampleviewer);
+            exAnnotationToolkit.addAnnotationUI({tools:["style"], addButton:false, addFileButton:false});
+        
+            $.get('./tissue-annotation.json').then(x => exAnnotationToolkit.addFeatureCollections(x));
         });
     </script>
 </head>
@@ -64,7 +89,32 @@
                     </p>
                 </div>
 
+                <div class="guided-usage">
+                    <h3>Guided Usage: Example Style Tool Scenario</h3>
+                    <p>
+                        Imagine you are examining a WSI of brain tissue with various notable annotations. Let's use the Style Tool to enhance how our annotations appear:
+                    </p>
+                    <ol>
+                        <li><strong>Task:</strong> Examine the "Grey Matter" annotation more closely. You'll notice two noticeable issues with it:
+                            <ul>
+                                <li>The 1st issue is a thick black outline surrounding the annotation, obscuring the underlying tissue.</li>
+                                <li>The 2nd issue is the white fill color of the annotation, masking the true color of the brain tissue.</li>
+                            </ul>
+                        </li>
+                        <li><strong>Solution:</strong> To address these issues, follow these steps:
+                            <ul>
+                                <li>Select the "Grey Matter" annotation by clicking on it.</li>
+                                <li>Activate the Style Tool by choosing it from the toolbar.</li>
+                                <li>In the Style Tool options, adjust the fill option by reducing the opacity to make it transparent.</li>
+                                <li>Modify the stroke color using the "Area Average" option to blend it with the surrounding tissue.</li>
+                                <li>Unselect the "Grey Matter" annotation and observe the difference in appearance.</li>
+                            </ul>
+                        </li>
+                    </ol>
+                    <div id="example-viewer" class="viewer"></div>
+                </div>
     <!-- The canvas used for Paper.js -->
+    <canvas id="example-canvas" style="display:none;"></canvas>
     <canvas id="brush-canvas" style="display:none;"></canvas>
 </body>
 </html>

@@ -27,11 +27,37 @@
             let paperScope = new paper.PaperScope(); // Create a new PaperScope
             paperScope.setup('brush-canvas'); // Set up Paper.js with the specified canvas ID
 
-            // Create the AnnotationToolkit instance and add feature collections (empty array for now)
+            // Create the AnnotationToolkit instance with annotationUI selecting a tool and add feature collections
             let annotationToolkit = new AnnotationToolkit(viewer);
             annotationToolkit.addAnnotationUI({tools:["transform"], addButton:false, addFileButton:false});
 
             $.get('./demo-annotation.json').then(x => annotationToolkit.addFeatureCollections(x));
+        });
+        
+        let exampleviewer = OpenSeadragon({
+            element: 'example-viewer',
+            prefixUrl: "https://openseadragon.github.io/openseadragon/images/",
+            tileSources: {
+                type: 'image',
+                url: './tissue.jpg',
+                buildPyramid: true
+            },
+            minZoomImageRatio: 0.01,
+            visibilityRatio: 0,
+            maxZoomPixelRatio: 4,
+            crossOriginPolicy: 'Anonymous',
+            ajaxWithCredentials: false
+        });
+
+        exampleviewer.addHandler('open', () => {
+            let exPaperScope = new paper.PaperScope(); // Create a new PaperScope
+            exPaperScope.setup('example-canvas'); // Set up Paper.js with the specified canvas ID
+        
+            // Create the AnnotationToolkit instance for the example viewer
+            let exAnnotationToolkit = new AnnotationToolkit(exampleviewer);
+            exAnnotationToolkit.addAnnotationUI({tools:["transform"], addButton:false, addFileButton:false});
+        
+            $.get('./tissue-annotationtransform.json').then(x => exAnnotationToolkit.addFeatureCollections(x));
         });
     </script>
 </head>
@@ -70,8 +96,25 @@
             <div>
             </div>
         </div>
+        <div class="use-case">
+            <h4>Use Case: Enhancing the utilization of other tools by transforming their annotation on Brain Tissue Images</h4>
+            <p>
+                Explore how the Transform Tool can aid in the analysis of brain tissue images stained with H&E:
+            </p>
+            <ol>
+                <li><strong>Task:</strong> Utilize the Transform Tool to fix the misalisgned grey matter annotation.</li>
+                    <ul>
+                        <li>Select the grey matter annotation from the annotation toolkit.</li>
+                        <li>Use the Transform Tool to align the grey matter annotation to its proper region.</li>
+                        <li>the grey matter annotation first needs to be moved to the left till the annotation edges with the tissue then moved up till the proper area is highlighted, the darker pink shaded area is the grey matter that needs to be properly aligned.</li>
+                    </ul>
+                </li>
+            </ol>
+            <div id="example-viewer" class="viewer"></div>
+        </div>
 
     <!-- The canvas used for Paper.js -->
+    <canvas id="example-canvas" style="display:none;"></canvas>
     <canvas id="brush-canvas" style="display:none;"></canvas>
 </body>
 </html>

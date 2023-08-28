@@ -213,8 +213,7 @@ class FeatureUI{
 export {FeatureUI};
 /**
   * Create an HTML element for the feature UI.
- * @memberof OSDPaperjsAnnotation.FeatureUI#
- * @function makeFeatureElement
+ * @private
  * @returns {jQuery} The jQuery object of the HTML element.
  */
 function makeFeatureElement(){
