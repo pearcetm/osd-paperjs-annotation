@@ -2,11 +2,11 @@ import { FeatureCollectionUI } from './featurecollectionui.mjs';
 
 export class LayerUI extends OpenSeadragon.EventSource{
 
-    constructor(paperScope){
+    constructor(annotationToolkit){
         super();
         let self=this;
-        
-        this.paperScope = paperScope;
+        this.annotationToolkit = annotationToolkit;
+        this.paperScope = annotationToolkit.overlay.paperScope;
         this.paperScope.project.on('feature-collection-added',ev=>this._onFeatureCollectionAdded(ev));
         
         self.element = makeHTMLElement();
@@ -67,9 +67,10 @@ export class LayerUI extends OpenSeadragon.EventSource{
         }).trigger('input');
 
         self.element.find('input.annotation-fill-opacity').on('input',function(){
-            self.paperScope.view.fillOpacity = this.value;
+            self.annotationToolkit.setGlobalFillOpacity(this.value);
         }).trigger('input');
 
+        // TODO 8/23 This needs to be updated to respond to being changed by AnnotationToolkit API
         function setOpacity(o){
             let status = self.element.find('.feature-collection').toArray().reduce(function(ac,el){
                 el = $(el)

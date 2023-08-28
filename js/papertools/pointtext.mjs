@@ -115,6 +115,6 @@ class PointTextToolbar extends AnnotationUIToolbarBase{
         return ['new','Point:PointText'].includes(mode);
     }
     updateInstructions(mode){
-        this.instructions.text(mode=='new'?'Click to drop wisdom' : mode=='Point:PointText' ? 'Drag to reposition' : '???' )
+        this.instructions.text(mode=='new' ? 'Click to place' : mode=='Point:PointText' ? 'Drag to reposition' : '???' )
     }
 }
