@@ -60,7 +60,7 @@ class AnnotationUI{
             appendTo:this._viewer.element,
             toolbar:this._toolbar,
         }
-        this._layerUI = new LayerUI(annotationToolkit.overlay.paperScope, dialogOpts);
+        this._layerUI = new LayerUI(annotationToolkit, dialogOpts);
         if(opts.addLayerDialog){
             this._createJqueryUIdialog();
         }

@@ -140,6 +140,14 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
     setGlobalVisibility(show = false){
         this.overlay.paperScope.view._element.setAttribute('style', 'visibility:' + (show ? 'visible;' : 'hidden;'));
     }
+    // TODO: document this, including that it affects only how objects are displayed, not how they are represented in geojson
+    setGlobalFillOpacity(opacity){
+        this.overlay.paperScope.view.fillOpacity = opacity;
+    }
+    // TODO: document this, including that it affects only how objects are displayed, not how they are represented in geojson
+    setGlobalOpacity(){
+
+    }
     addFeatureCollections(featureCollections,replaceCurrent){
         this.loadGeoJSON(featureCollections,replaceCurrent);
         this.overlay.rescaleItems();
