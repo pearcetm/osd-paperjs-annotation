@@ -1,7 +1,7 @@
 
-import { AnnotationToolkit } from '../../js/src/annotationtoolkit.mjs';
+import { AnnotationToolkit } from '../../src/js/annotationtoolkit.mjs';
 import { DSAUserInterface } from './dsauserinterface.mjs';
-import { RotationControlOverlay } from '../../js/src/rotationcontrol.mjs';
+import { RotationControlOverlay } from '../../src/js/rotationcontrol.mjs';
 
 
 // let styledef;
