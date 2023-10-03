@@ -1,7 +1,7 @@
 
-import { AnnotationToolkit } from '../../js/annotationtoolkit.mjs';
+import { AnnotationToolkit } from '../../src/js/annotationtoolkit.mjs';
 import { DSAUserInterface } from '../dsa/dsauserinterface.mjs';
-import { RotationControlOverlay } from '../../js/rotationcontrol.mjs';
+import { RotationControlOverlay } from '../../src/js/rotationcontrol.mjs';
 
 
 $(window).on('beforeunload',function(){

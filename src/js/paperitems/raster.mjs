@@ -63,7 +63,9 @@ class Raster extends AnnotationItem{
             raster.rotate(inputRaster.rotation);
         }
         
-        raster.selectedColor = rasterColor;
+        this._rasterSelectedColor = new paper.Color(0,0,0,0);
+
+        raster.selectedColor = this._rasterSelectedColor();
 
         
 
@@ -150,4 +152,3 @@ class Raster extends AnnotationItem{
 }
 export{Raster};
 
-const rasterColor = new paper.Color(0,0,0,0);

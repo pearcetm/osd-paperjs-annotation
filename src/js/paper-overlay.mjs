@@ -36,6 +36,9 @@
  * 
  */
 
+import { paper } from './paperjs.mjs';
+import { addCSS } from './addcss.mjs';
+        
 (function (OpenSeadragon) {
 
     if (typeof OpenSeadragon === 'undefined') {
@@ -47,7 +50,10 @@
         return;
     }
 
-    
+    if(OpenSeadragon.Viewer.prototype.PaperOverlays){
+        console.warn('Cannot redefine Viewer.prototype.PaperOverlays');
+        return;
+    }
     Object.defineProperty(OpenSeadragon.Viewer.prototype, 'PaperOverlays',{
         get: function PaperOverlays(){
             return this._PaperOverlays || (this._PaperOverlays = []);
@@ -194,6 +200,8 @@ class PaperOverlay{
         this._canvasdiv.appendChild(this._canvas);
         
         viewer.canvas.appendChild(this._canvasdiv);
+
+        this._viewerButtons = [];
         
         
         this.paperScope = new paper.PaperScope();
@@ -263,6 +271,8 @@ class PaperOverlay{
    * @returns {any} The button object.
    */
     addViewerButton(params={}){
+        addCSS('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css','font-awesome/6.1.1/css/all');
+        addCSS(`${import.meta.url.match(/(.*?)js\/[^\/]*$/)[1]}css/osd-button.css`,'osd-button');
         const prefixUrl=this.osdViewer.prefixUrl;
         let button = new OpenSeadragon.Button({
             tooltip: params.tooltip,
@@ -280,6 +290,7 @@ class PaperOverlay{
         }
         this.osdViewer.buttonGroup.buttons.push(button);
         this.osdViewer.buttonGroup.element.appendChild(button.element);
+        this._viewerButtons.push(button);
         return button;
     }
   /**
@@ -325,6 +336,11 @@ class PaperOverlay{
             this.osdViewer.removeHandler('reset-size',this.onViewerResetSize);
             this.osdViewer.removeHandler('rotate',this.onViewerRotate);
             this.setOSDMouseNavEnabled(true);
+
+            this._viewerButtons.forEach(button=>{
+                button.element.remove();
+            });
+            this._viewerButtons = [];
 
             this.osdViewer.PaperOverlays.splice(this.osdViewer.PaperOverlays.indexOf(this),1);
             if(this.osdViewer.PaperOverlays.length>0){

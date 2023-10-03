@@ -32,7 +32,7 @@ import { WandTool } from './papertools/wand.mjs';
  * @namespace OSDPaperjsAnnotation
  */
 
-OSDPaperjsAnnotation = {
+export const OSDPaperjsAnnotation = {
     AnnotationToolkit: AnnotationToolkit,
     AnnotationToolbar: AnnotationToolbar,
     addCSS: addCSS,

@@ -1,4 +1,4 @@
-
+import {ToolBase} from './papertools/base.mjs';
 import {DefaultTool} from './papertools/default.mjs';
 import {WandTool} from './papertools/wand.mjs';
 import {BrushTool} from './papertools/brush.mjs';
@@ -35,13 +35,13 @@ class AnnotationToolbar{
      * @property {ToolConstructors} toolConstructors - An object containing tool constructors.
      * @property {Object.<string, ToolObject>} tools - An object containing tool instances.
      * @param {Object} paperScope - The Paper.js scope object.
-     * @param {string[]} [tools] - An array of tool names to use. If not provided, all available tools will be used.
-     * @throws {Error} Throws an error if `tools` is provided but not an array.
+     * @param {Array} [tools] - An array of tool names or constructors to use. If not provided, all available tools will be used.
+     * @throws {Error} Throws an error if `tools` is provided but is not an array.
      */
     constructor(paperScope, tools){
         // tools should be an array of strings, or null/falsey
         if(tools && !Array.isArray(tools)){
-            throw('Bad option: if present, tools must be an Array of tool names to use.');
+            throw('Bad option: if present, tools must be an Array of tool names or constructors to use.');
         }
         this.ui = makeUI();
         this.paperScope=paperScope;
@@ -93,13 +93,20 @@ class AnnotationToolbar{
         if(toolsToUse.indexOf('default') == -1){
             toolsToUse = ['default', ...toolsToUse];
         }
-        toolsToUse.forEach(toolname => {
-            if(!this.toolConstructors[toolname]){
-                console.warn(`The requested tool is invalid: ${toolname}. No constructor found for that name.`);
+        toolsToUse.forEach(t => {
+            if(typeof t === 'string'){
+                if(!this.toolConstructors[t]){
+                    console.warn(`The requested tool is invalid: ${t}. No constructor found for that name.`);
+                    return;
+                }
+            } else if(! (t instanceof ToolBase) ){
+                console.warn(`${t} must inherit from class ToolBase`);
                 return;
             }
 
-            let toolObj = this.tools[toolname] = new this.toolConstructors[toolname](this.paperScope);
+            let toolConstructor = (t instanceof ToolBase) ? t : this.toolConstructors[t]
+
+            let toolObj = this.tools[t] = new toolConstructor(this.paperScope);
             let toolbarControl = toolObj.getToolbarControl();
             if(toolbarControl) this.addToolbarControl(toolbarControl);
 

@@ -68,7 +68,7 @@ class RotationControlTool extends ToolBase{
         super(paperScope);
         let self=this;
         let bounds = paperScope.view.bounds;
-        let widget = new RotationControlWidget(paperScope.view.bounds.center, setAngle);
+        let widget = new RotationControlWidget(paperScope.view.bounds.center, setAngle, close);
 
         let viewer = paperScope.overlay.osdViewer;
 
@@ -128,6 +128,9 @@ class RotationControlTool extends ToolBase{
             }
             viewer.viewport.rotateTo(angle, pivot, true);
         }
+        function close(){
+            rotationOverlay.deactivate();
+        }
     }
     
 }
@@ -142,7 +145,7 @@ export {RotationControlOverlay};
  * @param {Function} setAngle - The function to set the rotation angle.
  * @returns {object} The rotation control widget object.
  */
-function RotationControlWidget(center, setAngle){
+function RotationControlWidget(center, setAngle, close){
  
     let width = center.x*2;
     let height= center.y*2;
@@ -224,8 +227,21 @@ function RotationControlWidget(center, setAngle){
     connector.fillColor=null;
 
     group.addChild(rotationLineControl);
+
+    // close button
+    let closeButton = new paper.Group({insert:false});
+    closeButton.addChild(new paper.Path.Circle({radius:innerRadius}));
+    closeButton.addChild(new paper.Path.Line(new paper.Point(-innerRadius/2, -innerRadius/2), new paper.Point(innerRadius/2, innerRadius/2)));
+    closeButton.addChild(new paper.Path.Line(new paper.Point(innerRadius/2, -innerRadius/2), new paper.Point(-innerRadius/2, innerRadius/2)));
+    closeButton.set({fillColor:'red',strokeColor:'black',opacity:0.7});
+    closeButton.position = new paper.Point(radius*1.5, -radius*1.5), 
+    group.addChild(closeButton);
+
+    
     group.pivot = circle.bounds.center;//make the center of the circle the pivot for the entire  controller
     group.position = center;//set position after adding all children so it is applied to all
+
+    
 
     //define API
 
@@ -255,6 +271,7 @@ function RotationControlWidget(center, setAngle){
     widget.circle = circle;
     widget.cardinalControls = cardinalControls;
     widget.rotationLineControl = rotationLineControl;
+    widget.closeButton = closeButton;
 
     //add API functions
     /**
@@ -281,6 +298,7 @@ function RotationControlWidget(center, setAngle){
         rotationLineControl.rotate(angle - rotationLineControl.rotation, circle.bounds.center);
         rotationLineControl.visible = makeVisible || length > radius+innerRadius*1.5;
         arrowControl.position = new paper.Point(0, -length);
+        lineControl.segments[1].point = new paper.Point(0, -length);
     }
 
     //add intrinsic item-level controls
@@ -315,6 +333,10 @@ function RotationControlWidget(center, setAngle){
     // }
     circle.onMouseDrag=function(ev){
         widget.item.position = widget.item.position.add(ev.delta);
+    }
+
+    closeButton.onClick = function(){
+        close();
     }
 
     return widget;

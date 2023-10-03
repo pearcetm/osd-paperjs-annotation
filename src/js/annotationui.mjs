@@ -54,8 +54,8 @@ class AnnotationUI {
 
   
     /**
-     * AnnotationToolbar: UI for interactive tools
-     * @property {function} addToOpenSeadragon - Adds the AnnotationToolbar to the OpenSeadragon viewer.
+     * _toolbar: AnnotationToolbar UI for interactive tools
+     * @private
      */
     this._toolbar = new AnnotationToolbar(annotationToolkit.overlay.paperScope, opts.tools);
     if (opts.addToolbar) {
@@ -64,10 +64,8 @@ class AnnotationUI {
 
 
     /**
-     * FileDialog: UI for loading/saving data
-     * @property {function} toggle - Toggles the FileDialog visibility.
-     * @property {function} show - Shows the FileDialog.
-     * @property {function} hide - Hides the FileDialog.
+     * _fileDialog: FileDialog UI for loading/saving data
+     * @private
      */
     this._fileDialog = new FileDialog(annotationToolkit, { appendTo: _viewer.element });
     this._filebutton = null;
@@ -89,19 +87,28 @@ class AnnotationUI {
       appendTo: this._viewer.element,
       toolbar: this._toolbar,
     };
+
+    /**
+     * _layerUI: LayerUI: graphical user interface for this annotation layer
+     * @private
+     */
     this._layerUI = new LayerUI(annotationToolkit.overlay.paperScope, dialogOpts);
     if (opts.addLayerDialog) {
       this._createJqueryUIdialog();
     }
 
-    opts.autoOpen ? (this._layerUI.show(), this._toolbar.show()) : (this._layerUI.hide(), this._toolbar.hide());
+    if(opts.autoOpen){
+      this._layerUI.show();
+      this._toolbar.show();
+    } else {
+      this._layerUI.hide();
+      this._toolbar.hide();
+    }
 
 
     /**
-     * Button for controlling LayerUI and/or AnnotationToolbar
-     * @property {function} show - Shows the LayerUI and AnnotationToolbar.
-     * @property {function} hide - Hides the LayerUI and AnnotationToolbar.
-     * @property {function} toggle - Toggles the visibility of LayerUI and AnnotationToolbar.
+     * _button: Button for toggling LayerUI and/or AnnotationToolbar
+     * @private
      */
     this._button = null;
     if (opts.addButton) {

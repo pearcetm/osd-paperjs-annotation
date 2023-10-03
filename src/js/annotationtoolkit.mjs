@@ -1,5 +1,6 @@
+import { paper } from './paperjs.mjs';
 import { AnnotationUI } from './annotationui.mjs';
-import {PaperOverlay} from './paper-overlay.mjs';
+import { PaperOverlay } from './paper-overlay.mjs';
 import { AnnotationItemFactory } from './paperitems/annotationitem.mjs';
 import { MultiPolygon } from './paperitems/multipolygon.mjs';
 import { Placeholder } from './paperitems/placeholder.mjs';
@@ -135,6 +136,17 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
     get defaultStyle(){
         return this._defaultStyle;
     }
+
+    /**
+     * Get the paperScope associated with this toolkit
+     * 
+     * @returns {object} The paperScope object for this toolkit's PaperOverlay.
+     */
+    get paperScope(){
+        return this.overlay.paperScope;
+    }
+
+
     /**
      * Add an annotation UI to the toolkit.
      * 
@@ -156,6 +168,7 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
         this.viewer.annotationToolkit = null;
         this._annotationUI && this._annotationUI.destroy();
         this.overlay.destroy();
+        this.raiseEvent('destroy');
     }
     /**
      * Close the toolkit and remove its feature collections.
