@@ -6,7 +6,7 @@
  * as indicated accompanying those segments of code.
  * 
  * Original code:
- * Copyright (c) 2022, Thomas Pearce
+ * Copyright (c) 2022-2023, Thomas Pearce
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -148,10 +148,11 @@ import { addCSS } from './addcss.mjs';
 class PaperOverlay{    
     /**
     * Creates an instance of the PaperOverlay.
-    * overlayType: 'image' to sync to the zoomable image, 'viewport' to stay fixed to the viewer
-    * @param {any} viewer - The viewer object.
+    * overlayType: 'image' to sync to a single OpenSeadragon.TiledImage, 'element' to stay fixed to the viewer element, 'viewer' to sync to the OpenSeadragon.Viewport.
+    * @param {OpenSeadragon.Viewer} viewer - The viewer object.
     * @param {Object} opts - The options for the overlay.
-    * @property {string} [overlayType='image'] - The type of overlay: 'image' to sync to the zoomable image or 'viewport' to stay fixed to the viewer.
+    * @property {string} [opts.overlayType='image'] - "image", "element" or "viewer". The type of overlay: 'image' to sync to a single OpenSeadragon.TiledImage, 'element' to stay fixed to the viewer element, 'viewer' to sync to the OpenSeadragon.Viewport.
+    * @property {string} [opts.tiledImage=null] - The particular OpenSeadragon.TiledImage to attach this overlay to (for multi-image use).
     * @property {number} _scale - The scale factor for the overlay.
     * @property {OpenSeadragon.Viewer} osdViewer - The OpenSeadragon viewer object.
     * @property {string} _id - The unique ID of the paper overlay canvas.
@@ -168,15 +169,19 @@ class PaperOverlay{
     * @property {Function} onViewerResize - Event handler for viewer resize.
     * @property {Function} onViewerRotate - Event handler for viewer rotate (applicable for overlayType='image').
     */
-    constructor(viewer,opts={overlayType:'image'}){
+    constructor(viewer,opts){
         let defaultOpts = {
             overlayType: 'image',
+            tiledImage:null,
         }
         opts=OpenSeadragon.extend(true,defaultOpts,opts);
 
-        this._scale = opts.overlayType=='image' ? getViewerContentWidth(viewer) : 1;
-
         this.osdViewer = viewer;
+        this.overlayType = opts.overlayType;
+        this.tiledImage = opts.tiledImage || (this.overlayType === 'image' ? viewer.world.getItemAt(0) : null);
+
+        this._setViewerContentWidth();
+
         
         viewer.PaperOverlays.push(this);
         
@@ -203,7 +208,6 @@ class PaperOverlay{
 
         this._viewerButtons = [];
         
-        
         this.paperScope = new paper.PaperScope();
         
         
@@ -215,7 +219,7 @@ class PaperOverlay{
 
         this._resize();
         
-        if(opts.overlayType=='image'){
+        if(this.overlayType=='image'){
             this._updatePaperView();
         } 
 
@@ -228,7 +232,7 @@ class PaperOverlay{
             self._updatePaperView();
         })(this);
         this.onViewerResetSize=(self=>function(ev){
-            self._scale = getViewerContentWidth(ev);
+            self._setViewerContentWidth(ev);
             //need to setTimeout to wait for some value (viewport.getZoom()?) to actually be updated before doing our update
             //need to check for destroyed because this will get called as part of the viewer destroy chain, and we've set the timeout
             setTimeout(()=>{
@@ -236,7 +240,7 @@ class PaperOverlay{
                     return;
                 }
                 self._resize();
-                if(opts.overlayType=='image'){
+                if(self.overlayType=='image'){
                     self._updatePaperView(true);
                 }
             });
@@ -244,20 +248,24 @@ class PaperOverlay{
         this.onViewerResize=(self=>function(){
             self._resize();
             self.paperScope.view.emit('resize',{size:new paper.Size(self._containerWidth, self._containerHeight)})
-            if(opts.overlayType=='image'){
+            if(self.overlayType=='image'){
                 self._updatePaperView();
             } 
         })(this);
         this.onViewerRotate=(self=>function(ev){
-            let pivot = ev.pivot || self.osdViewer.viewport.viewportToImageCoordinates(self.osdViewer.viewport.getCenter());
-            self.paperScope.view.setRotation(ev.degrees, pivot)
+            this._pivot = ev.pivot || this._getCenter();
+            // self.paperScope.view.setRotation(ev.degrees, pivot)
         })(this);
 
         viewer.addHandler('resize',this.onViewerResize);
         viewer.addHandler('reset-size',this.onViewerResetSize)
-        if(opts.overlayType=='image'){
+        if(this.overlayType=='image'){
             viewer.addHandler('viewport-change', this.onViewportChange)
             viewer.addHandler('rotate',this.onViewerRotate)
+
+            if(this.tiledImage){
+                this.tiledImage.addHandler('bounds-change', this.onViewportChange);
+            }
         }
         viewer.addOnceHandler('destroy', this.onViewerDestroy)
           
@@ -472,6 +480,19 @@ class PaperOverlay{
             item.applyRescale();
         });
     }
+
+    /**
+     * Convert from paper coordinate frame to the pixel on the underlying canvas element
+     */
+    getCanvasCoordinates(x, y){
+        let point = new OpenSeadragon.Point(x, y);
+        if(this.tiledImage){
+            return this.tiledImage.imageToViewerElementCoordinates(point);
+        } else {
+            return this.osdViewer.viewport.imageToViewerElementCoordinates(point);
+        }
+    }
+
     //------------
   /**
    * Resizes the overlay to match the size of the viewer container.
@@ -511,14 +532,75 @@ class PaperOverlay{
         let viewportZoom = this.osdViewer.viewport.getZoom(true);
         let oldZoom = this.paperScope.view.zoom;
         this.paperScope.view.zoom = this.osdViewer.viewport._containerInnerSize.x * viewportZoom / this._scale;
-        let center = this.osdViewer.viewport.viewportToImageCoordinates(this.osdViewer.viewport.getCenter(true));
+        let center = this._getCenter();
         this.osdViewer.drawer.canvas.pixelRatio = window.devicePixelRatio;
         this.paperScope.view.center = new paper.Point(center.x, center.y);
+
+        if(this.overlayType=='image'){
+            let degrees = this.osdViewer.viewport.getRotation(true);
+            let pivot = this._getPivot();
+            this.paperScope.view.setRotation(degrees, pivot);
+
+            if(this.tiledImage){
+                let bounds = this.tiledImage.getBounds(true);
+                this.paperScope.view.setRotation(degrees + bounds.degrees);
+            }
+        }
+        
         
         if(Math.abs(this.paperScope.view.zoom - oldZoom)>0.0000001){
             this.paperScope.view.emit('zoom-changed',{zoom:this.paperScope.view.zoom});
         }
         this.paperScope.view.update();
+    }
+    _getPivot(){
+        if(!this._pivot) return;
+
+        // this._pivot is in viewport coordinates, and is set by the rotate event or is the center of the viewport
+        // if a tiledImage is being used, we need to get the pivot in tiledImage coordinates instead
+        if(this.tiledImage){
+            return this._pivot.subtract(this.tiledImage.getPosition());
+        } else {
+            return this._pivot;
+        }
+    }
+    _getCenter(){
+        if(this.tiledImage){
+            return this.tiledImage.viewportToImageCoordinates(this.osdViewer.viewport.getCenter(true), true);
+        } else {
+            return this.osdViewer.viewport.viewportToImageCoordinates(this.osdViewer.viewport.getCenter(true));
+        }
+    }
+
+
+    /**
+     * Gets the content width of the viewer.
+     * @param {any} input - The viewer object or an event object.
+     * @returns {number} The content width of the viewer.
+     */
+    _setViewerContentWidth(input){
+
+        if(this.overlayType == 'image'){
+            //if an event was passed in that defines the size, use it
+            if(input && input.contentSize){
+                this._scale = input.contentSize.x;
+            }
+            //otherwise, calculate from our tiledImage
+            if(this.tiledImage){
+                let bounds = this.tiledImage.getBounds();
+                this._scale = this.tiledImage.getContentSize().x / bounds.width;
+            } else {
+                let item = this.viewer.world.getItemAt(0);
+                this._scale = item&&item.getContentSize().x || 1;
+            }
+            
+        } else if (this.overlayType === 'viewer'){
+            this._scale = 1;
+        } else if(this.overlayType === 'viewport' || this.overlayType === 'element'){
+            this._scale = 1;
+        }
+
+        
     }
 
     
@@ -533,20 +615,4 @@ let counter = (function () {
     }
 })();
 
-/**
- * Gets the content width of the viewer.
- * @param {any} input - The viewer object or an event object.
- * @returns {number} The content width of the viewer.
- */
-function getViewerContentWidth(input){
-    if(input.contentSize){
-        return input.contentSize.x;
-    }
-    let viewer = input.eventSource || input;
-    let item = viewer.world.getItemAt(0);
-    return item && item.getContentSize().x || 1;
-    // let viewer = input.eventSource || input;
-    // let item = viewer.world.getItemAt(0);
-    // return (item && item.source && item.source.width) || 1;
-}
   

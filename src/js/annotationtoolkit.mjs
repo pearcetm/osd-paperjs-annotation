@@ -80,14 +80,12 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
      * Create a new AnnotationToolkit instance.
      * @constructor
      * @param {OpenSeadragon.Viewer} openSeadragonViewer - The OpenSeadragon viewer object.
-     * @param {object} [opts] - The configuration options(not yet supported).
+     * @param {object} [opts]
+     * @param {OpenSeadragon.TiledImage} [opts.tiledImage] - The TiledImage to attach the overlay to
      */
     constructor(openSeadragonViewer, opts) {
         super();
-        // TO DO: make the options object actually do something
-        if(opts){
-            console.warn('Configuration options for AnnotationToolkit are not yet supported')
-        }
+        
 
         this._defaultStyle = {
             fillColor: new paper.Color('white'),
@@ -103,14 +101,16 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
 
         this.viewer.addOnceHandler('close', ()=>this.destroy()); //TO DO: make this an option, not a hard-coded default
 
-        this.overlay = new PaperOverlay(this.viewer);
+        let overlayOptions = {
+            tiledImage: opts.tiledImage,
+            type: 'image',
+        }
+        this.overlay = new PaperOverlay(this.viewer, overlayOptions);
 
         this.overlay.paperScope.project.defaultStyle = new paper.Style();
         this.overlay.paperScope.project.defaultStyle.set(this.defaultStyle);
         this.overlay.autoRescaleItems(true);
 
-        // OpenSeadragon.extend(AnnotationToolkit.prototype, OpenSeadragon.EventSource.prototype);
-        // OpenSeadragon.EventSource.call(this);
         
         this.viewer.annotationToolkit = this;
 
@@ -126,6 +126,14 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
 
         paper.Item.fromGeoJSON = AnnotationItemFactory.itemFromGeoJSON;
         paper.Item.fromAnnotationItem = AnnotationItemFactory.itemFromAnnotationItem;
+
+        if(opts.addUI){
+            let uiOpts = {}
+            if(typeof opts.addUI === 'object'){
+                uiOpts = opts.addUI;
+            }
+            this.addAnnotationUI(uiOpts)
+        }
     }
 
     /**
@@ -136,6 +144,16 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
     get defaultStyle(){
         return this._defaultStyle;
     }
+    
+    /**
+     * Get the default style for the annotation items.
+     * 
+     * @returns {object} The default style object.
+     */
+    get annotationUI(){
+        return this._annotationUI;
+    }
+
 
     /**
      * Get the paperScope associated with this toolkit

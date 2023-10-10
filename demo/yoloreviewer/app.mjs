@@ -306,7 +306,6 @@ function setupKeypressHandlers(){
 
     // suppress default OSD keydown handling for a subset of keys
     v1.addHandler('canvas-key',event=>{
-        // console.log('canvas-key',event);
         if(['q','w','e','r','a','s','d','f'].includes(event.originalEvent.key)){
             event.preventDefaultAction = true;
         }

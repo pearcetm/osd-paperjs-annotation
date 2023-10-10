@@ -35,6 +35,7 @@ class TransformTool extends AnnotationUITool{
         this.extensions.onDeactivate=function(shouldFinish){
             // self.project.viewer.removeHandler('canvas-click',self.clickHandler);
             self.tool.onMouseMove = null;
+            self.project.overlay.removeClass(['transform-tool-resize', 'transform-tool-rotate']);
             if(shouldFinish){
                 self.disableTransformToolObject();
             }

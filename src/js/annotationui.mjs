@@ -82,7 +82,7 @@ class AnnotationUI {
 
 
     let dialogOpts = {
-      filename: _viewer.world.getItemAt(0) && this._viewer.world.getItemAt(0).source.name,
+      filename: _viewer.world.getItemAt(0) && this._viewer.world.getItemAt(0).source.name, //todo make this work with multiple tiledImages
       positioningElement: (this, _viewer.navigator || this._viewer).element,
       appendTo: this._viewer.element,
       toolbar: this._toolbar,
@@ -155,9 +155,44 @@ class AnnotationUI {
     }
   }
 
+  /**
+   * Show the LayerUI interface
+   */
+  showUI(){
+    this.ui.show();
+  }
+
+  /**
+   * Hide the LayerUI interface
+   */
+  hideUI(){
+    this.ui.hide();
+  }
+
+  /**
+   * Show the toolbar
+   */
+  showToolbar(){
+    this.toolbar.show();
+  }
+
+  /**
+   * Hide the toolbar
+   */
+  hideToolbar(){
+    this.toolbar.hide();
+  }
+
+  get ui(){
+    return this._layerUI;
+  }
 
   get toolbar() {
     return this._toolbar;
+  }
+
+  get element(){
+    return this._layerUI.element;
   }
 
   /**

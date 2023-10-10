@@ -56,7 +56,7 @@ class LayerUI extends OpenSeadragon.EventSource{
         self.element.on('selected','.feature',function(ev){
             ev.stopPropagation();
             $(this).addClass('selected');
-            this.scrollIntoViewIfNeeded();
+            this.scrollIntoView({block:'nearest'});
         });
         self.element.on('deselected','.feature',function(ev){
             ev.stopPropagation();

@@ -605,7 +605,7 @@ export {StyleToolbar};
     this.updatePosition = function(point){
         cursor.position=point;
 
-        let o = cursor.project.overlay.osdViewer.viewport.imageToViewerElementCoordinates(new OpenSeadragon.Point(point.x, point.y));
+        let o = cursor.project.overlay.getCanvasCoordinates(point.x, point.y);
         let x = Math.round(o.x)-Math.floor(cursor.numColumns/2);
         let y = Math.round(o.y)-Math.floor(cursor.numRows/2);
         let w = cursor.numColumns;
