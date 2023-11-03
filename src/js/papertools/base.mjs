@@ -22,7 +22,7 @@ class ToolBase{
          * @property {paper.PaperScope} paperScope - The Paper.js PaperScope object.
          * @property {Element} overlay - The overlay element used by the tool.
          */
-        let projectInterface = this.project ={
+        this.project ={
             getZoom:()=>paperScope.view.getZoom(),
             toolLayer:paperScope.project.layers.toolLayer || paperScope.project.activeLayer,
             paperScope:paperScope,
@@ -31,14 +31,16 @@ class ToolBase{
         
         let shiftPressed;
         let self=this;
+
+        this._identityMatrix = new paper.Matrix();
       
         this.extensions = {
             onActivate:()=>{},
             onDeactivate:()=>{}
         }
         this.tool = new paperScope.Tool();
-        // console.log('tool created at index',paperScope.tools.indexOf(this.tool),paperScope)
-        this.tool._toolObject=this;            
+        
+        this.tool._toolObject=this; //TODO is _toolObject actually used, and does it need to be?            
         this.tool.extensions = {
             onKeyUp:()=>{},
             onKeyDown:()=>{},
@@ -49,6 +51,7 @@ class ToolBase{
                 self.onDeactivate();//enable OpenSeadragon event handling for navigation
             }
             this.extensions.onKeyDown(ev);
+            self.onKeyDown(ev);
         }
         this.tool.onKeyUp=function(ev){
             if(ev.key=='shift'){
@@ -56,7 +59,21 @@ class ToolBase{
                 self.onActivate();//start capturing mouse/keyboard events again
             }
             this.extensions.onKeyUp(ev);
-        },
+            self.onKeyUp(ev);
+        }
+
+        this.tool.onMouseDown=function(ev){
+            self.onMouseDown(self._transformEvent(ev));
+        }
+        this.tool.onMouseDrag=function(ev){
+            self.onMouseDrag(self._transformEvent(ev));
+        }
+        this.tool.onMouseMove=function(ev){
+            self.onMouseMove(self._transformEvent(ev));
+        }
+        this.tool.onMouseUp = function(ev){
+            self.onMouseUp(self._transformEvent(ev));
+        }
         this.listeners = {}
     }
     /**
@@ -75,6 +92,7 @@ class ToolBase{
      * Function called when the tool is activated.
      */    
     onActivate(){
+        this._targetLayer = this.project.paperScope.project.activeLayer;
         this.captureUserInput(true);
         this.project.overlay.addEventListener('wheel',this.tool.onMouseWheel);
         this.project.toolLayer.bringToFront();
@@ -118,6 +136,47 @@ class ToolBase{
     captureUserInput(capture = true) { 
         this.project.overlay.setOSDMouseNavEnabled(!capture);
     };
+
+    // default no-op implementations of tool event handlers
+    onMouseDown(){}
+    onMouseMove(){}
+    onMouseDrag(){}
+    onMouseUp(){}
+    onKeyDown(){}
+    onKeyUp(){}
+
+    get targetLayer(){
+        return this._targetLayer;
+    }
+
+    get targetMatrix(){
+        return this.targetLayer ? this.targetLayer.matrix : this._identityMatrix;
+    }
+
+    // private
+    _transformEvent(ev){
+        let matrix = this.targetMatrix;
+        let transformed = {
+            point: matrix.inverseTransform(ev.point),
+            downPoint: matrix.inverseTransform(ev.downPoint),
+            lastPoint: matrix.inverseTransform(ev.lastPoint),
+            middlePoint: matrix.inverseTransform(ev.middlePoint),
+        };
+        let deltaStart = ev.point.subtract(ev.delta);
+        transformed.delta = transformed.point.subtract(matrix.inverseTransform(deltaStart));
+
+        ev.original = {
+            point: ev.point,
+            downPoint: ev.downPoint,
+            lastPoint: ev.lastPoint,
+            middlePoint: ev.middlePoint,
+            delta: ev.delta
+        };
+
+        Object.assign(ev, transformed);
+
+        return ev;
+    }
         
 }
 export {ToolBase};

@@ -31,7 +31,8 @@
         <h2><span class="attribs"><span class="type-signature"></span></span>
             <span class="ancestors"><a href="OSDPaperjsAnnotation.html">OSDPaperjsAnnotation</a>.</span>PaperOverlay<span class="signature">(viewer, opts)</span><span class="type-signature"></span></h2>
         
-            <div class="class-description">Represents a PaperOverlay associated with an OpenSeadragon Viewer.A PaperOverlay is a Paper.js overlay that can be either synced to the zoomable image or fixed to the viewer.</div>
+            <div class="class-description">Represents a PaperOverlay associated with an OpenSeadragon Viewer.
+A PaperOverlay is a Paper.js overlay that can be either synced to the zoomable image or fixed to the viewer.</div>
         
     
 </header>
@@ -54,7 +55,8 @@
 
 
 <div class="description">
-    Creates an instance of the PaperOverlay.overlayType: 'image' to sync to the zoomable image, 'viewport' to stay fixed to the viewer
+    Creates an instance of the PaperOverlay.
+overlayType: 'image' to sync to the zoomable image, 'viewport' to stay fixed to the viewer
 </div>
 
 
@@ -239,7 +241,7 @@
 
     
 
-        <tr>
+        <tr>viewer
             
                 <td class="name"><code>osdViewer</code></td>
             
@@ -799,7 +801,8 @@
 
 
 <div class="description">
-    This method allows you to add CSS classes to the canvas element of the overlay.Adding classes can be useful for styling the overlay or associating specific styles with it.
+    This method allows you to add CSS classes to the canvas element of the overlay.
+Adding classes can be useful for styling the overlay or associating specific styles with it.
 </div>
 
 
@@ -958,7 +961,8 @@
 
 
 <div class="description">
-    This method allows you to add custom event listeners to the canvas element of the overlay.You can listen for various events, such as mouse clicks or custom events, and perform actions accordingly.
+    This method allows you to add custom event listeners to the canvas element of the overlay.
+You can listen for various events, such as mouse clicks or custom events, and perform actions accordingly.
 </div>
 
 
@@ -1394,7 +1398,9 @@
 
 
 <div class="description">
-    This method allows you to enable or disable automatic rescaling of items within the overlaybased on the zoom level of the OpenSeadragon viewer.When enabled, items in the overlay will be rescaled automatically as the viewer's zoom level changes.
+    This method allows you to enable or disable automatic rescaling of items within the overlay
+based on the zoom level of the OpenSeadragon viewer.
+When enabled, items in the overlay will be rescaled automatically as the viewer's zoom level changes.
 </div>
 
 
@@ -1546,7 +1552,9 @@
 
 
 <div class="description">
-    Brings the overlay to the front, making it appear on top of other overlays.This method changes the z-index of the overlay to bring it forward.The overlay will appear on top of any other overlays that are currently on the viewer.
+    Brings the overlay to the front, making it appear on top of other overlays.
+This method changes the z-index of the overlay to bring it forward.
+The overlay will appear on top of any other overlays that are currently on the viewer.
 </div>
 
 
@@ -1744,7 +1752,9 @@
 
 
 <div class="description">
-    Clears the overlay by removing all paper items from the overlay's Paper.js project.This method removes all Paper.js items (such as paths, shapes, etc.) that have been added to the overlay.After calling this method, the overlay will be empty, and any content that was previously drawn on it will be removed.
+    Clears the overlay by removing all paper items from the overlay's Paper.js project.
+This method removes all Paper.js items (such as paths, shapes, etc.) that have been added to the overlay.
+After calling this method, the overlay will be empty, and any content that was previously drawn on it will be removed.
 </div>
 
 
@@ -1832,7 +1842,8 @@
 
 
 <div class="description">
-    Destroys the overlay and removes it from the viewer.This method cleans up the resources associated with the overlay and removes it from the viewer.
+    Destroys the overlay and removes it from the viewer.
+This method cleans up the resources associated with the overlay and removes it from the viewer.
 </div>
 
 
@@ -1884,7 +1895,9 @@
 
             
 
-            <td class="description last">Whether the viewer has been destroyed.If `viewerDestroyed` is true, it indicates that the viewer itself is being destroyed, and this methodwill not attempt to remove the overlay from the viewer, as it will be automatically removed during the viewer's cleanup process.</td>
+            <td class="description last">Whether the viewer has been destroyed.
+If `viewerDestroyed` is true, it indicates that the viewer itself is being destroyed, and this method
+will not attempt to remove the overlay from the viewer, as it will be automatically removed during the viewer's cleanup process.</td>
         </tr>
 
     
@@ -2379,7 +2392,8 @@
 
 
 <div class="description">
-    This method allows you to remove CSS classes from the canvas element of the overlay.Removing classes can be useful for updating the overlay's appearance or changing its associated styles.
+    This method allows you to remove CSS classes from the canvas element of the overlay.
+Removing classes can be useful for updating the overlay's appearance or changing its associated styles.
 </div>
 
 
@@ -2538,7 +2552,8 @@
 
 
 <div class="description">
-    This method allows you to remove a previously added event listener from the canvas element of the overlay.If the specified event and listener pair match an existing event listener, it will be removed.
+    This method allows you to remove a previously added event listener from the canvas element of the overlay.
+If the specified event and listener pair match an existing event listener, it will be removed.
 </div>
 
 
@@ -2720,7 +2735,9 @@
 
 
 <div class="description">
-    Rescales all items in the overlay according to the current zoom level of the viewer.This method manually rescales all Paper.js items that have the `rescale` property set to true.The rescaling is based on the current zoom level of the viewer, ensuring that the items maintain their relative size on the viewer.
+    Rescales all items in the overlay according to the current zoom level of the viewer.
+This method manually rescales all Paper.js items that have the `rescale` property set to true.
+The rescaling is based on the current zoom level of the viewer, ensuring that the items maintain their relative size on the viewer.
 </div>
 
 
@@ -2815,7 +2832,9 @@
 
 
 <div class="description">
-    Sends the overlay to the back, making it appear behind other overlays.This method changes the z-index of the overlay to send it backward.The overlay will appear behind any other overlays that are currently on the viewer.
+    Sends the overlay to the back, making it appear behind other overlays.
+This method changes the z-index of the overlay to send it backward.
+The overlay will appear behind any other overlays that are currently on the viewer.
 </div>
 
 
@@ -2903,7 +2922,8 @@
 
 
 <div class="description">
-    This method allows you to set custom attributes on the canvas element of the overlay.Setting attributes can be useful for additional customization or to store metadata related to the overlay.
+    This method allows you to set custom attributes on the canvas element of the overlay.
+Setting attributes can be useful for additional customization or to store metadata related to the overlay.
 </div>
 
 
@@ -3085,7 +3105,9 @@
 
 
 <div class="description">
-    This method allows you to enable or disable mouse navigation in the viewer associated with the overlay.Mouse navigation includes actions such as panning and zooming.It returns a boolean value indicating whether mouse navigation was enabled before the method call.
+    This method allows you to enable or disable mouse navigation in the viewer associated with the overlay.
+Mouse navigation includes actions such as panning and zooming.
+It returns a boolean value indicating whether mouse navigation was enabled before the method call.
 </div>
 
 

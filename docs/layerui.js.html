@@ -58,7 +58,7 @@ class LayerUI extends OpenSeadragon.EventSource {
       ev.stopPropagation();
       ev.preventDefault();
       // self.addFeatureCollection();
-      self.paperScope.createFeatureCollectionLayer();
+      self.paperScope.createFeatureCollectionGroup();
     });
     self.element.find('.toggle-annotations').on('click', function (ev) {
       let hidden = self.element.find('.annotation-ui-feature-collections .feature-collection.annotation-hidden');

@@ -96,7 +96,7 @@ paper.Project.prototype.updateFillOpacity = updateFillOpacity;
 paper.PaperScope.prototype.findSelectedNewItem = findSelectedNewItem;
 paper.PaperScope.prototype.findSelectedItems = findSelectedItems;
 paper.PaperScope.prototype.findSelectedItem = findSelectedItem;
-paper.PaperScope.prototype.createFeatureCollectionLayer = createFeatureCollectionLayer;
+paper.PaperScope.prototype.createFeatureCollectionGroup = createFeatureCollectionGroup;
 paper.PaperScope.prototype.scaleByCurrentZoom = function (v) {
   return v / this.view.getZoom();
 };
@@ -217,7 +217,7 @@ class AnnotationToolkit extends OpenSeadragon.EventSource {
    * Get the feature collection layers in the toolkit.
    * @returns {paper.Layer[]} The array of paper layer objects representing feature collections.
    */
-  getFeatureCollectionLayers() {
+  getFeatureCollectionGroups() {
     return this.overlay.paperScope.project.layers.filter(l => l.isGeoJSONFeatureCollection);
   }
   /**
@@ -275,7 +275,7 @@ class AnnotationToolkit extends OpenSeadragon.EventSource {
     }
     geoJSON.forEach(obj => {
       if (obj.type == 'FeatureCollection') {
-        let layer = this.overlay.paperScope.createFeatureCollectionLayer(obj.label);
+        let layer = this.overlay.paperScope.createFeatureCollectionGroup(obj.label);
         let props = obj.properties || {};
         layer.userdata = Object.assign({}, props.userdata);
         layer.defaultStyle.set(props.defaultStyle);
@@ -421,7 +421,7 @@ function findSelectedItem() {
  * @param {string} [displayLabel=null] - The display label for the feature collection layer.
  * @returns {paper.Layer} The paper layer object representing the feature collection.
  */
-function createFeatureCollectionLayer(displayLabel = null) {
+function createFeatureCollectionGroup(displayLabel = null) {
   let layer = new paper.Layer();
   this.project.addLayer(layer);
   layer.isGeoJSONFeatureCollection = true;

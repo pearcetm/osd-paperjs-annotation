@@ -65,7 +65,7 @@ class Raster extends AnnotationItem{
         
         this._rasterSelectedColor = new paper.Color(0,0,0,0);
 
-        raster.selectedColor = this._rasterSelectedColor();
+        raster.selectedColor = this._rasterSelectedColor;
 
         
 

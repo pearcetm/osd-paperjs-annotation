@@ -39,7 +39,7 @@ class RasterTool extends AnnotationUITool{
         let self = this;
         let item = this.item;
         if(item){
-            let raster = this.project.overlay.osdViewer.getViewportRaster(item.view);
+            let raster = this.project.overlay.viewer.getViewportRaster(item.view);
             item.layer.addChild(raster);
         
         /**

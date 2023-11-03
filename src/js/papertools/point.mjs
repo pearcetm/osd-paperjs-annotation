@@ -40,7 +40,6 @@ class PointTool extends AnnotationUITool{
          * @description Handles the activation of the PointTool.
          */
         this.extensions.onActivate=function(){
-            // self.project.paperScope.project.activeLayer.addChild(cursor);
             self.project.toolLayer.bringToFront();
             if(self.itemToCreate) cursor.visible = true;
         }
@@ -52,7 +51,6 @@ class PointTool extends AnnotationUITool{
          */
         this.extensions.onDeactivate=function(){
             self.project.toolLayer.sendToBack();
-            // self.project.toolLayer.addChild(cursor);
             cursor.visible=false;
             self.project.overlay.removeClass('point-tool-grab', 'point-tool-grabbing');
         }

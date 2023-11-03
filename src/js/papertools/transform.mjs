@@ -25,17 +25,17 @@ class TransformTool extends AnnotationUITool{
         this.ps = this.project.paperScope;
         this._mode = 'transform';
         this._moving = [];
+        this._active = false;
         this.setToolbarControl(new TransformToolbar(this));
         this.makeTransformToolObject(self.project.getZoom());
         
         this.extensions.onActivate=function(){ 
-            // self.project.viewer.addHandler('canvas-click',self.clickHandler) 
+            self._active = true;
             self.enableTransformToolObject();
         }    
         this.extensions.onDeactivate=function(shouldFinish){
-            // self.project.viewer.removeHandler('canvas-click',self.clickHandler);
-            self.tool.onMouseMove = null;
-            self.project.overlay.removeClass(['transform-tool-resize', 'transform-tool-rotate']);
+            self._active = false;
+            self.project.overlay.removeClass('transform-tool-resize', 'transform-tool-rotate', 'transform-tool-move');
             if(shouldFinish){
                 self.disableTransformToolObject();
             }
@@ -82,17 +82,16 @@ class TransformTool extends AnnotationUITool{
         
         //Resize operations
         this._transformTool.corners=[
-         ['topLeft','bottomRight'],
-         ['topRight','bottomLeft'],
-         ['bottomRight','topLeft'],
-         ['bottomLeft','topRight']].reduce((acc,c)=>{
+            ['topLeft','bottomRight'],
+            ['topRight','bottomLeft'],
+            ['bottomRight','topLeft'],
+            ['bottomLeft','topRight']
+        ].reduce((acc,c)=>{
              let ctrl = new paper.Shape.Rectangle(new paper.Point(0,0),new paper.Size(cSize/currentZoom,cSize/currentZoom));
-            //  let refPt = new paper.Shape.Circle(new paper.Point(0,0),1);
-            //  refPt.visible=false;
-            //  ctrl.refPt = refPt;
+           
              ctrl.set({rescale:{size:z=>new paper.Size(cSize/z, cSize/z)},fillColor:'red',strokeColor:'black'});
              self._transformTool.addChild(ctrl);
-            //  self._transformTool.addChild(refPt);
+            
              ctrl.anchor=c[0];
              ctrl.opposite=c[1];
              ctrl.onMouseDown = function(ev){ev.stopPropagation();}
@@ -115,8 +114,11 @@ class TransformTool extends AnnotationUITool{
                 let refPosX = refPos.transform(this.parent.matrix);
                 let refPosZ = this.parent.matrix.inverseTransform(this.parent.corners[this.opposite].refPos);
 
+                refPosZ = self.targetMatrix.inverseTransform(refPosZ);
+
                 this.parent.transforming.forEach( item=>{
                     let matrix = new paper.Matrix().scale(sf.width,sf.height,refPosZ); 
+
                     item.matrix.append(matrix);
                     item.onTransform && item.onTransform('scale', refPosX, rotation, matrix);
                 });
@@ -135,6 +137,9 @@ class TransformTool extends AnnotationUITool{
         this._transformTool.rotationHandle.onMouseDown = function(ev){ev.stopPropagation();}
         this._transformTool.rotationHandle.onMouseDrag = function(ev){
             let parentMatrix=this.parent.matrix;
+
+            //parentMatrix = parentMatrix.prepend(self.targetMatrix);
+
             let center=parentMatrix.transform(this.parent.boundingRect.position);
             
             let oldVec = ev.point.subtract(ev.delta).subtract(center);
@@ -142,8 +147,9 @@ class TransformTool extends AnnotationUITool{
             let angle = newVec.angle - oldVec.angle;
             this.parent.rotate(angle,center);
             this.parent.transforming.forEach(item=>{
-                item.rotate(angle,center);
-                item.onTransform && item.onTransform('rotate', angle, center);
+                let itemCenter = self.targetMatrix.inverseTransform(center);
+                item.rotate(angle, itemCenter);
+                item.onTransform && item.onTransform('rotate', angle, itemCenter);
             })
             Object.values(this.parent.corners).forEach(corner=>{
                 corner.refPos = corner.refPos.rotate(angle,center);
@@ -152,14 +158,11 @@ class TransformTool extends AnnotationUITool{
 
         //Translation operations
         this._transformTool.onMouseDown = function(ev){
-            // console.log('mousedown',ev);
-            // let hitresult=self.hitTest(ev.point) || this.boundingDisplay.hitTest(this.matrix.inverseTransform(ev.point));
-            // hitresult = hitresult && (hitresult.item==this.boundingDisplay || (hitresult.item.isGeoJSONFeature&&hitresult.item.selected) );
-            // console.log('hit',hitresult);
+            
             if(this.boundingDisplay.contains(ev.point)){
                 this._dragging = true;
             }
-            // if(hitresult) this._dragging=true;
+            
         }
         this._transformTool.onMouseUp = function(ev){
             this._dragging=false;
@@ -175,33 +178,7 @@ class TransformTool extends AnnotationUITool{
                 item.onTransform && item.onTransform('translate', ev.delta);
             });
         }
-        this.tool.onMouseMove=function(ev){
-            
-                let hitResult = self.project.paperScope.project.hitTest(ev.point);
-                if(hitResult){
-                    if(Object.values(self._transformTool.corners).indexOf(hitResult)){
-                        self.project.overlay.addClass('transform-tool-resize');
-                    } else {
-                        self.project.overlay.removeClass('transform-tool-resize');
-                    }
-                        
-                    if (self._transformTool.rotationHandle == hitResult){
-                        self.project.overlay.addClass('transform-tool-rotate');
-                    } else {
-                        self.project.overlay.removeClass('transform-tool-rotate');
-                    }
-                    
-                } else{
-                    self.project.overlay.removeClass(['transform-tool-resize', 'transform-tool-rotate']);
-                }
-
-                if(self.item.contains(ev.point)){
-                    self.project.overlay.addClass('transform-tool-move');
-                } else {
-                    self.project.overlay.removeClass('transform-tool-move');
-                }
-            
-        }
+        
 
         //(re)positioning the tool handles (corners, rotation control)
         this._transformTool.setBounds=function(useExistingBoundingRect=false){
@@ -213,7 +190,12 @@ class TransformTool extends AnnotationUITool{
                     acc.maxY = acc.maxY===null?item.bounds.bottomRight.y : Math.max(acc.maxY,item.bounds.bottomRight.y);
                     return acc;
                 },{minX:null,minY:null,maxX:null,maxY:null});
-                let rect = new paper.Rectangle(new paper.Point(bounds.minX,bounds.minY), new paper.Point(bounds.maxX,bounds.maxY));
+
+                // bounds = self.targetMatrix.transform(bounds);
+
+                let topLeft = self.targetMatrix.transform(new paper.Point(bounds.minX,bounds.minY));
+                let bottomRight = self.targetMatrix.transform(new paper.Point(bounds.maxX,bounds.maxY));
+                let rect = new paper.Rectangle(topLeft, bottomRight);
                 this.matrix.reset();
                 this.boundingRect.set({position:rect.center,size:rect.size});
                 // this.transforming.forEach(item=>item.rotationAxis=new paper.Point(rect.center));
@@ -289,6 +271,35 @@ class TransformTool extends AnnotationUITool{
         }
         return hitResult;
     }
+
+    onMouseMove(ev){
+        if(!this._active) return;
+        
+        let hitResult = this.project.paperScope.project.hitTest(ev.original.point);
+        if(hitResult){
+            if(Object.values(this._transformTool.corners).includes(hitResult.item)){
+                this.project.overlay.addClass('transform-tool-resize');
+            } else {
+                this.project.overlay.removeClass('transform-tool-resize');
+            }
+                
+            if (this._transformTool.rotationHandle == hitResult.item){
+                this.project.overlay.addClass('transform-tool-rotate');
+            } else {
+                this.project.overlay.removeClass('transform-tool-rotate');
+            }
+
+            if([this._transformTool.boundingRect, this._transformTool.boundingDisplay].includes(hitResult.item)){
+                this.project.overlay.addClass('transform-tool-move');
+            } else {
+                this.project.overlay.removeClass('transform-tool-move');
+            }
+            
+        } else{
+            this.project.overlay.removeClass('transform-tool-resize', 'transform-tool-rotate', 'transform-tool-move');
+        }
+    
+}
 }
 export{TransformTool};
 /**

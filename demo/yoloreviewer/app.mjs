@@ -129,7 +129,7 @@ function addSelectedItemsToLayer(layer){
 
 function setupReview(){
     // identify which FeatureCollections and Features to work with
-    let layers = tk.getFeatureCollectionLayers();
+    let layers = tk.getFeatureCollectionGroups();
     items = getFeaturesToReview();
     // add groups (other than those that start or end with "ROI" (case insensitive)) to the select dropdown and the dictionary of groups
     groups = {};

@@ -23,10 +23,10 @@ class PolygonTool extends AnnotationUITool{
         super(paperScope);
         let self = this;
         let tool = this.tool;
-        let lastClickTime = 0;
+        this._lastClickTime = 0;
         this.drawingGroup = new paper.Group();
-        self.project.toolLayer.addChild(self.drawingGroup);
-        self.drawingGroup.visible=false;  
+        this.project.toolLayer.addChild(this.drawingGroup);
+        this.drawingGroup.visible=false;  
         this.draggingSegment = null;
         this.eraseMode=false;
         this.simplifying=null;
@@ -43,6 +43,7 @@ class PolygonTool extends AnnotationUITool{
             tool.maxDistance=20/self.project.getZoom();
             self.drawingGroup.visible=true;
             self.drawingGroup.selected=true;
+            self.targetLayer.addChild(self.drawingGroup);
         }
         /**
          * Event handler when the tool is deactivated.
@@ -53,123 +54,11 @@ class PolygonTool extends AnnotationUITool{
         this.extensions.onDeactivate= function(finished){
             if(finished){
                 self.finish();
+                self.project.toolLayer.addChild(self.drawingGroup);
             }
         }
         
-        /**
-         * Event handler for the mouse down event.
-         * Handles various actions including initiating polygon drawing and erasing.
-         * @private
-         * @param {paper.MouseEvent} ev - The mouse event object.
-         */
-        tool.onMouseDown=function(ev){
-            self.draggingSegment=null;
-            let now = Date.now();
-            let interval=now-lastClickTime;
-            let dblClick = interval < 300;
-            lastClickTime=now;
-
-            self.simplifying && self.cancelSimplify();  
-            
-            if(self.itemToCreate){
-                self.itemToCreate.initializeGeoJSONFeature('MultiPolygon');
-                self.refreshItems();
-                
-                self.saveHistory();        
-            }
-
-            let dr = self.drawing();
-            if(dr && dblClick){
-                self.finishCurrentPath();
-                self.draggingSegment=null;
-                return;
-            }
-            
-            let hitResult = (dr&&dr.path ||self.item).hitTest(ev.point,{fill:false,stroke:true,segments:true,tolerance:(5/self.project.getZoom())})
-            if(hitResult){
-                //if erasing and hitResult is a segment, hitResult.segment.remove()
-                if(hitResult.type=='segment' && self.eraseMode){
-                    hitResult.segment.remove();
-                }
-                //if hitResult is a segment and NOT erasing, save reference to hitResult.segment for dragging it
-                else if(hitResult.type=='segment'){
-                    self.draggingSegment = hitResult.segment;
-                }
-                //if hitResult is a stroke, add a point:
-                else if(hitResult.type=='stroke'){
-                    let insertIndex = hitResult.location.index +1;
-                    let ns = hitResult.item.insert(insertIndex, ev.point);
-                }
-            }
-            else if(dr){ //already drawing, add point to the current path object
-                if(ev.point.subtract(dr.path.lastSegment).length<(5/self.project.getZoom())) return;
-                dr.path.add(ev.point);
-            }
-            else{ //not drawing yet, but start now!
-                self.drawingGroup.removeChildren();
-                self.drawingGroup.addChild(new paper.Path([ev.point]));
-                self.drawingGroup.visible=true;
-                self.drawingGroup.selected=true;
-                self.drawingGroup.selectedColor= self.eraseMode ? 'red' : null;
-            }
-            
-            
-        }
-        /**
-         * Event handler for the mouse drag event.
-         * Allows users to continue drawing or dragging polygon segments.
-         * @private
-         * @param {paper.MouseEvent} ev - The mouse event object.
-         */
-        tool.onMouseDrag=function(ev){
-            let dr = self.drawing();
-            if(dr){
-                dr.path.add(ev.point)
-            }
-            else if (self.draggingSegment){
-                self.draggingSegment.point = self.draggingSegment.point.add(ev.delta);
-            }
-        }
-        /**
-         * Event handler for the mouse move event.
-         * Provides visual feedback based on the mouse cursor's position.
-         * @private
-         * @param {paper.MouseEvent} ev - The mouse event.
-         */
-        tool.onMouseMove=function(ev){
-            let dr = self.drawing();
-            let hitResult = self.item && (dr&&dr.path ||self.item).hitTest(ev.point,{fill:false,stroke:true,segments:true,tolerance:(5/self.project.getZoom())})
-            if(hitResult){
-                let action = hitResult.type + (self.eraseMode ? '-erase' : '');
-                self.project.overlay.addClass('tool-action').setAttribute('data-tool-action',action);
-            }
-            else{
-                self.project.overlay.removeClass('tool-action').setAttribute('data-tool-action','');
-            }  
-        }
-        /**
-         * Event handler for the mouse up event.
-         * Finalizes polygon creation, dragging, and other interactions.
-         * @private
-         * @param {paper.MouseEvent} ev - The mouse event.
-         */
-        tool.onMouseUp=function(ev){
-            let dr = self.drawing();
-            if(dr && dr.path.segments.length>1){
-                let hitResult = dr.path.hitTest(ev.point,{fill:false,stroke:false,segments:true,tolerance:(5/self.project.getZoom())})
-                if(hitResult && hitResult.segment == dr.path.firstSegment){
-                    self.finishCurrentPath();
-                }
-            }
-            else if(self.draggingSegment){
-                self.draggingSegment=null;
-                if(!self.item.isBoundingElement){
-                    let boundingItems = self.item.parent.children.filter(i=>i.isBoundingElement);
-                    self.item.applyBounds(boundingItems);
-                }
-            }
-            self.saveHistory()
-        }
+        
         /**
          * Event handler for the key down event.
          * Handles keyboard shortcuts like toggling erase mode and undo/redo.
@@ -207,6 +96,96 @@ class PolygonTool extends AnnotationUITool{
             
         }
     
+    }
+    onMouseDown(ev){
+        this.draggingSegment=null;
+        let now = Date.now();
+        let interval=now-this._lastClickTime;
+        let dblClick = interval < 300;
+        this._lastClickTime=now;
+
+        this.simplifying && this.cancelSimplify();  
+        
+        if(this.itemToCreate){
+            this.itemToCreate.initializeGeoJSONFeature('MultiPolygon');
+            this.refreshItems();
+            
+            this.saveHistory();        
+        }
+
+        let dr = this.drawing();
+        if(dr && dblClick){
+            this.finishCurrentPath();
+            this.draggingSegment=null;
+            return;
+        }
+        
+        let hitResult = (dr&&dr.path ||this.item).hitTest(ev.point,{fill:false,stroke:true,segments:true,tolerance:(5/this.project.getZoom())})
+        if(hitResult){
+            //if erasing and hitResult is a segment, hitResult.segment.remove()
+            if(hitResult.type=='segment' && this.eraseMode){
+                hitResult.segment.remove();
+            }
+            //if hitResult is a segment and NOT erasing, save reference to hitResult.segment for dragging it
+            else if(hitResult.type=='segment'){
+                this.draggingSegment = hitResult.segment;
+            }
+            //if hitResult is a stroke, add a point:
+            else if(hitResult.type=='stroke'){
+                let insertIndex = hitResult.location.index +1;
+                let ns = hitResult.item.insert(insertIndex, ev.point);
+            }
+        }
+        else if(dr){ //already drawing, add point to the current path object
+            if(ev.point.subtract(dr.path.lastSegment).length<(5/this.project.getZoom())) return;
+            dr.path.add(ev.point);
+        }
+        else{ //not drawing yet, but start now!
+            this.drawingGroup.removeChildren();
+            this.drawingGroup.addChild(new paper.Path([ev.point]));
+            this.drawingGroup.visible=true;
+            this.drawingGroup.selected=true;
+            this.drawingGroup.selectedColor= this.eraseMode ? 'red' : null;
+        }
+        
+        
+    }
+    onMouseUp(ev){
+        let dr = this.drawing();
+        if(dr && dr.path.segments.length>1){
+            let hitResult = dr.path.hitTest(ev.point,{fill:false,stroke:false,segments:true,tolerance:(5/this.project.getZoom())})
+            if(hitResult && hitResult.segment == dr.path.firstSegment){
+                this.finishCurrentPath();
+            }
+        }
+        else if(this.draggingSegment){
+            this.draggingSegment=null;
+            if(!this.item.isBoundingElement){
+                let boundingItems = this.item.parent.children.filter(i=>i.isBoundingElement);
+                this.item.applyBounds(boundingItems);
+            }
+        }
+        this.saveHistory()
+    }
+    onMouseMove(ev){
+        let dr = this.drawing();
+        let hitResult = this.item && (dr&&dr.path ||this.item).hitTest(ev.point,{fill:false,stroke:true,segments:true,tolerance:(5/this.project.getZoom())})
+        if(hitResult){
+            let action = hitResult.type + (this.eraseMode ? '-erase' : '');
+            this.project.overlay.addClass('tool-action').setAttribute('data-tool-action',action);
+        }
+        else{
+            this.project.overlay.removeClass('tool-action').setAttribute('data-tool-action','');
+        }  
+    }
+    onMouseDrag(ev){
+        let dr = this.drawing();
+        if(dr){
+            dr.path.add(ev.point)
+        }
+        else if (this.draggingSegment){
+            this.draggingSegment.point = this.draggingSegment.point.add(ev.delta);
+        }
     }
     /**
      * Retrieves the current drawing state, including the active path being drawn.

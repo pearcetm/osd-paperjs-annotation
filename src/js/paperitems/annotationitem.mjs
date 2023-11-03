@@ -240,7 +240,7 @@ class AnnotationItemFactory{
      * @returns {paper.Item|undefined} A paper.Item instance or undefined if no matching constructor is found.
      * @description This static method creates an AnnotationItem instance from a GeoJSON feature. It retrieves a matching constructor based on the GeoJSON geometry type and subtype, and then creates an AnnotationItem instance using that constructor.
      */
-    static itemFromGeoJSON(geoJSON){
+    static itemFromGeoJSON(geoJSON){ 
         if(GeometryTypes.includes(geoJSON.type)){
             geoJSON = {
                 type: 'Feature',

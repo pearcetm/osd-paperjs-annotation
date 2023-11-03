@@ -52,6 +52,8 @@ class AnnotationToolbar{
         let toolLayer=new paperScope.Layer();
         toolLayer.isGeoJSONFeatureCollection=false;
         toolLayer.name = 'toolLayer';
+        toolLayer.applyMatrix = false;
+        // toolLayer.setScaling(1/toolLayer.view.viewSize.width);
         paperScope.project.addLayer(toolLayer);
 
         /**
