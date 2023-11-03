@@ -86,6 +86,9 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
     constructor(openSeadragonViewer, opts) {
         super();
         
+        if(!opts){
+            opts = {};
+        }
 
         this._defaultStyle = {
             fillColor: new paper.Color('white'),
