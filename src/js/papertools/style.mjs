@@ -50,23 +50,23 @@ import {AnnotationUITool, AnnotationUIToolbarBase} from './annotationUITool.mjs'
                 self.cancelColorpicker();
             }
         }
-        tool.onMouseMove=function(ev){            
-            if(self.pickingColor){
-                self.colorpicker.updatePosition(ev.point);
-                              
-            }
-        }
-        tool.onMouseUp=function(ev){
-            if(self.pickingColor && self.cursor.visible){
-                self._colorpickerPromise && self._colorpickerPromise.resolve(self.colorpicker.selectedColor);
-                self._colorpickerPromise = null;
-                self.cancelColorpicker();
-            }
-        }
 
         this.project.paperScope.project.on('edit-style',ev=>{
             this.activateForItem(ev.item);
         })
+    }
+
+    onMouseMove(ev){            
+        if(this.pickingColor){
+            this.colorpicker.updatePosition(ev.original.point);    
+        }
+    }
+    onMouseUp(){
+        if(this.pickingColor && this.cursor.visible){
+            this._colorpickerPromise && this._colorpickerPromise.resolve(this.colorpicker.selectedColor);
+            this._colorpickerPromise = null;
+            this.cancelColorpicker();
+        }
     }
 
     /**
@@ -603,14 +603,14 @@ export {StyleToolbar};
      */
     this.updatePosition = function(point){
         cursor.position=point;
-
+        
         let o = cursor.project.overlay.getCanvasCoordinates(point.x, point.y);
         let x = Math.round(o.x)-Math.floor(cursor.numColumns/2);
         let y = Math.round(o.y)-Math.floor(cursor.numRows/2);
         let w = cursor.numColumns;
         let h = cursor.numRows;
         let r = cursor.view.pixelRatio            
-        let imdata = cursor.project.overlay.viewer.getImageData(x*r,y*r,w*r,h*r);
+        let imdata = cursor.project.overlay.getImageData(x*r,y*r,w*r,h*r);
         ctx.clearRect(0, 0, w, h);
         window.createImageBitmap(imdata).then(bitmap=>{
             ctx.drawImage(bitmap, 0,0, cursor.numColumns, cursor.numRows);
@@ -662,7 +662,7 @@ export {ColorpickerCursor};
  */
  async function getAverageColor(itemToAverage){
     
-    let raster = ((itemToAverage.project && itemToAverage.project.overlay) || itemToAverage.overlay).viewer.getViewportRaster(itemToAverage.view);
+    let raster = ((itemToAverage.project && itemToAverage.project.overlay) || itemToAverage.overlay).getViewportRaster();
     return new Promise(function(resolve,reject){
         raster.onLoad = function(){
             let color = raster.getAverageColor(itemToAverage);

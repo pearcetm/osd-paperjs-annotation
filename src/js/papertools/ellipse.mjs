@@ -80,8 +80,8 @@ class EllipseTool extends AnnotationUITool{
             this.item.removeChildren();
             this.item.addChild(r);
             this.mode='creating';
-        }
-        else if(this.item && this.item.hitTest(ev.point,{fill:false,stroke:false,segments:true,tolerance:5/this.project.getZoom()})){
+        } else if(this.item){
+            // first do a hit test on the segments
             let result = this.item.hitTest(ev.point,{fill:false,stroke:false,segments:true,tolerance:5/this.project.getZoom()})
             if(result){
                 
@@ -95,6 +95,13 @@ class EllipseTool extends AnnotationUITool{
                     p1: result.segment.next.point.clone(),
                     p2: result.segment.previous.point.clone(),
                 }
+                return;
+            } 
+            // next hit test on "fill"
+            if(this.item.contains(ev.point)){
+                // crosshairTool.visible=true;
+                this.mode='fill-drag';
+                return;
             }
         }
     }
@@ -118,9 +125,8 @@ class EllipseTool extends AnnotationUITool{
             this.item.children[0].set({segments: ellipse.segments});
             ellipse.remove();
 
-            currPt = this.targetMatrix.inverseTransform(currPt);
-        }
-        else if(this.mode=='segment-drag'){
+            // currPt = this.targetMatrix.inverseTransform(currPt);
+        } else if(this.mode=='segment-drag'){
             let dragdelta = ev.point.subtract(this.points.opposite);
             let axis = this.points.drag.subtract(this.points.opposite);
             let proj = dragdelta.project(axis);
@@ -147,12 +153,14 @@ class EllipseTool extends AnnotationUITool{
                 ellipse.remove();
             }
 
-        }
-        else{
+        } else if(this.mode == 'fill-drag') {
+            this.item.translate(ev.delta);
+            return;
+        } else{
             this.setCursorPosition(ev.original.point);
             return;
         }
-        this.setCursorPosition(currPt);
+        this.setCursorPosition(this.targetLayer.matrix.transform(currPt));
         
     }
     onMouseMove(ev){
@@ -161,9 +169,14 @@ class EllipseTool extends AnnotationUITool{
             let hitResult = this.item.hitTest(ev.point,{fill:false,stroke:false,segments:true,tolerance:5/this.project.getZoom()});
             if(hitResult){
                 this.project.overlay.addClass('rectangle-tool-resize');
-            }
-            else{
+            } else { 
                 this.project.overlay.removeClass('rectangle-tool-resize');
+            }
+
+            if(this.item.contains(ev.point)){
+                this.project.overlay.addClass('rectangle-tool-move');
+            } else {
+                this.project.overlay.removeClass('rectangle-tool-move');
             }
         }
     }

@@ -26,6 +26,19 @@ class AnnotationUITool extends ToolBase{
         this._items=[];
         this._item=null;
 
+        this.tool.onMouseDown = ev => {
+            this.onMouseDown(this._transformEvent(ev));
+        }
+        this.tool.onMouseDrag = ev => {
+            this.onMouseDrag(this._transformEvent(ev));
+        }
+        this.tool.onMouseMove = ev => {
+            this.onMouseMove(this._transformEvent(ev));
+        }
+        this.tool.onMouseUp = ev => {
+            this.onMouseUp(this._transformEvent(ev));
+        }
+
     }
     
     /**
@@ -36,6 +49,7 @@ class AnnotationUITool extends ToolBase{
         if(this._active) return;//breaks possible infinite loops of tools activating/deactivating each other
         this._active=true;
         this.getSelectedItems();
+        this._setTargetLayer();
         let previousTool=this.project.paperScope.getActiveTool();
         this.tool.activate();
         this.toolbarControl.activate();//console.log('toolbar control activated')
@@ -92,6 +106,7 @@ class AnnotationUITool extends ToolBase{
      */
     selectionChanged(){
         this.getSelectedItems();
+        this._setTargetLayer();
         this.onSelectionChanged();
     }
     /**
@@ -122,6 +137,56 @@ class AnnotationUITool extends ToolBase{
      */
     get itemToCreate(){
         return this._itemToCreate;
+    }
+
+    get targetLayer(){
+        return this._targetLayer;
+    }
+
+    get targetMatrix(){
+        return this.targetLayer ? this.targetLayer.matrix : this._identityMatrix;
+    }
+
+    // private
+    _setTargetLayer(){
+        if(this.item){
+            this._targetLayer = this.item.layer;
+        } else if(this.itemToCreate){
+            this._targetLayer = this.itemToCreate.layer;
+        } else if(this.items){
+            let layerSet = new Set(this.items.map(item=>item.layer));
+            if(layerSet.size === 1){
+                this._targetLayer = layerSet.next().value;
+            } else {
+                this._targetLayer = this.project.overlay.viewer.viewport.paperLayer;
+            }
+        } else {
+            this._targetLayer = this.project.paperScope.project.activeLayer;
+        }
+    }
+    // private
+    _transformEvent(ev){
+        let matrix = this.targetMatrix;
+        let transformed = {
+            point: matrix.inverseTransform(ev.point),
+            downPoint: matrix.inverseTransform(ev.downPoint),
+            lastPoint: matrix.inverseTransform(ev.lastPoint),
+            middlePoint: matrix.inverseTransform(ev.middlePoint),
+        };
+        let deltaStart = ev.point.subtract(ev.delta);
+        transformed.delta = transformed.point.subtract(matrix.inverseTransform(deltaStart));
+
+        ev.original = {
+            point: ev.point,
+            downPoint: ev.downPoint,
+            lastPoint: ev.lastPoint,
+            middlePoint: ev.middlePoint,
+            delta: ev.delta
+        };
+
+        Object.assign(ev, transformed);
+
+        return ev;
     }
         
 }

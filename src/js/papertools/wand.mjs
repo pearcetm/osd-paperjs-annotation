@@ -259,7 +259,7 @@ class WandTool extends AnnotationUITool{
      */
     async getImageData(){
         let self=this;
-        let imageData = self.project.overlay.viewer.getImageData();
+        let imageData = self.project.overlay.getImageData();
         
         let viewportGroup = new paper.Group({children:[],insert:false});
 
@@ -396,7 +396,7 @@ class WandTool extends AnnotationUITool{
 
         this.preview && this.preview.remove();
         
-        this.preview = this.project.paperScope.overlay.viewer.getViewportRaster(this.project.paperScope.view, false);
+        this.preview = this.project.paperScope.overlay.getViewportRaster(this.project.paperScope.view, false);
         this.project.toolLayer.insertChild(0, this.preview);//add the raster to the bottom of the tool layer
         console.log('New preview',this.preview.id, this.preview.parent.id);
         

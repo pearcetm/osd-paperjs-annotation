@@ -97,6 +97,9 @@ class PolygonTool extends AnnotationUITool{
         }
     
     }
+    onSelectionChanged(){
+        this.targetLayer.addChild(this.drawingGroup);
+    }
     onMouseDown(ev){
         this.draggingSegment=null;
         let now = Date.now();

@@ -27,7 +27,7 @@ class TransformTool extends AnnotationUITool{
         this._moving = [];
         this._active = false;
         this.setToolbarControl(new TransformToolbar(this));
-        this.makeTransformToolObject(self.project.getZoom());
+        this._makeTransformToolObject(self.project.getZoom());
         
         this.extensions.onActivate=function(){ 
             self._active = true;
@@ -41,9 +41,9 @@ class TransformTool extends AnnotationUITool{
             }
         }
     }
-    // getSelectedItems(){
-    //     return this.ps.project.selectedItems.filter(i=>i.isGeoJSONFeature);
-    // }
+    onSelectionChanged(){
+        this.enableTransformToolObject();
+    }
 
     /**
      * A function that creates and initializes the TransformTool object with the specified zoom level.
@@ -63,7 +63,7 @@ class TransformTool extends AnnotationUITool{
      * @property {function} _transformTool.onMouseDrag - This function is triggered when the mouse is moved while a mouse button is pressed on the transform tool. It handles the dragging behavior of the transform tool. Depending on the state (resizing or translating), it resizes or translates the selected items accordingly.
      * @property {function} _transformTool.onMouseMove - This function is triggered when the mouse is moved on the transform tool. It updates the visual appearance of the transform tool, highlighting relevant handles and controls based on the mouse position.
      */
-    makeTransformToolObject(currentZoom){
+    _makeTransformToolObject(currentZoom){
         let self=this;
         let cSize=12;//control size
              
@@ -157,23 +157,13 @@ class TransformTool extends AnnotationUITool{
         }
 
         //Translation operations
-        this._transformTool.onMouseDown = function(ev){
-            
-            if(this.boundingDisplay.contains(ev.point)){
-                this._dragging = true;
-            }
-            
-        }
-        this._transformTool.onMouseUp = function(ev){
-            this._dragging=false;
-        }
-        this._transformTool.onMouseDrag = function(ev){
-            if(!this._dragging) return;
-            this.translate(ev.delta);
-            Object.values(this.corners).forEach(corner=>{
+        this.onMouseDrag = ev=>{
+            if(!this._transformTool._moveOnDrag) return;
+            this._transformTool.translate(ev.delta);
+            Object.values(this._transformTool.corners).forEach(corner=>{
                 corner.refPos = corner.refPos.add(ev.delta);
             })
-            this.transforming.forEach(item=>{
+            this._transformTool.transforming.forEach(item=>{
                 item.translate(ev.delta);
                 item.onTransform && item.onTransform('translate', ev.delta);
             });
@@ -291,8 +281,10 @@ class TransformTool extends AnnotationUITool{
 
             if([this._transformTool.boundingRect, this._transformTool.boundingDisplay].includes(hitResult.item)){
                 this.project.overlay.addClass('transform-tool-move');
+                this._transformTool._moveOnDrag = true;
             } else {
                 this.project.overlay.removeClass('transform-tool-move');
+                this._transformTool._moveOnDrag = false;
             }
             
         } else{
@@ -329,7 +321,8 @@ class TransformToolbar extends AnnotationUIToolbarBase{
      * @returns {boolean} - True if the transform tool is enabled for the mode, otherwise false.
      */
     isEnabledForMode(mode){
-        return this.tool.project.paperScope.findSelectedItems().length>0 && [
+        let selectedItems = this.tool.project.paperScope.findSelectedItems()
+        return selectedItems.length>0 && [
             'select',
             'multiselection',
             'MultiPolygon',
@@ -338,7 +331,7 @@ class TransformToolbar extends AnnotationUIToolbarBase{
             'Point',
             'LineString',
             'GeometryCollection:Raster',
-        ].includes(mode);
+        ].includes(mode) && new Set(selectedItems.map(item=>item.layer)).size == 1;
     }
     
 }

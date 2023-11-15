@@ -62,17 +62,17 @@ class ToolBase{
             self.onKeyUp(ev);
         }
 
-        this.tool.onMouseDown=function(ev){
-            self.onMouseDown(self._transformEvent(ev));
+        this.tool.onMouseDown = ev => {
+            this.onMouseDown(ev);
         }
-        this.tool.onMouseDrag=function(ev){
-            self.onMouseDrag(self._transformEvent(ev));
+        this.tool.onMouseDrag = ev => {
+            this.onMouseDrag(ev);
         }
-        this.tool.onMouseMove=function(ev){
-            self.onMouseMove(self._transformEvent(ev));
+        this.tool.onMouseMove = ev => {
+            this.onMouseMove(ev);
         }
-        this.tool.onMouseUp = function(ev){
-            self.onMouseUp(self._transformEvent(ev));
+        this.tool.onMouseUp = ev => {
+            this.onMouseUp(ev);
         }
         this.listeners = {}
     }
@@ -92,7 +92,6 @@ class ToolBase{
      * Function called when the tool is activated.
      */    
     onActivate(){
-        this._targetLayer = this.project.paperScope.project.activeLayer;
         this.captureUserInput(true);
         this.project.overlay.addEventListener('wheel',this.tool.onMouseWheel);
         this.project.toolLayer.bringToFront();
@@ -145,38 +144,7 @@ class ToolBase{
     onKeyDown(){}
     onKeyUp(){}
 
-    get targetLayer(){
-        return this._targetLayer;
-    }
-
-    get targetMatrix(){
-        return this.targetLayer ? this.targetLayer.matrix : this._identityMatrix;
-    }
-
-    // private
-    _transformEvent(ev){
-        let matrix = this.targetMatrix;
-        let transformed = {
-            point: matrix.inverseTransform(ev.point),
-            downPoint: matrix.inverseTransform(ev.downPoint),
-            lastPoint: matrix.inverseTransform(ev.lastPoint),
-            middlePoint: matrix.inverseTransform(ev.middlePoint),
-        };
-        let deltaStart = ev.point.subtract(ev.delta);
-        transformed.delta = transformed.point.subtract(matrix.inverseTransform(deltaStart));
-
-        ev.original = {
-            point: ev.point,
-            downPoint: ev.downPoint,
-            lastPoint: ev.lastPoint,
-            middlePoint: ev.middlePoint,
-            delta: ev.delta
-        };
-
-        Object.assign(ev, transformed);
-
-        return ev;
-    }
+    
         
 }
 export {ToolBase};

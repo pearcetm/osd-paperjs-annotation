@@ -38,13 +38,15 @@
 
 // Depends on OpenSeadragon global variable
 
+import { PaperOverlay } from "./paper-overlay.mjs";
+
 
 Object.defineProperty(OpenSeadragon.Viewer.prototype, 'paperLayer', paperLayerDef());
 Object.defineProperty(OpenSeadragon.TiledImage.prototype, 'paperLayer', paperLayerDef());
 Object.defineProperty(OpenSeadragon.Viewport.prototype, 'paperLayer', paperLayerDef());
-Object.defineProperty(OpenSeadragon.TiledImage.prototype, 'paperLayerMap', paperLayerMapDef());
-Object.defineProperty(OpenSeadragon.Viewer.prototype, 'paperLayerMap', paperLayerMapDef());
-Object.defineProperty(OpenSeadragon.Viewport.prototype, 'paperLayerMap', paperLayerMapDef());
+Object.defineProperty(OpenSeadragon.TiledImage.prototype, '_paperLayerMap', paperLayerMapDef());
+Object.defineProperty(OpenSeadragon.Viewer.prototype, '_paperLayerMap', paperLayerMapDef());
+Object.defineProperty(OpenSeadragon.Viewport.prototype, '_paperLayerMap', paperLayerMapDef());
 Object.defineProperty(OpenSeadragon.Viewer.prototype, 'paperItems', paperItemsDef());
 Object.defineProperty(OpenSeadragon.TiledImage.prototype, 'paperItems', paperItemsDef());
 Object.defineProperty(OpenSeadragon.Viewport.prototype, 'paperItems', paperItemsDef());
@@ -52,7 +54,10 @@ OpenSeadragon.Viewer.prototype._setupPaper = _setupPaper;
 OpenSeadragon.Viewport.prototype._setupPaper = _setupPaper;
 OpenSeadragon.TiledImage.prototype._setupPaper = _setupPaperForTiledImage;
 OpenSeadragon.Viewer.prototype.addPaperItem = addPaperItem;
+OpenSeadragon.Viewport.prototype.addPaperItem = addPaperItem;
 OpenSeadragon.TiledImage.prototype.addPaperItem = addPaperItem;
+
+OpenSeadragon.Viewer.prototype.createPaperOverlay = function(){ new PaperOverlay(this, ...arguments) };
 
 /**
  * Define the paperItems property for a tiledImage.
@@ -64,7 +69,7 @@ OpenSeadragon.TiledImage.prototype.addPaperItem = addPaperItem;
 function paperItemsDef(){
     return {
         get: function paperItems(){
-            return this.paperLayer.children();
+            return this.paperLayer.children;
         }
     }
 }
@@ -76,7 +81,7 @@ function paperItemsDef(){
 function _createPaperLayer(osdObject, paperScope){
     let layer = new paper.Layer({applyMatrix:false});
     paperScope.project.addLayer(layer);
-    osdObject.paperLayerMap.set(paperScope, layer);
+    osdObject._paperLayerMap.set(paperScope, layer);
     return layer;
 }
 
@@ -90,13 +95,13 @@ function _createPaperLayer(osdObject, paperScope){
 function paperLayerDef(){
     return {
         get: function paperLayer(){
-            let numScopes = this.paperLayerMap.size;
+            let numScopes = this._paperLayerMap.size;
             if( numScopes === 1){
-                return this.paperLayerMap.values().next().value;
+                return this._paperLayerMap.values().next().value;
             } else if (numScopes === 0){
                 return null;
             } else {
-                return this.paperLayerMap.get(paper) || null;
+                return this._paperLayerMap.get(paper) || null;
             }
         }
     }
@@ -110,11 +115,11 @@ function paperLayerDef(){
  */
 function paperLayerMapDef(){
     return {
-        get: function paperLayerMap(){
-            if(!this._paperLayerMap){
-                this._paperLayerMap = new Map();
+        get: function _paperLayerMap(){
+            if(!this.__paperLayerMap){
+                this.__paperLayerMap = new Map();
             }
-            return this._paperLayerMap;
+            return this.__paperLayerMap;
         }
     }
 }
@@ -129,16 +134,27 @@ function _setupPaperForTiledImage(overlay){
     // let scale = tiledImage.getBounds().width / tiledImage.getContentSize().x;
     // layer.setScaling(scale);
     // layer.setScaling(scale);
+    let degrees = this.getRotation();
     let bounds = this.getBounds();
-    // layer.translate({x: bounds.x * overlay.scaleFactor, y: bounds.y * overlay.scaleFactor});
+    
+    layer.matrix.rotate(degrees, (bounds.x+bounds.width/2) * overlay.scaleFactor, (bounds.y+bounds.height/2) * overlay.scaleFactor);
     layer.matrix.translate({x: bounds.x * overlay.scaleFactor, y: bounds.y * overlay.scaleFactor});
+    layer.matrix.scale(bounds.width);
+    
     tiledImage.addHandler('bounds-change',ev=>{
-        console.log('bounds-change',ev);
-        console.log('TODO implement rotation and scaling');
-        let bounds = this.getBounds();
-        let t = layer.matrix.getTranslation();
-        layer.matrix.translate({x: bounds.x * overlay.scaleFactor - t.x, y: bounds.y * overlay.scaleFactor - t.y});
-        //TODO implement updating the layer's matrix with the new values
+        // console.log('bounds-change',ev);
+        console.log('TODO implement scaling');
+        let degrees = this.getRotation();
+        let bounds = this.getBoundsNoRotate();
+        let matrix = new paper.Matrix();
+
+        console.log(degrees, bounds);
+
+        matrix.rotate(degrees, (bounds.x+bounds.width/2) * overlay.scaleFactor, (bounds.y+bounds.height/2) * overlay.scaleFactor);
+        matrix.translate({x: bounds.x * overlay.scaleFactor, y: bounds.y * overlay.scaleFactor});
+        matrix.scale(bounds.width);
+
+        layer.matrix.set(matrix);
     });
 }
 
@@ -156,7 +172,7 @@ function _setupPaper(overlay){
  */
 function addPaperItem(item){
     if(this.paperLayer){
-        this.paperLayer.addItem(item);
+        this.paperLayer.addChild(item);
     } else {
         console.error('No layer has been set up in the active paper scope for this object. Does a scope need to be activated?');
     }

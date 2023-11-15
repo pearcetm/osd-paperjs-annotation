@@ -13,14 +13,14 @@ let v1 =window.v1 = OpenSeadragon({
                 },
             x:0,
         },
-        {
-            tileSource:{
-                    type: 'image',
-                    url:  'https://openseadragon.github.io/example-images/grand-canyon-landscape-overlooking.jpg',
-                    buildPyramid: false,
-                },
-            x:1,
-        },,
+        // {
+        //     tileSource:{
+        //             type: 'image',
+        //             url:  'https://openseadragon.github.io/example-images/grand-canyon-landscape-overlooking.jpg',
+        //             buildPyramid: false,
+        //         },
+        //     x:1,
+        // },,
     ],
     minZoomImageRatio:0.01,
     visibilityRatio:0,
@@ -33,7 +33,11 @@ v1.addHandler('open',()=>{
     tk.addAnnotationUI({autoOpen:true});
     window.tk = tk;
 
-    $.get('./demo-annotation.json').then(x=>tk.addFeatureCollections(x))
+    $.get('./demo-annotation.json').then(x=>{
+        //tk.addFeatureCollections(x);
+        tk.addFeatureCollections(x, true, v1.world.getItemAt(0));
+        // tk.addFeatureCollections(x, true, v1.world.getItemAt(1));
+    })
 });
 
 

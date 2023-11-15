@@ -249,19 +249,20 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
      * Add feature collections to the toolkit from GeoJSON objects.
      * @param {object[]} featureCollections - The array of GeoJSON objects representing feature collections.
      * @param {boolean} replaceCurrent - Whether to replace the current feature collections or not.
+     * @param {OpenSeadragon.TiledImage || OpenSeadragon.Viewport || false} [parentImage] - which image to add the feature collections to
      */
-    addFeatureCollections(featureCollections,replaceCurrent){
-        this.loadGeoJSON(featureCollections,replaceCurrent);
+    addFeatureCollections(featureCollections,replaceCurrent, parentImage){
+        this.loadGeoJSON(featureCollections,replaceCurrent, parentImage);
         this.overlay.rescaleItems();
         this.paperScope.project.emit('items-changed');
     }
     /**
      * Get the feature collection layers in the toolkit.
-     * @returns {paper.Layer[]} The array of paper layer objects representing feature collections.
+     * @returns {paper.Group[]} The array of paper groups representing feature collections.
      */
-    getFeatureCollectionGroups(){
+    getFeatureCollectionGroups(parentLayer){
         // return this.overlay.paperScope.project.layers.filter(l=>l.isGeoJSONFeatureCollection);
-        return this.paperScope.project.getItems({match: item=>item.isGeoJSONFeatureCollection});
+        return this.paperScope.project.getItems({match: item=>item.isGeoJSONFeatureCollection && (parentLayer ? item.layer === parentLayer : true)});
     }
     /**
      * Get the features in the toolkit.
@@ -311,18 +312,21 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
      * Load feature collections from GeoJSON objects and add them to the project.
      * @param {object[]} geoJSON - The array of GeoJSON objects representing feature collections.
      * @param {boolean} replaceCurrent - Whether to replace the current feature collections or not.
+     * @param {OpenSeadragon.TiledImage || OpenSeadragon.Viewport || false} [parentImage] - Which image (or viewport) to add the object to
      * @param {boolean} [pixelCoordinates]
      */
-    loadGeoJSON(geoJSON, replaceCurrent, pixelCoordinates = true){
+    loadGeoJSON(geoJSON, replaceCurrent, parentImage, pixelCoordinates = true){
+        let parentLayer = parentImage ? parentImage.paperLayer : false;
         if(replaceCurrent){
-            this.getFeatureCollectionGroups().forEach(grp=>grp.remove());
+            this.getFeatureCollectionGroups(parentImage).forEach(grp=>grp.remove());
         }
         if(!Array.isArray(geoJSON)){
             geoJSON = [geoJSON];
         }
+        
         geoJSON.forEach(obj=>{
             if(obj.type=='FeatureCollection'){
-                let group = this._createFeatureCollectionGroup({label: obj.label});
+                let group = this._createFeatureCollectionGroup({label: obj.label, parent: parentLayer});
                 let props = (obj.properties || {});
                 group.userdata = Object.assign({},props.userdata);
                 group.defaultStyle.set(props.defaultStyle);

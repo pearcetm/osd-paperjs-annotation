@@ -63,10 +63,9 @@ class SelectTool extends AnnotationUITool{
             if(ev.downPoint.subtract(ev.point).length==0){
                 //not a click-and-drag, do element selection
                 let hitResult = self.hitTestPoint(ev);
-                hitResult && hitResult.item.toggle((ev.modifiers.control || ev.modifiers.meta));
+                hitResult && self._isItemSelectable(hitResult.item) && hitResult.item.toggle((ev.modifiers.control || ev.modifiers.meta));
                 
-            }
-            else{
+            } else{
                 //click and drag, do area-based selection
                 let hitResults = self.hitTestArea(ev);
                 let keepExistingSelection = (ev.modifiers.control || ev.modifiers.meta);
@@ -74,6 +73,8 @@ class SelectTool extends AnnotationUITool{
                     self.project.paperScope.findSelectedItems().forEach(item=>item.deselect());
                 }
                 hitResults.forEach(item=>item.select(true))
+                //limit results to a single layer
+                // hitResults.filter(item=>item.layer === hitResults[0].layer).forEach(item=>item.select(true))
             }
         }
         /**
@@ -92,14 +93,14 @@ class SelectTool extends AnnotationUITool{
             // console.log(selectionRectangle.visible, selectionRectangle.segments)
         }
     }
-  /**
-   * Gets the selected items that are GeoJSON features.
-   * This method retrieves all the items in the Paper.js project that are considered as GeoJSON features and are currently selected.
-   * @returns {Array<Object>} An array of selected items that are GeoJSON features.
-   */
-    getSelectedItems(){
-        return this.ps.project.selectedItems.filter(i=>i.isGeoJSONFeature);
-    }
+//   /**
+//    * Gets the selected items that are GeoJSON features.
+//    * This method retrieves all the items in the Paper.js project that are considered as GeoJSON features and are currently selected.
+//    * @returns {Array<Object>} An array of selected items that are GeoJSON features.
+//    */
+//     getSelectedItems(){
+//         return this.ps.project.selectedItems.filter(i=>i.isGeoJSONFeature);
+//     }
   /**
    * Checks if there are any GeoJSON feature items in the project.
    * This method searches through all the items in the Paper.js project and determines if there are any GeoJSON feature items.
@@ -116,7 +117,7 @@ class SelectTool extends AnnotationUITool{
    * @param {Object} ev - The mouse move event object containing information about the cursor position.
    */
     onMouseMove(ev){
-        if(ev.item){
+        if(ev.item && this._isItemSelectable(ev.item)){
             if(this.currentItem != ev.item) (ev.item.emit('selection:mouseenter')||true) 
             if(this.currentLayer != ev.item.layer) ev.item.layer.emit('selection:mouseenter');
             this.currentItem = ev.item;
@@ -172,6 +173,11 @@ class SelectTool extends AnnotationUITool{
         }
         let hitResult = this.ps.project.getItems(options);
         return hitResult;
+    }
+
+    _isItemSelectable(item){
+        return true;
+        return (this.items.length==0) || (item.layer == this.targetLayer);
     }
 }
 export{SelectTool};

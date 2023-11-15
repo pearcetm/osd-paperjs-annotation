@@ -61,55 +61,55 @@ import './osd-extensions.mjs';
             return this._PaperOverlays || (this._PaperOverlays = []);
         }
     });
-    /**
-     * Gets the image data from the viewer.
-     * @memberof OSDPaperjsAnnotation.PaperOverlay#
-     * @function getImageData
-     * @param {number} x - The x coordinate of the top left corner of the image data.
-     * @param {number} y - The y coordinate of the top left corner of the image data.
-     * @param {number} w - The width of the image data.
-     * @param {number} h - The height of the image data.
-     * @returns {ImageData} The image data.
-     */
-    OpenSeadragon.Viewer.prototype.getImageData = function(x, y, w, h){
-        x = x || 0;
-        y = y || 0;
-        w = w == undefined ? this.drawer.canvas.width : w;
-        h = h == undefined ? this.drawer.canvas.height : h;
-        return this.drawer.canvas.getContext('2d',{willReadFrequently:true}).getImageData(x, y, w, h);
-    }
+    // /**
+    //  * Gets the image data from the viewer.
+    //  * @memberof OSDPaperjsAnnotation.PaperOverlay#
+    //  * @function getImageData
+    //  * @param {number} x - The x coordinate of the top left corner of the image data.
+    //  * @param {number} y - The y coordinate of the top left corner of the image data.
+    //  * @param {number} w - The width of the image data.
+    //  * @param {number} h - The height of the image data.
+    //  * @returns {ImageData} The image data.
+    //  */
+    // OpenSeadragon.Viewer.prototype.getImageData = function(x, y, w, h){
+    //     x = x || 0;
+    //     y = y || 0;
+    //     w = w == undefined ? this.drawer.canvas.width : w;
+    //     h = h == undefined ? this.drawer.canvas.height : h;
+    //     return this.drawer.canvas.getContext('2d',{willReadFrequently:true}).getImageData(x, y, w, h);
+    // }
 
-    /**
-     * Gets a raster object representing the viewport.
-     * @memberof OSDPaperjsAnnotation.PaperOverlay#
-     * @function getViewportRaster
-     * @param {any} view - The view object.
-     * @param {boolean} withImageData - Whether to include image data in the raster object.
-     * @returns {any} The raster object.
-     */
-    OpenSeadragon.Viewer.prototype.getViewportRaster = function(view, withImageData = true){
-        //TO DO: make this query subregions of the viewport directly instead of always returning the entire thing
-        // let view = this.paperjsOverlay && this.paperjsOverlay.paperScope.view;
-        // if(!view){
-        //     console.error('Cannot call getViewportRaster before an overlay has been created');
-        //     return;
-        // }
-        let center = view.viewToProject(new paper.Point(view.viewSize.width/2, view.viewSize.height/2 ));
-        let rotation = -1 * this.viewport.getRotation();
-        let rasterDef = {
-            insert:false,
-        }
-        if(withImageData) rasterDef.canvas = this.drawer.canvas;
-        else rasterDef.size = new paper.Size(this.drawer.canvas.width,this.drawer.canvas.height);
-        let raster = new paper.Raster(rasterDef);
+    // /**
+    //  * Gets a raster object representing the viewport.
+    //  * @memberof OSDPaperjsAnnotation.PaperOverlay#
+    //  * @function getViewportRaster
+    //  * @param {any} view - The view object.
+    //  * @param {boolean} withImageData - Whether to include image data in the raster object.
+    //  * @returns {any} The raster object.
+    //  */
+    // OpenSeadragon.Viewer.prototype.getViewportRaster = function(view, withImageData = true){
+    //     //TO DO: make this query subregions of the viewport directly instead of always returning the entire thing
+    //     // let view = this.paperjsOverlay && this.paperjsOverlay.paperScope.view;
+    //     // if(!view){
+    //     //     console.error('Cannot call getViewportRaster before an overlay has been created');
+    //     //     return;
+    //     // }
+    //     let center = view.viewToProject(new paper.Point(view.viewSize.width/2, view.viewSize.height/2 ));
+    //     let rotation = -1 * this.viewport.getRotation();
+    //     let rasterDef = {
+    //         insert:false,
+    //     }
+    //     if(withImageData) rasterDef.canvas = this.drawer.canvas;
+    //     else rasterDef.size = new paper.Size(this.drawer.canvas.width,this.drawer.canvas.height);
+    //     let raster = new paper.Raster(rasterDef);
 
-        raster.position = center;
-        raster.rotate(rotation);
-        let scaleFactor = view.viewSize.width / view.getZoom() / this.drawer.canvas.width;
-        raster.scale(scaleFactor);
+    //     raster.position = center;
+    //     raster.rotate(rotation);
+    //     let scaleFactor = view.viewSize.width / view.getZoom() / this.drawer.canvas.width;
+    //     raster.scale(scaleFactor);
        
-        return raster;
-    }
+    //     return raster;
+    // }
     /**
      * Sets the rotation of the view.
      * @function setRotation
@@ -487,15 +487,62 @@ class PaperOverlay{
     }
 
     /**
-     * Convert from paper coordinate frame to the pixel on the underlying canvas element
+     * Convert from paper coordinate frame on the viewport level to the pixel on the underlying canvas element
      */
     getCanvasCoordinates(x, y){
-        let point = new OpenSeadragon.Point(x, y);
-        // if(this.tiledImage){
-        //     return this.tiledImage.imageToViewerElementCoordinates(point);
-        // } else {
-            return this.viewer.viewport.imageToViewerElementCoordinates(point);
-        //}
+        let point = new OpenSeadragon.Point(x, y).divide(this.scaleFactor);
+        return this.viewer.viewport.viewportToViewerElementCoordinates(point);
+    }
+
+    /**
+     * Gets the image data from the viewer.
+     * @memberof OSDPaperjsAnnotation.PaperOverlay#
+     * @function getImageData
+     * @param {number} x - The x coordinate of the top left corner of the image data.
+     * @param {number} y - The y coordinate of the top left corner of the image data.
+     * @param {number} w - The width of the image data.
+     * @param {number} h - The height of the image data.
+     * @returns {ImageData} The image data.
+     */
+    getImageData(x, y, w, h){
+        x = x || 0;
+        y = y || 0;
+        w = w == undefined ? this.viewer.drawer.canvas.width : w;
+        h = h == undefined ? this.viewer.drawer.canvas.height : h;
+        return this.viewer.drawer.canvas.getContext('2d',{willReadFrequently:true}).getImageData(x, y, w, h);
+    }
+
+    /**
+     * Gets a raster object representing the viewport.
+     * @memberof OSDPaperjsAnnotation.PaperOverlay#
+     * @function getViewportRaster
+     * @param {any} view - The view object.
+     * @param {boolean} withImageData - Whether to include image data in the raster object.
+     * @returns {any} The raster object.
+     */
+    getViewportRaster(withImageData = true){
+        let view = this.paperScope.view;
+        //TO DO: make this query subregions of the viewport directly instead of always returning the entire thing
+        // let view = this.paperjsOverlay && this.paperjsOverlay.paperScope.view;
+        // if(!view){
+        //     console.error('Cannot call getViewportRaster before an overlay has been created');
+        //     return;
+        // }
+        let center = view.viewToProject(new paper.Point(view.viewSize.width/2, view.viewSize.height/2 ));
+        let rotation = -1 * this.viewer.viewport.getRotation();
+        let rasterDef = {
+            insert:false,
+        }
+        if(withImageData) rasterDef.canvas = this.viewer.drawer.canvas;
+        else rasterDef.size = new paper.Size(this.viewer.drawer.canvas.width,this.viewer.drawer.canvas.height);
+        let raster = new paper.Raster(rasterDef);
+
+        raster.position = center;
+        raster.rotate(rotation);
+        let scaleFactor = view.viewSize.width / view.getZoom() / this.viewer.drawer.canvas.width;
+        raster.scale(scaleFactor);
+       
+        return raster;
     }
 
     //------------
@@ -569,25 +616,20 @@ class PaperOverlay{
         if(Math.abs(this.paperScope.view.zoom - oldZoom)>0.0000001){
             this.paperScope.view.emit('zoom-changed',{zoom:this.paperScope.view.zoom});
         }
+
+        // if(this.viewer.paperLayer){
+        //     let matrix = this.viewer.paperLayer.matrix;
+        //     matrix.scale(matrix.scaling.divide(this.paperScope.view.zoom) );
+        // }
+
         this.paperScope.view.update();
     }
     _getPivot(){
         if(!this._pivot) return;
 
-        // this._pivot is in viewport coordinates, and is set by the rotate event or is the center of the viewport
-        // if a tiledImage is being used, we need to get the pivot in tiledImage coordinates instead
-        // if(this.tiledImage){
-        //     return this._pivot.subtract(this.tiledImage.getPosition());
-        // } else {
-            return this._pivot.multiply(this.scaleFactor);
-        // }
+        return this._pivot.multiply(this.scaleFactor);
     }
     _getCenter(){
-        // if(this.tiledImage){
-        //     return this.tiledImage.viewportToImageCoordinates(this.viewer.viewport.getCenter(true), true);
-        // } else {
-        //    return this.viewer.viewport.viewportToImageCoordinates(this.viewer.viewport.getCenter(true));
-        // }
         return this.viewer.viewport.getCenter(true);
     }
 
