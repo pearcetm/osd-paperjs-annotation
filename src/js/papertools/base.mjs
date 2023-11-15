@@ -22,7 +22,7 @@ class ToolBase{
          * @property {paper.PaperScope} paperScope - The Paper.js PaperScope object.
          * @property {Element} overlay - The overlay element used by the tool.
          */
-        let projectInterface = this.project ={
+        this.project ={
             getZoom:()=>paperScope.view.getZoom(),
             toolLayer:paperScope.project.layers.toolLayer || paperScope.project.activeLayer,
             paperScope:paperScope,
@@ -31,14 +31,16 @@ class ToolBase{
         
         let shiftPressed;
         let self=this;
+
+        this._identityMatrix = new paper.Matrix();
       
         this.extensions = {
             onActivate:()=>{},
             onDeactivate:()=>{}
         }
         this.tool = new paperScope.Tool();
-        // console.log('tool created at index',paperScope.tools.indexOf(this.tool),paperScope)
-        this.tool._toolObject=this;            
+        
+        this.tool._toolObject=this; //TODO is _toolObject actually used, and does it need to be?            
         this.tool.extensions = {
             onKeyUp:()=>{},
             onKeyDown:()=>{},
@@ -49,6 +51,7 @@ class ToolBase{
                 self.onDeactivate();//enable OpenSeadragon event handling for navigation
             }
             this.extensions.onKeyDown(ev);
+            self.onKeyDown(ev);
         }
         this.tool.onKeyUp=function(ev){
             if(ev.key=='shift'){
@@ -56,7 +59,21 @@ class ToolBase{
                 self.onActivate();//start capturing mouse/keyboard events again
             }
             this.extensions.onKeyUp(ev);
-        },
+            self.onKeyUp(ev);
+        }
+
+        this.tool.onMouseDown = ev => {
+            this.onMouseDown(ev);
+        }
+        this.tool.onMouseDrag = ev => {
+            this.onMouseDrag(ev);
+        }
+        this.tool.onMouseMove = ev => {
+            this.onMouseMove(ev);
+        }
+        this.tool.onMouseUp = ev => {
+            this.onMouseUp(ev);
+        }
         this.listeners = {}
     }
     /**
@@ -118,6 +135,16 @@ class ToolBase{
     captureUserInput(capture = true) { 
         this.project.overlay.setOSDMouseNavEnabled(!capture);
     };
+
+    // default no-op implementations of tool event handlers
+    onMouseDown(){}
+    onMouseMove(){}
+    onMouseDrag(){}
+    onMouseUp(){}
+    onKeyDown(){}
+    onKeyUp(){}
+
+    
         
 }
 export {ToolBase};

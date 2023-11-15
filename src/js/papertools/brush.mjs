@@ -23,135 +23,49 @@ import {PaperOffset} from '../paper-offset.mjs';
     constructor(paperScope){
         super(paperScope);
         let self = this;
-        let tool = this.tool;
         this.setToolbarControl(new BrushToolbar(this));
 
         this.eraseMode = false;
-        let drawColor = new paper.Color('green');
-        let eraseColor= new paper.Color('red');
-        drawColor.alpha=0.5;
-        eraseColor.alpha=0.5;
+        this.drawColor = new paper.Color('green');
+        this.eraseColor= new paper.Color('red');
+        this.drawColor.alpha=0.5;
+        this.eraseColor.alpha=0.5;
 
-        let radius = 0;
-        let cursor=new paper.Shape.Circle(new paper.Point(0,0),radius);
-        cursor.set({
+        this.radius = 0;
+        this.cursor = new paper.Shape.Circle(new paper.Point(0,0), this.radius);
+        this.cursor.set({
             strokeWidth:1,
             strokeColor:'black',
-            fillColor:drawColor,
+            fillColor:this.drawColor,
             opacity:1,
             visible:false,
         });
+        this.cursor.name = 'brushtool';
         this.pathGroup = new paper.Group([new paper.Path(), new paper.Path()]);
         self.project.toolLayer.addChild(this.pathGroup);
-        self.project.toolLayer.addChild(cursor);
+        self.project.toolLayer.addChild(this.cursor);
 
         this.extensions.onActivate = function(){
-            cursor.radius = radius/self.project.getZoom();
-            cursor.strokeWidth=1/self.project.getZoom();
-            cursor.visible=true;
-            tool.minDistance=3/self.project.getZoom();
-            tool.maxDistance=10/self.project.getZoom();
+            self.cursor.radius = self.radius/self.project.getZoom();
+            self.cursor.strokeWidth=1/self.project.getZoom();
+            self.cursor.visible=true;
+            self.tool.minDistance=3/self.project.getZoom();
+            self.tool.maxDistance=10/self.project.getZoom();
+            self.targetLayer.addChild(self.pathGroup);
         }
         this.extensions.onDeactivate = function(finished){
-            cursor.visible=false;
+            self.cursor.visible=false;
+            self.project.toolLayer.addChild(self.pathGroup);
             if(finished){
                 self.finish();
             } 
         }
 
-        this.finish = function(){
-            this.deactivate();
-        }
-        /**
-         * Set the radius of the brush tool.
-         * @param {number} r - The new radius value for the brush.
-         * @description This method sets the radius of the brush tool, affecting the size of the brush strokes.
-         */
-        this.setRadius=function(r){
-            radius = r;
-            cursor.radius=r/self.project.getZoom();
-        }
-        /**
-         * Set the erase mode of the brush tool.
-         * @param {boolean} erase - A flag indicating whether the tool should be in Erase Mode or Draw Mode.
-         * @description This method toggles the erase mode of the brush tool, changing whether it adds or subtracts strokes.
-         */
-        this.setEraseMode=function(erase){
-            this.eraseMode=erase;
-            cursor.fillColor= erase ? eraseColor : drawColor;
-            this.toolbarControl.setEraseMode(this.eraseMode);
-        }  
-        /**
-         * Handle the mouse down event for the brush tool.
-         * @param {paper.MouseEvent} ev - The mouse down event.
-         * @private
-         * @description This method handles the mouse down event for the brush tool, initializing a new path and determining whether to draw or erase strokes.
-         */
-        tool.onMouseDown=function(ev){
-            ev.preventDefault();
-            ev.stopPropagation();
-            
-            if(self.itemToCreate){
-                self.itemToCreate.initializeGeoJSONFeature('MultiPolygon');
-                self.refreshItems();
-            }
-            
-            cursor.position=ev.point;
-
-            let path = new paper.Path([ev.point]);
-            path.mode = self.eraseMode ? 'erase' : 'draw';
-            path.radius = radius/self.project.getZoom();
-            
-            self.pathGroup.lastChild.replaceWith(path);
-            self.pathGroup.lastChild.set({strokeWidth:cursor.radius*2,fillColor:null,strokeCap:'round'});
-            if(path.mode=='erase'){
-                self.pathGroup.firstChild.fillColor=eraseColor;
-                self.pathGroup.lastChild.strokeColor=eraseColor;        
-            }
-            else{
-                self.pathGroup.firstChild.fillColor=drawColor;
-                self.pathGroup.lastChild.strokeColor=drawColor;
-            }
-        }
-    /**
-     * Handle the mouse move event for the brush tool.
-     * @param {paper.MouseEvent} ev - The mouse move event.
-     * @private
-     * @description This method handles the mouse move event for the brush tool, updating the cursor's position.
-     */
-        tool.onMouseMove=function(ev){
-            cursor.position=ev.point;
-        }
-        /**
-         * Handle the mouse drag event for the brush tool.
-         * @param {paper.MouseEvent} ev - The mouse drag event.
-         * @private
-         * @description This method handles the mouse drag event for the brush tool, adding points to the path and smoothing the drawn stroke.
-         */
-        tool.onMouseDrag=function(ev){
-            cursor.position=ev.point;
-            if(self.item){
-                self.pathGroup.lastChild.add(ev.point);
-                self.pathGroup.lastChild.smooth({ type: 'continuous' })
-            }
-        }
-        /**
-         * Handle the mouse up event for the brush tool.
-         * @param {paper.MouseEvent} ev - The mouse up event.
-         * @private
-         * @description This method handles the mouse up event for the brush tool, finalizing the drawn area.
-         */
-        tool.onMouseUp=function(ev){
-            self.modifyArea();
-        }
-
-        /**
-         * Handle the mouse wheel event for the brush tool.
-         * @param {paper.MouseEvent} ev - The mouse wheel event.
-         * @private
-         * @description This method handles the mouse wheel event for the brush tool, adjusting the brush radius.
-         */
-        tool.onMouseWheel = function(ev){
+        
+        
+        
+        
+        this.tool.onMouseWheel = function(ev){
             // console.log('Wheel event',ev);
             ev.preventDefault();
             ev.stopPropagation();
@@ -164,7 +78,7 @@ import {PaperOffset} from '../paper-offset.mjs';
          * @private
          * @description This method handles the key down event for the brush tool, toggling the erase mode using the 'e' key.
          */
-        tool.extensions.onKeyDown=function(ev){
+        this.tool.extensions.onKeyDown=function(ev){
             if(ev.key=='e'){
                 if(self.eraseMode===false){
                     self.setEraseMode(true);
@@ -180,12 +94,77 @@ import {PaperOffset} from '../paper-offset.mjs';
          * @private
          * @description This method handles the key up event for the brush tool, releasing the erase mode when the 'e' key is released.
          */
-        tool.extensions.onKeyUp=function(ev){
+        this.tool.extensions.onKeyUp=function(ev){
             if(ev.key=='e' && self.eraseMode=='keyhold'){
                 self.setEraseMode(false);
             }
         }
     }
+
+    onMouseDown(ev){
+        ev.preventDefault(); //TODO is this necessary?
+        ev.stopPropagation();
+        
+        if(this.itemToCreate){
+            this.itemToCreate.initializeGeoJSONFeature('MultiPolygon');
+            this.refreshItems();
+        }
+        
+        this.cursor.position=ev.original.point;
+
+        let path = new paper.Path([ev.point]);
+        path.mode = this.eraseMode ? 'erase' : 'draw';
+        path.radius = this.radius/this.project.getZoom();
+        
+        this.pathGroup.lastChild.replaceWith(path);
+        this.pathGroup.lastChild.set({strokeWidth:this.cursor.radius*2,fillColor:null,strokeCap:'round'});
+        if(path.mode=='erase'){
+            this.pathGroup.firstChild.fillColor=this.eraseColor;
+            this.pathGroup.lastChild.strokeColor=this.eraseColor;        
+        }
+        else{
+            this.pathGroup.firstChild.fillColor=this.drawColor;
+            this.pathGroup.lastChild.strokeColor=this.drawColor;
+        }
+    }
+    onMouseUp(ev){
+        this.modifyArea();
+    }
+    onMouseMove(ev){
+        this.cursor.position=ev.original.point;
+    }
+    onMouseDrag(ev){
+        this.cursor.position=ev.original.point;
+        if(this.item){
+            this.pathGroup.lastChild.add(ev.point);
+            this.pathGroup.lastChild.smooth({ type: 'continuous' })
+        }
+    }
+    /**
+     * Set the radius of the brush tool.
+     * @param {number} r - The new radius value for the brush.
+     * @description This method sets the radius of the brush tool, affecting the size of the brush strokes.
+     */
+    setRadius(r){
+        this.radius = r;
+        this.cursor.radius=r/this.project.getZoom();
+    }
+
+    /**
+         * Set the erase mode of the brush tool.
+         * @param {boolean} erase - A flag indicating whether the tool should be in Erase Mode or Draw Mode.
+         * @description This method toggles the erase mode of the brush tool, changing whether it adds or subtracts strokes.
+         */
+    setEraseMode(erase){
+        this.eraseMode=erase;
+        this.cursor.fillColor= erase ? this.eraseColor : this.drawColor;
+        this.toolbarControl.setEraseMode(this.eraseMode);
+    }  
+
+    finish(){
+        this.deactivate();
+    }
+
 
   /**
    * Modify the drawn area based on the brush strokes.
@@ -195,12 +174,12 @@ import {PaperOffset} from '../paper-offset.mjs';
     modifyArea(){
         let path = this.pathGroup.lastChild;
         let shape;
-
+        //TODO handle scaling of the offset radius by the targetLayer.matrix
         if(path.segments.length>1){                
-            shape = PaperOffset.offsetStroke(path,path.radius,{join:'round',cap:'round',insert:true})
+            shape = PaperOffset.offsetStroke(path, path.radius, {join:'round',cap:'round', insert:true });
         }
         else{
-            shape = new paper.Path.Circle({center: path.firstSegment.point, radius: path.radius });
+            shape = new paper.Path.RegularPolygon({center: path.firstSegment.point, radius: path.radius, sides: 360 });
         }
 
         shape.strokeWidth = 1/this.project.getZoom();

@@ -15,14 +15,14 @@ class RotationControlOverlay{
      * @param {any} viewer - The viewer object.
      */
     constructor(viewer){
-        let overlay=this.overlay = new PaperOverlay(viewer,{overlayType:'viewport'})
+        let overlay=this.overlay = new PaperOverlay(viewer,{overlayType:'viewer'})
         let tool = this.tool = new RotationControlTool(this.overlay.paperScope, this);
         this.dummyTool = new this.overlay.paperScope.Tool();//to capture things like mouseMove, keyDown etc (when actual tool is not active)
         this.dummyTool.activate();
         this._mouseNavEnabledAtActivation = true;
         overlay.addViewerButton({
             faIconClasses:'fa-solid fa-rotate',
-            tooltip:'Rotate image',
+            tooltip:'Rotate viewer',
             onClick:()=>{
                 tool.active ? this.deactivate() : this.activate();
             }
@@ -33,7 +33,7 @@ class RotationControlOverlay{
      * Activates the rotation control.
      */
     activate(){
-        this._mouseNavEnabledAtActivation=this.overlay.osdViewer.isMouseNavEnabled();
+        this._mouseNavEnabledAtActivation=this.overlay.viewer.isMouseNavEnabled();
         this.tool.activate();
         this.tool.active=true;
         this.overlay.bringToFront();
@@ -44,7 +44,7 @@ class RotationControlOverlay{
     deactivate(){
         this.tool.deactivate(true);
         this.dummyTool.activate();
-        this.overlay.osdViewer.setMouseNavEnabled(this._mouseNavEnabledAtActivation);
+        this.overlay.viewer.setMouseNavEnabled(this._mouseNavEnabledAtActivation);
         this.tool.active=false;
         this.overlay.sendToBack();
     }
@@ -70,7 +70,7 @@ class RotationControlTool extends ToolBase{
         let bounds = paperScope.view.bounds;
         let widget = new RotationControlWidget(paperScope.view.bounds.center, setAngle, close);
 
-        let viewer = paperScope.overlay.osdViewer;
+        let viewer = paperScope.overlay.viewer;
 
         viewer.addHandler('rotate', (ev)=>widget.setCurrentRotation(ev.degrees));
         paperScope.view.on('resize',function(ev){

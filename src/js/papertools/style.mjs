@@ -50,23 +50,23 @@ import {AnnotationUITool, AnnotationUIToolbarBase} from './annotationUITool.mjs'
                 self.cancelColorpicker();
             }
         }
-        tool.onMouseMove=function(ev){            
-            if(self.pickingColor){
-                self.colorpicker.updatePosition(ev.point);
-                              
-            }
-        }
-        tool.onMouseUp=function(ev){
-            if(self.pickingColor && self.cursor.visible){
-                self._colorpickerPromise && self._colorpickerPromise.resolve(self.colorpicker.selectedColor);
-                self._colorpickerPromise = null;
-                self.cancelColorpicker();
-            }
-        }
 
         this.project.paperScope.project.on('edit-style',ev=>{
             this.activateForItem(ev.item);
         })
+    }
+
+    onMouseMove(ev){            
+        if(this.pickingColor){
+            this.colorpicker.updatePosition(ev.original.point);    
+        }
+    }
+    onMouseUp(){
+        if(this.pickingColor && this.cursor.visible){
+            this._colorpickerPromise && this._colorpickerPromise.resolve(this.colorpicker.selectedColor);
+            this._colorpickerPromise = null;
+            this.cancelColorpicker();
+        }
     }
 
     /**
@@ -136,7 +136,6 @@ import {AnnotationUITool, AnnotationUIToolbarBase} from './annotationUITool.mjs'
             self.activate();
             self.pickingColor=true;
             self.cursor.visible=true;
-            // self.cursor.addTo(self.project.paperScope.project.activeLayer);
             self.project.paperScope.project.layers.toolLayer.bringToFront();
             self.tool.onMouseMove({point:self.cursor.view.center});
             self.project.overlay.addClass('tool-action').setAttribute('data-tool-action','colorpicker');
@@ -166,8 +165,8 @@ import {AnnotationUITool, AnnotationUIToolbarBase} from './annotationUITool.mjs'
         let mask = item.clone();
         let grp = new paper.Group([mask]);
         // console.log('itemToAverage',itemToAverage);
-        let imgrect=this.project.overlay.osdViewer.viewport.viewportToViewerElementRectangle(this.project.overlay.osdViewer.world.getItemAt(0).getBounds());
-        let viewrect=this.project.overlay.osdViewer.viewport.viewportToViewerElementRectangle(this.project.overlay.osdViewer.viewport.getBounds());
+        let imgrect=this.project.overlay.viewer.viewport.viewportToViewerElementRectangle(this.project.overlay.viewer.world.getItemAt(0).getBounds());
+        let viewrect=this.project.overlay.viewer.viewport.viewportToViewerElementRectangle(this.project.overlay.viewer.viewport.getBounds());
         let x = Math.floor(Math.max(imgrect.x, viewrect.x))-1;
         let y = Math.floor(Math.max(imgrect.y, viewrect.y))-1;
         let w = Math.ceil(Math.min(viewrect.x+viewrect.width, imgrect.x+imgrect.width))-x+2;
@@ -182,7 +181,7 @@ import {AnnotationUITool, AnnotationUIToolbarBase} from './annotationUITool.mjs'
         //Deal with pixel ratio other than one
         let r = this.project.paperScope.view.pixelRatio;
         let newcanvas = $('<canvas>').attr({width:mw*r,height:mh*r})[0];
-        newcanvas.getContext('2d').drawImage(this.project.overlay.osdViewer.drawer.canvas,mx*r,my*r,mw*r,mh*r,0,0,mw*r,mh*r);
+        newcanvas.getContext('2d').drawImage(this.project.overlay.viewer.drawer.canvas,mx*r,my*r,mw*r,mh*r,0,0,mw*r,mh*r);
         let dataurl = newcanvas.toDataURL();
         let raster = new paper.Raster({source:dataurl,position:mask.bounds.center});
         raster.scale(1/(r*this.project.getZoom()));
@@ -604,14 +603,14 @@ export {StyleToolbar};
      */
     this.updatePosition = function(point){
         cursor.position=point;
-
+        
         let o = cursor.project.overlay.getCanvasCoordinates(point.x, point.y);
         let x = Math.round(o.x)-Math.floor(cursor.numColumns/2);
         let y = Math.round(o.y)-Math.floor(cursor.numRows/2);
         let w = cursor.numColumns;
         let h = cursor.numRows;
         let r = cursor.view.pixelRatio            
-        let imdata = cursor.project.overlay.osdViewer.getImageData(x*r,y*r,w*r,h*r);
+        let imdata = cursor.project.overlay.getImageData(x*r,y*r,w*r,h*r);
         ctx.clearRect(0, 0, w, h);
         window.createImageBitmap(imdata).then(bitmap=>{
             ctx.drawImage(bitmap, 0,0, cursor.numColumns, cursor.numRows);
@@ -663,7 +662,7 @@ export {ColorpickerCursor};
  */
  async function getAverageColor(itemToAverage){
     
-    let raster = ((itemToAverage.project && itemToAverage.project.overlay) || itemToAverage.overlay).osdViewer.getViewportRaster(itemToAverage.view);
+    let raster = ((itemToAverage.project && itemToAverage.project.overlay) || itemToAverage.overlay).getViewportRaster();
     return new Promise(function(resolve,reject){
         raster.onLoad = function(){
             let color = raster.getAverageColor(itemToAverage);

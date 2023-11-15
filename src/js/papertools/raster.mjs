@@ -39,24 +39,23 @@ class RasterTool extends AnnotationUITool{
         let self = this;
         let item = this.item;
         if(item){
-            let raster = this.project.overlay.osdViewer.getViewportRaster(item.view);
+            let raster = this.project.overlay.getViewportRaster();
             item.layer.addChild(raster);
         
-        /**
-         * Handles the raster's onLoad event, which triggers after the raster image has loaded.
-         * The function performs rasterization and replacement of the vector annotation with the rasterized version.
-         * @private
-         * @param {Event} event - The onLoad event triggered by the raster image load.
-         */
+        
             raster.onLoad = function(){
                 //get the subregion in pixel coordinates of the large raster by inverse transforming the bounding rect of the item
                 let offset = new paper.Point(this.width/2,this.height/2);
+                
                 let newBounds = new paper.Rectangle(
-                    offset.add(this.matrix.inverseTransform(item.bounds.topLeft)).floor(), 
-                    offset.add(this.matrix.inverseTransform(item.bounds.bottomRight)).ceil()
+                    offset.add(this.matrix.inverseTransform(this.layer.matrix.transform(item.bounds.topLeft))).floor(), 
+                    offset.add(this.matrix.inverseTransform(this.layer.matrix.transform(item.bounds.bottomRight))).ceil()
                 );
                 
                 let subraster = this.getSubRaster(newBounds);
+                
+                subraster.transform(this.layer.matrix.inverted());
+                
                 subraster.selectedColor = null;
                 let geoJSON = {
                     type:'Feature',

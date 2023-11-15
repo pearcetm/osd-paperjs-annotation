@@ -97,14 +97,14 @@ class WandTool extends AnnotationUITool{
             self.itemLayer = item ? item.layer : null;
 
             self.getImageData();
-            self.project.overlay.osdViewer.addHandler('animation-finish',callback);
-            self.project.overlay.osdViewer.addHandler('rotate',callback);  
+            self.project.overlay.viewer.addHandler('animation-finish',callback);
+            self.project.overlay.viewer.addHandler('rotate',callback);  
             colorPicker.element.visible=true;
             self.project.toolLayer.bringToFront();
         };
         this.extensions.onDeactivate = function(finished){
-            self.project.overlay.osdViewer.removeHandler('animation-finish',callback);
-            self.project.overlay.osdViewer.removeHandler('rotate',callback);
+            self.project.overlay.viewer.removeHandler('animation-finish',callback);
+            self.project.overlay.viewer.removeHandler('rotate',callback);
             colorPicker.element.visible=false;
             this.preview && this.preview.remove();
             if(finished){
@@ -259,7 +259,7 @@ class WandTool extends AnnotationUITool{
      */
     async getImageData(){
         let self=this;
-        let imageData = self.project.overlay.osdViewer.getImageData();
+        let imageData = self.project.overlay.getImageData();
         
         let viewportGroup = new paper.Group({children:[],insert:false});
 
@@ -396,7 +396,7 @@ class WandTool extends AnnotationUITool{
 
         this.preview && this.preview.remove();
         
-        this.preview = this.project.paperScope.overlay.osdViewer.getViewportRaster(this.project.paperScope.view, false);
+        this.preview = this.project.paperScope.overlay.getViewportRaster(this.project.paperScope.view, false);
         this.project.toolLayer.insertChild(0, this.preview);//add the raster to the bottom of the tool layer
         console.log('New preview',this.preview.id, this.preview.parent.id);
         

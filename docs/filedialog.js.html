@@ -275,7 +275,7 @@ class FileDialog {
      */
     function exportPNG() {
       initDlg();
-      let fcs = atk.getFeatureCollectionLayers();
+      let fcs = atk.getFeatureCollectionGroups();
       let list = setupFeatureCollectionList(fcs);
       let finishbutton = setupFinalize('Create file', 'Choose file name:', getFileName() + '-raster.png');
       finishbutton.on('click', function () {

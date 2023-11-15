@@ -20,9 +20,6 @@ class PointTool extends AnnotationUITool{
      */
     constructor(paperScope){
         super(paperScope);
-        let tool = this.tool;
-        let self=this;
-        let dragging=false;
         
         let cursor = new Point({geometry:{type:'Point',coordinates:[0,0]},properties:{label:'Point Tool'}}).paperItem;
         cursor.fillColor=null;
@@ -30,104 +27,68 @@ class PointTool extends AnnotationUITool{
         cursor.visible=false;
         delete cursor.isGeoJSONFeature; // remove this field since this isn't really part of the GeoJSON structure
         
+        this.cursor = cursor;
+        this.dragging = false;
+
         this.project.toolLayer.addChild(cursor);
         
         this.setToolbarControl(new PointToolbar(this));
-        /**
-         * Event handler when the tool is activated.
-         * @private
-         * @memberof OSDPaperjsAnnotation.PointTool#
-         * @description Handles the activation of the PointTool.
-         */
-        this.extensions.onActivate=function(){
-            // self.project.paperScope.project.activeLayer.addChild(cursor);
-            self.project.toolLayer.bringToFront();
-            if(self.itemToCreate) cursor.visible = true;
+        
+        
+        this.extensions.onActivate = ()=>{
+            this.project.toolLayer.bringToFront();
+            if(this.itemToCreate) this.cursor.visible = true;
         }
-        /**
-         * Event handler when the tool is deactivated.
-         * @private
-         * @memberof OSDPaperjsAnnotation.PointTool#
-         * @description Handles the deactivation of the PointTool.
-         */
-        this.extensions.onDeactivate=function(){
-            self.project.toolLayer.sendToBack();
-            // self.project.toolLayer.addChild(cursor);
-            cursor.visible=false;
-            self.project.overlay.removeClass('point-tool-grab', 'point-tool-grabbing');
+        
+        
+        this.extensions.onDeactivate = ()=>{
+            this.project.toolLayer.sendToBack();
+            this.cursor.visible=false;
+            this.project.overlay.removeClass('point-tool-grab', 'point-tool-grabbing');
         }
-        /**
-         * Event handler when the selection changes.
-         * @private
-         * @memberof OSDPaperjsAnnotation.PointTool#
-         * @description Handles the change in selection for the PointTool.
-         */
-        this.onSelectionChanged = function(){
-            cursor.visible = !!this.itemToCreate;
+        
+        
+        this.onSelectionChanged = ()=>{
+            this.cursor.visible = !!this.itemToCreate;
         }
-        /**
-         * Handles the mouse movement event within the Paper.js project.
-         * Updates the cursor's position and adds or removes the 'point-tool-grab' class from the overlay based on whether the cursor is over an existing point.
-         * @private
-         * @memberof OSDPaperjsAnnotation.PointTool#
-         * @param {Object} ev - The mouse move event object containing information about the cursor position.
-         */
-        tool.onMouseMove=function(ev){
-            cursor.position = ev.point;
-            if(ev.item && self.item.hitTest(ev.point)){
-                self.project.overlay.addClass('point-tool-grab');
-            }
-            else{
-                self.project.overlay.removeClass('point-tool-grab');
-            }   
-        }
-        /**
-         * Handles the mouse down event within the Paper.js project.
-         * If an item is being created, it initializes the GeoJSON feature and updates the toolbar instructions.
-         * If an existing point is clicked, it sets the dragging flag to true and adds the 'point-tool-grabbing' class to the overlay.
-         * @private
-         * @memberof OSDPaperjsAnnotation.PointTool#
-         * @param {Object} ev - The mouse down event object containing information about the cursor position.
-         */
-        tool.onMouseDown=function(ev){
-            if(self.itemToCreate){
-                self.itemToCreate.initializeGeoJSONFeature('Point');
-                self.refreshItems();
-                self.item.position=ev.point;
-                cursor.visible=false;
-                self.toolbarControl.updateInstructions('Point');
-            }
-            else{
-                if(self.item&&self.item.hitTest(ev.point)){
-                    dragging=true;
-                    self.project.overlay.addClass('point-tool-grabbing')
-                }
-            }
-        }
-        /**
-         * Handles the mouse drag event within the Paper.js project.
-         * If the dragging flag is true, it updates the position of the existing point being dragged.
-         * @private
-         * @memberof OSDPaperjsAnnotation.PointTool#
-         * @param {Object} ev - The mouse drag event object containing information about the cursor position and movement.
-         */
-        tool.onMouseDrag=function(ev){
-            if(dragging){
-                self.item && (self.item.position = self.item.position.add(ev.delta))
-            }
-        }
-        /**
-         * Handles the mouse up event within the Paper.js project.
-         * Resets the dragging flag and removes the 'point-tool-grabbing' class from the overlay.
-         * @private
-         * @param {Object} ev - The mouse up event object containing information about the cursor position.
-         * @memberof OSDPaperjsAnnotation.PointTool#
-         */
-        tool.onMouseUp=function(ev){
-            dragging=false;
-            self.project.overlay.removeClass('point-tool-grabbing');
-        }
+        
     } 
+    
+    onMouseMove(ev){
+        this.cursor.position = ev.original.point;
+        if(this.item.hitTest(ev.point)){
+            this.project.overlay.addClass('point-tool-grab');
+        }
+        else{
+            this.project.overlay.removeClass('point-tool-grab');
+        }   
+    }
+    
+    onMouseDown(ev){
+        if(this.itemToCreate){
+            this.itemToCreate.initializeGeoJSONFeature('Point');
+            this.refreshItems();
+            this.item.position=ev.point;
+            this.cursor.visible=false;
+            this.toolbarControl.updateInstructions('Point');
+        } else {
+            if(this.item&&this.item.hitTest(ev.point)){
+                this.dragging=true;
+                this.project.overlay.addClass('point-tool-grabbing')
+            }
+        }
+    }
+    
+    onMouseDrag(ev){
+        if(this.dragging){
+            this.item && (this.item.position = this.item.position.add(ev.delta))
+        }
+    }
+    
+    onMouseUp(){
+        this.dragging=false;
+        this.project.overlay.removeClass('point-tool-grabbing');
+    }
 }
 export {PointTool};
 

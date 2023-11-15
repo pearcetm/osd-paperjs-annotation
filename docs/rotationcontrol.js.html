@@ -62,7 +62,7 @@ class RotationControlOverlay {
    * Activates the rotation control.
    */
   activate() {
-    this._mouseNavEnabledAtActivation = this.overlay.osdViewer.isMouseNavEnabled();
+    this._mouseNavEnabledAtActivation = this.overlay.viewer.isMouseNavEnabled();
     this.tool.activate();
     this.tool.active = true;
     this.overlay.bringToFront();
@@ -73,7 +73,7 @@ class RotationControlOverlay {
   deactivate() {
     this.tool.deactivate(true);
     this.dummyTool.activate();
-    this.overlay.osdViewer.setMouseNavEnabled(this._mouseNavEnabledAtActivation);
+    this.overlay.viewer.setMouseNavEnabled(this._mouseNavEnabledAtActivation);
     this.tool.active = false;
     this.overlay.sendToBack();
   }
@@ -97,7 +97,7 @@ class RotationControlTool extends ToolBase {
     let self = this;
     let bounds = paperScope.view.bounds;
     let widget = new RotationControlWidget(paperScope.view.bounds.center, setAngle);
-    let viewer = paperScope.overlay.osdViewer;
+    let viewer = paperScope.overlay.viewer;
     viewer.addHandler('rotate', ev => widget.setCurrentRotation(ev.degrees));
     paperScope.view.on('resize', function (ev) {
       let pos = widget.item.position;

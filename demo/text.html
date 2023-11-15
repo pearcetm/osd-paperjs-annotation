@@ -9,14 +9,27 @@
         import { AnnotationToolbar } from '../src/js/annotationtoolbar.mjs';
         import{ AnnotationToolkit } from '../src/js/annotationtoolkit.mjs';
         // Basic viewer setup
-        let viewer = OpenSeadragon({
+        let viewer = window.viewer = OpenSeadragon({
             element: 'brush-viewer',
             prefixUrl: "https://openseadragon.github.io/openseadragon/images/",
-            tileSources: {
-                type: 'image',
-                url: 'https://openseadragon.github.io/example-images/grand-canyon-landscape-overlooking.jpg',
-                buildPyramid: false
-            },
+            tileSources: [
+                {
+                    tileSource:{
+                            type: 'image',
+                            url:  'https://openseadragon.github.io/example-images/grand-canyon-landscape-overlooking.jpg',
+                            buildPyramid: false,
+                        },
+                    x:0,
+                },
+                // {
+                //     tileSource:{
+                //             type: 'image',
+                //             url:  'https://openseadragon.github.io/example-images/grand-canyon-landscape-overlooking.jpg',
+                //             buildPyramid: false,
+                //         },
+                //     x:1,
+                // },
+            ],
             minZoomImageRatio: 0.01,
             visibilityRatio: 0,
             crossOriginPolicy: 'Anonymous',
@@ -24,39 +37,15 @@
         });
 
         viewer.addHandler('open', () => {
-            let paperScope = new paper.PaperScope(); // Create a new PaperScope
-            paperScope.setup('brush-canvas'); // Set up Paper.js with the specified canvas ID
-
             // Create the AnnotationToolkit instance with annotationUI selecting a tool and add feature collections
             let annotationToolkit = new AnnotationToolkit(viewer);
-            annotationToolkit.addAnnotationUI({tools:["text" , "style"], addButton:false, addFileButton:false});
+            annotationToolkit.addAnnotationUI({tools:["transform", "text"], addButton:false, addFileButton:false});
 
-            $.get('./demo-annotation.json').then(x => annotationToolkit.addFeatureCollections(x));
-        });
-        
-        let exampleviewer = OpenSeadragon({
-            element: 'example-viewer',
-            prefixUrl: "https://openseadragon.github.io/openseadragon/images/",
-            tileSources: {
-                type: 'image',
-                url: './tissue.jpg',
-                buildPyramid: true
-            },
-            minZoomImageRatio: 0.01,
-            visibilityRatio: 0,
-            crossOriginPolicy: 'Anonymous',
-            ajaxWithCredentials: false
-        });
-
-        exampleviewer.addHandler('open', () => {
-            let exPaperScope = new paper.PaperScope(); // Create a new PaperScope
-            exPaperScope.setup('example-canvas'); // Set up Paper.js with the specified canvas ID
-        
-            // Create the AnnotationToolkit instance for the example viewer
-            let exAnnotationToolkit = new AnnotationToolkit(exampleviewer);
-            exAnnotationToolkit.addAnnotationUI({tools:["text" , "style"], addButton:false, addFileButton:false});
-        
-            $.get('./tissue-annotation.json').then(x => exAnnotationToolkit.addFeatureCollections(x));
+            $.get('./demo-annotation.json').then(x => {
+                // annotationToolkit.addFeatureCollections(x)
+                annotationToolkit.addFeatureCollections(x, true, viewer.world.getItemAt(0));
+                // annotationToolkit.addFeatureCollections(x, true, viewer.world.getItemAt(1));
+            });
         });
     </script>
 </head>
@@ -83,32 +72,8 @@
                         Text annotations created using the Text Toolbox Tool are point-based and may lose scalability when scaled. Ensure that you create annotations at appropriate sizes to maintain clarity in your map.
                     </p>
                 </div>
-                <div class="guided-usage">
-                    <h3>Guided Usage: Using the Text Toolbox Tool with Annotations</h3>
-                    <p>
-                        As you examine the brain tissue image with existing annotations, consider how the Text Toolbox Tool can help you provide additional information and context:
-                    </p>
-                    <ol>
-                        <li><strong>Task:</strong> Enhance the annotations by adding descriptive text to certain regions of interest.</li>
-                        <li><strong>Use Case:</strong> Identify specific structures within the tissue that need clarification for further analysis.</li>
-                        <li><strong>Solution:</strong> Follow these steps:
-                            <ul>
-                                <li>Select add feature to add an annotation on the viewer that represents a the textbox location near a structure or feature.</li>
-                                <li>Activate the Text Toolbox Tool from the toolbar.</li>
-                                <li>Click on the annotation or a nearby location to create a point-based text annotation.</li>
-                                <li>Edit the content of the text annotation to provide relevant information about the selected structure.</li>
-                                <li>Customize the style of the text annotation, such as font size and fill color, using the Style Tool for better visibility.</li>
-                                <li>Save your changes.</li>
-                            </ul>
-                        </li>
-                        <li><strong>Example:</strong> Select an annotation representing a "Blood Vessel" structure. Use the Text Toolbox Tool to create a text annotation that describes the size or function of the blood vessel. Customize the text style to ensure it stands out from the image.</li>
-                    </ol>
-                    <div id="example-viewer" class="viewer"></div>
-                </div>
-
-    <!-- The canvas used for Paper.js -->
-    
-    <canvas id="example-canvas" style="display:none;"></canvas>
-    <canvas id="brush-canvas" style="display:none;"></canvas>
-</body>
+                
+            </div>
+        </div>
+    </body>
 </html>

@@ -11,29 +11,24 @@ class LayerUI extends OpenSeadragon.EventSource{
     /**
      * Create a new LayerUI instance.
      * @constructor
-     * @property {paper.PaperScope} paperScope - The paper scope object.
-     * @property {function} setOpacity - Set the opacity of the feature collections.
      * @property {HTMLElement} element - The HTML element associated with the LayerUI instance. refer to typedef for subproperties
-     * @param {paper.PaperScope} paperScope - The paper scope object.
+     * @param {AnnotationToolkit} annotationToolkit - The paper scope object.
      */
-    constructor(paperScope){
+    constructor(annotationToolkit){
         super();
         let self=this;
-        
-        this.paperScope = paperScope;
+        this._tk = annotationToolkit
+        this.paperScope = this._tk.paperScope;
         this.paperScope.project.on('feature-collection-added',ev=>this._onFeatureCollectionAdded(ev));
         
         self.element = makeHTMLElement();
         
-        //make this an event source
-        // OpenSeadragon.extend(LayerUI.prototype, OpenSeadragon.EventSource.prototype);
-        // OpenSeadragon.EventSource.call(this);
         
         self.element.find('.new-feature-collection').on('click',function(ev){
             ev.stopPropagation();
             ev.preventDefault();
             // self.addFeatureCollection();
-            self.paperScope.createFeatureCollectionLayer();
+            self._tk.createFeatureCollectionGroup();
         });
         self.element.find('.toggle-annotations').on('click',function(ev){
             let hidden = self.element.find('.annotation-ui-feature-collections .feature-collection.annotation-hidden');
@@ -46,7 +41,7 @@ class LayerUI extends OpenSeadragon.EventSource{
         self.element.find('.annotation-ui-feature-collections').sortable({contain:'parent',update:function(){
             self.element.find('.annotation-ui-feature-collections .feature-collection').each(function(idx,g){
                 let fg = $(g).data('featureCollection');
-                fg.layer.bringToFront();
+                fg.group.bringToFront();
             })
         }})
 
@@ -186,9 +181,9 @@ class LayerUI extends OpenSeadragon.EventSource{
      * @param {object} ev - The event object.
      */
     _onFeatureCollectionAdded(ev){
-        let layer = ev.layer;
+        let grp = ev.group;
         
-        let fc=new FeatureCollectionUI(layer, {guiSelector:`[data-ui-id="${this.element.data('ui-id')}"]`});
+        let fc=new FeatureCollectionUI(grp, {guiSelector:`[data-ui-id="${this.element.data('ui-id')}"]`});
         this.element.find('.annotation-ui-feature-collections').append(fc.element).sortable('refresh');
         fc.element.trigger('element-added');
         setTimeout(function(){fc.element.addClass('inserted'); }, 30);//this allows opacity fade-in to be triggered

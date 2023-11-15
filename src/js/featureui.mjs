@@ -192,7 +192,7 @@ class FeatureUI{
      * @param {boolean} [immediately=false] - Whether to center the feature immediately or not.
      */
     centerItem(immediately = false){
-        let viewport = this.paperItem.project.overlay.osdViewer.viewport;
+        let viewport = this.paperItem.project.overlay.viewer.viewport;
         let bounds = this.paperItem.bounds;
         let center = viewport.imageToViewportCoordinates(bounds.center.x,bounds.center.y);
         let scale=1.5;

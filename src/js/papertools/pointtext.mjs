@@ -18,9 +18,8 @@ class PointTextTool extends AnnotationUITool{
  */
     constructor(paperScope){
         super(paperScope);
-        let tool = this.tool;
-        let self=this;
-        let dragging=false;
+        
+        this.dragging=false;
         
         /**
          * The visual representation of the text cursor.
@@ -58,14 +57,13 @@ class PointTextTool extends AnnotationUITool{
          * This function is called when the tool is activated, and it handles the setup of cursor visibility and interaction behavior.
          * @private
          */
-        this.extensions.onActivate=function(){
-            self.project.paperScope.project.activeLayer.addChild(cursor);
-            if(self.itemToCreate){
+        this.extensions.onActivate = () => {
+            if(this.itemToCreate){
                 // new item to be created - show the cursor
-                cursor.visible = true;
-            } else if(self.item){
+                this.cursor.visible = true;
+            } else if(this.item){
                 // modifying an existing item
-                self._updateTextInput();
+                this._updateTextInput();
             }
         }
         /**
@@ -73,80 +71,58 @@ class PointTextTool extends AnnotationUITool{
          * This function is called when the tool is deactivated, and it handles cursor visibility and interaction cleanup.
          * @private
          */
-        this.extensions.onDeactivate=function(){
-            self.project.toolLayer.addChild(cursor);
-            cursor.visible=false;
-            self.project.overlay.removeClass('point-tool-grab', 'point-tool-grabbing');
+        this.extensions.onDeactivate = () => {
+            this.project.toolLayer.addChild(this.cursor);
+            this.cursor.visible=false;
+            this.project.overlay.removeClass('point-tool-grab', 'point-tool-grabbing');
         }
-        this.onSelectionChanged = function(){
-            cursor.visible = !!this.itemToCreate;
-            self._updateTextInput();
+        
+    }
+    
+    onSelectionChanged(){
+        this.cursor.visible = !!this.itemToCreate;
+        this._updateTextInput();
+    }
+    onMouseMove(ev){
+        this.cursor.position = ev.original.point;
+        if(this.item.hitTest(ev.point)){ // for some reason hit-testing needs to be done in transformed coordinates not original
+            this.project.overlay.addClass('point-tool-grab');
         }
-        /**
-         * Handle the mouse move event for the PointTextTool.
-         * This function is called when the user moves the mouse.
-         * It updates the position of the cursor and changes the overlay class to indicate potential grabbing.
-         * @private
-         * @param {paper.MouseEvent} ev - The mouse event containing the move information.
-         */
-        tool.onMouseMove=function(ev){
-            cursor.position = ev.point;
-            if(ev.item && self.item.hitTest(ev.point)){
-                self.project.overlay.addClass('point-tool-grab');
-            }
-            else{
-                self.project.overlay.removeClass('point-tool-grab');
-            }   
+        else{
+            this.project.overlay.removeClass('point-tool-grab');
+        }   
+    }
+    onMouseDown(ev){
+        if(this.itemToCreate){
+            this.itemToCreate.initializeGeoJSONFeature('Point','PointText');
+            this.refreshItems();
+            this.item.children[1].content = this.toolbarControl.getValue();
+            this.item.position=ev.point;
+            this.cursor.visible=false;
+            this.toolbarControl.updateInstructions('Point:PointText');
         }
-        /**
-         * Handle the mouse down event for the PointTextTool.
-         * This function is called when the user presses the mouse button.
-         * It either initializes a new PointText or prepares for dragging an existing item.
-         * @param {paper.MouseEvent} ev - The mouse event containing the click information.
-         * @private
-         */
-        tool.onMouseDown=function(ev){
-            if(self.itemToCreate){
-                self.itemToCreate.initializeGeoJSONFeature('Point','PointText');
-                self.refreshItems();
-                self.item.children[1].content = self.toolbarControl.getValue();
-                self.item.position=ev.point;
-                cursor.visible=false;
-                self.toolbarControl.updateInstructions('Point:PointText');
-            }
-            else{
-                if(self.item&&self.item.hitTest(ev.point)){
-                    dragging=true;
-                    self.project.overlay.addClass('point-tool-grabbing')
-                }
+        else{
+            if(this.item && this.item.hitTest(ev.point)){ // for some reason hit-testing needs to be done in transformed coordinates not original
+                this.dragging=true;
+                this.project.overlay.addClass('point-tool-grabbing')
             }
         }
-        /**
-         * Handle the mouse drag event for the PointTextTool.
-         * This function is called when the user drags the mouse.
-         * It updates the position of the cursor and moves the PointText item if dragging is active.
-         * @private
-         * @param {paper.MouseEvent} ev - The mouse event containing the drag information.
-         */
-        tool.onMouseDrag=function(ev){
-            if(dragging){
-                self.item && (self.item.position = self.item.position.add(ev.delta))
-            }
+    }
+    onMouseDrag=function(ev){
+        if(this.dragging){
+            this.item && (this.item.position = this.item.position.add(ev.delta))
         }
-        /**
-         * Handle the mouse up event for the PointTextTool.
-         * This function is called when the user releases the mouse button.
-         * It stops dragging and updates the overlay class to indicate non-dragging state.
-         * @private
-         * @param {paper.MouseEvent} ev - The mouse event containing the release information.
-         */
-        tool.onMouseUp=function(ev){
-            dragging=false;
-            self.project.overlay.removeClass('point-tool-grabbing');
-        }
-    } 
+    }
+    onMouseUp(){
+        this.dragging=false;
+        this.project.overlay.removeClass('point-tool-grabbing');
+    }
+    
+
     _updateTextInput(){
-        this.toolbarControl.setItemText(this.item ? this.item.children[1].content : '');
+        let text = (this.item && this.item.annotationItem.subtype=='PointText') ? this.item.children[1].content : '';
+        this.toolbarControl.setItemText(text);
+        this.cursor.children[1].content = text.length ? text : this.toolbarControl.input.attr('placeholder');
     }
 }
 export{PointTextTool};

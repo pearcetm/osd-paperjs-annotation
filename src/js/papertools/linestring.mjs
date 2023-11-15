@@ -43,12 +43,16 @@ class LinestringTool extends PolygonTool{
             self.cursor.visible=true;
             tool.minDistance=4/self.project.getZoom();
             tool.maxDistance=10/self.project.getZoom();
+
+            self.targetLayer.addChild(self.drawingGroup);
         }
         this.extensions.onDeactivate = function(finished){
             self.cursor.visible=false;
             if(finished){
                 self.finish();
             } 
+
+            self.project.toolLayer.addChild(self.drawingGroup);
         }
         /**
          * Set the brush radius for the linestring tool.
@@ -62,97 +66,6 @@ class LinestringTool extends PolygonTool{
             this.cursor.radius=r/this.project.getZoom();
         }
 
-        // let superOnMouseDown = tool.onMouseDown;
-        /**
-         * Handle the mouse down event for the linestring tool.
-         * This function is called when the user presses the mouse button.
-         * It checks for hit items and decides whether to start a new path, delete a segment, or add a new point.
-         * @private
-         * @param {paper.MouseEvent} ev - The mouse event containing the click information.
-         */
-        tool.onMouseDown=function(ev){
-            self.draggingSegment=null;
-
-            if(self.itemToCreate){
-                self.itemToCreate.initializeGeoJSONFeature('MultiLineString');
-                self.refreshItems();
-                
-                self.startNewPath(ev)
-                // console.log('initialized item')
-                return;
-            }
-            
-            // self.simplifying && self.cancelSimplify();  
-            let dr = self.drawing();
-            let hitResult = (dr&&dr.path ||self.item).hitTest(ev.point,{fill:false,stroke:true,segments:true,tolerance:(5/self.project.getZoom())})
-            if(hitResult){
-                //if erasing and hitResult is a segment, hitResult.segment.remove()
-                if(hitResult.type=='segment' && self.eraseMode){
-                    hitResult.segment.remove();
-                }
-                //if hitResult is the last segment and NOT erasing, finish the current path
-                else if(hitResult.type=='segment' && dr && hitResult.segment==dr.path.lastSegment){
-                    self.finishCurrentPath();
-                }
-                //if hitResult is a segment and NOT erasing, save reference to hitResult.segment for dragging it
-                else if(hitResult.type=='segment'){
-                    self.draggingSegment = hitResult.segment;
-                }
-                //if hitResult is a stroke, add a point (unless in erase mode):
-                else if(hitResult.type=='stroke' && !self.eraseMode){
-                    let insertIndex = hitResult.location.index +1;
-                    let ns = hitResult.item.insert(insertIndex, ev.point);
-                }
-            }
-            else{ //not drawing yet, but start now!
-                if(!self.eraseMode) self.startNewPath(ev);
-            }
-            
-        }
-
-        let superOnMouseMove = tool.onMouseMove;
-        /**
-         * Handle the mouse move event for the linestring tool.
-         * This function is called when the user moves the mouse.
-         * It updates the position of the cursor representing the pen and performs any necessary operations during the mouse move.
-         * @private
-         * @param {paper.MouseEvent} ev - The mouse event containing the move information.
-         */
-        tool.onMouseMove=function(ev){
-            self.cursor.position=ev.point;
-            superOnMouseMove(ev);
-        }
-        let superOnMouseDrag = tool.onMouseDrag;
-        /**
-         * Handle the mouse drag event for the linestring tool.
-         * This function is called when the user drags the mouse.
-         * It updates the position of the cursor representing the pen and modifies the linestring path during the drag operation.
-         * @private
-         * @param {paper.MouseEvent} ev - The mouse event containing the drag information.
-         */
-        tool.onMouseDrag=function(ev){
-            self.cursor.position=ev.point;
-            superOnMouseDrag(ev);
-            let dr = self.drawing();
-            dr && (dr.path.segments = self.simplifier.simplify(dr.path.segments.map(s=>s.point)));
-        }
-        /**
-         * Handle the mouse up event for the linestring tool.
-         * This function is called when the user releases the mouse button.
-         * It finishes the current linestring path if one is being drawn.
-         * @private
-         * @param {paper.MouseEvent} ev - The mouse event containing the release information.
-         */
-        tool.onMouseUp=function(ev){
-            self.finishCurrentPath();
-        }
-        /**
-         * Handle the mouse wheel event for the linestring tool.
-         * This function is called when the user scrolls the mouse wheel.
-         * It updates the brush radius based on the scroll direction to make drawing thicker or thinner lines easier.
-         * @private
-         * @param {WheelEvent} ev - The wheel event containing the scroll information.
-         */
         tool.onMouseWheel = function(ev){
             // console.log('Wheel event',ev);
             ev.preventDefault();
@@ -162,6 +75,64 @@ class LinestringTool extends PolygonTool{
             self.toolbarControl.updateBrushRadius({larger:ev.deltaY < 0});
         }
     }
+
+    onMouseDown(ev){
+        this.draggingSegment=null;
+
+        if(this.itemToCreate){
+            this.itemToCreate.initializeGeoJSONFeature('MultiLineString');
+            this.refreshItems();
+            
+            this.startNewPath(ev)
+            // console.log('initialized item')
+            return;
+        }
+        
+        let dr = this.drawing();
+        let hitResult = (dr&&dr.path ||this.item).hitTest(ev.point,{fill:false,stroke:true,segments:true,tolerance:(5/this.project.getZoom())})
+        if(hitResult){
+            //if erasing and hitResult is a segment, hitResult.segment.remove()
+            if(hitResult.type=='segment' && this.eraseMode){
+                hitResult.segment.remove();
+            }
+            //if hitResult is the last segment and NOT erasing, finish the current path
+            else if(hitResult.type=='segment' && dr && hitResult.segment==dr.path.lastSegment){
+                this.finishCurrentPath();
+            }
+            //if hitResult is a segment and NOT erasing, save reference to hitResult.segment for dragging it
+            else if(hitResult.type=='segment'){
+                this.draggingSegment = hitResult.segment;
+            }
+            //if hitResult is a stroke, add a point (unless in erase mode):
+            else if(hitResult.type=='stroke' && !this.eraseMode){
+                let insertIndex = hitResult.location.index +1;
+                let ns = hitResult.item.insert(insertIndex, ev.point);
+            }
+        }
+        else{ //not drawing yet, but start now!
+            if(!this.eraseMode) this.startNewPath(ev);
+        }
+        
+    }
+
+    
+    onMouseMove(ev){
+        this.cursor.position=ev.original.point;
+        PolygonTool.prototype.onMouseMove.call(this, ev);
+    }
+    
+    onMouseDrag(ev){
+        this.cursor.position=ev.original.point;
+        // superOnMouseDrag(ev);
+        PolygonTool.prototype.onMouseDrag.call(this, ev);
+        let dr = this.drawing();
+        dr && (dr.path.segments = this.simplifier.simplify(dr.path.segments.map(s=>s.point)));
+    }
+    
+    onMouseUp(ev){
+        this.finishCurrentPath();
+    }
+
     /**
      * Start a new linestring path when the user clicks the mouse.
      * This function initializes the creation of a new linestring path, sets up a drawing group to hold the path, and listens for user mouse events to add new points to the path.

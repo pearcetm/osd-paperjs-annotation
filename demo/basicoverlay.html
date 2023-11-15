@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+
+<head>
+    <title>Style Tool Demo</title>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/openseadragon/4.0.0/openseadragon.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/paper.js/0.12.17/paper-full.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="./demo.css">
+
+    <script type="module">
+        import { PaperOverlay } from '../src/js/paper-overlay.mjs';
+        import {RotationControlOverlay} from '../src/js/rotationcontrol.mjs'
+        // Basic viewer setup
+        let viewer = window.viewer = OpenSeadragon({
+            element: 'viewer',
+            prefixUrl: "https://openseadragon.github.io/openseadragon/images/",
+            tileSources: [
+                {
+                    tileSource:{
+                            type: 'image',
+                            url:  'https://openseadragon.github.io/example-images/grand-canyon-landscape-overlooking.jpg',
+                            buildPyramid: false,
+                        },
+                    x:0,
+                },
+            ],
+            minZoomImageRatio: 0.01,
+            visibilityRatio: 0,
+            crossOriginPolicy: 'Anonymous',
+            ajaxWithCredentials: false
+        });
+
+        viewer.addHandler('open', () => {
+            new RotationControlOverlay(viewer);
+        });
+        
+        
+    </script>
+</head>
+<body>
+    <div class="content">
+        <div class="demo">
+            <h3>Paper Overlay Demo</h3>
+            <div id="viewer" class="viewer"></div>
+            
+        </div>
+    </div>
+</body>
+</html>

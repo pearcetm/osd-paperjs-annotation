@@ -1,3 +1,41 @@
+/**
+ * OpenSeadragon annotation plugin based on paper.js
+ * @version 0.1.2
+ * 
+ * Includes additional open source libraries which are subject to copyright notices
+ * as indicated accompanying those segments of code.
+ * 
+ * Original code:
+ * Copyright (c) 2022-2023, Thomas Pearce
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 
+ * * Redistributions of source code must retain the above copyright notice, this
+ *   list of conditions and the following disclaimer.
+ * 
+ * * Redistributions in binary form must reproduce the above copyright notice,
+ *   this list of conditions and the following disclaimer in the documentation
+ *   and/or other materials provided with the distribution.
+ * 
+ * * Neither the name of this project nor the names of its
+ *   contributors may be used to endorse or promote products derived from
+ *   this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * 
+ */
+
 import { paper } from './paperjs.mjs';
 import { AnnotationUI } from './annotationui.mjs';
 import { PaperOverlay } from './paper-overlay.mjs';
@@ -18,23 +56,10 @@ import { Ellipse } from './paperitems/ellipse.mjs';
 
 //extend paper prototypes to add functionality
 //property definitions
-Object.defineProperty(paper.Item.prototype, 'hierarchy', hierarchyDef())
-Object.defineProperty(paper.Item.prototype, 'descendants', descendantsDef())
-Object.defineProperty(paper.Item.prototype, 'displayName', displayNamePropertyDef())
-Object.defineProperty(paper.Item.prototype, 'fillOpacity', itemFillOpacityPropertyDef())
-Object.defineProperty(paper.Item.prototype, 'strokeOpacity', itemStrokeOpacityPropertyDef())
-Object.defineProperty(paper.Item.prototype, 'rescale', itemRescalePropertyDef())
-Object.defineProperty(paper.Style.prototype, 'fillOpacity', fillOpacityPropertyDef())
-Object.defineProperty(paper.Style.prototype, 'strokeOpacity', strokeOpacityPropertyDef())
-Object.defineProperty(paper.Style.prototype, 'rescale', rescalePropertyDef())
-Object.defineProperty(paper.CompoundPath.prototype, 'descendants', descendantsDefCompoundPath())//this must come after the Item prototype def to override it
-Object.defineProperty(paper.Project.prototype, 'hierarchy', hierarchyDef())
-Object.defineProperty(paper.Project.prototype, 'descendants', descendantsDefProject())
-Object.defineProperty(paper.Project.prototype, 'fillOpacity', itemFillOpacityPropertyDef())
-Object.defineProperty(paper.View.prototype, 'fillOpacity', viewFillOpacityPropertyDef())
-Object.defineProperty(paper.View.prototype, '_fillOpacity',{value: 1, writable: true});//initialize to opaque
-Object.defineProperty(paper.Project.prototype, 'strokeOpacity', itemStrokeOpacityPropertyDef())
-Object.defineProperty(paper.TextItem.prototype, 'content', textItemContentPropertyDef())
+
+Object.defineProperty(paper.Item.prototype, 'displayName', displayNamePropertyDef());
+Object.defineProperty(paper.TextItem.prototype, 'content', textItemContentPropertyDef());
+Object.defineProperty(paper.Project.prototype, 'descendants', descendantsDefProject());
 
 //extend remove function to emit events for GeoJSON type annotation objects
 let origRemove=paper.Item.prototype.remove;
@@ -47,22 +72,16 @@ paper.Item.prototype.remove=function(){
 paper.Group.prototype.insertChildren=getInsertChildrenDef();
 paper.Color.prototype.toJSON = paper.Color.prototype.toCSS;//for saving/restoring colors as JSON
 paper.Style.prototype.toJSON = styleToJSON;
-paper.Style.prototype.set= styleSet;
 paper.View.prototype.getImageData = paperViewGetImageData;
-paper.View.prototype._multiplyOpacity = true;
 paper.PathItem.prototype.toCompoundPath = toCompoundPath;
 paper.PathItem.prototype.applyBounds = applyBounds;
 paper.Item.prototype.select = paperItemSelect;
 paper.Item.prototype.deselect = paperItemDeselect;
 paper.Item.prototype.toggle = paperItemToggle;
-paper.Item.prototype.updateFillOpacity = updateFillOpacity;
-paper.Item.prototype.updateStrokeOpacity = updateStrokeOpacity;
-paper.Project.prototype.updateFillOpacity = updateFillOpacity;
 //to do: should these all be installed on project instead of scope?
 paper.PaperScope.prototype.findSelectedNewItem = findSelectedNewItem;
 paper.PaperScope.prototype.findSelectedItems = findSelectedItems;
 paper.PaperScope.prototype.findSelectedItem = findSelectedItem;
-paper.PaperScope.prototype.createFeatureCollectionLayer = createFeatureCollectionLayer;
 paper.PaperScope.prototype.scaleByCurrentZoom = function (v) { return v / this.view.getZoom(); };
 paper.PaperScope.prototype.getActiveTool = function(){ return this.tool ? this.tool._toolObject : null; }        
 
@@ -81,15 +100,24 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
      * @constructor
      * @param {OpenSeadragon.Viewer} openSeadragonViewer - The OpenSeadragon viewer object.
      * @param {object} [opts]
-     * @param {OpenSeadragon.TiledImage} [opts.tiledImage] - The TiledImage to attach the overlay to
+     * @param {object} [opts.addUI] a configuration object for the UI, if desired
+     * @param {object} [opts.overlay] a PaperOverlay object to use
      */
-    constructor(openSeadragonViewer, opts) {
+    constructor(openSeadragonViewer, opts = {}) {
         super();
+
         
         if(!opts){
             opts = {};
         }
 
+        this._defaultOptions = {
+            addUI: false,
+            overlay: null,
+            // initializeFeatureCollections:true,
+        }
+        this.options = Object.assign({}, this._defaultOptions, opts);
+        
         this._defaultStyle = {
             fillColor: new paper.Color('white'),
             strokeColor: new paper.Color('black'),
@@ -104,19 +132,28 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
 
         this.viewer.addOnceHandler('close', ()=>this.destroy()); //TO DO: make this an option, not a hard-coded default
 
-        let overlayOptions = {
-            tiledImage: opts.tiledImage,
-            type: 'image',
+        if(this.options.overlay){
+            if(this.options.overlay instanceof PaperOverlay){
+                this.overlay = this.options.overlay;
+            }
+        } else {
+            this.overlay = new PaperOverlay(this.viewer, {type: 'image'});
         }
-        this.overlay = new PaperOverlay(this.viewer, overlayOptions);
-
-        this.overlay.paperScope.project.defaultStyle = new paper.Style();
-        this.overlay.paperScope.project.defaultStyle.set(this.defaultStyle);
-        this.overlay.autoRescaleItems(true);
+        
+        
+        this.paperScope.project.defaultStyle = new paper.Style();
+        this.paperScope.project.defaultStyle.set(this.defaultStyle);
 
         
-        this.viewer.annotationToolkit = this;
 
+        this.overlay.autoRescaleItems(true);
+
+        //bind a reference to this to the viewer and the paperScope, for convenient access
+        this.viewer.annotationToolkit = this;
+        this.paperScope.annotationToolkit = this;
+
+
+        //register item constructors
         AnnotationItemFactory.register(MultiPolygon);
         AnnotationItemFactory.register(Placeholder);
         AnnotationItemFactory.register(Linestring);
@@ -130,13 +167,18 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
         paper.Item.fromGeoJSON = AnnotationItemFactory.itemFromGeoJSON;
         paper.Item.fromAnnotationItem = AnnotationItemFactory.itemFromAnnotationItem;
 
-        if(opts.addUI){
+
+        //handle options
+        if(this.options.addUI){
             let uiOpts = {}
             if(typeof opts.addUI === 'object'){
-                uiOpts = opts.addUI;
+                uiOpts = this.options.addUI;
             }
             this.addAnnotationUI(uiOpts)
         }
+
+
+
     }
 
     /**
@@ -183,7 +225,7 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
      */
     destroy() {
         this.raiseEvent('before-destroy');
-        let tool=this.overlay.paperScope && this.overlay.paperScope.getActiveTool();
+        let tool=this.paperScope && this.paperScope.getActiveTool();
         if(tool) tool.deactivate(true);
 
         this.viewer.annotationToolkit = null;
@@ -196,7 +238,7 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
      */
     close() {
         this.raiseEvent('before-close');
-        let tool=this.overlay.paperScope && this.overlay.paperScope.getActiveTool();
+        let tool=this.paperScope && this.paperScope.getActiveTool();
         if(tool) tool.deactivate(true);
 
         this.addFeatureCollections([],true);
@@ -206,53 +248,64 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
      * @param {boolean} [show=false] - Whether to show or hide the toolkit.
      */
     setGlobalVisibility(show = false){
-        this.overlay.paperScope.view._element.setAttribute('style', 'visibility:' + (show ? 'visible;' : 'hidden;'));
+        this.paperScope.view._element.setAttribute('style', 'visibility:' + (show ? 'visible;' : 'hidden;'));
     }
     /**
      * Add feature collections to the toolkit from GeoJSON objects.
      * @param {object[]} featureCollections - The array of GeoJSON objects representing feature collections.
      * @param {boolean} replaceCurrent - Whether to replace the current feature collections or not.
+     * @param {OpenSeadragon.TiledImage || OpenSeadragon.Viewport || false} [parentImage] - which image to add the feature collections to
      */
-    addFeatureCollections(featureCollections,replaceCurrent){
-        this.loadGeoJSON(featureCollections,replaceCurrent);
+    addFeatureCollections(featureCollections,replaceCurrent, parentImage){
+        this.loadGeoJSON(featureCollections,replaceCurrent, parentImage);
         this.overlay.rescaleItems();
-        this.overlay.paperScope.project.emit('items-changed');
+        this.paperScope.project.emit('items-changed');
     }
     /**
      * Get the feature collection layers in the toolkit.
-     * @returns {paper.Layer[]} The array of paper layer objects representing feature collections.
+     * @returns {paper.Group[]} The array of paper groups representing feature collections.
      */
-    getFeatureCollectionLayers(){
-        return this.overlay.paperScope.project.layers.filter(l=>l.isGeoJSONFeatureCollection);
+    getFeatureCollectionGroups(parentLayer){
+        // return this.overlay.paperScope.project.layers.filter(l=>l.isGeoJSONFeatureCollection);
+        return this.paperScope.project.getItems({match: item=>item.isGeoJSONFeatureCollection && (parentLayer ? item.layer === parentLayer : true)});
     }
     /**
      * Get the features in the toolkit.
      * @returns {paper.Item[]} The array of paper item objects representing features.
      */
     getFeatures(){
-        return this.overlay.paperScope.project.getItems({match:i=>i.isGeoJSONFeature});
+        return this.paperScope.project.getItems({match:i=>i.isGeoJSONFeature});
     }
     /**
      * Convert the feature collections in the toolkit to GeoJSON objects.
+     * @param {boolean} [pixelCoordinates] Whether the items should be scaled to the pixel coordinates of the image (true - default) or normalized by tiledImage or viewport width (false)
      * @returns {object[]} The array of GeoJSON objects representing feature collections.
      */
-    toGeoJSON(){
+    toGeoJSON(pixelCoordinates = true){
         //find all featureCollection items and convert to GeoJSON compatible structures
-        return this.overlay.paperScope.project.getItems({match:i=>i.isGeoJSONFeatureCollection}).map(layer=>{
+        return this.paperScope.project.getItems({match:i=>i.isGeoJSONFeatureCollection}).map(grp=>{
+            let scaleFactor;
+            if(pixelCoordinates){
+                scaleFactor = (grp.layer.tiledImage ? grp.layer.tiledImage.source.width : this.viewer.drawer.getCanvasSize().x) / this.overlay.scaleFactor;
+                grp.scale(scaleFactor, {x: 0, y: 0});
+            }
             let geoJSON = {
                 type:'FeatureCollection',
-                features: layer.descendants.filter(d=>d.annotationItem).map(d=>d.annotationItem.toGeoJSONFeature()),
+                features: grp.descendants.filter(d=>d.annotationItem).map(d=>d.annotationItem.toGeoJSONFeature()),
                 properties:{
-                    defaultStyle: layer.defaultStyle.toJSON(),
-                    userdata: layer.userdata,
+                    defaultStyle: grp.defaultStyle.toJSON(),
+                    userdata: grp.userdata,
                 },
-                label:layer.displayName,
+                label:grp.displayName,
+            }
+            if(pixelCoordinates){
+                grp.scale(1/scaleFactor, {x: 0, y: 0});
             }
             return geoJSON;
         })
     }
     /**
-     * Convert the feature collections in the toolkit to a JSON string.
+     * Convert the feature collections in the project to a JSON string.
      * @param {function} [replacer] - The replacer function for JSON.stringify().
      * @param {number|string} [space] - The space argument for JSON.stringify().
      * @returns {string} The JSON string representing the feature collections.
@@ -261,33 +314,84 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
         return JSON.stringify(this.toGeoJSON(),replacer,space);
     }
     /**
-     * Load feature collections from GeoJSON objects and add them to the toolkit.
+     * Load feature collections from GeoJSON objects and add them to the project.
      * @param {object[]} geoJSON - The array of GeoJSON objects representing feature collections.
      * @param {boolean} replaceCurrent - Whether to replace the current feature collections or not.
+     * @param {OpenSeadragon.TiledImage || OpenSeadragon.Viewport || false} [parentImage] - Which image (or viewport) to add the object to
+     * @param {boolean} [pixelCoordinates]
      */
-    loadGeoJSON(geoJSON, replaceCurrent){
+    loadGeoJSON(geoJSON, replaceCurrent, parentImage, pixelCoordinates = true){
+        let parentLayer = parentImage ? parentImage.paperLayer : false;
         if(replaceCurrent){
-            this.overlay.paperScope.project.getItems({match:i=>i.isGeoJSONFeatureCollection}).forEach(layer=>layer.remove());
+            this.getFeatureCollectionGroups(parentImage).forEach(grp=>grp.remove());
         }
         if(!Array.isArray(geoJSON)){
             geoJSON = [geoJSON];
         }
+        
         geoJSON.forEach(obj=>{
             if(obj.type=='FeatureCollection'){
-                let layer = this.overlay.paperScope.createFeatureCollectionLayer(obj.label);
+                let group = this._createFeatureCollectionGroup({label: obj.label, parent: parentLayer});
                 let props = (obj.properties || {});
-                layer.userdata = Object.assign({},props.userdata);
-                layer.defaultStyle.set(props.defaultStyle);
+                group.userdata = Object.assign({},props.userdata);
+                group.defaultStyle.set(props.defaultStyle);
                 obj.features.forEach(feature=>{
                     let item = paper.Item.fromGeoJSON(feature);
-                    layer.addChild(item);
+                    group.addChild(item);
                 })
+                if(pixelCoordinates){
+                    group.scale(this.overlay.scaleFactor/group.layer.tiledImage.source.width, {x: 0, y: 0});
+                    // group.scale(this.overlay.scaleFactor/group.layer.tiledImage.source.width);
+                }
             }
             else{
                 console.warn('GeoJSON object not loaded: wrong type. Only FeatureCollection objects are currently supported');
             }
         })
     }
+
+    /**
+     * Create a new feature collection group in the project scope.
+     * @private
+     * @param {Object} [opts] - Object with fields label and parent
+     * @returns {paper.Group} The paper group object representing the feature collection.
+     */
+    _createFeatureCollectionGroup(opts = {}) {
+        let defaultOpts = {
+            label:null,
+            parent:null
+        }
+        opts = Object.assign({}, defaultOpts, opts);
+
+        let displayLabel = opts.label;
+        
+        let parent = opts.parent;
+        if(!parent){
+            let numItems = this.viewer.world.getItemCount();
+            if( numItems == 1){
+                parent = this.viewer.world.getItemAt(0).paperLayer;
+            } else if (numItems == 0){
+                parent = this.viewer.viewport.paperLayer;
+            } else {
+                console.warn('Use of AnnotationToolkit with multi-image is not yet fully supported. All annotations will be added to the top-level tiled image.');
+                parent = this.viewer.world.getItemAt(numItems - 1).paperLayer;
+            }
+        }
+        if(!parent){
+            console.error('Failed to create feature collection group: no parent could be found');
+            return;
+        }
+
+        let grp = new paper.Group();
+        parent.addChild(grp);
+        grp.isGeoJSONFeatureCollection = true;
+        let grpNum = this.getFeatureCollectionGroups().length;
+        grp.name = grp.displayName = displayLabel!==null ? displayLabel : `Annotation Group ${grpNum}`;
+        grp.defaultStyle = new paper.Style(this.paperScope.project.defaultStyle);
+        this.paperScope.project.emit('feature-collection-added',{group:grp});
+        return grp;
+    }
+
     
 };
 
@@ -401,188 +505,8 @@ function findSelectedItems() {
 function findSelectedItem() {
     return this.findSelectedItems()[0];
 }
-/**
- * Create a new feature collection layer in the project scope.
- * @private
- * @param {string} [displayLabel=null] - The display label for the feature collection layer.
- * @returns {paper.Layer} The paper layer object representing the feature collection.
- */
-function createFeatureCollectionLayer(displayLabel=null) {
-    let layer = new paper.Layer();
-    this.project.addLayer(layer);
-    layer.isGeoJSONFeatureCollection = true;
-    let layerNum = this.project.layers.filter(l=>l.isGeoJSONFeatureCollection).length;
-    layer.name = layer.displayName = displayLabel!==null ? displayLabel : `Annotation Layer ${layerNum}`;
-    layer.defaultStyle = new paper.Style(this.project.defaultStyle);
-    this.project.emit('feature-collection-added',{layer:layer});
-    return layer;
-}
 
-/**
- * @private
- * Update the fill opacity of a paper item and its descendants.
- */
 
-function updateFillOpacity(){
-    this._computedFillOpacity = this.hierarchy.filter(item=>'fillOpacity' in item && (item._multiplyOpacity||item==this)).reduce((prod,item)=>prod*item.fillOpacity,1);
-    if(this.fillColor){
-        this.fillColor.alpha = this._computedFillOpacity;
-    }
-}
-/**
- * @private
- * Update the stroke opacity of a paper item and its descendants.
- */
-function updateStrokeOpacity(){
-    if(this.strokeColor){
-        this.strokeColor.alpha = this.hierarchy.filter(item=>'strokeOpacity' in item && (item._multiplyOpacity||item==this)).reduce((prod,item)=>prod*item.strokeOpacity,1);
-    }
-}
-/**
- * Define the fill opacity property for a paper style object.
- * The fill opacity property controls the opacity of the fill color in a style object.
- * @private
- * @returns {object} The property descriptor object.
- * @property {function} set - The setter function for the fill opacity property.
- *   @param {number} o - The fill opacity value. Should be a number between 0 and 1.
- * @property {function} get - The getter function for the fill opacity property.
- *   @returns {number} The fill opacity value. If not set, returns 1 (fully opaque).
- */
-function fillOpacityPropertyDef(){
-    return {
-        set: function opacity(o){
-            this._fillOpacity = this._values.fillOpacity = o;
-        },
-        get: function opacity(){
-            return typeof this._fillOpacity === 'undefined' ? 1 : this._fillOpacity;
-        }
-    }
-}
-/**
- * Define the stroke opacity property for a paper style object.
- * The stroke opacity property controls the opacity of the stroke color in a style object.
- * @private
- * @returns {object} The property descriptor object.
- * @property {function} set - The setter function for the stroke opacity property.
- *   @param {number} o - The stroke opacity value. Should be a number between 0 and 1.
- * @property {function} get - The getter function for the stroke opacity property.
- *   @returns {number} The stroke opacity value. If not set, returns 1 (fully opaque).
- */
-function strokeOpacityPropertyDef(){
-    return {
-        set: function opacity(o){
-            this._strokeOpacity = this._values.strokeOpacity = o;
-        },
-        get: function opacity(){
-            return typeof this._strokeOpacity === 'undefined' ? 1 : this._strokeOpacity;
-        }
-    }
-}
-/**
- * Define the fill opacity property for a paper item object.
- * The fill opacity property defines the opacity of the fill color used in a paper item object's style.
- * @private
- * @returns {object} The property descriptor object.
- * @property {function} set - The setter function for the fill opacity property.
- *   @param {number} opacity - The opacity value for the fill color.
- * @property {function} get - The getter function for the fill opacity property.
- *   @returns {number} The opacity value of the fill color.
- */
-function itemFillOpacityPropertyDef(){
-    return {
-        set: function opacity(o){
-            (this.style || this.defaultStyle).fillOpacity = o;
-            this.descendants.forEach(item=>item.updateFillOpacity())
-        },
-        get: function opacity(){
-            return (this.style || this.defaultStyle).fillOpacity;
-        }
-    }
-}
-/**
- * Define the fill opacity property for a paper view object.
- * The fill opacity property defines the opacity of the fill color used in a paper view object's style.
- * @private
- * @returns {object} The property descriptor object.
- * @property {function} set - The setter function for the fill opacity property.
- *   @param {number} opacity - The opacity value for the fill color.
- * @property {function} get - The getter function for the fill opacity property.
- *   @returns {number} The opacity value of the fill color.
- */
-function viewFillOpacityPropertyDef(){
-    return {
-        set: function opacity(o){
-            this._fillOpacity = o;
-            this._project.descendants.forEach(item=>item.updateFillOpacity())
-        },
-        get: function opacity(){
-            return this._fillOpacity;
-        },
-    }
-}
-
-/**
- * Define the stroke opacity property for a paper item object.
- * The stroke opacity property defines the opacity of the stroke color used in a paper item object's style.
- * @private
- * @returns {object} The property descriptor object.
- * @property {function} set - The setter function for the stroke opacity property.
- *   @param {number} opacity - The opacity value for the stroke color.
- * @property {function} get - The getter function for the stroke opacity property.
- *   @returns {number} The opacity value of the stroke color.
- */
-function itemStrokeOpacityPropertyDef(){
-    return {
-        set: function opacity(o){
-            this._strokeOpacity = o;
-            this.descendants.forEach(item=>item.updateStrokeOpacity())
-        },
-        get: function opacity(){
-            return typeof this._strokeOpacity === 'undefined' ? 1 : this._strokeOpacity;
-        }
-    }
-}
-/**
- * Define the rescale property for a paper style object.
- * The rescale property defines the scaling factor applied to a paper style object.
- * @private
- * @returns {object} The property descriptor object.
- * @property {function} set - The setter function for the rescale property.
- *   @param {number} rescale - The scaling factor value.
- * @property {function} get - The getter function for the rescale property.
- *   @returns {number} The scaling factor value.
- */
-function rescalePropertyDef(){
-    return {
-        set: function rescale(o){
-            this._rescale = this._values.rescale = o;
-        },
-        get: function rescale(){
-            return this._rescale;
-        }
-    }
-}
-
-/**
- * Define the rescale property for a paper item object.
- * The rescale property defines the scaling factor applied to a paper item object's style.
- * @private
- * @returns {object} The property descriptor object.
- * @property {function} set - The setter function for the rescale property.
- *   @param {number} rescale - The scaling factor value.
- * @property {function} get - The getter function for the rescale property.
- *   @returns {number} The scaling factor value.
- */
-function itemRescalePropertyDef(){
-    return {
-        set: function rescale(o){
-            this._style.rescale = o;
-        },
-        get: function rescale(){
-            return this._style.rescale;
-        }
-    }
-}
 
 /**
  * Define the display name property for a paper item object.
@@ -613,51 +537,7 @@ function displayNamePropertyDef(){
     }
 }
 
-/**
- * Define the hierarchy property for a paper item or project object.
- * The hierarchy property represents the parent-child relationship of paper item or project objects.
- * @private
- * @returns {object} The property descriptor object.
- * @property {function} get - The getter function for the hierarchy property.
- *   @returns {paper.Item[]} The array of paper item objects representing the hierarchy.
- */
-function hierarchyDef(){
-    return {
-        get: function hierarchy(){
-            return this.parent ? this.parent.hierarchy.concat(this) : this.project ? this.project.hierarchy.concat(this) : [this.view, this];
-        }
-    }
-}
-/**
- * Define the descendants property for a paper item or project object.
- * The descendants property represents all the descendants (children and their children) of a paper item or project object.
- * @private
- * @returns {object} The property descriptor object.
- * @property {function} get - The getter function for the descendants property.
- *   @returns {paper.Item[]} The array of paper item objects representing the descendants.
- */
-function descendantsDef(){
-    return {
-        get: function descendants(){
-            return (this.children ? this.children.map(child=>child.descendants).flat() : []).concat(this.isGeoJSONFeature ? [this] : []);
-        }
-    }
-}
-/**
- * Define the descendants property for a paper compound path object.
- * The descendants property represents the compound path object itself as its only descendant.
- * @private
- * @returns {object} The property descriptor object.
- * @property {function} get - The getter function for the descendants property.
- *   @returns {paper.Item[]} The array containing only the compound path object.
- */
-function descendantsDefCompoundPath(){
-    return {
-        get: function descendants(){
-            return [this];
-        }
-    }
-}
+
 /**
  * Define the descendants property for a paper project object.
  * The descendants property represents all the descendants (layers and their children) of a paper project object.
@@ -669,31 +549,12 @@ function descendantsDefCompoundPath(){
 function descendantsDefProject(){
     return {
         get: function descendants(){
-            return this.layers ? this.layers.filter(layer=>layer.isGeoJSONFeatureCollection).map(child=>child.descendants).flat() : [this];
+            // return this.layers ? this.layers.filter(layer=>layer.isGeoJSONFeatureCollection).map(child=>child.descendants).flat() : [this];
+            return this.layers ? this.getItems({match: item=>item.isGeoJSONFeatureCollection}).map(child=>child.descendants).flat() : [this];
         }
     }
 }
-/**
- * Define the set method for a paper style object.
- * @private
- * @param {object|paper.Style} style - The style object to set.
- */
-function styleSet(style){
 
-    var isStyle = style instanceof paper.Style,
-        values = isStyle ? style._values : style;
-    if (values) {
-        for (var key in values) {
-            // console.log('setting',key)
-            if (key in this._defaults || paper.Style.prototype.hasOwnProperty(key)) {
-                var value = values[key];
-                this[key] = value && isStyle && value.clone
-                        ? value.clone() : value ;
-            }
-        }
-    }
-	
-}
 /**
  * Convert a paper style object to a JSON object.
  * @private

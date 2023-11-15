@@ -12,14 +12,14 @@ class FeatureCollectionUI{
      * Create a new FeatureCollectionUI instance.
      * 
      * @constructor
-     * @property {string} displayName - The display name of the layer.
+     * @property {string} displayName - The display name of the group.
      * @property {paper.Item} paperItem - The paper item object.
      * @property {string} guiSelector - The selector for the GUI element.
      * @property {jQuery} element - The jQuery object representing the HTML element of the feature collection UI.
      * @param {paper.Layer} layer - The paper layer object.
      * @param {object} init - The initialization options.
      */
-    constructor(layer,init){
+    constructor(group,init){
         let self=this;
         // this.toolbar = init.toolbar;
         this.element = makeFeatureCollectionElement();
@@ -35,12 +35,12 @@ class FeatureCollectionUI{
             connectWith:`${init.guiSelector} .features-list`,
             update:function(){
                 self._featurelist.children().each(function(idx,c){
-                    self.layer.addChild($(c).data('feature').paperItem);
+                    self.group.addChild($(c).data('feature').paperItem);
                 })
             },
         });
-        this.layer = layer;
-        this.layer.on({
+        this.group = group;
+        this.group.on({
             'selection:mouseenter':function(){self.element.addClass('svg-hovered').trigger('mouseover')},
             'selection:mouseleave':function(){self.element.removeClass('svg-hovered').trigger('mouseout')},
             'selected':function(){self.element.addClass('selected').trigger('selected')},
@@ -57,8 +57,8 @@ class FeatureCollectionUI{
             }
         });
 
-        // expose this object as a property of the paper.js layer
-        this.layer.featureCollectionUI = this;
+        // expose this object as a property of the paper.js group
+        this.group.featureCollectionUI = this;
 
         /**
          * Get the features in the feature collection.
@@ -96,25 +96,25 @@ class FeatureCollectionUI{
             return f.element; 
         }
         /**
-         * Create a new feature and add it to the paper layer using the default style properties of the layer.
+         * Create a new feature and add it to the paper group using the default style properties of the group.
          * This function also creates a geoJSON object for the feature and converts it to a paper item.
          * @member
-        * @property {paper.Color} fillColor - The fill color of the layer.
-        * @property {paper.Color} strokeColor - The stroke color of the layer.
-        * @property {Object} rescale - The rescale properties of the layer.
-        * @property {number} fillOpacity - The fill opacity of the layer.
-        * @property {number} strokeOpacity - The stroke opacity of the layer.
-        * @property {number} strokeWidth - The stroke width of the layer.
+        * @property {paper.Color} fillColor - The fill color of the group.
+        * @property {paper.Color} strokeColor - The stroke color of the group.
+        * @property {Object} rescale - The rescale properties of the group.
+        * @property {number} fillOpacity - The fill opacity of the group.
+        * @property {number} strokeOpacity - The stroke opacity of the group.
+        * @property {number} strokeWidth - The stroke width of the group.
         * 
         * @property {string} type - The type of the feature (e.g., "Feature").
         * @property {Object} geometry - The geometry object.
         * @property {Object} properties - The properties object containing style information. 
         * 
-        * @returns {paper.Item} The paper item object of the new feature that was added to the layer.
+        * @returns {paper.Item} The paper item object of the new feature that was added to the group.
          */
         this.createFeature=function(){
             //define a new feature
-            let props = this.layer.defaultStyle;
+            let props = this.group.defaultStyle;
             let clonedProperties = {
                 fillColor:new paper.Color(props.fillColor),
                 strokeColor:new paper.Color(props.strokeColor),
@@ -130,7 +130,7 @@ class FeatureCollectionUI{
                 properties:style,
             }
             let placeholder = paper.Item.fromGeoJSON(geoJSON);
-            this.layer.addChild(placeholder);
+            this.group.addChild(placeholder);
             return placeholder;
         }
 
@@ -139,16 +139,16 @@ class FeatureCollectionUI{
             setFillOpacity:setFillOpacity,
         }
         function setOpacity(o){
-            self.layer.opacity = o;
+            self.group.opacity = o;
         }
         function setFillOpacity(o){
-            self.layer.fillOpacity = o;
+            self.group.fillOpacity = o;
         }
         
         
         self.element.data({featureCollection:self});//bind reference to self to the element, for use with rearranging/sorting layers
 
-        self.label = this.layer.displayName;
+        self.label = this.group.displayName;
 
         if(!self._featurelist.sortable('option','disabled') == false){
             self._featurelist.sortable('refresh');
@@ -191,7 +191,7 @@ class FeatureCollectionUI{
         return this;
     }
     get label(){
-        return this.layer.displayName;
+        return this.group.displayName;
     }
     set label(l){
         return this.setLabel(l)
@@ -205,7 +205,7 @@ class FeatureCollectionUI{
     setLabel(text,source){
         let l = new String(text);
         l.source=source;
-        this.layer.displayName = l;
+        this.group.displayName = l;
         this.updateLabel();
         return l;
     }
@@ -216,11 +216,11 @@ class FeatureCollectionUI{
         this._editableName.setText(this.label);
     }
     /**
-     * Toggle the visibility of the feature collection UI element and the paper layer.
+     * Toggle the visibility of the feature collection UI element and the paper group.
      */
     toggleVisibility(){
         this.element.toggleClass('annotation-hidden');
-        this.layer.visible = !this.element.hasClass('annotation-hidden');
+        this.group.visible = !this.element.hasClass('annotation-hidden');
     }
     /**
      * Remove the paper layer associated with the feature collection.
@@ -228,7 +228,7 @@ class FeatureCollectionUI{
      */
     removeLayer(confirm = true){
         if(confirm && window.confirm('Remove this layer?')==true){
-            this.layer.remove();
+            this.group.remove();
         } else {
 
         }
@@ -253,7 +253,7 @@ class FeatureCollectionUI{
      * @param {object} ev - The event object.
      */
     openStyleEditor(ev){
-        let heard = this.layer.project.emit('edit-style',{item:this.layer});
+        let heard = this.group.project.emit('edit-style',{item:this.group});
         if(!heard){
             console.warn('No event listeners are registered for paperScope.project for event \'edit-style\'');
         }
