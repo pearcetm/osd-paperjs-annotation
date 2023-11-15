@@ -106,6 +106,11 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
     constructor(openSeadragonViewer, opts = {}) {
         super();
 
+        
+        if(!opts){
+            opts = {};
+        }
+
         this._defaultOptions = {
             addUI: false,
             overlay: null,
