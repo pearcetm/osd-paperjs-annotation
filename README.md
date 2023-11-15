@@ -2,6 +2,28 @@
 
 This project combines the [OpenSeadragon](https://openseadragon.github.io/) zoomable image viewer with [PaperJS](http://paperjs.org/)-based annotations drawn into a synced zoomable overlay.
 
+## Quick start guide:
+
+To get started with a basic overlay, only a couple lines of code are needed.
+
+```
+// import the PaperOverlay object. You need to be using a JavaScript module.
+import { PaperOverlay } from './src/js/paper-overlay.mjs';
+
+// get the first TiledImage. This assumes you have a variable called 'viewer'
+let tiledImage = viewer.world.getItemAt(0);
+
+// add a paper.js item you've previously created to the overlay
+tiledImage.addPaperItem(myPaperItem);
+
+// you can modify the paper.js item using normal paper.js functionality
+myPaperItem.fillColor = 'blue';
+
+// A special `rescale` property can be used to automatically adjust properties during zooming
+myPaperItem.rescale = {strokeWidth: 2}
+
+```
+
 ## API Documentation:
 
 See the [JSDoc documentation pages](https://pearcetm.github.io/osd-paperjs-annotation/docs/OSDPaperjsAnnotation.html) for information about how to use the library.
