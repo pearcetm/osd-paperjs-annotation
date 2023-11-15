@@ -8,12 +8,20 @@ To get started with a basic overlay, only a couple lines of code are needed.
 
 ```
 // import the PaperOverlay object. You need to be using a JavaScript module.
+// if paper.js is not already included, it will be automatically loaded during import
 import { PaperOverlay } from './src/js/paper-overlay.mjs';
 
-// get the first TiledImage. This assumes you have a variable called 'viewer'
+// viewer creation, get reference to a TiledImage
+let viewer = new OpenSeadragon({...});
 let tiledImage = viewer.world.getItemAt(0);
 
-// add a paper.js item you've previously created to the overlay
+// create a paper.js object
+let myPaperItem = new paper.Path(...); // configure your paper item however you want
+
+// add a PaperOverlay to the viewer
+viewer.createPaperOverlay();
+
+// add the paper.js item you've previously created to the overlay
 tiledImage.addPaperItem(myPaperItem);
 
 // you can modify the paper.js item using normal paper.js functionality
