@@ -79,8 +79,8 @@ class WandTool extends AnnotationUITool{
         this.startThreshold=10;
 
         //colorpicker
-        let colorPicker = new ColorpickerCursor(10,7,self.project.toolLayer);
-        colorPicker.element.applyRescale();
+        this.colorPicker = new ColorpickerCursor(10,7,self.project.toolLayer);
+        this.colorPicker.element.applyRescale();
 
 
         this.MagicWand = makeMagicWand();
@@ -99,13 +99,13 @@ class WandTool extends AnnotationUITool{
             self.getImageData();
             self.project.overlay.viewer.addHandler('animation-finish',callback);
             self.project.overlay.viewer.addHandler('rotate',callback);  
-            colorPicker.element.visible=true;
+            self.colorPicker.element.visible=true;
             self.project.toolLayer.bringToFront();
         };
         this.extensions.onDeactivate = function(finished){
             self.project.overlay.viewer.removeHandler('animation-finish',callback);
             self.project.overlay.viewer.removeHandler('rotate',callback);
-            colorPicker.element.visible=false;
+            self.colorPicker.element.visible=false;
             this.preview && this.preview.remove();
             if(finished){
                 self.finish();
@@ -113,33 +113,7 @@ class WandTool extends AnnotationUITool{
             self.project.toolLayer.sendToBack();
         };
         
-        tool.onMouseDown=function(ev){
-            self.startThreshold=self.threshold;
-            self.imageData.dragStartMask = self.imageData.binaryMask;
-            self.applyMagicWand(ev.point);
-            colorPicker.element.visible=false;     
-        }
-        tool.onMouseDrag=function(ev){
-            let delta = ev.point.subtract(ev.downPoint).multiply(self.project.getZoom());
-            if(self.reduceMode) delta = delta.multiply(-1); //invert effect of dragging when in reduce mode for more intuitive user experience
-            let s=Math.round((delta.x+delta.y*-1)/2);
-            self.threshold=Math.min(Math.max(self.startThreshold+s, self.minThreshold), self.maxThreshold);
-            if(Number.isNaN(self.threshold)){
-                // console.log('wft nan??');
-                console.warn('NaN value for threshold')
-            }
-            self.toolbarControl.setThreshold(self.threshold);
-            self.applyMagicWand(ev.downPoint);
-        }
-        tool.onMouseMove=function(ev){
-            colorPicker.updatePosition(ev.point);
-        }
-        tool.onMouseUp=function(ev){
-            colorPicker.element.visible=true;
-            colorPicker.element.bringToFront();
-            // colorPicker.position=ev.point;
-            colorPicker.updatePosition(ev.point);
-        }
+        
         
         tool.extensions.onKeyUp=function(ev){
             // console.log(`Key up on ${ev.key} key`)
@@ -160,6 +134,36 @@ class WandTool extends AnnotationUITool{
             }
         }
     }
+
+    onMouseDown(ev){
+        this.startThreshold=this.threshold;
+        this.imageData.dragStartMask = this.imageData.binaryMask;
+        this.applyMagicWand(ev.original.point);
+        this.colorPicker.element.visible=false;     
+    }
+    onMouseDrag(ev){
+        let delta = ev.point.subtract(ev.downPoint).multiply(this.project.getZoom());
+        if(this.reduceMode) delta = delta.multiply(-1); //invert effect of dragging when in reduce mode for more intuitive user experience
+        let s=Math.round((delta.x+delta.y*-1)/2);
+        this.threshold=Math.min(Math.max(this.startThreshold+s, this.minThreshold), this.maxThreshold);
+        if(Number.isNaN(this.threshold)){
+            // console.log('wft nan??');
+            console.warn('NaN value for threshold')
+        }
+        this.toolbarControl.setThreshold(this.threshold);
+        this.applyMagicWand(ev.original.downPoint);
+    }
+    onMouseMove(ev){
+        this.colorPicker.updatePosition(ev.original.point);
+    }
+    onMouseUp(ev){
+        this.colorPicker.element.visible=true;
+        this.colorPicker.element.bringToFront();
+        // colorPicker.position=ev.point;
+        this.colorPicker.updatePosition(ev.original.point);
+    }
+
+
     /**
      * Finishes the wand tool operation and performs necessary cleanup.
      */
@@ -246,6 +250,8 @@ class WandTool extends AnnotationUITool{
         let success =  newPath !== n1;
         if(success){
             // console.log('Wand tool setting item children')
+            // this.item.layer.matrix.inverseTransform(newPath);
+            newPath.transform(this.item.layer.matrix.inverted());
             this.item.removeChildren();
             this.item.addChildren(newPath.children);
         }
@@ -281,6 +287,7 @@ class WandTool extends AnnotationUITool{
         })
         if(self.item){
             let clone = self.item.clone({insert:false});
+            clone.transform(self.item.layer.matrix);
             clone.fillColor = self.colors.currentItem;
             clone.strokeWidth = 0;
             clone.selected=false;
@@ -290,14 +297,15 @@ class WandTool extends AnnotationUITool{
         viewportGroup.selected=false;
 
         //hide all annotation layers; add the viewportGroup; render; get image data; remove viewportGroup; restore visibility of layers
-        let annotationLayers = self.project.paperScope.project.layers.filter(l=>l.isGeoJSONFeatureCollection);
-        let visibility = annotationLayers.map(l=>l.visible);
-        annotationLayers.forEach(l=>l.visible=false);
+        // let annotationLayers = self.project.paperScope.project.layers.filter(l=>l.isGeoJSONFeatureCollection);
+        let annotations = self.project.paperScope.project.getItems({match: l=>l.isGeoJSONFeatureCollection});
+        let visibility = annotations.map(l=>l.visible);
+        annotations.forEach(l=>l.visible=false);
         self.project.toolLayer.addChild(viewportGroup);
         self.tool.view.update();
         let cm = self.tool.view.getImageData();
         viewportGroup.remove();
-        annotationLayers.forEach((l,index)=>l.visible = visibility[index]);
+        annotations.forEach((l,index)=>l.visible = visibility[index]);
         self.tool.view.update();
         
         self.imageData = {
@@ -395,10 +403,13 @@ class WandTool extends AnnotationUITool{
         }
 
         this.preview && this.preview.remove();
-        
-        this.preview = this.project.paperScope.overlay.getViewportRaster(this.project.paperScope.view, false);
+
+        this.preview = this.project.paperScope.overlay.getViewportRaster(false);
+
+        window.preview = this.preview;
+
         this.project.toolLayer.insertChild(0, this.preview);//add the raster to the bottom of the tool layer
-        console.log('New preview',this.preview.id, this.preview.parent.id);
+        console.log('New preview',this.preview.id, this.preview.parent.id, this.preview.bounds);
         
         let c;
         let imdata=this.preview.createImageData(this.preview.size);

@@ -61,55 +61,7 @@ import './osd-extensions.mjs';
             return this._PaperOverlays || (this._PaperOverlays = []);
         }
     });
-    // /**
-    //  * Gets the image data from the viewer.
-    //  * @memberof OSDPaperjsAnnotation.PaperOverlay#
-    //  * @function getImageData
-    //  * @param {number} x - The x coordinate of the top left corner of the image data.
-    //  * @param {number} y - The y coordinate of the top left corner of the image data.
-    //  * @param {number} w - The width of the image data.
-    //  * @param {number} h - The height of the image data.
-    //  * @returns {ImageData} The image data.
-    //  */
-    // OpenSeadragon.Viewer.prototype.getImageData = function(x, y, w, h){
-    //     x = x || 0;
-    //     y = y || 0;
-    //     w = w == undefined ? this.drawer.canvas.width : w;
-    //     h = h == undefined ? this.drawer.canvas.height : h;
-    //     return this.drawer.canvas.getContext('2d',{willReadFrequently:true}).getImageData(x, y, w, h);
-    // }
-
-    // /**
-    //  * Gets a raster object representing the viewport.
-    //  * @memberof OSDPaperjsAnnotation.PaperOverlay#
-    //  * @function getViewportRaster
-    //  * @param {any} view - The view object.
-    //  * @param {boolean} withImageData - Whether to include image data in the raster object.
-    //  * @returns {any} The raster object.
-    //  */
-    // OpenSeadragon.Viewer.prototype.getViewportRaster = function(view, withImageData = true){
-    //     //TO DO: make this query subregions of the viewport directly instead of always returning the entire thing
-    //     // let view = this.paperjsOverlay && this.paperjsOverlay.paperScope.view;
-    //     // if(!view){
-    //     //     console.error('Cannot call getViewportRaster before an overlay has been created');
-    //     //     return;
-    //     // }
-    //     let center = view.viewToProject(new paper.Point(view.viewSize.width/2, view.viewSize.height/2 ));
-    //     let rotation = -1 * this.viewport.getRotation();
-    //     let rasterDef = {
-    //         insert:false,
-    //     }
-    //     if(withImageData) rasterDef.canvas = this.drawer.canvas;
-    //     else rasterDef.size = new paper.Size(this.drawer.canvas.width,this.drawer.canvas.height);
-    //     let raster = new paper.Raster(rasterDef);
-
-    //     raster.position = center;
-    //     raster.rotate(rotation);
-    //     let scaleFactor = view.viewSize.width / view.getZoom() / this.drawer.canvas.width;
-    //     raster.scale(scaleFactor);
-       
-    //     return raster;
-    // }
+    
     /**
      * Sets the rotation of the view.
      * @function setRotation
@@ -516,7 +468,6 @@ class PaperOverlay{
      * Gets a raster object representing the viewport.
      * @memberof OSDPaperjsAnnotation.PaperOverlay#
      * @function getViewportRaster
-     * @param {any} view - The view object.
      * @param {boolean} withImageData - Whether to include image data in the raster object.
      * @returns {any} The raster object.
      */

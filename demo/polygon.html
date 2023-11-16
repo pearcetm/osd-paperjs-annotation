@@ -9,7 +9,7 @@
         import { AnnotationToolbar } from '../src/js/annotationtoolbar.mjs';
         import{ AnnotationToolkit } from '../src/js/annotationtoolkit.mjs';
         // Basic viewer setup
-        let viewer = OpenSeadragon({
+        let viewer = window.viewer = OpenSeadragon({
             element: 'brush-viewer',
             prefixUrl: "https://openseadragon.github.io/openseadragon/images/",
             tileSources: [
