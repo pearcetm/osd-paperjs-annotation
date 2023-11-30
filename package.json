@@ -1,7 +1,7 @@
 {
   "name": "osd-paperjs-annotation",
-  "description": "",
-  "version": "0.1.0",
+  "description": "Annotation tools for OpenSeadragon using PaperJS",
+  "version": "0.2.0",
   "dependencies": {
     "jsdoc": "4.0.0"
   },
@@ -19,6 +19,7 @@
   "bugs": {
     "url": "https://github.com/pearcetm/osd-paperjs-annotation/issues"
   },
+  "main": "src/js/osdpaperjsannotation.mjs",
   "homepage": "https://github.com/pearcetm/osd-paperjs-annotation",
   "devDependencies": {
     "webpack-stream": "^7.0.0"
