@@ -56,7 +56,14 @@ OpenSeadragon.Viewer.prototype.addPaperItem = addPaperItem;
 OpenSeadragon.Viewport.prototype.addPaperItem = addPaperItem;
 OpenSeadragon.TiledImage.prototype.addPaperItem = addPaperItem;
 
-OpenSeadragon.Viewer.prototype.createPaperOverlay = function(){ new PaperOverlay(this, ...arguments) };
+/**
+ * Creates a PaperOverlay for this viewer. See {@link PaperOverlay} for options.
+ * @returns {PaperOverlay} The overlay that was created
+ */
+OpenSeadragon.Viewer.prototype.createPaperOverlay = function(){ 
+    let overlay = new PaperOverlay(this, ...arguments);
+    return overlay;
+};
 
 /**
  * Define the paperItems property for a tiledImage.
