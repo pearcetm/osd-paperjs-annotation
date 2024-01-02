@@ -1,7 +1,6 @@
 //requires jquery, jqueryui
 //styles in annotationui.css
-import 'https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js';
-import 'https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js';
+
 import { addCSS } from './addcss.mjs';
 import { AnnotationToolbar } from './annotationtoolbar.mjs';
 import { LayerUI } from './layerui.mjs';
@@ -9,9 +8,9 @@ import { FileDialog } from './filedialog.mjs';
 
 addCSS('https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.css', 'jquery-ui');
 addCSS('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css', 'font-awesome/6.1.1/css/all');
-addCSS(`${import.meta.url.match(/(.*?)js\/[^\/]*$/)[1]}css/annotationui.css`, 'annotationui');
-addCSS(`${import.meta.url.match(/(.*?)js\/[^\/]*$/)[1]}css/osd-button.css`, 'osd-button');
-addCSS(`${import.meta.url.match(/(.*?)js\/[^\/]*$/)[1]}css/editablecontent.css`, 'editablecontent');
+addCSS('annotationui.css', 'annotationui');
+addCSS('osd-button.css', 'osd-button');
+addCSS('editablecontent.css', 'editablecontent');
 
 /**
  * @memberof OSDPaperjsAnnotation

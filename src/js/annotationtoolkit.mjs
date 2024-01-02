@@ -36,6 +36,8 @@
  * 
  */
 
+
+import { OpenSeadragon } from './osd-loader.mjs';
 import { paper } from './paperjs.mjs';
 import { AnnotationUI } from './annotationui.mjs';
 import { PaperOverlay } from './paper-overlay.mjs';
@@ -85,8 +87,6 @@ paper.PaperScope.prototype.findSelectedItem = findSelectedItem;
 paper.PaperScope.prototype.scaleByCurrentZoom = function (v) { return v / this.view.getZoom(); };
 paper.PaperScope.prototype.getActiveTool = function(){ return this.tool ? this.tool._toolObject : null; }        
 
-
- 
 
 /**
  * A class for creating and managing annotation tools on an OpenSeadragon viewer.

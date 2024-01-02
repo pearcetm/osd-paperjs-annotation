@@ -1,4 +1,6 @@
 import {EditableContent} from './utils/editablecontent.mjs';
+import { OpenSeadragon } from './osd-loader.mjs';
+
 /**
  * A user interface for managing features.
  * @class

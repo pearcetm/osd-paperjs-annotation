@@ -1,3 +1,5 @@
+import { OpenSeadragon } from '../osd-loader.mjs';
+
 
 /**
  * Represents an annotation item that can be used in a map.

@@ -61,3 +61,35 @@ export const OSDPaperjsAnnotation = {
     WandTool:WandTool
 
 }
+
+
+// export various classes and functions so they can be imported by name
+export {
+    AnnotationToolkit,
+    AnnotationToolbar,
+    addCSS,
+    FeatureCollectionUI,
+    FeatureUI,
+    FileDialog,
+    LayerUI,
+    PaperOffset,
+    PaperOverlay,
+    RotationControlOverlay,
+    RotationControlTool,
+    AnnotationUITool,
+    ToolBase,
+    BrushTool,
+    DefaultTool,
+    EllipseTool,
+    LinestringTool,
+    PointTool,
+    PointTextTool,
+    PolygonTool,
+    RasterTool,
+    RectangleTool,
+    SelectTool,
+    StyleTool,
+    TransformTool,
+    WandTool
+
+}

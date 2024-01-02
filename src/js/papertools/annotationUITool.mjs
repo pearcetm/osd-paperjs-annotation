@@ -1,4 +1,5 @@
 import {ToolBase} from './base.mjs';
+import { OpenSeadragon } from '../osd-loader.mjs';
 
 /**
  * Base class for annotation tools, extending the ToolBase class.

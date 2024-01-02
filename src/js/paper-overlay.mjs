@@ -36,6 +36,7 @@
  * 
  */
 
+import { OpenSeadragon } from './osd-loader.mjs';
 import { paper } from './paperjs.mjs';
 import { addCSS } from './addcss.mjs';
 import './paper-extensions.mjs';
@@ -78,7 +79,7 @@ import './osd-extensions.mjs';
 
     
 
-})(window.OpenSeadragon);
+})(OpenSeadragon);
 
 /********************************************************************************************** */
 
@@ -237,7 +238,7 @@ class PaperOverlay{
    */
     addViewerButton(params={}){
         addCSS('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css','font-awesome/6.1.1/css/all');
-        addCSS(`${import.meta.url.match(/(.*?)js\/[^\/]*$/)[1]}css/osd-button.css`,'osd-button');
+        addCSS('osd-button.css','osd-button');
         const prefixUrl=this.viewer.prefixUrl;
         let button = new OpenSeadragon.Button({
             tooltip: params.tooltip,

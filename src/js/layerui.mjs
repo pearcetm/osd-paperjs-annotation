@@ -1,3 +1,5 @@
+
+import { OpenSeadragon } from './osd-loader.mjs';
 import { FeatureCollectionUI } from './featurecollectionui.mjs';
 
 /**

@@ -1,4 +1,5 @@
 import { AnnotationItem } from "./annotationitem.mjs";
+import { OpenSeadragon } from '../osd-loader.mjs';
 
 /**
  * Represents a point annotation item.

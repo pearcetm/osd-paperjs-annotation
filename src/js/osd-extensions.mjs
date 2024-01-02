@@ -36,10 +36,9 @@
  * 
  */
 
-// Depends on OpenSeadragon global variable
-
 import { PaperOverlay } from "./paper-overlay.mjs";
-
+import { OpenSeadragon } from "./osd-loader.mjs";
+import { paper } from './paperjs.mjs';
 
 Object.defineProperty(OpenSeadragon.Viewer.prototype, 'paperLayer', paperLayerDef());
 Object.defineProperty(OpenSeadragon.TiledImage.prototype, 'paperLayer', paperLayerDef());
