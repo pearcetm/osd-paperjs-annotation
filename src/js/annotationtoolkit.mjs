@@ -1,6 +1,6 @@
 /**
  * OpenSeadragon annotation plugin based on paper.js
- * @version 0.1.2
+ * @version 0.3.0
  * 
  * Includes additional open source libraries which are subject to copyright notices
  * as indicated accompanying those segments of code.
@@ -52,9 +52,6 @@ import { PointText } from './paperitems/pointtext.mjs';
 import { Rectangle } from './paperitems/rectangle.mjs';
 import { Ellipse } from './paperitems/ellipse.mjs';
 
-//to do:
-// - Add configuration options (as a class, modeled after OpenSeadragon??)
-// --- Document configuration options. JSDocs?
 
 //extend paper prototypes to add functionality
 //property definitions
@@ -254,7 +251,7 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
      * Add feature collections to the toolkit from GeoJSON objects.
      * @param {object[]} featureCollections - The array of GeoJSON objects representing feature collections.
      * @param {boolean} replaceCurrent - Whether to replace the current feature collections or not.
-     * @param {OpenSeadragon.TiledImage || OpenSeadragon.Viewport || false} [parentImage] - which image to add the feature collections to
+     * @param {OpenSeadragon.TiledImage | OpenSeadragon.Viewport | false} [parentImage] - which image to add the feature collections to
      */
     addFeatureCollections(featureCollections,replaceCurrent, parentImage){
         this.loadGeoJSON(featureCollections,replaceCurrent, parentImage);
@@ -317,7 +314,7 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
      * Load feature collections from GeoJSON objects and add them to the project.
      * @param {object[]} geoJSON - The array of GeoJSON objects representing feature collections.
      * @param {boolean} replaceCurrent - Whether to replace the current feature collections or not.
-     * @param {OpenSeadragon.TiledImage || OpenSeadragon.Viewport || false} [parentImage] - Which image (or viewport) to add the object to
+     * @param {OpenSeadragon.TiledImage | OpenSeadragon.Viewport | false} [parentImage] - Which image (or viewport) to add the object to
      * @param {boolean} [pixelCoordinates]
      */
     loadGeoJSON(geoJSON, replaceCurrent, parentImage, pixelCoordinates = true){

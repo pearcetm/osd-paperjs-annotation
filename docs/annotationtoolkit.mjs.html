@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: annotationtoolkit.mjs</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: annotationtoolkit.mjs</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * OpenSeadragon annotation plugin based on paper.js
+ * @version 0.3.0
+ * 
+ * Includes additional open source libraries which are subject to copyright notices
+ * as indicated accompanying those segments of code.
+ * 
+ * Original code:
+ * Copyright (c) 2022-2023, Thomas Pearce
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 
+ * * Redistributions of source code must retain the above copyright notice, this
+ *   list of conditions and the following disclaimer.
+ * 
+ * * Redistributions in binary form must reproduce the above copyright notice,
+ *   this list of conditions and the following disclaimer in the documentation
+ *   and/or other materials provided with the distribution.
+ * 
+ * * Neither the name of this project nor the names of its
+ *   contributors may be used to endorse or promote products derived from
+ *   this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * 
+ */
+
+
+import { OpenSeadragon } from './osd-loader.mjs';
+import { paper } from './paperjs.mjs';
+import { AnnotationUI } from './annotationui.mjs';
+import { PaperOverlay } from './paper-overlay.mjs';
+import { AnnotationItemFactory } from './paperitems/annotationitem.mjs';
+import { MultiPolygon } from './paperitems/multipolygon.mjs';
+import { Placeholder } from './paperitems/placeholder.mjs';
+import { Linestring } from './paperitems/linestring.mjs';
+import { MultiLinestring } from './paperitems/multilinestring.mjs';
+import { Raster } from './paperitems/raster.mjs';
+import { Point } from './paperitems/point.mjs';
+import { PointText } from './paperitems/pointtext.mjs';
+import { Rectangle } from './paperitems/rectangle.mjs';
+import { Ellipse } from './paperitems/ellipse.mjs';
+
+
+//extend paper prototypes to add functionality
+//property definitions
+
+Object.defineProperty(paper.Item.prototype, 'displayName', displayNamePropertyDef());
+Object.defineProperty(paper.TextItem.prototype, 'content', textItemContentPropertyDef());
+Object.defineProperty(paper.Project.prototype, 'descendants', descendantsDefProject());
+
+//extend remove function to emit events for GeoJSON type annotation objects
+let origRemove=paper.Item.prototype.remove;
+paper.Item.prototype.remove=function(){
+    (this.isGeoJSONFeature || this.isGeoJSONFeatureCollection) &amp;&amp; this.project.emit('item-removed',{item: this});
+    origRemove.call(this);
+    (this.isGeoJSONFeature || this.isGeoJSONFeatureCollection) &amp;&amp; this.emit('removed',{item:this});
+}
+//function definitions
+paper.Group.prototype.insertChildren=getInsertChildrenDef();
+paper.Color.prototype.toJSON = paper.Color.prototype.toCSS;//for saving/restoring colors as JSON
+paper.Style.prototype.toJSON = styleToJSON;
+paper.View.prototype.getImageData = paperViewGetImageData;
+paper.PathItem.prototype.toCompoundPath = toCompoundPath;
+paper.PathItem.prototype.applyBounds = applyBounds;
+paper.Item.prototype.select = paperItemSelect;
+paper.Item.prototype.deselect = paperItemDeselect;
+paper.Item.prototype.toggle = paperItemToggle;
+//to do: should these all be installed on project instead of scope?
+paper.PaperScope.prototype.findSelectedNewItem = findSelectedNewItem;
+paper.PaperScope.prototype.findSelectedItems = findSelectedItems;
+paper.PaperScope.prototype.findSelectedItem = findSelectedItem;
+paper.PaperScope.prototype.scaleByCurrentZoom = function (v) { return v / this.view.getZoom(); };
+paper.PaperScope.prototype.getActiveTool = function(){ return this.tool ? this.tool._toolObject : null; }        
+
+
+/**
+ * A class for creating and managing annotation tools on an OpenSeadragon viewer.
+ * @class 
+ * @memberof OSDPaperjsAnnotation
+ * @extends OpenSeadragon.EventSource
+ */
+class AnnotationToolkit extends OpenSeadragon.EventSource{
+    /**
+     * Create a new AnnotationToolkit instance.
+     * @constructor
+     * @param {OpenSeadragon.Viewer} openSeadragonViewer - The OpenSeadragon viewer object.
+     * @param {object} [opts]
+     * @param {object} [opts.addUI] a configuration object for the UI, if desired
+     * @param {object} [opts.overlay] a PaperOverlay object to use
+     */
+    constructor(openSeadragonViewer, opts = {}) {
+        super();
+
+        
+        if(!opts){
+            opts = {};
+        }
+
+        this._defaultOptions = {
+            addUI: false,
+            overlay: null,
+            // initializeFeatureCollections:true,
+        }
+        this.options = Object.assign({}, this._defaultOptions, opts);
+        
+        this._defaultStyle = {
+            fillColor: new paper.Color('white'),
+            strokeColor: new paper.Color('black'),
+            fillOpacity:1,
+            strokeOpacity:1,
+            strokeWidth: 1,
+            rescale: {
+                strokeWidth: 1
+            }
+        };
+        this.viewer = openSeadragonViewer;
+
+        this.viewer.addOnceHandler('close', ()=>this.destroy()); //TO DO: make this an option, not a hard-coded default
+
+        if(this.options.overlay){
+            if(this.options.overlay instanceof PaperOverlay){
+                this.overlay = this.options.overlay;
+            }
+        } else {
+            this.overlay = new PaperOverlay(this.viewer, {type: 'image'});
+        }
+        
+        
+        this.paperScope.project.defaultStyle = new paper.Style();
+        this.paperScope.project.defaultStyle.set(this.defaultStyle);
+
+        
+
+        this.overlay.autoRescaleItems(true);
+
+        //bind a reference to this to the viewer and the paperScope, for convenient access
+        this.viewer.annotationToolkit = this;
+        this.paperScope.annotationToolkit = this;
+
+
+        //register item constructors
+        AnnotationItemFactory.register(MultiPolygon);
+        AnnotationItemFactory.register(Placeholder);
+        AnnotationItemFactory.register(Linestring);
+        AnnotationItemFactory.register(MultiLinestring);
+        AnnotationItemFactory.register(Raster);
+        AnnotationItemFactory.register(Point);
+        AnnotationItemFactory.register(PointText);
+        AnnotationItemFactory.register(Rectangle);
+        AnnotationItemFactory.register(Ellipse);
+
+        paper.Item.fromGeoJSON = AnnotationItemFactory.itemFromGeoJSON;
+        paper.Item.fromAnnotationItem = AnnotationItemFactory.itemFromAnnotationItem;
+
+
+        //handle options
+        if(this.options.addUI){
+            let uiOpts = {}
+            if(typeof opts.addUI === 'object'){
+                uiOpts = this.options.addUI;
+            }
+            this.addAnnotationUI(uiOpts)
+        }
+
+
+
+    }
+
+    /**
+     * Get the default style for the annotation items.
+     * 
+     * @returns {object} The default style object.
+     */
+    get defaultStyle(){
+        return this._defaultStyle;
+    }
+    
+    /**
+     * Get the default style for the annotation items.
+     * 
+     * @returns {object} The default style object.
+     */
+    get annotationUI(){
+        return this._annotationUI;
+    }
+
+
+    /**
+     * Get the paperScope associated with this toolkit
+     * 
+     * @returns {object} The paperScope object for this toolkit's PaperOverlay.
+     */
+    get paperScope(){
+        return this.overlay.paperScope;
+    }
+
+
+    /**
+     * Add an annotation UI to the toolkit.
+     * 
+     * @param {object} [opts={}] - The options for the annotation UI.
+     * @returns {AnnotationUI} The annotation UI object.
+     */
+    addAnnotationUI(opts = {}){
+        if (!this._annotationUI) this._annotationUI = new AnnotationUI(this, opts);
+        return this._annotationUI;
+    }
+    /**
+     * Destroy the toolkit and its components.
+     */
+    destroy() {
+        this.raiseEvent('before-destroy');
+        let tool=this.paperScope &amp;&amp; this.paperScope.getActiveTool();
+        if(tool) tool.deactivate(true);
+
+        this.viewer.annotationToolkit = null;
+        this._annotationUI &amp;&amp; this._annotationUI.destroy();
+        this.overlay.destroy();
+        this.raiseEvent('destroy');
+    }
+    /**
+     * Close the toolkit and remove its feature collections.
+     */
+    close() {
+        this.raiseEvent('before-close');
+        let tool=this.paperScope &amp;&amp; this.paperScope.getActiveTool();
+        if(tool) tool.deactivate(true);
+
+        this.addFeatureCollections([],true);
+    }
+    /**
+     * Set the global visibility of the toolkit.
+     * @param {boolean} [show=false] - Whether to show or hide the toolkit.
+     */
+    setGlobalVisibility(show = false){
+        this.paperScope.view._element.setAttribute('style', 'visibility:' + (show ? 'visible;' : 'hidden;'));
+    }
+    /**
+     * Add feature collections to the toolkit from GeoJSON objects.
+     * @param {object[]} featureCollections - The array of GeoJSON objects representing feature collections.
+     * @param {boolean} replaceCurrent - Whether to replace the current feature collections or not.
+     * @param {OpenSeadragon.TiledImage | OpenSeadragon.Viewport | false} [parentImage] - which image to add the feature collections to
+     */
+    addFeatureCollections(featureCollections,replaceCurrent, parentImage){
+        this.loadGeoJSON(featureCollections,replaceCurrent, parentImage);
+        this.overlay.rescaleItems();
+        this.paperScope.project.emit('items-changed');
+    }
+    /**
+     * Get the feature collection layers in the toolkit.
+     * @returns {paper.Group[]} The array of paper groups representing feature collections.
+     */
+    getFeatureCollectionGroups(parentLayer){
+        // return this.overlay.paperScope.project.layers.filter(l=>l.isGeoJSONFeatureCollection);
+        return this.paperScope.project.getItems({match: item=>item.isGeoJSONFeatureCollection &amp;&amp; (parentLayer ? item.layer === parentLayer : true)});
+    }
+    /**
+     * Get the features in the toolkit.
+     * @returns {paper.Item[]} The array of paper item objects representing features.
+     */
+    getFeatures(){
+        return this.paperScope.project.getItems({match:i=>i.isGeoJSONFeature});
+    }
+    /**
+     * Convert the feature collections in the toolkit to GeoJSON objects.
+     * @param {boolean} [pixelCoordinates] Whether the items should be scaled to the pixel coordinates of the image (true - default) or normalized by tiledImage or viewport width (false)
+     * @returns {object[]} The array of GeoJSON objects representing feature collections.
+     */
+    toGeoJSON(pixelCoordinates = true){
+        //find all featureCollection items and convert to GeoJSON compatible structures
+        return this.paperScope.project.getItems({match:i=>i.isGeoJSONFeatureCollection}).map(grp=>{
+            let scaleFactor;
+            if(pixelCoordinates){
+                scaleFactor = (grp.layer.tiledImage ? grp.layer.tiledImage.source.width : this.viewer.drawer.getCanvasSize().x) / this.overlay.scaleFactor;
+                grp.scale(scaleFactor, {x: 0, y: 0});
+            }
+            let geoJSON = {
+                type:'FeatureCollection',
+                features: grp.descendants.filter(d=>d.annotationItem).map(d=>d.annotationItem.toGeoJSONFeature()),
+                properties:{
+                    defaultStyle: grp.defaultStyle.toJSON(),
+                    userdata: grp.userdata,
+                },
+                label:grp.displayName,
+            }
+            if(pixelCoordinates){
+                grp.scale(1/scaleFactor, {x: 0, y: 0});
+            }
+            return geoJSON;
+        })
+    }
+    /**
+     * Convert the feature collections in the project to a JSON string.
+     * @param {function} [replacer] - The replacer function for JSON.stringify().
+     * @param {number|string} [space] - The space argument for JSON.stringify().
+     * @returns {string} The JSON string representing the feature collections.
+     */
+    toGeoJSONString(replacer,space){
+        return JSON.stringify(this.toGeoJSON(),replacer,space);
+    }
+    /**
+     * Load feature collections from GeoJSON objects and add them to the project.
+     * @param {object[]} geoJSON - The array of GeoJSON objects representing feature collections.
+     * @param {boolean} replaceCurrent - Whether to replace the current feature collections or not.
+     * @param {OpenSeadragon.TiledImage | OpenSeadragon.Viewport | false} [parentImage] - Which image (or viewport) to add the object to
+     * @param {boolean} [pixelCoordinates]
+     */
+    loadGeoJSON(geoJSON, replaceCurrent, parentImage, pixelCoordinates = true){
+        let parentLayer = parentImage ? parentImage.paperLayer : false;
+        if(replaceCurrent){
+            this.getFeatureCollectionGroups(parentImage).forEach(grp=>grp.remove());
+        }
+        if(!Array.isArray(geoJSON)){
+            geoJSON = [geoJSON];
+        }
+        
+        geoJSON.forEach(obj=>{
+            if(obj.type=='FeatureCollection'){
+                let group = this._createFeatureCollectionGroup({label: obj.label, parent: parentLayer});
+                let props = (obj.properties || {});
+                group.userdata = Object.assign({},props.userdata);
+                group.defaultStyle.set(props.defaultStyle);
+                obj.features.forEach(feature=>{
+                    let item = paper.Item.fromGeoJSON(feature);
+                    group.addChild(item);
+                })
+                if(pixelCoordinates){
+                    group.scale(this.overlay.scaleFactor/group.layer.tiledImage.source.width, {x: 0, y: 0});
+                    // group.scale(this.overlay.scaleFactor/group.layer.tiledImage.source.width);
+                }
+            }
+            else{
+                console.warn('GeoJSON object not loaded: wrong type. Only FeatureCollection objects are currently supported');
+            }
+        })
+    }
+
+    /**
+     * Create a new feature collection group in the project scope.
+     * @private
+     * @param {Object} [opts] - Object with fields label and parent
+     * @returns {paper.Group} The paper group object representing the feature collection.
+     */
+    _createFeatureCollectionGroup(opts = {}) {
+        let defaultOpts = {
+            label:null,
+            parent:null
+        }
+        opts = Object.assign({}, defaultOpts, opts);
+
+        let displayLabel = opts.label;
+        
+        let parent = opts.parent;
+        if(!parent){
+            let numItems = this.viewer.world.getItemCount();
+            if( numItems == 1){
+                parent = this.viewer.world.getItemAt(0).paperLayer;
+            } else if (numItems == 0){
+                parent = this.viewer.viewport.paperLayer;
+            } else {
+                console.warn('Use of AnnotationToolkit with multi-image is not yet fully supported. All annotations will be added to the top-level tiled image.');
+                parent = this.viewer.world.getItemAt(numItems - 1).paperLayer;
+            }
+        }
+        if(!parent){
+            console.error('Failed to create feature collection group: no parent could be found');
+            return;
+        }
+
+        let grp = new paper.Group();
+        parent.addChild(grp);
+        grp.isGeoJSONFeatureCollection = true;
+        let grpNum = this.getFeatureCollectionGroups().length;
+        grp.name = grp.displayName = displayLabel!==null ? displayLabel : `Annotation Group ${grpNum}`;
+        grp.defaultStyle = new paper.Style(this.paperScope.project.defaultStyle);
+        this.paperScope.project.emit('feature-collection-added',{group:grp});
+        return grp;
+    }
+
+    
+};
+
+export {AnnotationToolkit as AnnotationToolkit};
+
+
+
+// private functions
+
+/**
+ * Create a compound path from a path item.
+ * @private
+ * @returns {paper.CompoundPath} The compound path object.
+ */
+function toCompoundPath() {
+    if (this.constructor !== paper.CompoundPath) {
+        let np = new paper.CompoundPath({ children: [this], fillRule: 'evenodd' });
+        np.selected = this.selected;
+        this.selected = false;
+        return np;
+    }
+    return this;
+}
+/**
+ * Apply bounds to a path item.
+ * @private
+ * @param {paper.Item[]} boundingItems - The array of paper items to use as bounds.
+ */
+function applyBounds(boundingItems) {
+    if (boundingItems.length == 0)
+        return;
+    let intersection;
+    if (boundingItems.length == 1) {
+        let bounds = boundingItems[0];
+        intersection = bounds.intersect(this, { insert: false });
+    }
+    else if (bounding.length > 1) {
+        let bounds = new paper.CompoundPath(bounding.map(b => b.clone().children).flat());
+        intersection = bounds.intersect(this, { insert: false });
+        bounds.remove();
+    }
+    if (this.children) {
+        //compound path
+        this.removeChildren();
+        this.addChildren(intersection.children ? intersection.children : [intersection]);
+    }
+    else {
+        //simple path
+        this.segments = intersection.segments ? intersection.segments : intersection.firstChild.segments;
+    }
+
+}
+/**
+ * Select a paper item and emit events.
+ * @private
+ * @param {boolean} [keepOtherSelectedItems=false] - Whether to keep other selected items or not.
+ */
+function paperItemSelect(keepOtherSelectedItems) {
+    if(!keepOtherSelectedItems){
+        this.project._scope.findSelectedItems().forEach(item => item.deselect());
+    }
+    this.selected = true;
+    this.emit('selected');
+    this.project.emit('item-selected', { item: this });
+}
+/**
+ * Deselect a paper item and emit events.
+ * @private
+ * @param {boolean} [keepOtherSelectedItems=false] - Whether to keep other selected items or not.
+ */
+function paperItemDeselect(keepOtherSelectedItems) {
+    if(!keepOtherSelectedItems){
+        this.project._scope.findSelectedItems().forEach(item => item.deselect(true));
+        return;
+    }
+    this.selected = false;
+    this.emit('deselected');
+    this.project.emit('item-deselected', { item: this });
+}
+/**
+ * Toggle the selection of a paper item and emit events.
+ * @private
+ * @param {boolean} [keepOtherSelectedItems=false] - Whether to keep other selected items or not.
+ */
+function paperItemToggle(keepOtherSelectedItems) {
+    this.selected ? this.deselect(keepOtherSelectedItems) : this.select(keepOtherSelectedItems);
+}
+
+/**
+ * Find the selected new item in the project scope.
+ * @private
+ * @returns {paper.Item} The selected new item, or null if none exists.
+ */
+function findSelectedNewItem() {
+    //to do: change this to use type=='Feature' and geometry==null to match GeoJSON spec and AnnotationItemPlaceholder definition
+    return this.project.getItems({ selected:true, match: function (i) { return i.isGeoJSONFeature &amp;&amp; i.initializeGeoJSONFeature; } })[0];
+}
+/**
+ * Find the selected items in the project scope.
+ * @private
+ * @returns {paper.Item[]} The array of selected items, or an empty array if none exists.
+ */
+function findSelectedItems() {
+    return this.project.getItems({ selected: true, match: function (i) { return i.isGeoJSONFeature; } });
+}
+/**
+ * Find the first selected item in the project scope.
+ * @private
+ * @returns {paper.Item} The first selected item, or null if none exists.
+ */
+function findSelectedItem() {
+    return this.findSelectedItems()[0];
+}
+
+
+
+/**
+ * Define the display name property for a paper item object.
+ * The display name property defines the name used to identify a paper item object.
+ * @private
+ * @returns {object} The property descriptor object.
+ * @property {function} set - The setter function for the display name property.
+ *   @param {string} input - The display name value.
+ * @property {function} get - The getter function for the display name property.
+ *   @returns {string} The display name value.
+ */
+function displayNamePropertyDef(){
+    return {
+        set: function displayName(input){
+            if(Array.isArray(input)){
+                this._displayName = new String(input[0]);
+                this._displayName.source=input[1];
+            }
+            else{
+                this._displayName = input;
+            }
+            this.name = this._displayName;
+            this.emit('display-name-changed',{displayName:this._displayName});
+        },
+        get: function displayName(){
+            return this._displayName;
+        }
+    }
+}
+
+
+/**
+ * Define the descendants property for a paper project object.
+ * The descendants property represents all the descendants (layers and their children) of a paper project object.
+ * @private
+ * @returns {object} The property descriptor object.
+ * @property {function} get - The getter function for the descendants property.
+ *   @returns {paper.Item[]} The array of paper item objects representing the descendants.
+ */
+function descendantsDefProject(){
+    return {
+        get: function descendants(){
+            // return this.layers ? this.layers.filter(layer=>layer.isGeoJSONFeatureCollection).map(child=>child.descendants).flat() : [this];
+            return this.layers ? this.getItems({match: item=>item.isGeoJSONFeatureCollection}).map(child=>child.descendants).flat() : [this];
+        }
+    }
+}
+
+/**
+ * Convert a paper style object to a JSON object.
+ * @private
+ * @returns {object} The JSON object representing the style.
+ */
+function styleToJSON(){
+    let output={};
+    Object.keys(this._values).forEach(key=>{
+        output[key] = this[key];//invoke getter
+    })
+    return output;
+}
+/**
+ * Get the image data of a paper view element.
+ * @private
+ * @returns {ImageData} The image data object of the view element.
+ */
+function paperViewGetImageData(){
+    return this.element.getContext('2d').getImageData(0,0,this.element.width, this.element.height);
+}
+
+/**
+ * Get the insert children method definition for a paper group object.
+ * The insert children method emits events when children are added to the paper group object.
+ * @private
+ * @returns {function} The insert children method that emits events when children are added.
+ */
+function getInsertChildrenDef(){
+    let origInsertChildren = paper.Group.prototype.insertChildren.original || paper.Group.prototype.insertChildren;
+    function insertChildren(){ 
+        let output = origInsertChildren.apply(this,arguments); 
+        let index = arguments[0], children=Array.from(arguments[1]);
+        children&amp;&amp;children.forEach((child,i)=>{
+            if(child.isGeoJSONFeature){
+                let idx = typeof index !== 'undefined' ? index+1 : -1; 
+                this.emit('child-added',{item:child,index:idx});
+            } 
+        });
+        return output;
+    }
+    insertChildren.original = origInsertChildren;
+    return insertChildren;
+}
+
+/**
+ * Define the fill opacity property for a paper style object.
+ *  @private
+ *  @returns {object} The property descriptor object with the following properties:
+ * - get: A function that returns the fill opacity value (a number between 0 and 1).
+ * - set: A function that sets the fill opacity value (a number between 0 and 1).
+ */
+function textItemContentPropertyDef(){
+    let _set = paper.TextItem.prototype._setContent || Object.getOwnPropertyDescriptor(paper.TextItem.prototype, 'content').set;
+    paper.TextItem.prototype._setContent = _set;
+    return{
+        get: function() {
+            return this._content;
+        },
+        set: function(content) {
+            _set.call(this, content);
+            this.emit('content-changed');
+        },
+    }
+}</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="OSDPaperjsAnnotation.html">OSDPaperjsAnnotation</a></li></ul><h3>Classes</h3><ul><li><a href="EditableContent.html">EditableContent</a></li><li><a href="Morph.html">Morph</a></li><li><a href="OSDPaperjsAnnotation.AnnotationItem.html">AnnotationItem</a></li><li><a href="OSDPaperjsAnnotation.AnnotationItemFactory.html">AnnotationItemFactory</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolbar.html">AnnotationToolbar</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolkit.html">AnnotationToolkit</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUI.html">AnnotationUI</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUITool.html">AnnotationUITool</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUITool.AnnotationUIToolbarBase.html">AnnotationUIToolbarBase</a></li><li><a href="OSDPaperjsAnnotation.BrushTool.html">BrushTool</a></li><li><a href="OSDPaperjsAnnotation.BrushTool.BrushToolbar.html">BrushToolbar</a></li><li><a href="OSDPaperjsAnnotation.DefaultTool.html">DefaultTool</a></li><li><a href="OSDPaperjsAnnotation.DefaultTool.DefaultToolbar.html">DefaultToolbar</a></li><li><a href="OSDPaperjsAnnotation.Ellipse.html">Ellipse</a></li><li><a href="OSDPaperjsAnnotation.EllipseTool.html">EllipseTool</a></li><li><a href="OSDPaperjsAnnotation.EllipseTool.EllipseToolbar.html">EllipseToolbar</a></li><li><a href="OSDPaperjsAnnotation.FeatureCollectionUI.html">FeatureCollectionUI</a></li><li><a href="OSDPaperjsAnnotation.FeatureUI.html">FeatureUI</a></li><li><a href="OSDPaperjsAnnotation.FileDialog.html">FileDialog</a></li><li><a href="OSDPaperjsAnnotation.LayerUI.html">LayerUI</a></li><li><a href="OSDPaperjsAnnotation.Linestring.html">Linestring</a></li><li><a href="OSDPaperjsAnnotation.LinestringTool.html">LinestringTool</a></li><li><a href="OSDPaperjsAnnotation.LinestringTool.LinestringToolbar.html">LinestringToolbar</a></li><li><a href="OSDPaperjsAnnotation.MultiLinestring.html">MultiLinestring</a></li><li><a href="OSDPaperjsAnnotation.MultiPolygon.html">MultiPolygon</a></li><li><a href="OSDPaperjsAnnotation.PaperOverlay.html">PaperOverlay</a></li><li><a href="OSDPaperjsAnnotation.Placeholder.html">Placeholder</a></li><li><a href="OSDPaperjsAnnotation.Point.html">Point</a></li><li><a href="OSDPaperjsAnnotation.PointText.html">PointText</a></li><li><a href="OSDPaperjsAnnotation.PointTextTool.html">PointTextTool</a></li><li><a href="OSDPaperjsAnnotation.PointTextTool.PointTextToolbar.html">PointTextToolbar</a></li><li><a href="OSDPaperjsAnnotation.PointTool.html">PointTool</a></li><li><a href="OSDPaperjsAnnotation.PointTool.PointToolbar.html">PointToolbar</a></li><li><a href="OSDPaperjsAnnotation.PolygonTool.html">PolygonTool</a></li><li><a href="OSDPaperjsAnnotation.PolygonTool.PolygonToolbar.html">PolygonToolbar</a></li><li><a href="OSDPaperjsAnnotation.Raster.html">Raster</a></li><li><a href="OSDPaperjsAnnotation.RasterTool.html">RasterTool</a></li><li><a href="OSDPaperjsAnnotation.RasterTool.RasterToolbar.html">RasterToolbar</a></li><li><a href="OSDPaperjsAnnotation.Rectangle.html">Rectangle</a></li><li><a href="OSDPaperjsAnnotation.RectangleTool.html">RectangleTool</a></li><li><a href="OSDPaperjsAnnotation.RectangleTool_RectToolbar.html">RectToolbar</a></li><li><a href="OSDPaperjsAnnotation.RotationControlOverlay.html">RotationControlOverlay</a></li><li><a href="OSDPaperjsAnnotation.RotationControlTool.html">RotationControlTool</a></li><li><a href="OSDPaperjsAnnotation.RotationControlWidget.html">RotationControlWidget</a></li><li><a href="OSDPaperjsAnnotation.StyleTool.html">StyleTool</a></li><li><a href="OSDPaperjsAnnotation.StyleTool.StyleToolbar.html">StyleToolbar</a></li><li><a href="OSDPaperjsAnnotation.ToolBase.html">ToolBase</a></li><li><a href="OSDPaperjsAnnotation.TransformTool.html">TransformTool</a></li><li><a href="OSDPaperjsAnnotation.TransformTool.TransformToolbar.html">TransformToolbar</a></li><li><a href="OSDPaperjsAnnotation.WandTool.html">WandTool</a></li><li><a href="OSDPaperjsAnnotation.WandTool.WandToolbar.html">WandToolbar</a></li><li><a href="SelectTool.html">SelectTool</a></li></ul><h3>Global</h3><ul><li><a href="global.html#_paper">_paper</a></li><li><a href="global.html#adaptiveOffsetCurve">adaptiveOffsetCurve</a></li><li><a href="global.html#connectAdjacentBezier">connectAdjacentBezier</a></li><li><a href="global.html#connectBeziers">connectBeziers</a></li><li><a href="global.html#getPointLineIntersections">getPointLineIntersections</a></li><li><a href="global.html#localImportsCompleted">localImportsCompleted</a></li><li><a href="global.html#makeRoundJoin">makeRoundJoin</a></li><li><a href="global.html#normalize">normalize</a></li><li><a href="global.html#offsetSegment">offsetSegment</a></li><li><a href="global.html#osd">osd</a></li><li><a href="global.html#removeIntersection">removeIntersection</a></li><li><a href="global.html#removeOutsiders">removeOutsiders</a></li><li><a href="global.html#updateFillOpacity">updateFillOpacity</a></li><li><a href="global.html#updateStrokeOpacity">updateStrokeOpacity</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.0</a> on Tue Jan 02 2024 14:46:22 GMT-0500 (Eastern Standard Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

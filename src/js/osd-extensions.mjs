@@ -1,12 +1,12 @@
 /**
  * OpenSeadragon canvas Overlay plugin based on paper.js
- * @version 0.1.2
+ * @version 0.3.0
  * 
  * Includes additional open source libraries which are subject to copyright notices
  * as indicated accompanying those segments of code.
  * 
  * Original code:
- * Copyright (c) 2022-2023, Thomas Pearce
+ * Copyright (c) 2022-2024, Thomas Pearce
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -75,7 +75,7 @@ function paperItemsDef(){
 
 
 /**
- * @private _createPaperLayer
+ * @private
  */
 function _createPaperLayer(osdObject, paperScope){
     let layer = new paper.Layer({applyMatrix:false});
@@ -167,7 +167,7 @@ function _setupPaper(overlay){
 
 
 /**
- * @private addPaperItem
+ * @private
  */
 function addPaperItem(item){
     if(this.paperLayer){

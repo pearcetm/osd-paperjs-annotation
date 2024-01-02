@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: papertools/annotationUITool.mjs</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: papertools/annotationUITool.mjs</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * OpenSeadragon canvas Overlay plugin based on paper.js
+ * @version 0.3.0
+ * 
+ * Includes additional open source libraries which are subject to copyright notices
+ * as indicated accompanying those segments of code.
+ * 
+ * Original code:
+ * Copyright (c) 2022-2024, Thomas Pearce
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 
+ * * Redistributions of source code must retain the above copyright notice, this
+ *   list of conditions and the following disclaimer.
+ * 
+ * * Redistributions in binary form must reproduce the above copyright notice,
+ *   this list of conditions and the following disclaimer in the documentation
+ *   and/or other materials provided with the distribution.
+ * 
+ * * Neither the name of paper-overlay nor the names of its
+ *   contributors may be used to endorse or promote products derived from
+ *   this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * 
+ */
+
+import {ToolBase} from './base.mjs';
+import { OpenSeadragon } from '../osd-loader.mjs';
+
+/**
+ * Base class for annotation tools, extending the ToolBase class.
+ *
+ * @class
+ * @extends ToolBase
+ * @memberof OSDPaperjsAnnotation
+ */
+class AnnotationUITool extends ToolBase{
+    /**
+     * Create an AnnotationUITool instance.
+     *
+     * @constructor
+     * @param {paper.PaperScope} paperScope - The Paper.js scope for the tool.
+     *
+     * @property {boolean} _active - Flag indicating if the tool is currently active.
+     * @property {paper.Item[]} _items - Array of selected items.
+     * @property {paper.Item} _item - The selected item (if only one is selected).
+     * @property {paper.Item} _itemToCreate - The selected new item to be created.
+     */
+    constructor(paperScope){
+        super(paperScope)
+        
+        this._active=false;
+        this._items=[];
+        this._item=null;
+
+        this.tool.onMouseDown = ev => {
+            this.onMouseDown(this._transformEvent(ev));
+        }
+        this.tool.onMouseDrag = ev => {
+            this.onMouseDrag(this._transformEvent(ev));
+        }
+        this.tool.onMouseMove = ev => {
+            this.onMouseMove(this._transformEvent(ev));
+        }
+        this.tool.onMouseUp = ev => {
+            this.onMouseUp(this._transformEvent(ev));
+        }
+
+    }
+    
+    /**
+     * Activate the annotation tool, making it ready for interaction.
+     * If another tool was active, it's deactivated before activating this tool.
+     */
+    activate(){
+        if(this._active) return;//breaks possible infinite loops of tools activating/deactivating each other
+        this._active=true;
+        this.getSelectedItems();
+        this._setTargetLayer();
+        let previousTool=this.project.paperScope.getActiveTool();
+        this.tool.activate();
+        this.toolbarControl.activate();//console.log('toolbar control activated')
+        previousTool &amp;&amp; previousTool != this &amp;&amp; previousTool.deactivate(true);
+
+        this.onActivate();
+        this.broadcast('activated',{target:this});
+    }
+    /**
+     * Deactivate the annotation tool, stopping its interaction.
+     * @param {boolean} finishToolAction - Whether the tool action should be completed before deactivating.
+     */
+    deactivate(finishToolAction){
+        if(!this._active) return;//breaks possible infinite loops of tools activating/deactivating each other
+        this._active=false;
+        this.toolbarControl.deactivate();
+
+        this.onDeactivate(finishToolAction);
+        this.broadcast('deactivated',{target:this}); 
+    }
+    /**
+     * Get the associated toolbar control for the tool.
+     * @returns {AnnotationUIToolbarBase} The toolbar control instance.
+     */
+    getToolbarControl(){
+        return this.toolbarControl;
+    }
+    /**
+     * Set the associated toolbar control for the tool.
+     *
+     * @param {AnnotationUIToolbarBase} toolbarControl - The toolbar control instance to set.
+     * @returns {AnnotationUIToolbarBase} The provided toolbar control instance.
+     */
+    setToolbarControl(toolbarControl){
+        this.toolbarControl = toolbarControl;
+        return this.toolbarControl;
+    }
+    /**
+     * Refresh the list of currently selected items.
+     */
+    refreshItems(){
+        return this.getSelectedItems();
+    }
+    /**
+     * Retrieve the list of currently selected items.
+     */
+    getSelectedItems(){
+        this._items = this.project.paperScope.findSelectedItems();
+        this._itemToCreate = this.project.paperScope.findSelectedNewItem();
+    }
+    /**
+     * Callback function triggered when the selection of items changes.
+     * This function can be overridden in subclasses to react to selection changes.
+     */
+    selectionChanged(){
+        this.getSelectedItems();
+        this._setTargetLayer();
+        this.onSelectionChanged();
+    }
+    /**
+     * Callback function triggered when the selection changes.
+     * To be implemented in subclasses.
+     */
+    onSelectionChanged(){}
+    /**
+     * Get the array of currently selected items.
+     *
+     * @returns {paper.Item[]} An array of currently selected items.
+     */
+    get items(){
+        return this._items;
+    }
+    /**
+     * Get the currently selected item, if only one is selected.
+     *
+     * @returns {paper.Item|null} The currently selected item, or null if no item is selected.
+     */
+    get item(){
+        return this._items.length==1 ? this._items[0] : null;
+    }
+    /**
+     * Get the selected new item to be created.
+     *
+     * @returns {paper.Item|null} The selected new item, or null if no item is selected.
+     */
+    get itemToCreate(){
+        return this._itemToCreate;
+    }
+
+    get targetLayer(){
+        return this._targetLayer;
+    }
+
+    get targetMatrix(){
+        return this.targetLayer ? this.targetLayer.matrix : this._identityMatrix;
+    }
+
+    // private
+    _setTargetLayer(){
+        if(this.item){
+            this._targetLayer = this.item.layer;
+        } else if(this.itemToCreate){
+            this._targetLayer = this.itemToCreate.layer;
+        } else if(this.items){
+            let layerSet = new Set(this.items.map(item=>item.layer));
+            if(layerSet.size === 1){
+                this._targetLayer = layerSet.next().value;
+            } else {
+                this._targetLayer = this.project.overlay.viewer.viewport.paperLayer;
+            }
+        } else {
+            this._targetLayer = this.project.paperScope.project.activeLayer;
+        }
+    }
+    // private
+    _transformEvent(ev){
+        let matrix = this.targetMatrix;
+        let transformed = {
+            point: matrix.inverseTransform(ev.point),
+            downPoint: matrix.inverseTransform(ev.downPoint),
+            lastPoint: matrix.inverseTransform(ev.lastPoint),
+            middlePoint: matrix.inverseTransform(ev.middlePoint),
+        };
+        let deltaStart = ev.point.subtract(ev.delta);
+        transformed.delta = transformed.point.subtract(matrix.inverseTransform(deltaStart));
+
+        ev.original = {
+            point: ev.point,
+            downPoint: ev.downPoint,
+            lastPoint: ev.lastPoint,
+            middlePoint: ev.middlePoint,
+            delta: ev.delta
+        };
+
+        Object.assign(ev, transformed);
+
+        return ev;
+    }
+        
+}
+export{AnnotationUITool};
+
+/**
+ * Base class for annotation toolbar controls.
+ *
+ * @class
+ * @memberof OSDPaperjsAnnotation.AnnotationUITool
+ */
+class AnnotationUIToolbarBase{
+    /**
+     * Create a new instance of AnnotationUIToolbarBase associated with an annotation tool.
+     *
+     * @constructor
+     * @param {AnnotationUITool} tool - The annotation tool linked to the toolbar control.
+     */
+    constructor(tool){
+        // let self=this;
+        this._active=false;
+        let button=document.createElement('button');
+        button.classList.add('btn','invisible');
+        button.textContent = 'Generic Tool';
+
+        this.button=new OpenSeadragon.Button({
+            tooltip:'Generic Tool',
+            element:button,
+            onClick:function(ev){if(!ev.eventSource.element.disabled) tool._active?tool.deactivate(true):tool.activate()},
+        });
+        this.button.configure=function(node,tooltip){
+            this.element.title = tooltip;
+            this.element.replaceChildren(node);
+            this.element.classList.remove('invisible');
+            this.tooltip=tooltip;
+        }
+        this.dropdown=document.createElement('div');
+        this.dropdown.classList.add('dropdown'); 
+        this.tool = tool;
+    }
+    /**
+     * Check whether the toolbar control is enabled for a specific mode.
+     *
+     * @param {string} mode - The mode to check for enabling.
+     * @returns {boolean} True if the toolbar control is enabled for the mode, otherwise false.
+     */
+    isEnabledForMode(mode){
+        return false;
+    }
+    
+    /**
+     * Activate the toolbar control, making it visually active.
+     */
+    activate(){
+        if(this._active) return;
+        this._active=true;
+        //this.tool.activate();
+        this.button.element.classList.add('active');
+        this.dropdown.classList.add('active');
+    }
+    /**
+     * Deactivate the toolbar control, making it visually inactive.
+     *
+     * @param {boolean} shouldFinish - Whether the action associated with the control should be completed.
+     */
+    deactivate(shouldFinish){
+        if(!this._active) return;
+        this._active=false;
+        //this.tool.deactivate(shouldFinish);
+        this.button.element.classList.remove('active');
+        this.dropdown.classList.remove('active');
+    }
+}
+export{AnnotationUIToolbarBase};</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="OSDPaperjsAnnotation.html">OSDPaperjsAnnotation</a></li></ul><h3>Classes</h3><ul><li><a href="EditableContent.html">EditableContent</a></li><li><a href="Morph.html">Morph</a></li><li><a href="OSDPaperjsAnnotation.AnnotationItem.html">AnnotationItem</a></li><li><a href="OSDPaperjsAnnotation.AnnotationItemFactory.html">AnnotationItemFactory</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolbar.html">AnnotationToolbar</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolkit.html">AnnotationToolkit</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUI.html">AnnotationUI</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUITool.html">AnnotationUITool</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUITool.AnnotationUIToolbarBase.html">AnnotationUIToolbarBase</a></li><li><a href="OSDPaperjsAnnotation.BrushTool.html">BrushTool</a></li><li><a href="OSDPaperjsAnnotation.BrushTool.BrushToolbar.html">BrushToolbar</a></li><li><a href="OSDPaperjsAnnotation.DefaultTool.html">DefaultTool</a></li><li><a href="OSDPaperjsAnnotation.DefaultTool.DefaultToolbar.html">DefaultToolbar</a></li><li><a href="OSDPaperjsAnnotation.Ellipse.html">Ellipse</a></li><li><a href="OSDPaperjsAnnotation.EllipseTool.html">EllipseTool</a></li><li><a href="OSDPaperjsAnnotation.EllipseTool.EllipseToolbar.html">EllipseToolbar</a></li><li><a href="OSDPaperjsAnnotation.FeatureCollectionUI.html">FeatureCollectionUI</a></li><li><a href="OSDPaperjsAnnotation.FeatureUI.html">FeatureUI</a></li><li><a href="OSDPaperjsAnnotation.FileDialog.html">FileDialog</a></li><li><a href="OSDPaperjsAnnotation.LayerUI.html">LayerUI</a></li><li><a href="OSDPaperjsAnnotation.Linestring.html">Linestring</a></li><li><a href="OSDPaperjsAnnotation.LinestringTool.html">LinestringTool</a></li><li><a href="OSDPaperjsAnnotation.LinestringTool.LinestringToolbar.html">LinestringToolbar</a></li><li><a href="OSDPaperjsAnnotation.MultiLinestring.html">MultiLinestring</a></li><li><a href="OSDPaperjsAnnotation.MultiPolygon.html">MultiPolygon</a></li><li><a href="OSDPaperjsAnnotation.PaperOverlay.html">PaperOverlay</a></li><li><a href="OSDPaperjsAnnotation.Placeholder.html">Placeholder</a></li><li><a href="OSDPaperjsAnnotation.Point.html">Point</a></li><li><a href="OSDPaperjsAnnotation.PointText.html">PointText</a></li><li><a href="OSDPaperjsAnnotation.PointTextTool.html">PointTextTool</a></li><li><a href="OSDPaperjsAnnotation.PointTextTool.PointTextToolbar.html">PointTextToolbar</a></li><li><a href="OSDPaperjsAnnotation.PointTool.html">PointTool</a></li><li><a href="OSDPaperjsAnnotation.PointTool.PointToolbar.html">PointToolbar</a></li><li><a href="OSDPaperjsAnnotation.PolygonTool.html">PolygonTool</a></li><li><a href="OSDPaperjsAnnotation.PolygonTool.PolygonToolbar.html">PolygonToolbar</a></li><li><a href="OSDPaperjsAnnotation.Raster.html">Raster</a></li><li><a href="OSDPaperjsAnnotation.RasterTool.html">RasterTool</a></li><li><a href="OSDPaperjsAnnotation.RasterTool.RasterToolbar.html">RasterToolbar</a></li><li><a href="OSDPaperjsAnnotation.Rectangle.html">Rectangle</a></li><li><a href="OSDPaperjsAnnotation.RectangleTool.html">RectangleTool</a></li><li><a href="OSDPaperjsAnnotation.RectangleTool_RectToolbar.html">RectToolbar</a></li><li><a href="OSDPaperjsAnnotation.RotationControlOverlay.html">RotationControlOverlay</a></li><li><a href="OSDPaperjsAnnotation.RotationControlTool.html">RotationControlTool</a></li><li><a href="OSDPaperjsAnnotation.RotationControlWidget.html">RotationControlWidget</a></li><li><a href="OSDPaperjsAnnotation.StyleTool.html">StyleTool</a></li><li><a href="OSDPaperjsAnnotation.StyleTool.StyleToolbar.html">StyleToolbar</a></li><li><a href="OSDPaperjsAnnotation.ToolBase.html">ToolBase</a></li><li><a href="OSDPaperjsAnnotation.TransformTool.html">TransformTool</a></li><li><a href="OSDPaperjsAnnotation.TransformTool.TransformToolbar.html">TransformToolbar</a></li><li><a href="OSDPaperjsAnnotation.WandTool.html">WandTool</a></li><li><a href="OSDPaperjsAnnotation.WandTool.WandToolbar.html">WandToolbar</a></li><li><a href="SelectTool.html">SelectTool</a></li></ul><h3>Global</h3><ul><li><a href="global.html#_paper">_paper</a></li><li><a href="global.html#adaptiveOffsetCurve">adaptiveOffsetCurve</a></li><li><a href="global.html#connectAdjacentBezier">connectAdjacentBezier</a></li><li><a href="global.html#connectBeziers">connectBeziers</a></li><li><a href="global.html#getPointLineIntersections">getPointLineIntersections</a></li><li><a href="global.html#localImportsCompleted">localImportsCompleted</a></li><li><a href="global.html#makeRoundJoin">makeRoundJoin</a></li><li><a href="global.html#normalize">normalize</a></li><li><a href="global.html#offsetSegment">offsetSegment</a></li><li><a href="global.html#osd">osd</a></li><li><a href="global.html#removeIntersection">removeIntersection</a></li><li><a href="global.html#removeOutsiders">removeOutsiders</a></li><li><a href="global.html#updateFillOpacity">updateFillOpacity</a></li><li><a href="global.html#updateStrokeOpacity">updateStrokeOpacity</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.0</a> on Tue Jan 02 2024 14:46:22 GMT-0500 (Eastern Standard Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

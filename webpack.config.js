@@ -16,12 +16,6 @@ module.exports = {
             commonjs: 'openseadragon',
             amd: 'openseadragon',
         },
-        // "paper": {
-        //     root: 'paper',
-        //     commonjs2: 'paper',
-        //     commonjs: 'paper',
-        //     amd: 'paper',
-        // },
     },
     devtool: 'source-map',
     plugins: [
@@ -31,11 +25,6 @@ module.exports = {
           "window.jQuery":"jquery"
         })
     ],
-    // resolve: {
-    //     alias: {
-    //         'jquery-ui': 'jquery-ui-dist/jquery-ui.js'
-    //     }
-    // },
     module:{
         parser: {
             javascript : { importMeta: false }
@@ -65,14 +54,6 @@ module.exports = {
                     imports: "named ./importcss.mjs importedCSS",
                 },
             },
-            // {
-            //     test: require.resolve("./src/js/addcss.mjs"),
-            //     loader: "imports-loader",
-            //     options: {
-            //         type: "module",
-            //         imports: "named browser-or-node isNode",
-            //     },
-            // },
             {
                 test: /\.css$/,
                 use: ['style-loader', 'css-loader']

@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: papertools/select.mjs</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: papertools/select.mjs</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * OpenSeadragon canvas Overlay plugin based on paper.js
+ * @version 0.3.0
+ * 
+ * Includes additional open source libraries which are subject to copyright notices
+ * as indicated accompanying those segments of code.
+ * 
+ * Original code:
+ * Copyright (c) 2022-2024, Thomas Pearce
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 
+ * * Redistributions of source code must retain the above copyright notice, this
+ *   list of conditions and the following disclaimer.
+ * 
+ * * Redistributions in binary form must reproduce the above copyright notice,
+ *   this list of conditions and the following disclaimer in the documentation
+ *   and/or other materials provided with the distribution.
+ * 
+ * * Neither the name of paper-overlay nor the names of its
+ *   contributors may be used to endorse or promote products derived from
+ *   this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * 
+ */
+
+import {AnnotationUITool, AnnotationUIToolbarBase} from './annotationUITool.mjs';
+
+/**
+ * Represents the SelectTool class that extends the AnnotationUITool.
+ * This tool allows users to select and manipulate GeoJSON feature items on the Paper.js project.
+ * @class
+ */
+class SelectTool extends AnnotationUITool{
+    /**
+     * Creates an instance of SelectTool.
+     * @constructor
+     * @param {Object} paperScope - The Paper.js paper scope object.
+     * @property {Object} ps - Reference to the Paper.js project scope.
+     * @property {SelectToolbar} toolbarControl - Sets the toolbar control for the SelectTool.
+     * @property {paper.Path.Rectangle} selectionRectangle - The selection rectangle used for area-based selection.
+     * @property {paper.Path.Rectangle} sr2 - A second selection rectangle with a dashed border.
+     * @description This tool provides the ability to select and manipulate GeoJSON feature items on the canvas. Users can select items by clicking
+     * on them or by performing area-based selection through click-and-drag. It also emits selection-related events for interaction and provides
+     * functions to retrieve selected items and check for the existence of GeoJSON feature items.
+     */
+    constructor(paperScope){
+        super(paperScope);
+        let self=this;
+        this.ps = this.project.paperScope;
+        this.setToolbarControl(new SelectToolbar(this));
+
+        let selectionRectangle = new paper.Path.Rectangle({strokeWidth:1,rescale:{strokeWidth:1},strokeColor:'black'});
+        let sr2 = new paper.Path.Rectangle({strokeWidth:1,dashArray:[10,10],rescale:{strokeWidth:1,dashArray:[10,10]},strokeColor:'white'});
+        this.project.toolLayer.addChild(selectionRectangle);
+        this.project.toolLayer.addChild(sr2);
+        selectionRectangle.applyRescale();
+        sr2.applyRescale();
+        selectionRectangle.visible=false;
+        sr2.visible=false;
+        
+        this.extensions.onActivate=function(){ 
+            self.tool.onMouseMove = (ev)=>self.onMouseMove(ev);
+        }    
+        this.extensions.onDeactivate=function(shouldFinish){
+            self.project.overlay.removeClass('selectable-layer');
+            self.tool.onMouseMove = null;
+        }
+        this.tool.extensions.onKeyUp=function(ev){
+            if(ev.key=='escape'){
+                self.project.paperScope.findSelectedItems().forEach(item=>item.deselect());
+            }
+        }
+       
+        /**
+         * Event handler for mouse up events.
+         * @private
+         * @param {Event} ev - The mouse up event.
+         * @property {boolean} visible - Hide the selection rectangle.
+         * @property {HitResult} hitResult - The result of the hit test to find the item under the mouse pointer.
+         * @property {boolean} toggleSelection - Indicates whether the 'Control' or 'Meta' key was pressed during the event.
+         * @property {HitResult[]} hitResults - An array of hit test results containing items found within the area.
+         * @property {boolean} keepExistingSelection - Indicates whether the 'Control' or 'Meta' key was pressed during the event.
+         * @property {Item[]} selectedItems - An array of selected items to be deselected.
+         */        
+        this.tool.onMouseUp=function(ev){
+            selectionRectangle.visible=false;
+            sr2.visible=false;
+            if(ev.downPoint.subtract(ev.point).length==0){
+                //not a click-and-drag, do element selection
+                let hitResult = self.hitTestPoint(ev);
+                hitResult &amp;&amp; self._isItemSelectable(hitResult.item) &amp;&amp; hitResult.item.toggle((ev.modifiers.control || ev.modifiers.meta));
+                
+            } else{
+                //click and drag, do area-based selection
+                let hitResults = self.hitTestArea(ev);
+                let keepExistingSelection = (ev.modifiers.control || ev.modifiers.meta);
+                if(!keepExistingSelection){
+                    self.project.paperScope.findSelectedItems().forEach(item=>item.deselect());
+                }
+                hitResults.forEach(item=>item.select(true))
+                //limit results to a single layer
+                // hitResults.filter(item=>item.layer === hitResults[0].layer).forEach(item=>item.select(true))
+            }
+        }
+        /**
+         * Event handler for mouse drag events.
+         * @private
+         * @param {Event} ev - The mouse drag event.
+         * @property {boolean} visible - Show the selection rectangle.
+         * @property {Rectangle} r - The bounding rectangle of the selection area.
+         */
+        this.tool.onMouseDrag = function(ev){
+            selectionRectangle.visible=true;
+            sr2.visible=true;
+            let r=new paper.Rectangle(ev.downPoint,ev.point);
+            selectionRectangle.set({segments:[r.topLeft, r.topRight, r.bottomRight, r.bottomLeft]});
+            sr2.set({segments:[r.topLeft, r.topRight, r.bottomRight, r.bottomLeft]});
+            // console.log(selectionRectangle.visible, selectionRectangle.segments)
+        }
+    }
+//   /**
+//    * Gets the selected items that are GeoJSON features.
+//    * This method retrieves all the items in the Paper.js project that are considered as GeoJSON features and are currently selected.
+//    * @returns {Array&lt;Object>} An array of selected items that are GeoJSON features.
+//    */
+//     getSelectedItems(){
+//         return this.ps.project.selectedItems.filter(i=>i.isGeoJSONFeature);
+//     }
+  /**
+   * Checks if there are any GeoJSON feature items in the project.
+   * This method searches through all the items in the Paper.js project and determines if there are any GeoJSON feature items.
+   * @returns {boolean} Returns true if there are GeoJSON feature items, false otherwise.
+   */
+    doAnnotationItemsExist(){
+        return this.ps.project.getItems({match:i=>i.isGeoJSONFeature}).length>0; 
+    }
+
+  /**
+   * Handles mouse movement events and emits selection-related events for items under the cursor.
+   * When the mouse moves within the Paper.js project area, this method detects if it is over any item and triggers related selection events.
+   * It updates the currently hovered item and layer, and applies a CSS class to the project's overlay for highlighting selectable layers.
+   * @param {Object} ev - The mouse move event object containing information about the cursor position.
+   */
+    onMouseMove(ev){
+        if(ev.item &amp;&amp; this._isItemSelectable(ev.item)){
+            if(this.currentItem != ev.item) (ev.item.emit('selection:mouseenter')||true) 
+            if(this.currentLayer != ev.item.layer) ev.item.layer.emit('selection:mouseenter');
+            this.currentItem = ev.item;
+            this.currentLayer = this.currentItem.layer;
+            this.project.overlay.addClass('selectable-layer')
+        }
+        else{
+            this.currenItem &amp;&amp; (this.currentItem.emit('selection:mouseleave',ev)||true) 
+            this.currentLayer &amp;&amp; this.currentLayer.emit('selection:mouseleave',ev);
+            this.project.overlay.removeClass('selectable-layer')
+            this.currentItem = null;
+            this.currentLayer = null;
+        }   
+    }
+    /**
+     * Performs a hit test on a specific point and returns hit results for GeoJSON feature items.
+     * This method performs a hit test on the provided point and filters the results to include only GeoJSON feature items.
+     * It also adjusts the hit result if the initial hit is not on the GeoJSON feature itself, but on a child item.
+     * @param {Object} ev - The mouse event object containing the point to perform the hit test on.
+     * @returns {HitResult} The hit result object containing information about the hit test.
+     */
+    hitTestPoint(ev){
+        let hitResult = this.ps.project.hitTest(ev.point,{
+            fill:true,
+            stroke:true,
+            segments:true,
+            tolerance:(5/this.project.getZoom()),
+            match:i=>i.item.isGeoJSONFeature || i.item.parent.isGeoJSONFeature,
+        })
+        if(hitResult &amp;&amp; !hitResult.item.isGeoJSONFeature){
+            hitResult.item = hitResult.item.parent;
+        }
+        return hitResult;
+    }
+    /**
+     * Performs a hit test within an area and returns hit results for GeoJSON feature items.
+     * This method performs a hit test within the provided area and returns hit results that include only GeoJSON feature items.
+     * It supports options for testing against fully contained or overlapping items.
+     * @param {Object} ev - The mouse event object containing the area for hit testing.
+     * @param {boolean} [onlyFullyContained=false] - Flag to indicate if hit test should be performed only on fully contained items.
+     * @returns {HitResult[]} An array of hit results containing GeoJSON feature items within the specified area.
+     */
+    hitTestArea(ev,onlyFullyContained){
+        let options = {
+            match:item=>item.isGeoJSONFeature,
+        }
+        let testRectangle=new paper.Rectangle(ev.point,ev.downPoint);
+        if(onlyFullyContained){
+            options.inside=testRectangle;
+        }
+        else{
+            options.overlapping=testRectangle;
+        }
+        let hitResult = this.ps.project.getItems(options);
+        return hitResult;
+    }
+
+    _isItemSelectable(item){
+        return true;
+        return (this.items.length==0) || (item.layer == this.targetLayer);
+    }
+}
+export{SelectTool};
+
+
+class SelectToolbar extends AnnotationUIToolbarBase{
+    constructor(tool){
+        super(tool);
+        $(this.dropdown).addClass('select-dropdown');
+        let html = $('&lt;i>',{class:'fa-solid fa-arrow-pointer'})[0];
+        this.button.configure(html,'Selection Tool');
+        
+        let s = $('&lt;div>',{'data-active':'select'}).appendTo(this.modeRow)
+        $('&lt;span>').text('(Ctrl)click to select items.').appendTo(s);
+        
+    }
+    isEnabledForMode(mode){
+        let itemsExist = this.tool.doAnnotationItemsExist();
+        return itemsExist &amp;&amp; [
+            'default',
+            'select',
+            'multiselection',
+            'MultiPolygon',
+            'Point:Rectangle',
+            'Point','LineString',
+            'GeometryColletion:Raster',
+        ].includes(mode);
+    }
+    
+}</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="OSDPaperjsAnnotation.html">OSDPaperjsAnnotation</a></li></ul><h3>Classes</h3><ul><li><a href="EditableContent.html">EditableContent</a></li><li><a href="Morph.html">Morph</a></li><li><a href="OSDPaperjsAnnotation.AnnotationItem.html">AnnotationItem</a></li><li><a href="OSDPaperjsAnnotation.AnnotationItemFactory.html">AnnotationItemFactory</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolbar.html">AnnotationToolbar</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolkit.html">AnnotationToolkit</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUI.html">AnnotationUI</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUITool.html">AnnotationUITool</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUITool.AnnotationUIToolbarBase.html">AnnotationUIToolbarBase</a></li><li><a href="OSDPaperjsAnnotation.BrushTool.html">BrushTool</a></li><li><a href="OSDPaperjsAnnotation.BrushTool.BrushToolbar.html">BrushToolbar</a></li><li><a href="OSDPaperjsAnnotation.DefaultTool.html">DefaultTool</a></li><li><a href="OSDPaperjsAnnotation.DefaultTool.DefaultToolbar.html">DefaultToolbar</a></li><li><a href="OSDPaperjsAnnotation.Ellipse.html">Ellipse</a></li><li><a href="OSDPaperjsAnnotation.EllipseTool.html">EllipseTool</a></li><li><a href="OSDPaperjsAnnotation.EllipseTool.EllipseToolbar.html">EllipseToolbar</a></li><li><a href="OSDPaperjsAnnotation.FeatureCollectionUI.html">FeatureCollectionUI</a></li><li><a href="OSDPaperjsAnnotation.FeatureUI.html">FeatureUI</a></li><li><a href="OSDPaperjsAnnotation.FileDialog.html">FileDialog</a></li><li><a href="OSDPaperjsAnnotation.LayerUI.html">LayerUI</a></li><li><a href="OSDPaperjsAnnotation.Linestring.html">Linestring</a></li><li><a href="OSDPaperjsAnnotation.LinestringTool.html">LinestringTool</a></li><li><a href="OSDPaperjsAnnotation.LinestringTool.LinestringToolbar.html">LinestringToolbar</a></li><li><a href="OSDPaperjsAnnotation.MultiLinestring.html">MultiLinestring</a></li><li><a href="OSDPaperjsAnnotation.MultiPolygon.html">MultiPolygon</a></li><li><a href="OSDPaperjsAnnotation.PaperOverlay.html">PaperOverlay</a></li><li><a href="OSDPaperjsAnnotation.Placeholder.html">Placeholder</a></li><li><a href="OSDPaperjsAnnotation.Point.html">Point</a></li><li><a href="OSDPaperjsAnnotation.PointText.html">PointText</a></li><li><a href="OSDPaperjsAnnotation.PointTextTool.html">PointTextTool</a></li><li><a href="OSDPaperjsAnnotation.PointTextTool.PointTextToolbar.html">PointTextToolbar</a></li><li><a href="OSDPaperjsAnnotation.PointTool.html">PointTool</a></li><li><a href="OSDPaperjsAnnotation.PointTool.PointToolbar.html">PointToolbar</a></li><li><a href="OSDPaperjsAnnotation.PolygonTool.html">PolygonTool</a></li><li><a href="OSDPaperjsAnnotation.PolygonTool.PolygonToolbar.html">PolygonToolbar</a></li><li><a href="OSDPaperjsAnnotation.Raster.html">Raster</a></li><li><a href="OSDPaperjsAnnotation.RasterTool.html">RasterTool</a></li><li><a href="OSDPaperjsAnnotation.RasterTool.RasterToolbar.html">RasterToolbar</a></li><li><a href="OSDPaperjsAnnotation.Rectangle.html">Rectangle</a></li><li><a href="OSDPaperjsAnnotation.RectangleTool.html">RectangleTool</a></li><li><a href="OSDPaperjsAnnotation.RectangleTool_RectToolbar.html">RectToolbar</a></li><li><a href="OSDPaperjsAnnotation.RotationControlOverlay.html">RotationControlOverlay</a></li><li><a href="OSDPaperjsAnnotation.RotationControlTool.html">RotationControlTool</a></li><li><a href="OSDPaperjsAnnotation.RotationControlWidget.html">RotationControlWidget</a></li><li><a href="OSDPaperjsAnnotation.StyleTool.html">StyleTool</a></li><li><a href="OSDPaperjsAnnotation.StyleTool.StyleToolbar.html">StyleToolbar</a></li><li><a href="OSDPaperjsAnnotation.ToolBase.html">ToolBase</a></li><li><a href="OSDPaperjsAnnotation.TransformTool.html">TransformTool</a></li><li><a href="OSDPaperjsAnnotation.TransformTool.TransformToolbar.html">TransformToolbar</a></li><li><a href="OSDPaperjsAnnotation.WandTool.html">WandTool</a></li><li><a href="OSDPaperjsAnnotation.WandTool.WandToolbar.html">WandToolbar</a></li><li><a href="SelectTool.html">SelectTool</a></li></ul><h3>Global</h3><ul><li><a href="global.html#_paper">_paper</a></li><li><a href="global.html#adaptiveOffsetCurve">adaptiveOffsetCurve</a></li><li><a href="global.html#connectAdjacentBezier">connectAdjacentBezier</a></li><li><a href="global.html#connectBeziers">connectBeziers</a></li><li><a href="global.html#getPointLineIntersections">getPointLineIntersections</a></li><li><a href="global.html#localImportsCompleted">localImportsCompleted</a></li><li><a href="global.html#makeRoundJoin">makeRoundJoin</a></li><li><a href="global.html#normalize">normalize</a></li><li><a href="global.html#offsetSegment">offsetSegment</a></li><li><a href="global.html#osd">osd</a></li><li><a href="global.html#removeIntersection">removeIntersection</a></li><li><a href="global.html#removeOutsiders">removeOutsiders</a></li><li><a href="global.html#updateFillOpacity">updateFillOpacity</a></li><li><a href="global.html#updateStrokeOpacity">updateStrokeOpacity</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.0</a> on Tue Jan 02 2024 14:46:22 GMT-0500 (Eastern Standard Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

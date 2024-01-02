@@ -1,12 +1,12 @@
 /**
  * OpenSeadragon canvas Overlay plugin based on paper.js
- * @version 0.1.2
+ * @version 0.3.0
  * 
  * Includes additional open source libraries which are subject to copyright notices
  * as indicated accompanying those segments of code.
  * 
  * Original code:
- * Copyright (c) 2022-2023, Thomas Pearce
+ * Copyright (c) 2022-2024, Thomas Pearce
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -83,7 +83,7 @@ function styleSet(style){
 	
 }
 /**
- * @private
+ * Item.updateFillOpacity (paper extension)
  * Update the fill opacity of a paper item and its descendants.
  */
 
@@ -94,7 +94,7 @@ function updateFillOpacity(){
     }
 }
 /**
- * @private
+ * Item.updateStrokeOpacity (paper extension)
  * Update the stroke opacity of a paper item and its descendants.
  */
 function updateStrokeOpacity(){

@@ -1,7 +1,7 @@
 {
   "name": "osd-paperjs-annotation",
   "description": "Annotation tools for OpenSeadragon using PaperJS",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "generate-docs": "jsdoc -c ./jsdoc-config.json",
@@ -20,11 +20,11 @@
   "main": "dist/main.js",
   "homepage": "https://github.com/pearcetm/osd-paperjs-annotation",
   "peerDependencies": {
-    "openseadragon": "^4.0.0"
+    "openseadragon": "^4.0.0",
+    "jquery": "^3.6.0",
+    "jqueryui": "^1.11.1"
   },
   "dependencies": {
-    "jquery": "^3.6.0",
-    "jqueryui": "^1.11.1",
     "paper": "0.12.17"
   },
   "devDependencies": {
