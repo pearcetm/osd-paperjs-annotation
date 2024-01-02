@@ -292,9 +292,8 @@ class PaperOverlay{
     destroy(viewerDestroyed){
         this.destroyed = true;
         this._canvasdiv.remove();
-        this.paperScope.project.remove();
-        this._canvasdiv.remove();
-        this.ps.remove();  
+        this.paperScope.project && this.paperScope.project.remove();
+        this.ps && this.ps.remove();  
         if(!viewerDestroyed){
             this.viewer.removeHandler('viewport-change',this.onViewportChange);
             this.viewer.removeHandler('resize',this.onViewerResize);
