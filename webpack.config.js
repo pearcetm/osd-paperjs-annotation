@@ -55,6 +55,14 @@ module.exports = {
                 },
             },
             {
+                test: require.resolve("./src/js/annotationui.mjs"),
+                loader: "imports-loader",
+                options: {
+                    type: "module",
+                    imports: "side-effects jqueryui",
+                },
+            },
+            {
                 test: /\.css$/,
                 use: ['style-loader', 'css-loader']
             }
