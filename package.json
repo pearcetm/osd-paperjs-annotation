@@ -20,9 +20,7 @@
   "main": "dist/main.js",
   "homepage": "https://github.com/pearcetm/osd-paperjs-annotation",
   "peerDependencies": {
-    "openseadragon": "^4.0.0",
-    "jquery": "^3.6.0",
-    "jqueryui": "^1.11.1"
+    "jquery": "^3.6.0"
   },
   "dependencies": {
     "paper": "0.12.17"
