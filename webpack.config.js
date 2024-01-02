@@ -59,7 +59,7 @@ module.exports = {
                 loader: "imports-loader",
                 options: {
                     type: "module",
-                    imports: "side-effects jqueryui",
+                    imports: "side-effects jquery-ui",
                 },
             },
             {
