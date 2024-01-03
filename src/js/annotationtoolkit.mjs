@@ -348,6 +348,13 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
     }
 
     /**
+     * Add a new, empty FeatureCollection with default label and parent
+     * @returns {paper.Group} The paper group object representing the feature collection.
+     */
+    addEmptyFeatureCollectionGroup(){
+        return this._createFeatureCollectionGroup();
+    }
+    /**
      * Create a new feature collection group in the project scope.
      * @private
      * @param {Object} [opts] - Object with fields label and parent
@@ -370,6 +377,7 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
             } else if (numItems == 0){
                 parent = this.viewer.viewport.paperLayer;
             } else {
+                //TODO: Update the UI and associated APIs to allow selecting specific tiled images for multi-image use
                 console.warn('Use of AnnotationToolkit with multi-image is not yet fully supported. All annotations will be added to the top-level tiled image.');
                 parent = this.viewer.world.getItemAt(numItems - 1).paperLayer;
             }

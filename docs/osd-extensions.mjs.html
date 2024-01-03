@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Source: paperitems/placeholder.mjs</title>
+    <title>JSDoc: Source: osd-extensions.mjs</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,7 +17,7 @@
 
 <div id="main">
 
-    <h1 class="page-title">Source: paperitems/placeholder.mjs</h1>
+    <h1 class="page-title">Source: osd-extensions.mjs</h1>
 
     
 
@@ -64,92 +64,154 @@
  * 
  */
 
-import { AnnotationItem } from "./annotationitem.mjs";
+import { PaperOverlay } from "./paper-overlay.mjs";
+import { OpenSeadragon } from "./osd-loader.mjs";
+import { paper } from './paperjs.mjs';
+
+Object.defineProperty(OpenSeadragon.Viewer.prototype, 'paperLayer', paperLayerDef());
+Object.defineProperty(OpenSeadragon.TiledImage.prototype, 'paperLayer', paperLayerDef());
+Object.defineProperty(OpenSeadragon.Viewport.prototype, 'paperLayer', paperLayerDef());
+Object.defineProperty(OpenSeadragon.TiledImage.prototype, '_paperLayerMap', paperLayerMapDef());
+Object.defineProperty(OpenSeadragon.Viewer.prototype, '_paperLayerMap', paperLayerMapDef());
+Object.defineProperty(OpenSeadragon.Viewport.prototype, '_paperLayerMap', paperLayerMapDef());
+Object.defineProperty(OpenSeadragon.Viewer.prototype, 'paperItems', paperItemsDef());
+Object.defineProperty(OpenSeadragon.TiledImage.prototype, 'paperItems', paperItemsDef());
+Object.defineProperty(OpenSeadragon.Viewport.prototype, 'paperItems', paperItemsDef());
+OpenSeadragon.Viewer.prototype._setupPaper = _setupPaper;
+OpenSeadragon.Viewport.prototype._setupPaper = _setupPaper;
+OpenSeadragon.TiledImage.prototype._setupPaper = _setupPaperForTiledImage;
+OpenSeadragon.Viewer.prototype.addPaperItem = addPaperItem;
+OpenSeadragon.Viewport.prototype.addPaperItem = addPaperItem;
+OpenSeadragon.TiledImage.prototype.addPaperItem = addPaperItem;
 
 /**
- * Represents a placeholder annotation item.
- * @class
- * @memberof OSDPaperjsAnnotation
- * @extends AnnotationItem
- * @description The `Placeholder` class represents a placeholder annotation item. It inherits from the `AnnotationItem` class and provides methods to work with placeholder annotations.
+ * Creates a PaperOverlay for this viewer. See {@link PaperOverlay} for options.
+ * @returns {PaperOverlay} The overlay that was created
  */
-class Placeholder extends AnnotationItem{
-    /**
-     * Create a new Placeholder instance.
-     * @param {Object} geoJSON - The GeoJSON object containing annotation data.
-     * @property {paper.Path} _paperItem - The associated paper item representing the placeholder.
-     * @description This constructor initializes a new placeholder annotation item based on the provided GeoJSON object.
-     */
-    constructor(geoJSON){
-        super(geoJSON);
-        
-        this.paperItem = new paper.Path();
-        // this.paperItem.style = this.paperItem.instructions = geoJSON;
-        this.paperItem.style = geoJSON.properties;
+OpenSeadragon.Viewer.prototype.createPaperOverlay = function(){ 
+    let overlay = new PaperOverlay(this, ...arguments);
+    return overlay;
+};
 
-        this.paperItem.initializeGeoJSONFeature = initialize;
-    }
-    /**
-     * Retrieves the supported types by the Placeholder annotation item.
-     * @static
-     * @returns {Object} An object with type property set to null.
-     * @description This static method provides information that the Placeholder annotation item does not have a specific type.
-     */
-    static get supportsType(){
-        return {
-            type: null
+/**
+ * Define the paperItems property for a tiledImage.
+ * @private
+ * @returns {object} The property descriptor object.
+ * @property {function} get - The getter function for paperItems.
+ *   @returns {paper.Item[]} The array of paper item objects representing the items belonging to this TiledImage.
+ */
+function paperItemsDef(){
+    return {
+        get: function paperItems(){
+            return this.paperLayer.children;
         }
     }
-    /**
-     * Retrieves the coordinates of the placeholder.
-     * @returns {Array} An empty array.
-     * @description This method returns an empty array since the Placeholder class does not have coordinates.
-     */
-    getCoordinates(){
-        return [];
-    }
-    /**
-     * Retrieves the properties of the placeholder.
-     * @returns {Object} The properties object.
-     * @description This method returns the properties associated with the placeholder.
-     */
-    getProperties(){
-        let item = this.paperItem;
-        return item.style;
-    }
-    
 }
 
-export{Placeholder};
 
 /**
- * Initializes a GeoJSON feature based on the provided geometry type and subtype.
- * @param {string} geoJSONGeometryType - The GeoJSON geometry type.
- * @param {string} geometrySubtype - The subtype of the geometry.
- * @returns {paper.Item} The created paper item.
  * @private
- * @description This function initializes a GeoJSON feature using the provided geometry type and subtype, and returns the corresponding paper item.
  */
-function initialize(geoJSONGeometryType, geometrySubtype) {
-    let item = this;
-    // let geoJSON = item.instructions;
-    let geoJSON = {
-        geometry:{
-            type: geoJSONGeometryType,
-            coordinates: [],
-            properties: {
-                subtype:geometrySubtype,
-            },
-        },
-        properties: item.style,
-    };
+function _createPaperLayer(osdObject, paperScope){
+    let layer = new paper.Layer({applyMatrix:false});
+    paperScope.project.addLayer(layer);
+    osdObject._paperLayerMap.set(paperScope, layer);
+    return layer;
+}
+
+/**
+ * Define the paperLayer property for a tiledImage. Initializes the paper.Layer object the first time it is accessed.
+ * @private
+ * @returns {object} The property descriptor object.
+ * @property {function} get - The getter function for paperGroup.
+ *   @returns {paper.Layer} The group that serves as the parent of all paper items belonging to this TiledImage.
+ */
+function paperLayerDef(){
+    return {
+        get: function paperLayer(){
+            let numScopes = this._paperLayerMap.size;
+            if( numScopes === 1){
+                return this._paperLayerMap.values().next().value;
+            } else if (numScopes === 0){
+                return null;
+            } else {
+                return this._paperLayerMap.get(paper) || null;
+            }
+        }
+    }
+}
+/**
+ * Define the _paperLayerMap property for a tiledImage. Initializes the Map object the first time it is accessed.
+ * @private
+ * @returns {object} The property descriptor object.
+ * @property {function} get - The getter function for paperGroup.
+ *   @returns {Map} The mapping from paper.Scope to the layer within the scope corresponding to this object
+ */
+function paperLayerMapDef(){
+    return {
+        get: function _paperLayerMap(){
+            if(!this.__paperLayerMap){
+                this.__paperLayerMap = new Map();
+            }
+            return this.__paperLayerMap;
+        }
+    }
+}
+/**
+ * @private
+ * 
+ */
+function _setupPaperForTiledImage(overlay){
+    let layer = _setupPaper.call(this, overlay);
+    let tiledImage = this;
+    layer.tiledImage = tiledImage;
+    // let scale = tiledImage.getBounds().width / tiledImage.getContentSize().x;
+    // layer.setScaling(scale);
+    // layer.setScaling(scale);
+    let degrees = this.getRotation();
+    let bounds = this.getBounds();
     
-    let newItem = paper.Item.fromGeoJSON(geoJSON);
-    // newItem.selected=item.selected;
-    item.replaceWith(newItem);
-        
-    return newItem;
-}</code></pre>
+    layer.matrix.rotate(degrees, (bounds.x+bounds.width/2) * overlay.scaleFactor, (bounds.y+bounds.height/2) * overlay.scaleFactor);
+    layer.matrix.translate({x: bounds.x * overlay.scaleFactor, y: bounds.y * overlay.scaleFactor});
+    layer.matrix.scale(bounds.width);
+    
+    tiledImage.addHandler('bounds-change',ev=>{
+        // console.log('bounds-change',ev);
+        console.log('TODO implement scaling');
+        let degrees = this.getRotation();
+        let bounds = this.getBoundsNoRotate();
+        let matrix = new paper.Matrix();
+
+        console.log(degrees, bounds);
+
+        matrix.rotate(degrees, (bounds.x+bounds.width/2) * overlay.scaleFactor, (bounds.y+bounds.height/2) * overlay.scaleFactor);
+        matrix.translate({x: bounds.x * overlay.scaleFactor, y: bounds.y * overlay.scaleFactor});
+        matrix.scale(bounds.width);
+
+        layer.matrix.set(matrix);
+    });
+}
+
+/**
+ * @private
+ * @returns {paper.Layer}
+ */
+function _setupPaper(overlay){
+    return _createPaperLayer(this, overlay.paperScope);
+}
+
+
+/**
+ * @private
+ */
+function addPaperItem(item){
+    if(this.paperLayer){
+        this.paperLayer.addChild(item);
+    } else {
+        console.error('No layer has been set up in the active paper scope for this object. Does a scope need to be activated?');
+    }
+}
+</code></pre>
         </article>
     </section>
 

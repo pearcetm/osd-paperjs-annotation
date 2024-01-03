@@ -67,8 +67,7 @@ class LayerUI extends OpenSeadragon.EventSource{
         self.element.find('.new-feature-collection').on('click',function(ev){
             ev.stopPropagation();
             ev.preventDefault();
-            // self.addFeatureCollection();
-            self._tk.createFeatureCollectionGroup();
+            self._tk.addEmptyFeatureCollectionGroup();
         });
         self.element.find('.toggle-annotations').on('click',function(ev){
             let hidden = self.element.find('.annotation-ui-feature-collections .feature-collection.annotation-hidden');
