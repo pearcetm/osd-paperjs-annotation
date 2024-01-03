@@ -298,7 +298,7 @@ class AnnotationUI {
     }
 
     function limitHeight() {
-      let topOfFCList = element.offset().top;
+      let topOfFCList = element.offset().top - $(window).scrollTop();
       let bottomOfVisibleWindow = $(window).height();
       let maxheight = bottomOfVisibleWindow - topOfFCList - (element.outerHeight() - element.height()) - 5;
       element.css({ maxHeight: maxheight });
