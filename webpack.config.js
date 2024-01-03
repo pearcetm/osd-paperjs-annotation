@@ -55,6 +55,17 @@ module.exports = {
                 },
             },
             {
+                test: require.resolve("./src/js/annotationui.mjs"),
+                loader: "imports-loader",
+                options: {
+                    type: "module",
+                    imports: [
+                        "side-effects jquery-ui/ui/widgets/dialog.js",
+                        "side-effects jquery-ui/ui/widgets/sortable.js"
+                    ]
+                },
+            },
+            {
                 test: /\.css$/,
                 use: ['style-loader', 'css-loader']
             }
