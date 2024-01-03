@@ -59,7 +59,10 @@ module.exports = {
                 loader: "imports-loader",
                 options: {
                     type: "module",
-                    imports: "side-effects jquery-ui/ui/widgets/dialog.js",
+                    imports: [
+                        "side-effects jquery-ui/ui/widgets/dialog.js",
+                        "side-effects jquery-ui/ui/widgets/sortable.js"
+                    ]
                 },
             },
             {
