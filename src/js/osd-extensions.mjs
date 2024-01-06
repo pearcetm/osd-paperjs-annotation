@@ -177,6 +177,7 @@ function _setupPaper(overlay){
 function addPaperItem(item){
     if(this.paperLayer){
         this.paperLayer.addChild(item);
+        item.applyRescale();
     } else {
         console.error('No layer has been set up in the active paper scope for this object. Does a scope need to be activated?');
     }
