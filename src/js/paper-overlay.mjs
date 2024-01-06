@@ -223,10 +223,12 @@ class PaperOverlay{
         
         
     }
+    // TODO: fix this comment once the behavior is fixed.
     // The scale factor for this overlay. Equal to the screen width (window.screen.width). Smaller values (e.g. 1) lead to undesirable coarseness
     // of polygon vertices following certain paper operations
     get scaleFactor(){
-        return window.screen.width;
+        // return window.screen.width;
+        return 100;
     }
   /**
    * Adds a button to the viewer. The button is created with the provided parameters.
@@ -474,11 +476,7 @@ class PaperOverlay{
     getViewportRaster(withImageData = true){
         let view = this.paperScope.view;
         //TO DO: make this query subregions of the viewport directly instead of always returning the entire thing
-        // let view = this.paperjsOverlay && this.paperjsOverlay.paperScope.view;
-        // if(!view){
-        //     console.error('Cannot call getViewportRaster before an overlay has been created');
-        //     return;
-        // }
+       
         let center = view.viewToProject(new paper.Point(view.viewSize.width/2, view.viewSize.height/2 ));
         let rotation = -1 * this.viewer.viewport.getRotation();
         let rasterDef = {

@@ -46,7 +46,7 @@ const localImportsCompleted = typeof importedCSS !== 'undefined';
  * @returns {void}
  */
 function addCSS(url, nameToCheck){
-    if(localImportsCompleted && !url.startsWith('http')){
+    if(localImportsCompleted){
         console.log('Already imported', url);
         return;
     }

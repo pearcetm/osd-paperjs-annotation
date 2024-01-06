@@ -1,16 +1,25 @@
-var webpack = require('webpack');
+let webpack = require('webpack');
+let UnminifiedWebpackPlugin = require('unminified-webpack-plugin');
 
 module.exports = {
-    "stats": {
+    stats: {
         "errorDetails": true,
         "children": true
     },
     output:{
-        libraryTarget: 'umd'
+        libraryTarget: 'umd',
+        filename: '[name].min.js'
     },
-    "entry": './src/js/osdpaperjsannotation.mjs',
-    "externals": {
-        "openseadragon": {
+    entry: {
+        full:'./src/js/osdpaperjsannotation.mjs',
+        overlay:'./src/js/paper-overlay.mjs',
+        annotationtoolkit:'./src/js/annotationtoolkit.mjs',
+    },
+    plugins: [
+        new UnminifiedWebpackPlugin()
+    ],
+    externals: {
+        openseadragon: {
             root: 'OpenSeadragon',
             commonjs2: 'openseadragon',
             commonjs: 'openseadragon',
@@ -43,7 +52,7 @@ module.exports = {
                 loader: "imports-loader",
                 options: {
                     type: "module",
-                    imports: "default paper paper",
+                    imports: "default paper/dist/paper-core.min.js paper",
                 },
             },
             {

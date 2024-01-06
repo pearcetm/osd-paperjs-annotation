@@ -37,7 +37,6 @@
  */
 
 import { AnnotationToolkit } from './annotationtoolkit.mjs';
-import { addCSS } from './addcss.mjs';
 import { AnnotationToolbar } from './annotationtoolbar.mjs';
 import { FeatureCollectionUI } from './featurecollectionui.mjs';
 import { FeatureUI } from './featureui.mjs';
@@ -73,7 +72,6 @@ import { WandTool } from './papertools/wand.mjs';
 export const OSDPaperjsAnnotation = {
     AnnotationToolkit: AnnotationToolkit,
     AnnotationToolbar: AnnotationToolbar,
-    addCSS: addCSS,
     FeatureCollectionUI :FeatureCollectionUI,
     FeatureUI:FeatureUI,
     FileDialog:FileDialog,
@@ -105,7 +103,6 @@ export const OSDPaperjsAnnotation = {
 export {
     AnnotationToolkit,
     AnnotationToolbar,
-    addCSS,
     FeatureCollectionUI,
     FeatureUI,
     FileDialog,

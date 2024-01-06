@@ -92,7 +92,7 @@ function _createPaperLayer(osdObject, paperScope){
 }
 
 /**
- * Define the paperLayer property for a tiledImage. Initializes the paper.Layer object the first time it is accessed.
+ * Define the paperLayer property for a tiledImage.
  * @private
  * @returns {object} The property descriptor object.
  * @property {function} get - The getter function for paperGroup.
@@ -137,15 +137,13 @@ function _setupPaperForTiledImage(overlay){
     let layer = _setupPaper.call(this, overlay);
     let tiledImage = this;
     layer.tiledImage = tiledImage;
-    // let scale = tiledImage.getBounds().width / tiledImage.getContentSize().x;
-    // layer.setScaling(scale);
-    // layer.setScaling(scale);
+    
     let degrees = this.getRotation();
     let bounds = this.getBounds();
     
     layer.matrix.rotate(degrees, (bounds.x+bounds.width/2) * overlay.scaleFactor, (bounds.y+bounds.height/2) * overlay.scaleFactor);
     layer.matrix.translate({x: bounds.x * overlay.scaleFactor, y: bounds.y * overlay.scaleFactor});
-    layer.matrix.scale(bounds.width);
+    layer.matrix.scale(bounds.width * overlay.scaleFactor / this.source.width );
     
     tiledImage.addHandler('bounds-change',ev=>{
         // console.log('bounds-change',ev);
@@ -158,7 +156,7 @@ function _setupPaperForTiledImage(overlay){
 
         matrix.rotate(degrees, (bounds.x+bounds.width/2) * overlay.scaleFactor, (bounds.y+bounds.height/2) * overlay.scaleFactor);
         matrix.translate({x: bounds.x * overlay.scaleFactor, y: bounds.y * overlay.scaleFactor});
-        matrix.scale(bounds.width);
+        matrix.scale(bounds.width * overlay.scaleFactor / this.source.width );
 
         layer.matrix.set(matrix);
     });
