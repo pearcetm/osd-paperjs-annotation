@@ -8,13 +8,14 @@ module.exports = {
     },
     output:{
         libraryTarget: 'umd',
-        filename: '[name].min.js'
+        // filename: '[name].min.js'
     },
-    entry: {
-        full:'./src/js/osdpaperjsannotation.mjs',
-        overlay:'./src/js/paper-overlay.mjs',
-        annotationtoolkit:'./src/js/annotationtoolkit.mjs',
-    },
+    "entry": './src/js/osdpaperjsannotation.mjs',
+    // entry: {
+    //     full:'./src/js/osdpaperjsannotation.mjs',
+    //     overlay:'./src/js/paper-overlay.mjs',
+    //     annotationtoolkit:'./src/js/annotationtoolkit.mjs',
+    // },
     plugins: [
         new UnminifiedWebpackPlugin()
     ],
