@@ -78,7 +78,30 @@ module.exports = {
             {
                 test: /\.css$/,
                 use: ['style-loader', 'css-loader']
-            }
+            },
+            {
+                test: /\.(woff(2)?|ttf|eot)(\?v=\d+\.\d+\.\d+)?$/,
+                use: [
+                  {
+                    loader: "file-loader",
+                    options: {
+                      name: "[name].[contenthash].[ext]",
+                      outputPath: "fonts/",
+                    },
+                  },
+                ],
+              },
+              {
+                test: /\.svg$/,
+                use: [
+                  {
+                    loader: "svg-url-loader",
+                    options: {
+                      limit: 10000,
+                    },
+                  },
+                ],
+              },
         ],
     }
 }
