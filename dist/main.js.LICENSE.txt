@@ -1,4 +1,10 @@
 /*!
+ * Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com
+ * License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License)
+ * Copyright 2023 Fonticons, Inc.
+ */
+
+/*!
  * Paper.js v0.12.17 - The Swiss Army Knife of Vector Graphics Scripting.
  * http://paperjs.org/
  *
