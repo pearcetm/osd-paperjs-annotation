@@ -47,7 +47,7 @@ const localImportsCompleted = typeof importedCSS !== 'undefined';
  */
 function addCSS(url, nameToCheck){
     if(localImportsCompleted){
-        console.log('Already imported', url);
+        // console.log('Already imported', url);
         return;
     }
     // convert relative url to absolute

@@ -36,8 +36,8 @@
  * 
  */
 import 'jquery-ui/dist/themes/base/jquery-ui.css';
-// import '@fortawesome/fontawesome-free/css/fontawesome.min.css';
-import '../css/fontawesome-slim.css';
+import '@fortawesome/fontawesome-free/css/fontawesome.min.css';
+// import '../css/fontawesome-slim.css';
 import '../css/editablecontent.css';
 import '../css/osd-button.css';
 import '../css/annotationui.css';
