@@ -85,8 +85,11 @@ module.exports = {
                 options: {
                   outputPath: "../fonts",
                 }
+            },
+            {
+                test: /\.png$/,
+                type: 'asset/resource'
             }
-            
         ],
     }
 }
