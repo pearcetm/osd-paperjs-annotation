@@ -74,7 +74,7 @@ class FeatureUI{
             //don't bubble up
             ev.stopPropagation();
             ev.preventDefault();
-            let action = $(ev.target).data('action');
+            let action = $(ev.currentTarget).data('action');
             switch(action){
                 case 'trash': self.removeItem(); break;
                 case 'edit': self.editClicked(); break;
