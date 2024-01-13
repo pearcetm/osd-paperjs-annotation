@@ -205,7 +205,7 @@ class FeatureCollectionUI{
             ev.preventDefault();
         });
 
-        self.element.find('.annotation-header [data-action]').on('click',function(ev){
+        self.element.on('click','.annotation-header [data-action]',function(ev){
             //don't bubble up
             ev.stopPropagation();
             ev.preventDefault();

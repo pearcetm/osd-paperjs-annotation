@@ -70,7 +70,7 @@ class FeatureUI{
 
         
         el.data({feature:self});
-        el.find('[data-action]').on('click', function(ev){
+        el.on('click','[data-action]', function(ev){
             //don't bubble up
             ev.stopPropagation();
             ev.preventDefault();
