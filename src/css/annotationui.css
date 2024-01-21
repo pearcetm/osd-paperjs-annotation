@@ -122,24 +122,13 @@
 .annotation-ui-feature-collections .name{
     font-weight:bold;
 }
+.annotation-details{
+    flex-grow:1;
+}
 .feature-item{
     margin-left:1em;
 }
-/* .editablecontent:not(.editing){
-    cursor:default;
-}
-.editablecontent>[data-action]{
-    margin-left:0.2em;
-    cursor:pointer;
-}
-.editablecontent.editing>.onhover, .editablecontent:not(:hover) .onhover{
-    visibility:hidden;
-}
-.editablecontent.editing .edit{
-    border:thin gray solid;
-    background-color:lightblue;
-    padding:0 0.3em;
-} */
+
 .feature-collection [data-action], .feature [data-action]{
     margin-left:0.2em;
 }
@@ -153,6 +142,10 @@
     background-color:darkred;
     opacity:0.3;
     pointer-events:none;
+}
+.annotation-header{
+    display:grid;
+    grid-template-columns:auto 1fr auto auto auto;
 }
 .feature-collection.trashed .annotation-header [data-action="trash"]{
     pointer-events:all;
@@ -500,7 +493,7 @@ button[disabled]{
     color:black;
 }
 .feature:not(:hover) .bounding-element:not(.active){
-    display:none;
+    visibility:hidden;
 }
 
 /* From bootstrap */

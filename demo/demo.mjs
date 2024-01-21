@@ -8,7 +8,7 @@ let v1 =window.v1 = OpenSeadragon({
     tileSources: [{
             tileSource:{
                     type: 'image',
-                    url:  'https://openseadragon.github.io/example-images/grand-canyon-landscape-overlooking.jpg',
+                    url:  './grand-canyon-landscape-overlooking.jpg',
                     buildPyramid: false,
                 },
             x:0,

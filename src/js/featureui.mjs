@@ -259,7 +259,7 @@ export {FeatureUI};
 function makeFeatureElement(){
     let html = `
     <div class='feature'>
-        <div class='hoverable-actions'>
+        <div class='annotation-header hoverable-actions'>
             <span class='onhover fa-solid fa-crop-simple bounding-element' data-action="bounds" title='Bounding element'></span>
             <span class='feature-item name'></span>
             <span class='onhover fa-solid fa-palette' data-action='style' title='Open style editor'></span>

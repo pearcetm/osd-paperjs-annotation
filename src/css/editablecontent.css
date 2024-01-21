@@ -35,10 +35,14 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-
+.editablecontent{
+    display:grid;
+    grid-template-columns:1fr auto;
+}
 .editablecontent:not(.editing){
     cursor:default;
 }
+
 .editablecontent>.edit-button{
     margin-left:0.2em;
     cursor:pointer;
@@ -47,13 +51,30 @@
     visibility:hidden;
 }
 .editablecontent.editing .text-content{
-    /* border:thin gray solid; */
-    background-color:white;
-    padding:0 0.3em;
+    display: none;
 }
-.editablecontent .text-content:empty::after{
-    content:'Enter text...';
-    color:gray;
-    font-style:italic;
-    font-weight:normal;
+.editablecontent.editing textarea{
+    display:block;
+}
+.editablecontent:not(.editing) textarea{
+    display:none;
+}
+
+.editablecontent .text-content{
+    display:inline-block;
+    position:relative;
+}
+.editablecontent svg *{
+    pointer-events: none;
+}
+.editablecontent textarea{
+    resize:none;
+    width:100%;
+    padding:0;
+    margin:0;
+    border:none;
+    outline:thin black solid;
+    font-weight: inherit;
+    font-size: inherit;
+    font-family: inherit;
 }
