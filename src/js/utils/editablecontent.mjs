@@ -1,5 +1,5 @@
 /**
- * OpenSeadragon canvas Overlay plugin based on paper.js
+ * OpenSeadragon paperjs overlay plugin based on paper.js
  * @version 0.3.0
  * 
  * Includes additional open source libraries which are subject to copyright notices
@@ -19,7 +19,7 @@
  *   this list of conditions and the following disclaimer in the documentation
  *   and/or other materials provided with the distribution.
  * 
- * * Neither the name of paper-overlay nor the names of its
+ * * Neither the name of osd-paperjs-annotation nor the names of its
  *   contributors may be used to endorse or promote products derived from
  *   this software without specific prior written permission.
  * 
@@ -63,8 +63,11 @@ export class EditableContent{
         this._element.appendChild(this._button);
         this._oldtext='';
 
+        let buttonicon = document.createElement('span');
+        this._button.appendChild(buttonicon);
+        buttonicon.classList.add('fa', 'fa-edit', 'edit-button', 'onhover');
+
         this._element.classList.add('editablecontent');
-        this._button.classList.add('fa', 'fa-edit', 'edit-button', 'onhover');
 
         this._textarea.textContent = opts.initialContent;
         //this._textarea.setAttribute('contenteditable',true);
@@ -100,13 +103,11 @@ export class EditableContent{
             ev.stopPropagation();
         });
 
-        this._element.addEventListener('click',(ev)=>{
-            const {target} = ev;
-            // console.log('click target',target,ev);
-            if(target == this._button){
-                this._editClicked();
-            }
-            
+        this._button.addEventListener('click',(ev)=>{
+            if(this._onEditClicked) this._onEditClicked(ev);
+            this._element.classList.toggle('editing');
+            this._oldtext = this._textarea.value.trim();
+            this._textarea.select();
         });
 
 
@@ -124,6 +125,16 @@ export class EditableContent{
             throw('Value must be a function or null');
         }
     }
+    get onEditClicked(){
+        return this._onEditClicked;
+    }
+    set onEditClicked(func){
+        if(typeof func === 'function' || func === null){
+            this._onEditClicked=func;
+        } else {
+            throw('Value must be a function or null');
+        }
+    }
     // private
     // sync the textcontent and textarea text and call the onChange callback if needed
     _updateText(){
@@ -136,11 +147,6 @@ export class EditableContent{
     setText(text){
         this._textarea.value = text;
         this._textcontent.textContent = text;
-    }
-    _editClicked(){
-        this._element.classList.toggle('editing');
-        this._oldtext = this._textarea.value.trim();
-        this._textarea.select();
     }
 }
 

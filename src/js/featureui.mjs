@@ -1,5 +1,5 @@
 /**
- * OpenSeadragon canvas Overlay plugin based on paper.js
+ * OpenSeadragon paperjs overlay plugin based on paper.js
  * @version 0.3.0
  * 
  * Includes additional open source libraries which are subject to copyright notices
@@ -19,7 +19,7 @@
  *   this list of conditions and the following disclaimer in the documentation
  *   and/or other materials provided with the distribution.
  * 
- * * Neither the name of paper-overlay nor the names of its
+ * * Neither the name of osd-paperjs-annotation nor the names of its
  *   contributors may be used to endorse or promote products derived from
  *   this software without specific prior written permission.
  * 
@@ -61,6 +61,10 @@ class FeatureUI{
         this._editableName.onChanged = function(text){
             self.setLabel(text,'user-defined');
         };
+        this._editableName.onEditClicked = function(event){
+            event.preventDefault();
+            event.stopPropagation();
+        }
         
         // let guid= 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(c) {
         //     let r = Math.random() * 16|0;
