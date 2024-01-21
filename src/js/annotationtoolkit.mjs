@@ -433,8 +433,8 @@ function applyBounds(boundingItems) {
         let bounds = boundingItems[0];
         intersection = bounds.intersect(this, { insert: false });
     }
-    else if (bounding.length > 1) {
-        let bounds = new paper.CompoundPath(bounding.map(b => b.clone().children).flat());
+    else if (boundingItems.length > 1) {
+        let bounds = new paper.CompoundPath(boundingItems.map(b => b.clone().children).flat());
         intersection = bounds.intersect(this, { insert: false });
         bounds.remove();
     }

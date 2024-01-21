@@ -224,8 +224,8 @@ class LayerUI extends OpenSeadragon.EventSource{
         
         let fc=new FeatureCollectionUI(grp, {guiSelector:`[data-ui-id="${this.element.data('ui-id')}"]`});
         this.element.find('.annotation-ui-feature-collections').append(fc.element).sortable('refresh');
-        fc.element.trigger('element-added');
-        setTimeout(function(){fc.element.addClass('inserted'); }, 30);//this allows opacity fade-in to be triggered
+        fc.element.dispatchEvent(new Event('element-added'));
+        setTimeout(function(){fc.element.classList.add('inserted'); }, 30);//this allows opacity fade-in to be triggered
 
     }
     

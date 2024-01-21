@@ -38,6 +38,8 @@
 
 import {EditableContent} from './utils/editablecontent.mjs';
 import { OpenSeadragon } from './osd-loader.mjs';
+import { domObjectFromHTML } from './utils/domObjectFromHTML.mjs';
+import { datastore } from './utils/datastore.mjs';
 
 /**
  * A user interface for managing features.
@@ -52,93 +54,74 @@ class FeatureUI{
      */
     constructor(paperItem){
         
-        let self=this;
         this.paperItem=paperItem;
         let el = this._element = makeFeatureElement();
         this.paperItem.FeatureUI = this;
         this._editableName = new EditableContent();
-        el.find('.feature-item.name').empty().append(this._editableName.element);
-        this._editableName.onChanged = function(text){
-            self.setLabel(text,'user-defined');
+        el.querySelector('.feature-item.name').appendChild(this._editableName.element);
+        this._editableName.onChanged = text => {
+            this.setLabel(text,'user-defined');
         };
         this._editableName.onEditClicked = function(event){
             event.preventDefault();
             event.stopPropagation();
         }
         
-        // let guid= 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(c) {
-        //     let r = Math.random() * 16|0;
-        //     let v = c == 'x' ? r : (r&0x3|0x8);
-        //     return v.toString(16);
-        // });
-
-        
-        el.data({feature:self});
-        el.on('click','[data-action]', function(ev){
-            //don't bubble up
-            ev.stopPropagation();
-            ev.preventDefault();
-            let action = $(ev.currentTarget).data('action');
-            switch(action){
-                case 'trash': self.removeItem(); break;
-                case 'edit': self.editClicked(); break;
-                case 'bounds': self.useAsBoundingElement(); break;
-                case 'style':self.openStyleEditor(ev); break;
-                case 'zoom-to':self.centerItem(); break;
-                default: console.log('No function set for action:',action);
+        datastore.set(el, {feature:this});
+        el.addEventListener('click', ev => {
+            if(ev.target.matches('[data-action]')){
+                //don't bubble up
+                ev.stopPropagation();
+                ev.stopImmediatePropagation();
+                ev.preventDefault();
+                let action = ev.target.dataset.action;
+                switch(action){
+                    case 'trash': this.removeItem(); break;
+                    case 'bounds': this.useAsBoundingElement(true); break;
+                    case 'style':this.openStyleEditor(ev); break;
+                    case 'zoom-to':this.centerItem(); break;
+                    default: console.log('No function set for action:',action);
+                }
             }
-            
         });
         
-        // $(this._editableName.element).on('value-changed',function(ev,val){
-        //     self.setLabel(val,'user-defined');
-        // });
-        el.on('click',function(ev){
+        el.addEventListener('click',ev => {
             ev.stopPropagation();
-            self.paperItem.toggle((ev.metaKey || ev.ctrlKey));
+            this.paperItem.toggle((ev.metaKey || ev.ctrlKey));
         })
-
-        
-        
-        // el.on('focusout','.editablecontent.editing .edit', function(){
-        //     let parent=$(this).closest('.editablecontent');
-        //     let oldtext = $(this).data('previous-text');
-        //     let newtext = $(this).text().trim();
-        //     if(newtext !== oldtext) parent.find('.edit').trigger('value-changed',newtext);
-        //     parent.removeClass('editing');
-        //     $(this).removeAttr('contenteditable').text(newtext);
-        // });
-        // el.on('keypress','.editablecontent.editing .edit', function(ev){
-        //     ev.stopPropagation();
-        //     if(ev.which==13){
-        //         ev.preventDefault();
-        //         $(this).blur();
-        //     }
-        // });
-        // el.on('keydown keyup','.editablecontent.editing .edit',function(ev){ev.stopPropagation()})
         
         this.element = el;
         this.paperItem.on({
-            'selected':function(){ el.addClass('selected').trigger('selected'); },
-            'deselected':function(){ el.removeClass('selected').trigger('deselected'); },
-            'selection:mouseenter':function(){el.addClass('item-hovered')},
-            'selection:mouseleave':function(){el.removeClass('item-hovered')},
-            'item-replaced':function(ev){
+            'selected':()=>{ 
+                el.classList.add('selected');
+                el.dispatchEvent(new Event('selected')); 
+            },
+            'deselected':()=>{ 
+                el.classList.remove('selected');
+                el.dispatchEvent(new Event('deselected')); 
+            },
+            'selection:mouseenter':()=>{ 
+                el.classList.add('item-hovered');
+            },
+            'selection:mouseleave':()=>{ 
+                el.classList.remove('item-hovered');
+            },
+            'item-replaced':(ev)=>{ 
                 // console.log('item-replaced',ev);
                 //check label first because it is dynamically fetched from the referenced this.paperItem object
-                if(self.label.source=='user-defined'){
-                    ev.item.displayName = self.label;
+                if(this.label.source=='user-defined'){
+                    ev.item.displayName = this.label;
                 }
-                self.paperItem = ev.item;
-                self.paperItem.FeatureUI=self;
-                self.updateLabel();
+                this.paperItem = ev.item;
+                this.paperItem.FeatureUI=this;
+                this.updateLabel();
             },
-            'display-name-changed':function(ev){
-                self.updateLabel();
+            'display-name-changed':(ev)=>{ 
+                this.updateLabel();
             },
-            'removed':function(ev){
-                if(ev.item == self.paperItem){
-                    self.remove();
+            'removed':(ev)=>{ 
+                if(ev.item == this.paperItem){
+                    this.remove();
                 }
             }
         });
@@ -189,22 +172,11 @@ class FeatureUI{
      * Remove the UI element associated with the feature.
      */
     remove(){
-        this._element.remove().trigger('removed');
+        this._element.remove();
+        this._element.dispatchEvent( new Event('removed') );
     }
-    /**
-     * Handle the edit clicked event on the UI element.
-     */
-    editClicked(){
-        let header = this._element.find('.editablecontent');
-        header.addClass('editing');
-        let ce = header.find('.edit').attr('contenteditable',true).focus();
-        ce.data('previous-text',ce.text());
-        let range = document.createRange();
-        range.selectNodeContents(ce[0]);
-        let selection = window.getSelection();
-        selection.removeAllRanges();
-        selection.addRange(range);
-    }
+    
+    
     /**
      * Use the feature as a bounding element.
      * @param {boolean} [toggle=false] - Whether to toggle the bounding element status or not.
@@ -212,13 +184,13 @@ class FeatureUI{
      */
     useAsBoundingElement(toggle=false){
         if(!this.paperItem.canBeBoundingElement) return false;
-        let element = this._element.find('[data-action="bounds"]');
+        let element = this._element.querySelector('[data-action="bounds"]');
         if(toggle){
-            element.find('[data-action="bounds"]').toggleClass('active');
+            element.classList.toggle('active');
         } else {
-            element.find('[data-action="bounds"]').addClass('active');
+            element.classList.add('active');
         }
-        let isActive = element.hasClass('active');
+        let isActive = element.classList.contains('active');
         this.paperItem.isBoundingElement = isActive;
         return isActive;
     }   
@@ -250,7 +222,6 @@ class FeatureUI{
         else{
             viewport.panTo(center, immediately);
         }
-        // console.log('centerItem clicked',rect)
     }
     
 }
@@ -272,5 +243,5 @@ function makeFeatureElement(){
         </div>
     </div>
     `;
-    return $(html);
+    return domObjectFromHTML(html);
 }
