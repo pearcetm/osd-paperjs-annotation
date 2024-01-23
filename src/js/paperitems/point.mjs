@@ -79,7 +79,7 @@ class Point extends AnnotationItem{
             fontFamily: this.iconFontFamily,
             fontWeight: this.iconFontWeight,
             fontSize: 18,
-            strokeWidth: 1, //keep this constant
+            // strokeWidth: 1, //keep this constant
         });
         point.addChild(textitem);
 

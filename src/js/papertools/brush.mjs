@@ -100,9 +100,6 @@ import {PaperOffset} from '../paper-offset.mjs';
         }
 
         
-        
-        
-        
         this.tool.onMouseWheel = function(ev){
             // console.log('Wheel event',ev);
             ev.preventDefault();
@@ -153,9 +150,11 @@ import {PaperOffset} from '../paper-offset.mjs';
         let path = new paper.Path([ev.point]);
         path.mode = this.eraseMode ? 'erase' : 'draw';
         path.radius = this.radius/this.project.getZoom();
+
+        const strokeWidth = this.cursor.radius * 2 / this.targetLayer.scaling.x;
         
         this.pathGroup.lastChild.replaceWith(path);
-        this.pathGroup.lastChild.set({strokeWidth:this.cursor.radius*2,fillColor:null,strokeCap:'round'});
+        this.pathGroup.lastChild.set({strokeWidth: strokeWidth, fillColor:null, strokeCap:'round'});
         if(path.mode=='erase'){
             this.pathGroup.firstChild.fillColor=this.eraseColor;
             this.pathGroup.lastChild.strokeColor=this.eraseColor;        
@@ -212,12 +211,14 @@ import {PaperOffset} from '../paper-offset.mjs';
     modifyArea(){
         let path = this.pathGroup.lastChild;
         let shape;
-        //TODO handle scaling of the offset radius by the targetLayer.matrix
+
+        const radius = path.radius / this.targetLayer.scaling.x;
+        
         if(path.segments.length>1){                
-            shape = PaperOffset.offsetStroke(path, path.radius, {join:'round',cap:'round', insert:true });
+            shape = PaperOffset.offsetStroke(path, radius, {join:'round',cap:'round', insert:true });
         }
         else{
-            shape = new paper.Path.RegularPolygon({center: path.firstSegment.point, radius: path.radius, sides: 360 });
+            shape = new paper.Path.RegularPolygon({center: path.firstSegment.point, radius: radius, sides: 360 });
         }
 
         shape.strokeWidth = 1/this.project.getZoom();

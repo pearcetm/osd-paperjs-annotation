@@ -62,7 +62,8 @@ class PointText extends AnnotationItem{
         let radius = 4.0;
         let coords = geoJSON.geometry.coordinates.slice(0, 2);
         
-        let point = new paper.Group();
+        let point = this.paperItem = new paper.Group();
+
         point.pivot = new paper.Point(0,0);
         point.applyMatrix = true;
         
@@ -76,8 +77,6 @@ class PointText extends AnnotationItem{
             point: new paper.Point(0, 0),
             pivot: new paper.Point(0, 0),
             content: geoJSON.geometry.properties.content || 'PointText',
-            // fontFamily: this.iconFontFamily,
-            // fontWeight: this.iconFontWeight,
             fontSize: 18,
             strokeWidth: 1, //keep this constant
         });
@@ -92,13 +91,9 @@ class PointText extends AnnotationItem{
         //     }
         // });
 
-        //to-do: make this automatic somehow, instead of hard-coded...
-        //the problem is that the bounding box of the text for some reason is not tight to the visual object.
-        textitem.translate(new paper.Point(-textitem.bounds.width/2, -(textitem.bounds.height/2))); 
-        textitem.on('content-changed',function(){
-            let boundsNoRotate = textitem.getInternalBounds();
-            let offset = new paper.Point(-boundsNoRotate.width/2, -boundsNoRotate.height/2).divide(textitem.view.zoom).rotate(-textitem.view.getRotation());
-            textitem.position = circle.bounds.center.add(offset);
+        this.refreshTextOffset();
+        textitem.on('content-changed',()=>{
+            this.refreshTextOffset();
         })
     
         point.position = new paper.Point(...coords);
@@ -118,7 +113,6 @@ class PointText extends AnnotationItem{
         point.view.on('rotate',function(ev){point.rotate(-ev.rotatedBy)});
         point.applyRescale();
         
-        this.paperItem = point;
 
 
     }
@@ -141,6 +135,14 @@ class PointText extends AnnotationItem{
      */
     get textitem(){
         return this.paperItem.children[1];
+    }
+
+    /**
+     * Get the circle that represents the point.
+     * @returns {paper.Path.Circle} The circle
+     */
+    get circle(){
+        return this.paperItem.children[0];
     }
 
     /**
@@ -218,6 +220,16 @@ class PointText extends AnnotationItem{
                 break;
             }
         }
+    }
+
+    refreshTextOffset(){
+        // let scale = 1 / this.textitem.layer.scaling.x;
+        // this.textitem.translate(new paper.Point(-this.textitem.bounds.width * scale/2, -(this.textitem.bounds.height * scale/2))); 
+
+        let boundsNoRotate = this.textitem.getInternalBounds();
+        let scale = 1 / this.textitem.layer.scaling.x;
+        let offset = new paper.Point(-boundsNoRotate.width * scale/2, -boundsNoRotate.height * scale/2).divide(this.textitem.view.zoom).rotate(-this.textitem.view.getRotation());
+        this.textitem.position = this.circle.bounds.center.add(offset);
     }
     
 }

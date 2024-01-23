@@ -317,7 +317,7 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
      * @param {OpenSeadragon.TiledImage | OpenSeadragon.Viewport | false} [parentImage] - Which image (or viewport) to add the object to
      * @param {boolean} [pixelCoordinates]
      */
-    loadGeoJSON(geoJSON, replaceCurrent, parentImage, pixelCoordinates = true){
+    loadGeoJSON(geoJSON, replaceCurrent, parentImage){
         let parentLayer = parentImage ? parentImage.paperLayer : false;
         if(replaceCurrent){
             this.getFeatureCollectionGroups(parentImage).forEach(grp=>grp.remove());
@@ -336,10 +336,6 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
                     let item = paper.Item.fromGeoJSON(feature);
                     group.addChild(item);
                 })
-                if(pixelCoordinates){
-                    group.scale(this.overlay.scaleFactor/group.layer.tiledImage.source.width, {x: 0, y: 0});
-                    // group.scale(this.overlay.scaleFactor/group.layer.tiledImage.source.width);
-                }
             }
             else{
                 console.warn('GeoJSON object not loaded: wrong type. Only FeatureCollection objects are currently supported');
@@ -608,8 +604,8 @@ function getInsertChildrenDef(){
  * Define the fill opacity property for a paper style object.
  *  @private
  *  @returns {object} The property descriptor object with the following properties:
- * - get: A function that returns the fill opacity value (a number between 0 and 1).
- * - set: A function that sets the fill opacity value (a number between 0 and 1).
+ * - get: A function that returns the text of the item.
+ * - set: A function that sets the text of the item and causes the 'content-changed' event to be fired.
  */
 function textItemContentPropertyDef(){
     let _set = paper.TextItem.prototype._setContent || Object.getOwnPropertyDescriptor(paper.TextItem.prototype, 'content').set;

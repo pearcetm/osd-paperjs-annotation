@@ -309,21 +309,21 @@ class PolygonTool extends AnnotationUITool{
         let dr = this.drawing()
         if(!dr || !this.item) return;
         dr.path.closed=true;
-        // if(dr.path.parent==this.drawingGroup){
-            let result = this.eraseMode ? this.item.subtract(dr.path,{insert:false}) : this.item.unite(dr.path,{insert:false});
-            if(result){
-                result=result.toCompoundPath();
-                if(!this.item.isBoundingElement){
-                    let boundingItems = this.item.parent.children.filter(i=>i.isBoundingElement);
-                    result.applyBounds(boundingItems);
-                }
-                this.item.removeChildren();
-                this.item.addChildren(result.children);
-                this.item.children.forEach(child=>child.selected=false);//only have the parent set selected status
-                result.remove();
+            
+        let result = this.eraseMode ? this.item.subtract(dr.path,{insert:false}) : this.item.unite(dr.path,{insert:false});
+        if(result){
+            result=result.toCompoundPath();
+            if(!this.item.isBoundingElement){
+                let boundingItems = this.item.parent.children.filter(i=>i.isBoundingElement);
+                result.applyBounds(boundingItems);
             }
-            this.drawingGroup.removeChildren();
-        // }
+            this.item.removeChildren();
+            this.item.addChildren(result.children);
+            this.item.children.forEach(child=>child.selected=false);//only have the parent set selected status
+            result.remove();
+        }
+        this.drawingGroup.removeChildren();
+        
     }
     /**
      * Saves the current state of the annotation to the history stack for undo/redo functionality.

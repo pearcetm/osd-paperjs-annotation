@@ -63,25 +63,30 @@ class PointTextTool extends AnnotationUITool{
          * The visual representation of the text cursor.
          * @type {paper.PointText}
          */
-        let cursor = this.cursor = new PointText({
+        let pointText = new PointText({
             geometry:{
                 type:'Point',
                 coordinates:[0,0],
                 properties:{
                     subtype:'PointText',
                     content:'Click to place',
-                    strokeWidth: 0,
                 }
             },
             properties:{
                 label:'Text Tool',
             }
-        }).paperItem;
+        });
+        
+        let cursor = this.cursor = pointText.paperItem;
         cursor.isGeoJSONFeature = false;
         cursor.fillColor='grey';
         cursor.strokeColor='black';
+        cursor.strokeWidth = 1;
         cursor.visible=false;
         this.project.toolLayer.addChild(cursor);
+        
+        pointText.refreshTextOffset();
+        cursor.applyRescale();
         
         /**
          * Set the toolbar control for the PointTextTool.
@@ -99,6 +104,8 @@ class PointTextTool extends AnnotationUITool{
             if(this.itemToCreate){
                 // new item to be created - show the cursor
                 this.cursor.visible = true;
+                pointText.refreshTextOffset();
+                cursor.applyRescale();
             } else if(this.item){
                 // modifying an existing item
                 this._updateTextInput();

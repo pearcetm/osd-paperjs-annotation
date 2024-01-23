@@ -75,44 +75,55 @@ class LinestringTool extends PolygonTool{
         });
         self.project.toolLayer.addChild(this.cursor);
 
-        this.extensions.onActivate= function(){
-            self.cursor.radius = self.radius/self.project.getZoom();
-            self.cursor.strokeWidth=1/self.project.getZoom();
-            self.cursor.visible=true;
+        this.extensions.onActivate= ()=>{
+            this.cursor.radius = this.radius/this.project.getZoom();
+            this.cursor.strokeWidth=1/this.project.getZoom();
+            this.cursor.visible=true;
             tool.minDistance=4/self.project.getZoom();
             tool.maxDistance=10/self.project.getZoom();
 
-            self.targetLayer.addChild(self.drawingGroup);
+            // self.targetLayer.addChild(self.drawingGroup);
         }
-        this.extensions.onDeactivate = function(finished){
-            self.cursor.visible=false;
+        this.extensions.onDeactivate = finished => {
+            this.cursor.visible=false;
             if(finished){
-                self.finish();
+                this.finish();
             } 
 
-            self.project.toolLayer.addChild(self.drawingGroup);
+            // self.project.toolLayer.addChild(self.drawingGroup);
         }
-        /**
-         * Set the brush radius for the linestring tool.
-         * This function updates the brush radius used for drawing linestrings.
-         * The new radius is adjusted according to the current zoom level.
-         * @param {number} r - The new brush radius value to set.
-         * 
-         */        
-        this.setRadius=function(r){
-            this.radius = r;
-            this.cursor.radius=r/this.project.getZoom();
-        }
-
-        tool.onMouseWheel = function(ev){
+        
+        tool.onMouseWheel = ev => {
             // console.log('Wheel event',ev);
             ev.preventDefault();
             ev.stopPropagation();
             if(ev.deltaY==0) return;//ignore lateral "scrolls"
             // self.project.broadcast('brush-radius',{larger:ev.deltaY > 0});
-            self.toolbarControl.updateBrushRadius({larger:ev.deltaY < 0});
+            this.toolbarControl.updateBrushRadius({larger:ev.deltaY < 0});
         }
     }
+
+    /**
+     * Set the brush radius for the linestring tool.
+     * This function updates the brush radius used for drawing linestrings.
+     * The new radius is adjusted according to the current zoom level.
+     * @param {number} r - The new brush radius value to set.
+     * 
+     */        
+    setRadius(r){
+        this.radius = r;
+        this.cursor.radius= r / this.project.getZoom();
+
+        // let dr = this.drawing();
+        // if(dr){
+        //     dr.path.strokeWidth = this.cursor.radius;
+
+        //     console.log(r, this.cursor.radius, dr.path.strokeWidth);
+        // }
+
+        // window.dr = dr;
+    }
+
 
     onMouseDown(ev){
         this.draggingSegment=null;
@@ -186,7 +197,8 @@ class LinestringTool extends PolygonTool{
         this.drawingGroup.visible=true;
         this.drawingGroup.selected=true;
         this.drawingGroup.selectedColor= this.eraseMode ? 'red' : null;
-        this.drawing().path.set({strokeWidth:this.cursor.radius*2, strokeColor:this.item.strokeColor})
+        let path = this.drawing().path;
+        path.set({strokeWidth:this.radius  * 2 / this.targetLayer.scaling.x / this.project.getZoom(), strokeColor:this.item.strokeColor})
         console.log('started new path')
     }
     //override finishCurrentPath so it doesn't close the path

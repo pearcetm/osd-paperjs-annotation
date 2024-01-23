@@ -228,7 +228,8 @@ class PaperOverlay{
     // of polygon vertices following certain paper operations
     get scaleFactor(){
         // return window.screen.width;
-        return 100;
+        // return 100;
+        return this.viewer.element.clientWidth;
     }
   /**
    * Adds a button to the viewer. The button is created with the provided parameters.
