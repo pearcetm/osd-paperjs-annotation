@@ -198,8 +198,12 @@ class LinestringTool extends PolygonTool{
         this.drawingGroup.selected=true;
         this.drawingGroup.selectedColor= this.eraseMode ? 'red' : null;
         let path = this.drawing().path;
-        path.set({strokeWidth:this.radius  * 2 / this.targetLayer.scaling.x / this.project.getZoom(), strokeColor:this.item.strokeColor})
-        console.log('started new path')
+        path.set({
+            strokeWidth:this.radius  * 2 / this.targetLayer.scaling.x / this.project.getZoom(),
+            strokeColor:this.item.strokeColor,
+            strokeJoin: 'round',
+            strokeCap: 'round',
+        });
     }
     //override finishCurrentPath so it doesn't close the path
     /**
