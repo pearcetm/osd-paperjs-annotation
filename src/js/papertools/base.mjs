@@ -70,7 +70,7 @@ class ToolBase{
         let shiftPressed;
         let self=this;
 
-        this._identityMatrix = new paper.Matrix();
+        this._identityMatrix = new paperScope.Matrix();
       
         this.extensions = {
             onActivate:()=>{},
