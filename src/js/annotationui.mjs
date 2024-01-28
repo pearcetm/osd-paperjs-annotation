@@ -237,7 +237,8 @@ class AnnotationUI {
    * @private
    */
   _createJqueryUIdialog() {
-    let element = this._layerUI.element;
+    let element = $(this._layerUI.element);
+    document.body.appendChild(element[0]);
 
     let positioningElement = $((this._viewer.navigator || this._viewer).element);
 

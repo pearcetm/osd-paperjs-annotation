@@ -161,15 +161,18 @@ class PaperOverlay{
                 this._setupTiledImage(item);
             }
 
-            // add handlers so that new items added to the scene are set up and removed appropriately
-            viewer.world.addHandler('add-item',(ev)=>{
+            this.onAddItem = (self=>function(ev){
                 let tiledImage = ev.item;
                 this._setupTiledImage(tiledImage);
-            });
-            viewer.world.addHandler('remove-item',(ev)=>{
+            })(this);
+            this.onRemoveItem = (self=>function(ev){
                 let tiledImage = ev.item;
                 this._removeTiledImage(tiledImage);
-            });
+            })(this);
+            
+            // add handlers so that new items added to the scene are set up and removed appropriately
+            viewer.world.addHandler('add-item',this.onAddItem);
+            viewer.world.addHandler('remove-item',this.onRemoveItem);
 
 
             this._updatePaperView();
@@ -300,9 +303,10 @@ class PaperOverlay{
         if(!viewerDestroyed){
             this.viewer.removeHandler('viewport-change',this.onViewportChange);
             this.viewer.removeHandler('resize',this.onViewerResize);
-            this.viewer.removeHandler('close',this.onViewerDestroy);
             this.viewer.removeHandler('reset-size',this.onViewerResetSize);
             this.viewer.removeHandler('rotate',this.onViewerRotate);
+            this.viewer.world.removeHandler('add-item', this.onAddItem);
+            this.viewer.world.removeHandler('remove-item', this.onRemoveItem);
             this.setOSDMouseNavEnabled(true);
 
             this._viewerButtons.forEach(button=>{

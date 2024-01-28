@@ -40,9 +40,13 @@ import { FeatureUI } from './featureui.mjs';
 import { EditableContent } from './utils/editablecontent.mjs';
 import { domObjectFromHTML } from './utils/domObjectFromHTML.mjs';
 import { datastore } from './utils/datastore.mjs';
+import { DragAndDrop } from './utils/draganddrop.mjs';
 
 /**
- * A user interface for managing feature collections. The FeatureCollectionUI class provides a user interface to manage feature collections on a paper.Layer object. It allows users to create, edit, and organize features within the collection. The class includes various functionalities, such as adding and removing features, setting opacity and fill opacity for the paper layer, and more.
+ * A user interface for managing feature collections. The FeatureCollectionUI class provides a user
+ *  interface to manage feature collections on a paper.Layer object. It allows users to create, edit,
+ *  and organize features within the collection. The class includes various functionalities, such as 
+ * adding and removing features, setting opacity and fill opacity for the paper layer, and more.
  * @class
  * @memberof OSDPaperjsAnnotation
  */
@@ -82,6 +86,16 @@ class FeatureCollectionUI{
         //         })
         //     },
         // });
+
+        this._dragAndDrop = new DragAndDrop({
+            parent: this.element, 
+            selector: '.features-list .feature', 
+            dropTarget: this._featurelist,
+            onDrop: ()=>{
+                this.features.forEach(f => this.group.addChild(f.paperItem));
+            }
+        });
+
         this.group = group;
         // add paperjs event handlers
         this.group.on({
@@ -116,16 +130,7 @@ class FeatureCollectionUI{
         // expose this object as a property of the paper.js group
         this.group.featureCollectionUI = this;
 
-        /**
-         * Get the features in the feature collection.
-         * @member
-         * @returns {FeatureUI[]} The array of features.
-         */
-        this.features = ()=>{
-            return this._featurelist.querySelectorAll('.feature').map(element => {
-                return datastore.get(element, 'feature');
-            }).toArray();
-        }
+        
         this.remove = ()=>{
             this.element.remove();
         }
@@ -135,7 +140,7 @@ class FeatureCollectionUI{
          * @returns {number} The number of features.
          */
         this.numFeatures = ()=>{
-            return this.features().length;
+            return this.features.length;
         }
 
         /**
@@ -147,8 +152,8 @@ class FeatureCollectionUI{
         this._addFeature = f => {
             f.paperItem.updateFillOpacity();
             this._featurelist.appendChild(f.element);
-            // self._sortableDebounce && window.clearTimeout(self._sortableDebounce);
-            // self._sortableDebounce = window.setTimeout(()=>$(`${init.guiSelector} .features-list .feature`).length>100 ? self._featurelist.sortable('disable') : self._featurelist.sortable('refresh'), 15);
+            this._sortableDebounce && window.clearTimeout(this._sortableDebounce);
+            self._sortableDebounce = window.setTimeout(()=>this._dragAndDrop.refresh(), 15);
             return f.element; 
         }
         /**
@@ -208,11 +213,6 @@ class FeatureCollectionUI{
         
         this.label = this.group.displayName;
 
-        // if(!self._featurelist.sortable('option','disabled') == false){
-        //     self._featurelist.sortable('refresh');
-        // }
-        
-
         this.element.addEventListener('click',ev=>{
             ev.stopPropagation();
         })
@@ -251,6 +251,17 @@ class FeatureCollectionUI{
         });
 
         return this;
+    }
+    
+    /**
+    * Get the features in the feature collection.
+    * @member
+    * @returns {FeatureUI[]} The array of features.
+    */
+    get features(){
+       return Array.from(this._featurelist.querySelectorAll('.feature')).map(element => {
+           return datastore.get(element, 'feature');
+       });
     }
     get label(){
         return this.group.displayName;

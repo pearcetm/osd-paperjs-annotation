@@ -13,14 +13,14 @@ let v1 =window.v1 = OpenSeadragon({
                 },
             x:0,
         },
-        {
-            tileSource:{
-                    type: 'image',
-                    url:  './grand-canyon-landscape-overlooking.jpg',
-                    buildPyramid: false,
-                },
-            x:1,
-        },
+        // {
+        //     tileSource:{
+        //             type: 'image',
+        //             url:  './grand-canyon-landscape-overlooking.jpg',
+        //             buildPyramid: false,
+        //         },
+        //     x:1,
+        // },
     ],
     minZoomImageRatio:0.01,
     visibilityRatio:0,
@@ -37,7 +37,17 @@ v1.addHandler('open',()=>{
         //tk.addFeatureCollections(x);
         tk.addFeatureCollections(x, true, v1.world.getItemAt(0));
         // tk.addFeatureCollections(x, true, v1.world.getItemAt(1));
-    })
+    });
+
+    // v1.addTiledImage({
+    //     tileSource:{
+    //             type: 'image',
+    //             url:  './grand-canyon-landscape-overlooking.jpg',
+    //             buildPyramid: false,
+    //         },
+    //     x:1,
+    //     index: -1,
+    // },)
 });
 
 

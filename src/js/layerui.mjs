@@ -39,6 +39,9 @@
 
 import { OpenSeadragon } from './osd-loader.mjs';
 import { FeatureCollectionUI } from './featurecollectionui.mjs';
+import { domObjectFromHTML } from './utils/domObjectFromHTML.mjs';
+import { datastore } from './utils/datastore.mjs';
+import { DragAndDrop } from './utils/draganddrop.mjs';
 
 /**
  * A user interface for managing layers of feature collections.
@@ -61,74 +64,85 @@ class LayerUI extends OpenSeadragon.EventSource{
         this.paperScope = this._tk.paperScope;
         this.paperScope.project.on('feature-collection-added',ev=>this._onFeatureCollectionAdded(ev));
         
-        self.element = makeHTMLElement();
+        this.element = makeHTMLElement();
         
         
-        self.element.find('.new-feature-collection').on('click',function(ev){
+        this.element.querySelector('.new-feature-collection').addEventListener('click', ev => {
             ev.stopPropagation();
             ev.preventDefault();
-            self._tk.addEmptyFeatureCollectionGroup();
+            this._tk.addEmptyFeatureCollectionGroup();
         });
-        self.element.find('.toggle-annotations').on('click',function(ev){
-            let hidden = self.element.find('.annotation-ui-feature-collections .feature-collection.annotation-hidden');
-            if(hidden.length > 0) hidden.find('[data-action="show"]').trigger('click');
-            else self.element.find('.annotation-ui-feature-collections .feature-collection:not(.hidden) [data-action="hide"]').trigger('click');
+        this.element.querySelector('.toggle-annotations').addEventListener('click',() => {
+            let hidden = this.element.querySelectorAll('.annotation-ui-feature-collections .feature-collection.annotation-hidden');
+            if(hidden.length > 0) hidden.querySelectorAll('[data-action="show"]').forEach(a=>a.dispatchEvent(new Event('click')));
+            else this.element.querySelectorAll('.annotation-ui-feature-collections .feature-collection:not(.hidden) [data-action="hide"]').forEach(a=>a.dispatchEvent(new Event('click')));
         });
 
-
-        //setup sortable featurecollection interface
-        self.element.find('.annotation-ui-feature-collections').sortable({contain:'parent',update:function(){
-            self.element.find('.annotation-ui-feature-collections .feature-collection').each(function(idx,g){
-                let fg = $(g).data('featureCollection');
-                fg.group.bringToFront();
-            })
-        }})
+        this._dragAndDrop = new DragAndDrop({
+            parent: this.element, 
+            selector: '.feature-collection',
+            dropTarget: this.element.querySelector('.annotation-ui-feature-collections'),
+            onDrop:()=>{
+                this.element.querySelectorAll('.annotation-ui-feature-collections .feature-collection').forEach(g => {
+                    let fg = datastore.get(g, 'featureCollection');
+                    fg.group.bringToFront();
+                })
+            }
+        });
 
         
         //set up delegated events
 
-        self.element.on('selected','.feature',function(ev){
-            ev.stopPropagation();
-            $(this).addClass('selected');
-            this.scrollIntoView({block:'nearest'});
+        self.element.addEventListener('selected', function(ev){
+            if(ev.target.matches('.feature')){
+                ev.stopPropagation();
+                this.classList.add('selected');
+                this.scrollIntoView({block:'nearest'});
+            }
         });
-        self.element.on('deselected','.feature',function(ev){
-            ev.stopPropagation();
-            $(this).removeClass('selected');
-        });
-
-        
-        self.element.on('click','.toggle-list',function(ev){
-            $(this).closest('.features').toggleClass('collapsed');
-            ev.stopPropagation();
+        self.element.addEventListener('deselected', function(ev){
+            if(ev.target.matches('.feature')){
+                ev.stopPropagation();
+                this.classList.remove('selected');
+            }
         });
         
-        self.element.on('value-changed',function(){
-            let el = $(this);
-            console.log('value-changed',el);
-            self.element.find('.feature.selected').trigger('selected');
-            self.element.find('.feature-collection.active').trigger('selected');
+        self.element.addEventListener('click', function(ev){
+            if(ev.target.matches('.toggle-list')){
+                this.closest('.features').classList.toggle('collapsed');
+                ev.stopPropagation();
+            }
+            
+        });
+        
+        self.element.addEventListener('value-changed',function(){
+            self.element.querySelector('.feature.selected').dispatchEvent(new Event('selected'));
+            self.element.querySelector('.feature-collection.active').dispatchEvent(new Event('selected'));
         });
 
-        self.element.find('input.annotation-total-opacity').on('input',function(){
+        const totalOpacitySlider= self.element.querySelector('input.annotation-total-opacity');
+        totalOpacitySlider.addEventListener('input',function(){
             setOpacity(this.value);
-        }).trigger('input');
+        })
+        totalOpacitySlider.dispatchEvent(new Event('input'));
 
-        self.element.find('input.annotation-fill-opacity').on('input',function(){
+        const fillOpacitySlider = self.element.querySelector('input.annotation-fill-opacity');
+        fillOpacitySlider.addEventListener('input',function(){
             self.paperScope.view.fillOpacity = this.value;
-        }).trigger('input');
+        });
+        fillOpacitySlider.dispatchEvent(new Event('input'));
+
         /**
          * Set the opacity of the feature collections.
          * @private
          * @param {number} o - The opacity value between 0 and 1.
          */
         function setOpacity(o){
-            let status = self.element.find('.feature-collection').toArray().reduce(function(ac,el){
-                el = $(el)
-                if( el.hasClass('selected') ){
+            let status = Array.from(self.element.querySelectorAll('.feature-collection')).reduce(function(ac,el){
+                if( el.classList.has('selected') ){
                     ac.selected.push(el);
                 }
-                else if( el.is(':hover,.svg-hovered')){
+                else if( el.matches(':hover,.svg-hovered')){
                     ac.hover.push(el);
                 }
                 else{
@@ -139,31 +153,31 @@ class LayerUI extends OpenSeadragon.EventSource{
             if(status.selected.length>0){
                 status.selected.forEach(function(el){
                     let opacity=1 * o;
-                    let fc=$(el).data('featureCollection');
+                    let fc=datastore.get(el, 'featureCollection');
                     fc&&fc.ui.setOpacity(opacity)
                 })
                 status.hover.concat(status.other).forEach(function(el){
                     let opacity=0.25 * o;
-                    let fc=$(el).data('featureCollection');
+                    let fc=datastore.get(el, 'featureCollection');
                     fc&&fc.ui.setOpacity(opacity)
                 })
             }
             else if(status.hover.length>0){
                 status.hover.forEach(function(el){
                     let opacity=1 * o;
-                    let fc=$(el).data('featureCollection');
+                    let fc=datastore.get(el, 'featureCollection');
                     fc&&fc.ui.setOpacity(opacity)
                 })
                 status.other.forEach(function(el){
                     let opacity=0.25 * o;
-                    let fc=$(el).data('featureCollection');
+                    let fc=datastore.get(el, 'featureCollection');
                     fc&&fc.ui.setOpacity(opacity)
                 })
             }
             else{
                 status.other.forEach(function(el){
                     let opacity=1 * o;
-                    let fc=$(el).data('featureCollection');
+                    let fc=datastore.get(el, 'featureCollection');
                     fc&&fc.ui.setOpacity(opacity)
                 })
             }
@@ -175,7 +189,7 @@ class LayerUI extends OpenSeadragon.EventSource{
      * 
      */
     hide(){
-        this.element.hide();
+        this.element.classList.add('hidden');
         this.raiseEvent('hide');
     }
     /**
@@ -183,26 +197,26 @@ class LayerUI extends OpenSeadragon.EventSource{
      * 
      */
     show(){
-        this.element.show();
+        this.element.classList.remove('hidden');
         this.raiseEvent('show');
     }
     /**
      * Toggle the visibility of the layer UI element.
      */
     toggle(){
-        this.element.is(':visible') ? this.hide() : this.show();
+        this.element.matches(':visible') ? this.hide() : this.show();
     }
     /**
      * Deactivate the layer UI element.
      */
     deactivate(){
-        this.element.addClass('deactivated');
+        this.element.classList.add('deactivated');
     }
     /**
      * Activate the layer UI element.
      */
     activate(){
-        this.element.removeClass('deactivated');
+        this.element.classList.remove('deactivated');
     }
     /**
      * Destroy the layer UI element.
@@ -222,8 +236,9 @@ class LayerUI extends OpenSeadragon.EventSource{
     _onFeatureCollectionAdded(ev){
         let grp = ev.group;
         
-        let fc=new FeatureCollectionUI(grp, {guiSelector:`[data-ui-id="${this.element.data('ui-id')}"]`});
-        this.element.find('.annotation-ui-feature-collections').append(fc.element).sortable('refresh');
+        let fc=new FeatureCollectionUI(grp, {guiSelector:`[data-ui-id="${this.element.dataset.uiId}"]`});
+        this.element.querySelector('.annotation-ui-feature-collections').appendChild(fc.element);
+        this._dragAndDrop.refresh();
         fc.element.dispatchEvent(new Event('element-added'));
         setTimeout(function(){fc.element.classList.add('inserted'); }, 30);//this allows opacity fade-in to be triggered
 
@@ -260,13 +275,14 @@ function makeHTMLElement(){
             <div class='annotation-ui-feature-collections disable-when-annotations-hidden disable-when-deactivated'></div>
             <div class='new-feature-collection disable-when-deactivated'><span class='glyphicon glyphicon-plus fa fa-plus'></span>Add Feature Collection</div>
         </div>`;
-    let element = $(html);
+    let element = domObjectFromHTML(html);
     let guid= 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(c) {
         let r = Math.random() * 16|0;
         let v = c == 'x' ? r : (r&0x3|0x8);
         return v.toString(16);
     });
-    element.attr('data-ui-id',guid);
+    // element.attr('data-ui-id',guid);
+    element.dataset.uiId = guid;
     return element;
 }
 

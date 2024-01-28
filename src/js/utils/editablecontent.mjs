@@ -77,7 +77,7 @@ export class EditableContent{
                 return;
             }
             this._element.classList.remove('editing');
-            this._updateText();
+            this._updateText(true);
             // this._textarea.setAttribute('contenteditable',false);
         });
 
@@ -137,8 +137,11 @@ export class EditableContent{
     }
     // private
     // sync the textcontent and textarea text and call the onChange callback if needed
-    _updateText(){
-        let newtext = this._textarea.value.trim();
+    _updateText(trim){
+        let newtext = this._textarea.value;
+        if(trim){
+            newtext = newtext.trim();
+        }
         this._textcontent.textContent = newtext;
         if(newtext !== this._oldtext){
             this.onChanged && this.onChanged(newtext);

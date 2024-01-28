@@ -96,7 +96,7 @@
 .annotation-ui-feature-collections .feature-collection{
     transition: opacity 1s;
 }
-.annotation-ui-feature-collections .feature-collection.inserted:not(.trashed){
+.annotation-ui-feature-collections .feature-collection.inserted:not(.trashed):not(.draganddrop-dragging){
     opacity:1;
 }
 .annotation-ui-feature-collections .feature-collection:not(.trashed).selected{
@@ -493,6 +493,33 @@ button[disabled]{
     color:black;
 }
 .feature:not(:hover) .bounding-element:not(.active){
+    visibility:hidden;
+}
+
+.hidden{
+    display:none;
+}
+
+.draganddrop-dragging{
+    opacity:0.3;
+}
+.draganddrop-hide{
+    display:none;
+}
+.draganddrop-drop-target{
+    outline:thick rgb(112, 111, 111) solid;
+}
+.draganddrop-drop-target:hover{
+    outline-color:black;
+}
+.draganddrop-drop-target>*>*{
+    pointer-events:none;
+}
+.draganddrop-placeholder{
+    border: thin black solid;
+    border-radius:2px;
+}
+.draganddrop-placeholder>*{
     visibility:hidden;
 }
 
