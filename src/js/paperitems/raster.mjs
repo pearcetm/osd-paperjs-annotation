@@ -37,6 +37,7 @@
  */
 
 import { AnnotationItem } from './annotationitem.mjs';
+import { paper } from '../paperjs.mjs';
 
 /*
  * Raster - contains pixel data for a rectangular region, with an optional clip mask

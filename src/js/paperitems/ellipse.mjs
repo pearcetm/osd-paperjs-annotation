@@ -37,6 +37,7 @@
  */
 
 import { AnnotationItem } from "./annotationitem.mjs";
+import { paper } from '../paperjs.mjs';
 
 /**
  * Represents an ellipse annotation item.
