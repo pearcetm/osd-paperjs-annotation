@@ -400,9 +400,10 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
 
     /**
      * Make a placeholder annotation item
+     * @param {Object} style - options (e.g strokeColor) to pass to the paper item
      */
-    makePlaceholderItem(){
-        return new Placeholder();
+    makePlaceholderItem(style){
+        return new Placeholder(style);
     }
     
 };
