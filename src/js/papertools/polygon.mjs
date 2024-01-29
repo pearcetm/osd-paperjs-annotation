@@ -37,6 +37,7 @@
  */
 
 import {AnnotationUITool, AnnotationUIToolbarBase} from './annotationUITool.mjs';
+import { paper } from '../paperjs.mjs';
 /**
  * Represents a polygon annotation tool that allows users to create and manipulate polygons on a canvas.
  * Inherits functionality from the AnnotationUITool class.

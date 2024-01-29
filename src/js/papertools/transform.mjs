@@ -37,6 +37,7 @@
  */
 
 import {AnnotationUITool, AnnotationUIToolbarBase} from './annotationUITool.mjs';
+import { paper } from '../paperjs.mjs';
 /**
  * The TransformTool class extends the AnnotationUITool and provides functionality for transforming selected items on the canvas.
  * @memberof OSDPaperjsAnnotation

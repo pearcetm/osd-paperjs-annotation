@@ -37,6 +37,7 @@
  */
 
 import {AnnotationUITool, AnnotationUIToolbarBase} from './annotationUITool.mjs';
+import { paper } from '../paperjs.mjs';
 /**
  * Default annotation tool that extends the AnnotationUITool class.
  * Used for image navigation and interaction with annotations.

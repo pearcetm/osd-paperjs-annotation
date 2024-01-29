@@ -38,6 +38,7 @@
 
 import {AnnotationUITool, AnnotationUIToolbarBase} from './annotationUITool.mjs';
 import { PointText } from '../paperitems/pointtext.mjs';
+import { paper } from '../paperjs.mjs';
 
 /**
  * The PointTextTool class empowers the annotation UI with the ability to add point-based text annotations.

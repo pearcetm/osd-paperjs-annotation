@@ -37,6 +37,7 @@
  */
 
 import {AnnotationUITool, AnnotationUIToolbarBase} from './annotationUITool.mjs';
+import { paper } from '../paperjs.mjs';
 
 /**
  * The RectangleTool class extends the AnnotationUITool and provides functionality for creating and modifying rectangles.

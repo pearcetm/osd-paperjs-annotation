@@ -38,6 +38,7 @@
 
 import {AnnotationUITool, AnnotationUIToolbarBase} from './annotationUITool.mjs';
 import {PaperOffset} from '../paper-offset.mjs';
+import { paper } from '../paperjs.mjs';
 /**
  * Represents a brush tool for creating and modifying annotations.
  * @class

@@ -37,6 +37,7 @@
  */
 
 import {AnnotationUITool, AnnotationUIToolbarBase} from './annotationUITool.mjs';
+import { paper } from '../paperjs.mjs';
 
 /**
  * Represents a tool for modifying the visual styles of annotation items, including color and opacity.

@@ -37,6 +37,7 @@
  */
 
 import {AnnotationUITool, AnnotationUIToolbarBase} from './annotationUITool.mjs';
+import { paper } from '../paperjs.mjs';
 /**
  * The RasterTool class extends the AnnotationUITool and provides functionality for rasterizing annotations.
  * @extends AnnotationUITool

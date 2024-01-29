@@ -37,6 +37,7 @@
  */
 
 import {AnnotationUITool, AnnotationUIToolbarBase} from './annotationUITool.mjs';
+import { paper } from '../paperjs.mjs';
 /**
  * Represents an Ellipse Tool in the Annotation Toolkit program.
  * This tool allows users to create and modify ellipses on the canvas.

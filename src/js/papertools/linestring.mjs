@@ -38,6 +38,7 @@
 
 import { AnnotationUIToolbarBase } from './annotationUITool.mjs';
 import {PolygonTool} from './polygon.mjs';
+import { paper } from '../paperjs.mjs';
 
 /**
  * The LinestringTool class extends the PolygonTool and provides functionality for creating and modifying linestrings.

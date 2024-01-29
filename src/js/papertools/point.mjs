@@ -38,6 +38,7 @@
 
 import {AnnotationUITool, AnnotationUIToolbarBase} from './annotationUITool.mjs';
 import { Point } from '../paperitems/point.mjs';
+import { paper } from '../paperjs.mjs';
 /**
  * Represents the PointTool class that allows users to create and manipulate Point features on the Paper.js project.
  * This tool provides functionality for creating points on the map, moving them, and updating their properties.

@@ -40,6 +40,7 @@ import {AnnotationUITool, AnnotationUIToolbarBase} from './annotationUITool.mjs'
 import {ColorpickerCursor,getAverageColor} from './style.mjs';
 import {Morph} from '../utils/morph.mjs';
 import { makeMagicWand } from '../utils/magicwand.mjs';
+import { paper } from '../paperjs.mjs';
 
 
 /**
