@@ -49,7 +49,7 @@ class Placeholder extends AnnotationItem{
     /**
      * Create a new Placeholder instance.
      * @param {Object} geoJSON - The GeoJSON object containing annotation data.
-     * @property {paper.Path} _paperItem - The associated paper item representing the placeholder.
+     * @property {paper.Path} paperItem - The associated paper item representing the placeholder.
      * @description This constructor initializes a new placeholder annotation item based on the provided GeoJSON object.
      */
     constructor(geoJSON){

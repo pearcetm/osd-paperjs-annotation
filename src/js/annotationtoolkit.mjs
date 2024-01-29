@@ -99,6 +99,7 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
      * @param {object} [opts]
      * @param {object} [opts.addUI] a configuration object for the UI, if desired
      * @param {object} [opts.overlay] a PaperOverlay object to use
+     * @param {object} [opts.destroyOnViewerClose] whether to destroy the toolkit and its overlay when the viewer closes
      */
     constructor(openSeadragonViewer, opts = {}) {
         super();
@@ -111,7 +112,7 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
         this._defaultOptions = {
             addUI: false,
             overlay: null,
-            // initializeFeatureCollections:true,
+            destroyOnViewerClose: false,
         }
         this.options = Object.assign({}, this._defaultOptions, opts);
         
@@ -127,7 +128,10 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
         };
         this.viewer = openSeadragonViewer;
 
-        this.viewer.addOnceHandler('close', ()=>this.destroy()); //TO DO: make this an option, not a hard-coded default
+        if(this.options.destroyOnViewerClose){
+            this.viewer.addOnceHandler('close', ()=>this.destroy());
+        }
+        
 
         if(this.options.overlay){
             if(this.options.overlay instanceof PaperOverlay){
@@ -350,6 +354,7 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
     addEmptyFeatureCollectionGroup(){
         return this._createFeatureCollectionGroup();
     }
+    
     /**
      * Create a new feature collection group in the project scope.
      * @private
@@ -393,6 +398,12 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
         return grp;
     }
 
+    /**
+     * Make a placeholder annotation item
+     */
+    makePlaceholderItem(){
+        return new Placeholder();
+    }
     
 };
 
