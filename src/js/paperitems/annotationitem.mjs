@@ -59,7 +59,7 @@ class AnnotationItem{
             throw('Bad GeoJSON Geometry type');
         }
         this._paperItem = null;
-        this._props = feature.properties;
+        this._props = feature.properties || {};
         this.userdata = Object.assign({}, this._props.userdata);//ensure userdata field exists
     }
     /**
