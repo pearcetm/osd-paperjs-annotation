@@ -48,16 +48,15 @@ import { AnnotationItem } from "./annotationitem.mjs";
 class Placeholder extends AnnotationItem{
     /**
      * Create a new Placeholder instance.
-     * @param {Object} geoJSON - The GeoJSON object containing annotation data.
      * @property {paper.Path} paperItem - The associated paper item representing the placeholder.
      * @description This constructor initializes a new placeholder annotation item based on the provided GeoJSON object.
      */
-    constructor(geoJSON){
-        super(geoJSON);
+    constructor(styleOpts){
+        super({type:'Feature',geometry:null});
         
         this.paperItem = new paper.Path();
         // this.paperItem.style = this.paperItem.instructions = geoJSON;
-        this.paperItem.style = geoJSON.properties;
+        this.paperItem.style = styleOpts;
 
         this.paperItem.initializeGeoJSONFeature = initialize;
     }
