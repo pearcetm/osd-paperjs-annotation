@@ -79,6 +79,10 @@ class AnnotationUITool extends ToolBase{
         }
 
     }
+
+    isActive(){
+        return this._active;
+    }
     
     /**
      * Activate the annotation tool, making it ready for interaction.
