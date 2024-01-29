@@ -163,11 +163,11 @@ class PaperOverlay{
 
             this.onAddItem = (self=>function(ev){
                 let tiledImage = ev.item;
-                this._setupTiledImage(tiledImage);
+                self._setupTiledImage(tiledImage);
             })(this);
             this.onRemoveItem = (self=>function(ev){
                 let tiledImage = ev.item;
-                this._removeTiledImage(tiledImage);
+                self._removeTiledImage(tiledImage);
             })(this);
             
             // add handlers so that new items added to the scene are set up and removed appropriately
