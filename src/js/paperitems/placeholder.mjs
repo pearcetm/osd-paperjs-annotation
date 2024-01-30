@@ -57,7 +57,7 @@ class Placeholder extends AnnotationItem{
         
         this.paperItem = new paper.Path();
         // this.paperItem.style = this.paperItem.instructions = geoJSON;
-        this.paperItem.style = styleOpts;
+        this.paperItem.style = new paper.Style(styleOpts);
 
         this.paperItem.initializeGeoJSONFeature = initialize;
     }

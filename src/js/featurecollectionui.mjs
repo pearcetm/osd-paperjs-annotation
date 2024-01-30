@@ -41,6 +41,7 @@ import { EditableContent } from './utils/editablecontent.mjs';
 import { domObjectFromHTML } from './utils/domObjectFromHTML.mjs';
 import { datastore } from './utils/datastore.mjs';
 import { DragAndDrop } from './utils/draganddrop.mjs';
+import { Placeholder } from './paperitems/placeholder.mjs';
 
 /**
  * A user interface for managing feature collections. The FeatureCollectionUI class provides a user
@@ -184,15 +185,9 @@ class FeatureCollectionUI{
                 strokeOpacity:props.strokeOpacity,
                 strokeWidth:props.strokeWidth,
             }
-            let style = new paper.Style(clonedProperties);
-            let geoJSON = {
-                type:'Feature',
-                geometry:null,
-                properties:style,
-            }
-            let placeholder = paper.Item.fromGeoJSON(geoJSON);
-            this.group.addChild(placeholder);
-            return placeholder;
+            let placeholder = new Placeholder(clonedProperties);
+            this.group.addChild(placeholder.paperItem);
+            return placeholder.paperItem;
         }
 
         
