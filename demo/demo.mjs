@@ -25,7 +25,10 @@ let v1 =window.v1 = OpenSeadragon({
     minZoomImageRatio:0.01,
     visibilityRatio:0,
     crossOriginPolicy: 'Anonymous',
-    ajaxWithCredentials: false
+    ajaxWithCredentials: false,
+    gestureSettingsMouse:{
+        dragToPan:false,
+    }
 });
 v1.addHandler('open',()=>{
     new RotationControlOverlay(v1);

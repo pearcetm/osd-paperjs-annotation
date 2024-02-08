@@ -513,7 +513,7 @@ class PaperOverlay{
      * @private
      */
     _removeTiledImage(tiledImage){
-        //TODO implement this
+        tiledImage.paperLayer.remove();
     }
 
 
