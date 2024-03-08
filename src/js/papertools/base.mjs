@@ -114,6 +114,9 @@ class ToolBase{
         }
         this.listeners = {}
     }
+    getTolerance(pixels, item){
+        return pixels * item.layer.scaling.x / this.project.getZoom();
+    }
     /**
      * Check if the tool is active.
      * @returns {boolean} True if the tool is active, otherwise false.

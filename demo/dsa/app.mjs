@@ -86,13 +86,13 @@ function createViewer(){
             addLayerDialog:false,
 
         });
-        ui._layerUI.element.appendTo($('#paper-gui')).on('element-added',(ev)=>{
+        $(ui._layerUI.element).appendTo($('#paper-gui')).on('element-added',(ev)=>{
             let scrollToElement = $(ev.target);
             scrollToElement && setTimeout(()=>{
                 scrollToElement[0].scrollIntoView({block: "nearest", inline: "nearest"})
             }, 0);
         });
-        ui._layerUI.element.find('input.annotation-fill-opacity').val('0.5').trigger('input');
+        $(ui._layerUI.element).find('input.annotation-fill-opacity').val('0.5').trigger('input');
 
         // $('#current-file').text(`${ts.name} (${ev.page+1} of ${ev.eventSource.tileSources.length})`)
 

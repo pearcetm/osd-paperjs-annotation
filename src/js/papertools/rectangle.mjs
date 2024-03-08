@@ -154,7 +154,7 @@ class RectangleTool extends AnnotationUITool{
         }
         else if(this.item){
             // try hit test on corners first
-            let result = this.item.hitTest(ev.point,{fill:false,stroke:false,segments:true,tolerance:5/this.project.getZoom()});
+            let result = this.item.hitTest(ev.point,{fill:false,stroke:false,segments:true, tolerance:this.getTolerance(5, item) });
             if(result){
                 // crosshairTool.visible=true;
                 this.mode='corner-drag';
