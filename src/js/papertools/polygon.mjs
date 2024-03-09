@@ -162,7 +162,7 @@ class PolygonTool extends AnnotationUITool{
             return;
         }
         
-        let hitResult = (dr&&dr.path ||this.item).hitTest(ev.point,{fill:false,stroke:true,segments:true,tolerance:this.getTolerance(5, item)})
+        let hitResult = (dr&&dr.path ||this.item).hitTest(ev.point,{fill:false,stroke:true,segments:true,tolerance:this.getTolerance(5)})
         if(hitResult){
             //if erasing and hitResult is a segment, hitResult.segment.remove()
             if(hitResult.type=='segment' && this.eraseMode){
@@ -195,7 +195,7 @@ class PolygonTool extends AnnotationUITool{
     onMouseUp(ev){
         let dr = this.drawing();
         if(dr && dr.path.segments.length>1){
-            let hitResult = dr.path.hitTest(ev.point,{fill:false,stroke:false,segments:true,tolerance:this.getTolerance(5, item)})
+            let hitResult = dr.path.hitTest(ev.point,{fill:false,stroke:false,segments:true,tolerance:this.getTolerance(5)})
             if(hitResult && hitResult.segment == dr.path.firstSegment){
                 this.finishCurrentPath();
             }
@@ -211,7 +211,7 @@ class PolygonTool extends AnnotationUITool{
     }
     onMouseMove(ev){
         let dr = this.drawing();
-        let hitResult = this.item && (dr&&dr.path ||this.item).hitTest(ev.point,{fill:false,stroke:true,segments:true,tolerance:this.getTolerance(5, item)})
+        let hitResult = this.item && (dr&&dr.path ||this.item).hitTest(ev.point,{fill:false,stroke:true,segments:true,tolerance:this.getTolerance(5)})
         if(hitResult){
             let action = hitResult.type + (this.eraseMode ? '-erase' : '');
             this.project.overlay.addClass('tool-action').setAttribute('data-tool-action',action);
