@@ -125,7 +125,7 @@ class RectangleTool extends AnnotationUITool{
 
     get rectangle(){
         // handle the case where the actual rectangle is the first child of a group, or just the item itself
-        return this.item?.children[0] || this.item;
+        return (this.item.children && this.item.children[0]) || this.item;
     }
 
     setCursorPosition(point){
