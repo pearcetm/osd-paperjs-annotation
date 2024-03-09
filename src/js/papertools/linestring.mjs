@@ -139,7 +139,7 @@ class LinestringTool extends PolygonTool{
         }
         
         let dr = this.drawing();
-        let hitResult = (dr&&dr.path ||this.item).hitTest(ev.point,{fill:false,stroke:true,segments:true,tolerance:(5/this.project.getZoom())})
+        let hitResult = (dr&&dr.path ||this.item).hitTest(ev.point,{fill:false,stroke:true,segments:true,tolerance:this.getTolerance(5, item)})
         if(hitResult){
             //if erasing and hitResult is a segment, hitResult.segment.remove()
             if(hitResult.type=='segment' && this.eraseMode){

@@ -121,7 +121,7 @@ class EllipseTool extends AnnotationUITool{
             this.mode='creating';
         } else if(this.item){
             // first do a hit test on the segments
-            let result = this.item.hitTest(ev.point,{fill:false,stroke:false,segments:true,tolerance:5/this.project.getZoom()})
+            let result = this.item.hitTest(ev.point,{fill:false,stroke:false,segments:true,tolerance:this.getTolerance(5, item)})
             if(result){
                 
                 this.mode='segment-drag';
@@ -205,7 +205,7 @@ class EllipseTool extends AnnotationUITool{
     onMouseMove(ev){
         this.setCursorPosition(ev.original.point);
         if(this.mode == 'modifying'){
-            let hitResult = this.item.hitTest(ev.point,{fill:false,stroke:false,segments:true,tolerance:5/this.project.getZoom()});
+            let hitResult = this.item.hitTest(ev.point,{fill:false,stroke:false,segments:true,tolerance:this.getTolerance(5, item)});
             if(hitResult){
                 this.project.overlay.addClass('rectangle-tool-resize');
             } else { 

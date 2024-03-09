@@ -183,7 +183,7 @@ class SelectTool extends AnnotationUITool{
             fill:true,
             stroke:true,
             segments:true,
-            tolerance:(5/this.project.getZoom()),
+            tolerance:this.getTolerance(5, item),
             match:i=>i.item.isGeoJSONFeature || i.item.parent.isGeoJSONFeature,
         })
         if(hitResult && !hitResult.item.isGeoJSONFeature){
