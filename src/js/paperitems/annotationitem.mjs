@@ -38,7 +38,7 @@
 
 import { OpenSeadragon } from '../osd-loader.mjs';
 import { paper } from '../paperjs.mjs';
-
+import { AnnotationToolkit } from '../annotationtoolkit.mjs';
 
 /**
  * Represents an annotation item that can be used in a map.
@@ -333,7 +333,7 @@ function convertPaperItemToAnnotation(annotationItem){
     let constructor = annotationItem.constructor;
     let properties = annotationItem._props;
 
-    item.isGeoJSONFeature = true;
+    AnnotationToolkit.registerFeature(item);
     item.onTransform = constructor.onTransform;
 
     //style

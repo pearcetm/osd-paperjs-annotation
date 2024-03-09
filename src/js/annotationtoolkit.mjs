@@ -277,6 +277,20 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
     getFeatures(){
         return this.paperScope.project.getItems({match:i=>i.isGeoJSONFeature});
     }
+     /**
+     * Register an item as a GeoJSONFeature that the toolkit should track
+     * @param {paper.Item} item - The item to track as a geoJSONFeature
+     */
+    static registerFeature(item){
+        item.isGeoJSONFeature = true;
+    }
+     /**
+     * Register a group as a GeoJSONFeatureCollection that the toolkit should track
+     * @param {paper.Group} group - The group to track as a geoJSONFeatureCollection
+     */
+    static registerFeatureCollection(group){
+        group.isGeoJSONFeatureCollection = true;
+    }
     /**
      * Convert the feature collections in the toolkit to GeoJSON objects.
      * @param {boolean} [pixelCoordinates] Whether the items should be scaled to the pixel coordinates of the image (true - default) or normalized by tiledImage or viewport width (false)
@@ -390,7 +404,7 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
 
         let grp = new paper.Group();
         parent.addChild(grp);
-        grp.isGeoJSONFeatureCollection = true;
+        AnnotationToolkit.registerFeatureCollection(grp);
         let grpNum = this.getFeatureCollectionGroups().length;
         grp.name = grp.displayName = displayLabel!==null ? displayLabel : `Annotation Group ${grpNum}`;
         grp.defaultStyle = new paper.Style(this.paperScope.project.defaultStyle);
