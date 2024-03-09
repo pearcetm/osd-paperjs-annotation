@@ -114,8 +114,12 @@ class ToolBase{
         }
         this.listeners = {}
     }
-    getTolerance(pixels, item){
-        return pixels / item.layer.scaling.x / this.project.getZoom();
+    getTolerance(pixels, item = null){
+        if(!item){
+            item = this.item;
+        }
+        const scalefactor = item?.layer.scaling.x || 1;
+        return pixels / scalefactor / this.project.getZoom();
     }
     /**
      * Check if the tool is active.

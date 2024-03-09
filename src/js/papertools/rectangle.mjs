@@ -161,7 +161,7 @@ class RectangleTool extends AnnotationUITool{
         }
         else if(this.item){
             // try hit test on corners first
-            let result = this.item.hitTest(ev.point,{fill:false,stroke:false,segments:true, tolerance:this.getTolerance(5, item) });
+            let result = this.item.hitTest(ev.point,{fill:false,stroke:false,segments:true, tolerance:this.getTolerance(5) });
             if(result){
                 // crosshairTool.visible=true;
                 this.mode='corner-drag';
@@ -184,7 +184,7 @@ class RectangleTool extends AnnotationUITool{
     onMouseMove(ev){
         this.setCursorPosition(ev.original.point);
         if(this.mode == 'modifying'){
-            let hitResult = this.item.hitTest(ev.point,{fill:false,stroke:false,segments:true,tolerance:this.getTolerance(5, item) });
+            let hitResult = this.item.hitTest(ev.point,{fill:false,stroke:false,segments:true,tolerance:this.getTolerance(5) });
             if(hitResult){
                 this.project.overlay.addClass('rectangle-tool-resize');
             } else{
