@@ -118,9 +118,16 @@ class RectangleTool extends AnnotationUITool{
             crosshairTool.visible=false;
             self.mode=null;
             self.project.overlay.removeClass('rectangle-tool-resize');
+            self.project.overlay.removeClass('rectangle-tool-move');
         }
         
     }
+
+    get rectangle(){
+        // handle the case where the actual rectangle is the first child of a group, or just the item itself
+        return this.item?.children[0] || this.item;
+    }
+
     setCursorPosition(point){
         //to do: account for view rotation
         // let viewBounds=tool.view.bounds;
@@ -209,7 +216,7 @@ class RectangleTool extends AnnotationUITool{
                 currPt = ev.point;
             }
         } else if(this.mode=='corner-drag'){
-            angle = this.item.children[0].segments[1].point.subtract(this.item.children[0].segments[0].point).angle;
+            angle = this.rectangle.segments[1].point.subtract(this.rectangle.segments[0].point).angle;
             refPt = this.refPoint;
 
             if(ev.modifiers.command || ev.modifiers.control){
@@ -231,7 +238,7 @@ class RectangleTool extends AnnotationUITool{
         // this.setCursorPosition(currPt);
         let r=new paper.Rectangle(refPt.rotate(-angle,center),currPt.rotate(-angle, center));
         let corners = [r.topLeft, r.topRight, r.bottomRight, r.bottomLeft].map(p=>p.rotate(angle,center));
-        this.item.children[0].set({segments:corners})
+        this.rectangle.set({segments:corners})
     }
     
     onMouseUp(){
