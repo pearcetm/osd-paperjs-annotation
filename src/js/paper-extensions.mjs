@@ -163,6 +163,30 @@ function itemFillOpacityPropertyDef(){
         }
     }
 }
+
+/**
+ * Define the stroke opacity property for a paper item object.
+ * The stroke opacity property defines the opacity of the stroke color used in a paper item object's style.
+ * @private
+ * @returns {object} The property descriptor object.
+ * @property {function} set - The setter function for the stroke opacity property.
+ *   @param {number} opacity - The opacity value for the stroke color.
+ * @property {function} get - The getter function for the stroke opacity property.
+ *   @returns {number} The opacity value of the stroke color.
+ */
+function itemStrokeOpacityPropertyDef(){
+    return {
+        set: function opacity(o){
+            (this.style || this.defaultStyle).strokeOpacity = o;
+            this.descendants.forEach(item=>item.updateStrokeOpacity())
+        },
+        get: function opacity(){
+            return (this.style || this.defaultStyle).strokeOpacity;
+        }
+    }
+}
+
+
 /**
  * Define the fill opacity property for a paper view object.
  * The fill opacity property defines the opacity of the fill color used in a paper view object's style.
@@ -185,27 +209,6 @@ function viewFillOpacityPropertyDef(){
     }
 }
 
-/**
- * Define the stroke opacity property for a paper item object.
- * The stroke opacity property defines the opacity of the stroke color used in a paper item object's style.
- * @private
- * @returns {object} The property descriptor object.
- * @property {function} set - The setter function for the stroke opacity property.
- *   @param {number} opacity - The opacity value for the stroke color.
- * @property {function} get - The getter function for the stroke opacity property.
- *   @returns {number} The opacity value of the stroke color.
- */
-function itemStrokeOpacityPropertyDef(){
-    return {
-        set: function opacity(o){
-            this._strokeOpacity = o;
-            this.descendants.forEach(item=>item.updateStrokeOpacity())
-        },
-        get: function opacity(){
-            return typeof this._strokeOpacity === 'undefined' ? 1 : this._strokeOpacity;
-        }
-    }
-}
 /**
  * Define the rescale property for a paper style object.
  * The rescale property defines the scaling factor applied to a paper style object.

@@ -347,9 +347,11 @@ class TransformToolbar extends AnnotationUIToolbarBase{
      */
     constructor(tool){
         super(tool);
-        $(this.dropdown).addClass('transform-dropdown');
-        let html = $('<i>',{class:'fa-solid fa-up-down-left-right'})[0];
-        this.button.configure(html,'Transform Tool');
+        this.dropdown.classList.add('transform-dropdown');
+        
+        const i = document.createElement('i');
+        i.classList.add('fa-solid','fa-up-down-left-right');
+        this.button.configure(i,'Transform Tool');
         
     }
     /**
