@@ -704,8 +704,13 @@ export {ColorpickerCursor};
     let raster = ((itemToAverage.project && itemToAverage.project.overlay) || itemToAverage.overlay).getViewportRaster();
     return new Promise(function(resolve,reject){
         raster.onLoad = function(){
-            let color = raster.getAverageColor(itemToAverage);
+            // clone the item and transform it back to viewport coordinates
+            const cloned = itemToAverage.clone();
+            cloned.transform(cloned.layer.matrix);
+            let color = raster.getAverageColor(cloned);
+            //clean up the cloned item and the raster
             raster.remove();
+            cloned.remove();
             if(!color){
                 reject('Error: The item must be visible on the screen to pick the average color of visible pixels. Please navigate and retry.')
             } 
