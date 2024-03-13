@@ -258,7 +258,6 @@ class PaperOverlay{
             let i = document.createElement('i');
             i.classList.add(...params.faIconClasses.split(/\s/), 'button-icon-fa');
             button.element.appendChild(i);
-            // $(button.element).append($('<i>', {class:params.faIconClasses + ' button-icon-fa'}));
         }
         this.viewer.buttonGroup.buttons.push(button);
         this.viewer.buttonGroup.element.appendChild(button.element);
