@@ -264,9 +264,13 @@ class RectToolbar extends AnnotationUIToolbarBase{
      */
     constructor(tool){
         super(tool);
-        let html = $('<i>',{class:'fa-solid fa-vector-square'})[0];
-        this.button.configure(html,'Rectangle Tool');
-        this.instructions = $('<span>').text('Click and drag to create a rectangle').appendTo(this.dropdown);
+        const i = document.createElement('i');
+        i.classList.add('fa-solid','fa-vector-square');
+        this.button.configure(i,'Rectangle Tool');
+        
+        this.instructions = document.createElement('span');
+        this.instructions.innerHTML = 'Click and drag to create a rectangle';
+        this.dropdown.appendChild(this.instructions);
     }
     /**
      * Check if the toolbar is enabled for the specified mode.
@@ -281,6 +285,7 @@ class RectToolbar extends AnnotationUIToolbarBase{
      * @param {string} mode - The current mode.
      */
     updateInstructions(mode){
-        this.instructions.text(mode=='new'?'Click and drag to create a rectangle' : mode=='Point:Rectangle' ? 'Drag a corner to resize' : '???' )
+        const text = mode=='new'?'Click and drag to create a rectangle' : mode=='Point:Rectangle' ? 'Drag a corner to resize' : '???'; 
+        this.instructions.innerHTML = text;
     }
 }
