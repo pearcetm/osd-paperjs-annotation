@@ -199,7 +199,7 @@ class AnnotationUITool extends ToolBase{
         } else if(this.items){
             let layerSet = new Set(this.items.map(item=>item.layer));
             if(layerSet.size === 1){
-                this._targetLayer = layerSet.next().value;
+                this._targetLayer = layerSet.values().next().value;
             } else {
                 this._targetLayer = this.project.overlay.viewer.viewport.paperLayer;
             }
