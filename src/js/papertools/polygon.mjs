@@ -384,26 +384,58 @@ class PolygonToolbar extends AnnotationUIToolbarBase{
      */
     constructor(polyTool){
         super(polyTool);
-        let self=this;
-        let html = $('<i>',{class:'fa-solid fa-draw-polygon'})[0];
-        this.button.configure(html,'Polygon Tool');
         
-        let fdd=$('<div>',{'data-tool':'polygon',class:'dropdown polygon-toolbar'}).appendTo(this.dropdown);
-        $('<span>').appendTo(fdd).text('Click or Drag');
+        const i = document.createElement('i');
+        i.classList.add('fa-solid','fa-draw-polygon');
+        this.button.configure(i,'Polygon Tool');
+        
+        const fdd = document.createElement('div');
+        fdd.classList.add('dropdown','polygon-toolbar');
+        fdd.setAttribute('data-tool','polygon');
+        this.dropdown.appendChild(fdd);
+        const s = document.createElement('span');
+        s.innerHTML = 'Click or Drag';
+        fdd.appendChild(s);
     
-        let simplifyDiv=$('<div>').appendTo(fdd);
-        this.simplifyButton=$('<button>',{'data-action':'simplify'}).text('Simplify').appendTo(simplifyDiv).on('click',function(){
+        const simplifyDiv = document.createElement('div');
+        fdd.appendChild(simplifyDiv);
+        this.simplifyButton = document.createElement('button');
+        this.simplifyButton.setAttribute('data-action', 'simplify');
+        this.simplifyButton.innerHTML = 'Simplify';
+        simplifyDiv.append(this.simplifyButton);
+        this.simplifyButton.addEventListener('click',function(){
             polyTool.doSimplify();
         });
-        this.eraseButton=$('<button>',{'data-action':'erase'}).text('Eraser').appendTo(fdd).on('click',function(){
-            let erasing = $(this).toggleClass('active').hasClass('active');
+
+
+        this.eraseButton = document.createElement('button');
+        fdd.appendChild(this.eraseButton);
+        this.eraseButton.setAttribute('data-action', 'erase');
+        this.eraseButton.innerHTML = 'Eraser';
+        this.eraseButton.addEventListener('click',function(){
+            let erasing = this.classList.toggle('active');
             polyTool.setEraseMode(erasing);
         });
-        let span = $('<span>').appendTo(fdd);
-        this.undoButton=$('<button>',{title:'Undo (ctrl-Z)', 'data-action':'undo'}).text('<').appendTo(span).on('click',function(){
+
+        
+        const undoRedo = document.createElement('span');
+        fdd.appendChild(undoRedo);
+
+        this.undoButton = document.createElement('button');
+        undoRedo.appendChild(this.undoButton);
+        this.undoButton.setAttribute('data-action', 'undo');
+        this.undoButton.setAttribute('title', 'Undo (ctrl-Z)');
+        this.undoButton.innerHTML = '<';
+        this.undoButton.addEventListener('click',function(){
             polyTool.undo();
         });
-        this.redoButton=$('<button>',{title:'Redo (ctrl-shift-Z)', 'data-action':'redo'}).text('>').appendTo(span).on('click',function(){
+
+        this.redoButton = document.createElement('button');
+        undoRedo.appendChild(this.redoButton);
+        this.redoButton.setAttribute('data-action', 'redo');
+        this.redoButton.setAttribute('title', 'Redo (ctrl-shift-Z)');
+        this.redoButton.innerHTML = '>';
+        this.redoButton.addEventListener('click',function(){
             polyTool.redo();
         });
     }
@@ -420,7 +452,7 @@ class PolygonToolbar extends AnnotationUIToolbarBase{
      * @param {boolean} erasing - True to enable erase mode, false to disable.
      */
     setEraseMode(erasing){
-        erasing ? this.eraseButton.addClass('active') : this.eraseButton.removeClass('active');
+        erasing ? this.eraseButton.classList.add('active') : this.eraseButton.classList.remove('active');
     }
 
 }
