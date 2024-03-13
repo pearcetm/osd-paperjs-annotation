@@ -41,7 +41,7 @@ import {ColorpickerCursor,getAverageColor} from './style.mjs';
 import {Morph} from '../utils/morph.mjs';
 import { makeMagicWand } from '../utils/magicwand.mjs';
 import { paper } from '../paperjs.mjs';
-
+import { datastore } from '../utils/datastore.mjs';
 
 /**
  * The `WandTool` class represents a powerful tool designed for making selections with a magic wand-like effect. 
@@ -155,21 +155,17 @@ class WandTool extends AnnotationUITool{
         
         
         tool.extensions.onKeyUp=function(ev){
-            // console.log(`Key up on ${ev.key} key`)
             if(ev.key=='a'){
                 self.applyChanges();
             }
             if(ev.key=='e'){
-                self.reduceMode = !self.reduceMode;
-                self.toolbarControl.setReduceMode(self.reduceMode);
+                self.toolbarControl.cycleReduceMode();
             }
             if(ev.key=='r'){
-                self.replaceMode = !self.replaceMode;
-                self.toolbarControl.setReplaceMode(self.replaceMode);
+                self.toolbarControl.cycleReplaceMode();
             }
             if(ev.key=='f'){
-                self.floodMode = !self.floodMode;
-                self.toolbarControl.setFloodMode(self.floodMode);
+                self.toolbarControl.cycleFloodMode();
             }
         }
     }
@@ -496,73 +492,125 @@ class WandToolbar extends AnnotationUIToolbarBase{
      */
     constructor(wandTool){
         super(wandTool);
-        let html = $('<i>',{class:"fa-solid fa-wand-magic-sparkles fa-rotate-270"})[0];
+        
+        let html = document.createElement('i');
+        html.classList.add("fa-solid", "fa-wand-magic-sparkles", "fa-rotate-270");
         this.button.configure(html,'Magic Wand Tool');
         
-        let fdd = $('<div>',{'data-tool':'wand',class:'dropdown wand-toolbar'}).appendTo(this.dropdown);
-        let thr = $('<div>',{class:'threshold-container'}).appendTo(fdd);
-        $('<label>').text('Threshold').appendTo(thr)
-        this.thresholdInput=$('<input>',{type:'range',min:-1,max:100,value:20}).appendTo(thr).on('change',function(){
-            wandTool.setThreshold($(this).val());
+        let fdd = document.createElement('div');
+        fdd.classList.add('wand-toolbar', 'dropdown');
+        fdd.setAttribute('data-tool','wand');
+        this.dropdown.appendChild(fdd);
+
+        let thr = document.createElement('div');
+        thr.classList.add('threshold-container');
+        fdd.appendChild(thr);
+
+        let label = document.createElement('label');
+        thr.appendChild(label);
+        label.innerHTML = 'Threshold';
+
+        this.thresholdInput = document.createElement('input');
+        thr.appendChild(this.thresholdInput);
+        Object.assign(this.thresholdInput, {type:'range',min:-1,max:100,value:20} );
+        this.thresholdInput.onchange = function(){ wandTool.setThreshold(this.value) }
+        
+        let toggles = document.createElement('div');
+        toggles.classList.add('toggles');
+        fdd.appendChild(toggles);
+        
+        let cycleReplaceModeButton = this.cycleReplaceModeButton = document.createElement('span');
+        cycleReplaceModeButton.classList.add('option-toggle');
+        toggles.appendChild(cycleReplaceModeButton);
+        datastore.set(cycleReplaceModeButton, {
+            prefix:'On click:',
+            actions:[{replace:'Start new mask'}, {append:'Add to current'}],
+            onclick:function(action){
+                wandTool.setReplaceMode(action=='replace');
+            }
+        });
+
+        let cycleFloodModeButton = this.cycleFloodModeButton = document.createElement('span');
+        cycleFloodModeButton.classList.add('option-toggle');
+        toggles.appendChild(cycleFloodModeButton);
+        datastore.set(cycleFloodModeButton, {
+            prefix:'Fill rule:',
+            actions:[{flood:'Contiguous'}, {everywhere:'Anywhere'}],
+            onclick:function(action){
+                wandTool.setFloodMode(action=='flood')
+            }
+        });
+
+        let cycleReduceModeButton = this.cycleReduceModeButton = document.createElement('span');
+        cycleReduceModeButton.classList.add('option-toggle');
+        toggles.appendChild(cycleReduceModeButton);
+        datastore.set(cycleReduceModeButton, {
+            prefix:'Use to:',
+            actions:[{expand:'Expand selection'}, {reduce:'Reduce selection'}],
+            onclick:function(action){
+                wandTool.setReduceMode(action=='reduce');
+            }
         });
         
-        let toggles=$('<div>',{class:'toggles'}).appendTo(fdd);
-        
-        $('<span>',{class:'option-toggle'}).appendTo(toggles)
-            .data({
-                prefix:'On click:',
-                actions:[{replace:'Start new mask'}, {append:'Add to current'}],
-                onclick:function(action){
-                    wandTool.setReplaceMode(action=='replace');
-                }
-            })
-        $('<span>',{class:'option-toggle'}).appendTo(toggles)
-            .data({
-                prefix:'Fill rule:',
-                actions:[{flood:'Contiguous'}, {everywhere:'Anywhere'}],
-                onclick:function(action){
-                    wandTool.setFloodMode(action=='flood')
-                }
-            });
-        $('<span>',{class:'option-toggle'}).appendTo(toggles)
-            .data({
-                prefix:'Use to:',
-                actions:[{expand:'Expand selection'}, {reduce:'Reduce selection'}],
-                onclick:function(action){
-                    wandTool.setReduceMode(action=='reduce');
-                }
-            });
-        
-        toggles.find('.option-toggle').each((index,item)=>{
-            // console.log('option-toggle item',item)
-            item=$(item);
-            let data=item.data();
-            $('<span>',{class:'prefix label'}).text(data.prefix).appendTo(item);
+       
+        // set up the buttons to cycle through actions for each option
+        [cycleReplaceModeButton, cycleFloodModeButton, cycleReduceModeButton].forEach(item=>{
+            
+            let data = datastore.get(item);
+            
+            let s = document.createElement('span');
+            s.classList.add('label','prefix');
+            s.innerHTML = data.prefix;
+            item.appendChild(s);
             
             data.actions.forEach((action,actionIndex)=>{
                 let text=Object.values(action)[0];
                 let key = Object.keys(action)[0];
-                let option = $('<span>',{class:'option'}).text(text).appendTo(item).data({key:key,index:actionIndex});
-                if(actionIndex==0) option.addClass('selected');
+                let option = document.createElement('span');
+                option.classList.add('option');
+                option.innerHTML = text;
+                item.appendChild(option);
+                datastore.set(option, {key, index:actionIndex});
+                action.htmlElement = option;
+                action.key = key;
+
+                if(actionIndex==0) option.classList.add('selected');
             })
-            item.on('click',function(){
-                let actions=$(this).data('actions');
-                let currentIndex = $(this).find('.option.selected').data('index');
+            
+            item.addEventListener('click', function(){
+                let itemData = datastore.get(this);
+                let actions = itemData.actions;
+                let selectedChild = this.querySelector('.option.selected');
+                let currentIndex = datastore.get(selectedChild)?.index;
                 let nextIndex = typeof currentIndex==='undefined' ? 0 : (currentIndex+1) % actions.length;
-                $(this).find('.option').removeClass('selected');
-                let actionToEnable=$(this).find('.option').filter((idx,item)=>$(item).data('index')==nextIndex).addClass('selected').data('key');
-                $(this).data('onclick')(actionToEnable);//use the 
-            })
+                let allOptions = this.querySelectorAll('.option');
+                allOptions.forEach(o=>o.classList.remove('selected'));
+                let actionToEnable = actions[nextIndex];
+                actionToEnable.htmlElement.classList.add('selected');
+                itemData.onclick(actionToEnable.key);
+            });
         })
 
 
         
-        $('<button>',{class:'btn btn-secondary btn-sm','data-action':'apply'}).appendTo(fdd).text('Apply').on('click',function(){
+        let applyButton = document.createElement('button');
+        applyButton.classList.add('btn', 'btn-secondary', 'btn-sm');
+        applyButton.setAttribute('data-action','apply');
+        fdd.appendChild(applyButton);
+        applyButton.innerHTML = 'Apply';
+        applyButton.onclick = function(){
             wandTool.applyChanges();
-        });
-        $('<button>',{class:'btn btn-sm', 'data-action':'done'}).appendTo(fdd).text('Done').on('click',function(){
+        };
+
+        let doneButton = document.createElement('button');
+        doneButton.classList.add('btn', 'btn-secondary', 'btn-sm');
+        doneButton.setAttribute('data-action','done');
+        fdd.appendChild(doneButton);
+        doneButton.innerHTML = 'Done';
+        doneButton.onclick = function(){
             wandTool.finish();
-        });
+        };
+
     }
     /**
      * Check if the toolbar should be enabled for the given mode.
@@ -580,9 +628,31 @@ class WandToolbar extends AnnotationUIToolbarBase{
      * @param {number} thr - The threshold value to set.
      */
     setThreshold(thr){
-        this.thresholdInput.val(thr);
+        this.thresholdInput.value = thr;
+    }
+
+    /**
+     * Cycle through the reduce modes (add, reduce)
+     */
+    cycleReduceMode(){
+        this.cycleReduceModeButton.dispatchEvent(new Event('click'));
+    }
+
+    /**
+     * Cycle through the replace modes (replace, expand)
+     */
+    cycleReplaceMode(){
+        this.cycleReplaceModeButton.dispatchEvent(new Event('click'));
+    }
+
+    /**
+     * Cycle through the flood modes (flood, everywhere)
+     */
+    cycleFloodMode(){
+        this.cycleFloodModeButton.dispatchEvent(new Event('click'));
     }
 }
+
 
 /**
  * Displays an image preview on the web page using the provided data URL.
@@ -591,10 +661,10 @@ class WandToolbar extends AnnotationUIToolbarBase{
  * @private
  * @param {string} dataURL - The data URL of the image to display.
  */
-function imgPreview(dataURL){
-    if(window.preview) window.preview.remove();
-    window.preview = $('<img>',{style:'position:fixed;left:10px;top:10px;width:260px;',src:dataURL}).appendTo('body');
-}
+// function imgPreview(dataURL){
+//     if(window.preview) window.preview.remove();
+//     window.preview = $('<img>',{style:'position:fixed;left:10px;top:10px;width:260px;',src:dataURL}).appendTo('body');
+// }
 
 /**
  * Converts a binary mask to a compound path, tracing contours and creating path objects.

@@ -70,8 +70,6 @@ class AnnotationToolbar{
      * @property {null|string[]} currentMode - The current mode.
      * @property {null|number} setModeTimeout - The set mode timeout.
      * @property {Object} toolLayer - The tool layer.
-     * @property {boolean} toolLayer.isGeoJSONFeatureCollection - A boolean indicating if the tool layer is a GeoJSON feature collection.
-     * @property {string} toolLayer.name - The name of the tool layer.
      * @property {ToolConstructors} toolConstructors - An object containing tool constructors.
      * @property {Object.<string, ToolObject>} tools - An object containing tool instances.
      * @param {Object} paperScope - The Paper.js scope object.
