@@ -198,13 +198,19 @@ class TransformTool extends AnnotationUITool{
         //Translation operations
         this.onMouseDrag = ev=>{
             if(!this._transformTool._moveOnDrag) return;
-            this._transformTool.translate(ev.delta);
+            
+            // use original delta for the tool's display rectangle and handles
+            this._transformTool.translate(ev.original.delta);
+
+            // use transformed delta for the object we're transforming
+            const delta = ev.delta;
+            
             Object.values(this._transformTool.corners).forEach(corner=>{
-                corner.refPos = corner.refPos.add(ev.delta);
+                corner.refPos = corner.refPos.add(delta);
             })
             this._transformTool.transforming.forEach(item=>{
-                item.translate(ev.delta);
-                item.onTransform && item.onTransform('translate', ev.delta);
+                item.translate(delta);
+                item.onTransform && item.onTransform('translate', delta);
             });
         }
         
