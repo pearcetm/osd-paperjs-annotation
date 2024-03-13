@@ -278,9 +278,15 @@ class EllipseToolbar extends AnnotationUIToolbarBase{
      */
     constructor(tool){
         super(tool);
-        let html = $('<i>',{class:'fa-regular fa-circle'})[0];
-        this.button.configure(html,'Ellipse Tool');
-        this.instructions = $('<span>').text('Click and drag to create an ellipse').appendTo(this.dropdown);
+        
+        const i = document.createElement('i');
+        i.classList.add('fa-regular','fa-circle');
+        this.button.configure(i,'Ellipse Tool');
+        
+        this.instructions = document.createElement('span');
+        this.instructions.innerHTML = 'Click and drag to create an ellipse';
+        this.dropdown.appendChild(this.instructions);
+
     }
      /**
      * Check if the ellipse tool is enabled for the given mode.
@@ -297,6 +303,7 @@ class EllipseToolbar extends AnnotationUIToolbarBase{
      * @description This method updates the instructions text based on the annotation tool's mode. It provides appropriate instructions for different modes.
      */
     updateInstructions(mode){
-        this.instructions.text(mode=='new'?'Click and drag to create an ellipse' : mode=='Point:Ellipse' ? 'Drag a point to resize' : '???' )
+        const text = mode=='new'?'Click and drag to create an ellipse' : mode=='Point:Ellipse' ? 'Drag a point to resize' : '???';
+        this.instructions.innerHTML = text;
     }
 }
