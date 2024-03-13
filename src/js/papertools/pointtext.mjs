@@ -168,7 +168,7 @@ class PointTextTool extends AnnotationUITool{
     _updateTextInput(){
         let text = (this.item && this.item.annotationItem.subtype=='PointText') ? this.item.children[1].content : '';
         this.toolbarControl.setItemText(text);
-        this.cursor.children[1].content = text.length ? text : this.toolbarControl.input.attr('placeholder');
+        this.cursor.children[1].content = text.length ? text : this.toolbarControl.input.getAttribute('placeholder');
     }
 }
 export{PointTextTool};
@@ -192,17 +192,28 @@ class PointTextToolbar extends AnnotationUIToolbarBase{
     constructor(tool){
         super(tool);
         let self = this;
-        let html = $('<i>',{class:'fa-solid fa-font'})[0];
-        this.button.configure(html,'Text Tool');
-        this.instructions=$('<span>',{class:'instructions'}).text('').appendTo(this.dropdown);
-        this.input = $('<input>',{type:'text',placeholder:'Enter text'}).appendTo(this.dropdown).on('input',function(){
+
+        const i = document.createElement('i');
+        i.classList.add('fa-solid','fa-font');
+        this.button.configure(i,'Text Tool');
+
+        this.instructions = document.createElement('span');
+        this.instructions.classList.add('instructions');
+        this.dropdown.appendChild(this.instructions);
+
+        this.input = document.createElement('input');
+        this.input.setAttribute('type','text');
+        this.input.setAttribute('placeholder', 'Enter text');
+        this.dropdown.appendChild(this.input);
+        this.input.addEventListener('input', function(){
             let value = self.getValue();
             if(self.tool.item && self.tool.item.annotationItem.subtype=='PointText'){
                 self.tool.item.children[1].content = value;
             }
             self.tool.cursor.children[1].content = value;
-        });
-        this.input.trigger('input');
+        })
+        
+        this.input.dispatchEvent(new Event('input'));
     }
     /**
      * Update the input element's text content.
@@ -210,7 +221,7 @@ class PointTextToolbar extends AnnotationUIToolbarBase{
      * @param {string} text - The text to be set in the input.
      */
     setItemText(text){
-        this.input.val(text);
+        this.input.value = text;
     }
     /**
      * Retrieve the current value from the input element.
@@ -218,7 +229,7 @@ class PointTextToolbar extends AnnotationUIToolbarBase{
      * @returns {string} The value from the input.
      */
     getValue(){
-        let input = this.input[0];
+        let input = this.input;
         return input.value.trim() || input.getAttribute('placeholder');
     }
     /**
@@ -238,6 +249,7 @@ class PointTextToolbar extends AnnotationUIToolbarBase{
      * @param {string} mode - The current annotation mode.
      */
     updateInstructions(mode){
-        this.instructions.text(mode=='new' ? 'Click to place' : mode=='Point:PointText' ? 'Drag to reposition' : '???' )
+        const text = mode=='new' ? 'Click to place' : mode=='Point:PointText' ? 'Drag to reposition' : '???';
+        this.instructions.innerHTML = text;
     }
 }
