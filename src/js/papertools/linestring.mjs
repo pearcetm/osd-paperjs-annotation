@@ -76,30 +76,28 @@ class LinestringTool extends PolygonTool{
         });
         self.project.toolLayer.addChild(this.cursor);
 
+        this.clickAction = 'startPath';
+
         this.extensions.onActivate= ()=>{
             this.cursor.radius = this.radius/this.project.getZoom();
             this.cursor.strokeWidth=1/this.project.getZoom();
-            this.cursor.visible=true;
+            this.refreshCursorVisibility();
             tool.minDistance=4/self.project.getZoom();
             tool.maxDistance=10/self.project.getZoom();
-
-            // self.targetLayer.addChild(self.drawingGroup);
         }
+
         this.extensions.onDeactivate = finished => {
             this.cursor.visible=false;
             if(finished){
                 this.finish();
             } 
-
-            // self.project.toolLayer.addChild(self.drawingGroup);
         }
         
         tool.onMouseWheel = ev => {
-            // console.log('Wheel event',ev);
             ev.preventDefault();
             ev.stopPropagation();
             if(ev.deltaY==0) return;//ignore lateral "scrolls"
-            // self.project.broadcast('brush-radius',{larger:ev.deltaY > 0});
+            
             this.toolbarControl.updateBrushRadius({larger:ev.deltaY < 0});
         }
     }
@@ -115,14 +113,6 @@ class LinestringTool extends PolygonTool{
         this.radius = r;
         this.cursor.radius= r / this.project.getZoom();
 
-        // let dr = this.drawing();
-        // if(dr){
-        //     dr.path.strokeWidth = this.cursor.radius;
-
-        //     console.log(r, this.cursor.radius, dr.path.strokeWidth);
-        // }
-
-        // window.dr = dr;
     }
 
 
@@ -133,30 +123,26 @@ class LinestringTool extends PolygonTool{
             this.itemToCreate.initializeGeoJSONFeature('MultiLineString');
             this.refreshItems();
             
-            this.startNewPath(ev)
-            // console.log('initialized item')
+            this.startNewPath(ev);
             return;
         }
         
-        let dr = this.drawing();
-        let hitResult = (dr&&dr.path ||this.item).hitTest(ev.point,{fill:false,stroke:true,segments:true,tolerance:this.getTolerance(5)})
+        let hitResult = this.item?.hitTest(ev.point,{fill:false,stroke:false,segments:true,tolerance:this.getTolerance(5)})
         if(hitResult){
             //if erasing and hitResult is a segment, hitResult.segment.remove()
             if(hitResult.type=='segment' && this.eraseMode){
                 hitResult.segment.remove();
             }
-            //if hitResult is the last segment and NOT erasing, finish the current path
-            else if(hitResult.type=='segment' && dr && hitResult.segment==dr.path.lastSegment){
-                this.finishCurrentPath();
-            }
+            
             //if hitResult is a segment and NOT erasing, save reference to hitResult.segment for dragging it
             else if(hitResult.type=='segment'){
                 this.draggingSegment = hitResult.segment;
             }
+
             //if hitResult is a stroke, add a point (unless in erase mode):
             else if(hitResult.type=='stroke' && !this.eraseMode){
                 let insertIndex = hitResult.location.index +1;
-                let ns = hitResult.item.insert(insertIndex, ev.point);
+                hitResult.item.insert(insertIndex, ev.point);
             }
         }
         else{ //not drawing yet, but start now!
@@ -168,12 +154,24 @@ class LinestringTool extends PolygonTool{
     
     onMouseMove(ev){
         this.cursor.position=ev.original.point;
-        PolygonTool.prototype.onMouseMove.call(this, ev);
+
+        let hitResult = this.item?.hitTest(ev.point,{fill:false,stroke:false,segments:true,tolerance:this.getTolerance(5)})
+        if(hitResult){
+            let action = hitResult.type + (this.eraseMode ? '-erase' : '');
+            this.project.overlay.addClass('tool-action').setAttribute('data-tool-action',action);
+            this.clickAction = action;
+        }
+        else{
+            this.project.overlay.removeClass('tool-action').setAttribute('data-tool-action','');
+            this.clickAction = 'startPath';
+        }
+        
+        this.refreshCursorVisibility();
     }
     
     onMouseDrag(ev){
         this.cursor.position=ev.original.point;
-        // superOnMouseDrag(ev);
+        
         PolygonTool.prototype.onMouseDrag.call(this, ev);
         let dr = this.drawing();
         dr && (dr.path.segments = this.simplifier.simplify(dr.path.segments.map(s=>s.point)));
@@ -222,6 +220,10 @@ class LinestringTool extends PolygonTool{
         }
         this.drawingGroup.removeChildren();
     }
+
+    refreshCursorVisibility(){
+        this.cursor.visible = !this.eraseMode && this.clickAction==='startPath';
+    }
 }
 export{LinestringTool};
 /**
@@ -244,19 +246,39 @@ class LinestringToolbar extends AnnotationUIToolbarBase{
      */
     constructor(linestringTool){
         super(linestringTool);
-        let html = $('<i>',{class:'fa-solid fa-pen-nib'})[0];
-        this.button.configure(html,'Linestring Tool');
+        this.linestringTool = linestringTool;
+
+        const i = document.createElement('i');
+        i.classList.add('fa-solid','fa-pen-nib');
+        this.button.configure(i,'Linestring Tool');
         
-        let fdd = $('<div>',{'data-tool':'linestring',class:'dropdown linestring-toolbar'}).prependTo(this.dropdown);
+        const fdd = document.createElement('div');
+        fdd.classList.add('dropdown','linestring-toolbar');
+        fdd.setAttribute('data-tool','linestring');
+        this.dropdown.appendChild(fdd);
+        const label = document.createElement('label');
+        label.innerHTML = 'Set pen width:';
+        fdd.appendChild(label);
+
+
         let defaultRadius=4;
-        $('<label>').text('Set pen width:').appendTo(fdd);
-        this.rangeInput=$('<input>',{type:'range',min:.2,max:12,step:0.1,value:defaultRadius}).appendTo(fdd).on('change',function(){
-            linestringTool.setRadius($(this).val());
+        
+        this.rangeInput = document.createElement('input');
+        fdd.appendChild(this.rangeInput);
+        Object.assign(this.rangeInput, {type:'range', min:0.2, max:12, step:0.1, value:defaultRadius});
+        this.rangeInput.addEventListener('change', function(){
+            linestringTool.setRadius(this.value);
         });
-        this.eraseButton=$('<button>',{'data-action':'erase'}).text('Eraser').appendTo(fdd).on('click',function(){
-            let erasing = $(this).toggleClass('active').hasClass('active');
+
+        this.eraseButton = document.createElement('button');
+        fdd.appendChild(this.eraseButton);
+        this.eraseButton.innerHTML = 'Eraser';
+        this.eraseButton.setAttribute('data-action','erase');
+        this.eraseButton.addEventListener('click',function(){
+            let erasing = this.classList.toggle('active');
             linestringTool.setEraseMode(erasing);
         });
+        
         setTimeout(()=>linestringTool.setRadius(defaultRadius));
     }
     /**
@@ -271,10 +293,12 @@ class LinestringToolbar extends AnnotationUIToolbarBase{
      */
     updateBrushRadius(update){
         if(update.larger){
-            this.rangeInput.val(parseFloat(this.rangeInput.val())+parseFloat(this.rangeInput.attr('step'))).trigger('change');
+            this.rangeInput.value = parseFloat(this.rangeInput.value)+parseFloat(this.rangeInput.step);
+            this.rangeInput.dispatchEvent(new Event('change'));
         }
         else{
-            this.rangeInput.val(parseFloat(this.rangeInput.val())-parseFloat(this.rangeInput.attr('step'))).trigger('change');
+            this.rangeInput.value = parseFloat(this.rangeInput.value)-parseFloat(this.rangeInput.step);
+            this.rangeInput.dispatchEvent(new Event('change'));
         }
     }
         /**
@@ -298,6 +322,7 @@ class LinestringToolbar extends AnnotationUIToolbarBase{
      * @param {boolean} erasing - A boolean value indicating whether the erase mode should be enabled or disabled.
      */
     setEraseMode(erasing){
-        erasing ? this.eraseButton.addClass('active') : this.eraseButton.removeClass('active');
+        erasing ? this.eraseButton.classList.add('active') : this.eraseButton.classList.remove('active');
+        this.linestringTool.refreshCursorVisibility();
     }
 }
