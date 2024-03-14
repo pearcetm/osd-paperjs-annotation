@@ -80,18 +80,10 @@ class DefaultToolbar extends AnnotationUIToolbarBase{
      */
     constructor(tool){
         super(tool);
-        /**
-         * HTML representation of the button icon for the toolbar.
-         * @private
-         * @type {HTMLElement}
-         */
-        let html = $('<i>',{class:'fa-solid fa-hand'})[0];
-        /**
-         * Button control for image navigation.
-         * @private
-         * @type {OpenSeadragon.Button}
-         */
-        this.button.configure(html,'Image Navigation Tool');
+        
+        const i = document.createElement('i');
+        i.classList.add('fa-solid', 'fa-hand');
+        this.button.configure(i,'Image Navigation Tool');
         
     }
     /**
