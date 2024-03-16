@@ -38,6 +38,8 @@
 
 
 import { EditableContent } from "./utils/editablecontent.mjs";
+import { dialog } from "./utils/dialog.mjs";
+import { datastore} from "./utils/datastore.mjs";
 /**
  * The FileDialog class provides options for saving and loading feature collections as GeoJSON, exporting them as SVG or PNG files,
  * and storing them in local storage. It is designed to work with the AnnotationToolKit (atk) object to manage annotations.
@@ -57,23 +59,27 @@ class FileDialog{
      */
     constructor(atk, opts){
         let _this=this;
-        this.element = $(fileDialogHtml()).appendTo('body');
-        this.element.dialog({closeOnEscape:false,autoOpen:false,modal:false,open:initDlg,width:'auto','appendTo':opts.appendTo});
-        // this.dialog = function(...args){ this.element.dialog(...args) }
+        this.dialog = dialog({innerHTML: fileDialogHtml(), title:''});
+        this.element = this.dialog.container;
 
-        this.element.find('button[data-action="geojson-load"]').on('click',loadGeoJSON)
-        this.element.find('button[data-action="geojson-save"]').on('click',saveGeoJSON)
-        this.element.find('button[data-action="svg-export"]').on('click',exportSVG)
-        this.element.find('button[data-action="png-export"]').on('click',exportPNG)
-        this.element.find('button[data-action="ls-store"]').on('click',localstorageStore)
-        this.element.find('button[data-action="ls-load"]').on('click',localstorageLoad)
+        this.element.querySelector('button[data-action="geojson-load"]').addEventListener('click',loadGeoJSON)
+        this.element.querySelector('button[data-action="geojson-save"]').addEventListener('click',saveGeoJSON)
+        this.element.querySelector('button[data-action="svg-export"]').addEventListener('click',exportSVG)
+        this.element.querySelector('button[data-action="png-export"]').addEventListener('click',exportPNG)
+        this.element.querySelector('button[data-action="ls-store"]').addEventListener('click',localstorageStore)
+        this.element.querySelector('button[data-action="ls-load"]').addEventListener('click',localstorageLoad)
 
-        function getFileName(){
-            return atk.viewer.world.getItemAt(0) ? atk.viewer.world.getItemAt(0).source.name : '';
+        function getFileName(appendIfNotBlank){
+            // TODO: handle case of multiple images
+            let output = atk.viewer.world.getItemAt(0)?.source.name || '';
+            if(output.length > 0){
+                output += appendIfNotBlank;
+            }
+            return output;
         }
         function initDlg(){
-            _this.element.find('.featurecollection-list').empty();
-            _this.element.find('.finalize').empty();
+            _this.element.querySelector('.featurecollection-list')?.replaceChildren();
+            _this.element.querySelector('.finalize')?.replaceChildren();
         }
         /**
          * Sets up the feature collection list in the dialog. This function populates the file dialog with a list of available feature collections.
@@ -83,15 +89,25 @@ class FileDialog{
          * @returns {jQuery} The feature collection list element.
          */
         function setupFeatureCollectionList(fcarray){
-            let list = _this.element.find('.featurecollection-list').empty();
-            let els = fcarray.map(function(fc){
+            let list = _this.element.querySelector('.featurecollection-list');
+            list.replaceChildren();
+            fcarray.forEach(fc => {
                 let label = fc.label || fc.displayName; //handle geoJSON objects or paper.Layers
-                let d = $('<div>');
-                $('<input>',{type:'checkbox',checked:true}).appendTo(d).data('fc',fc);
-                $('<label>').text(label).appendTo(d);
-                return d;
+
+                const d = document.createElement('div');
+                list.appendChild(d);
+                const input = document.createElement('input');
+                d.appendChild(input);
+                input.setAttribute('type', 'checkbox');
+                input.setAttribute('checked', 'true');
+                datastore.set(input, 'fc', fc);
+
+                const l = document.createElement('label');
+                l.innerText = label;
+                d.appendChild(l);
+                
             });
-            list.append(els);
+            // list.append(els);
             return list;
         }
         /**
@@ -102,9 +118,11 @@ class FileDialog{
          */
         function loadGeoJSON(){
             initDlg();
-            let finput = $('<input>',{type:'file',accept:'text/geojson,.geojson,text/json,.json'});
-            finput.on('change',function(){
-                // console.log('File picked',this.files[0]);
+            const finput = document.createElement('input');
+            finput.type = 'file';
+            finput.accept = 'text/geojson,.geojson,text/json,.json';
+            
+            finput.addEventListener('change',function(){
                 let file = this.files[0];
                 let fr = new FileReader();
                 let geoJSON=[];
@@ -124,7 +142,7 @@ class FileDialog{
                         alert('Bad file - valid geoJSON consists of an array of objects with single type (FeatureCollection or Feature)');
                         return;
                     }
-                    //type.length==1
+                    
                     //convert list of features into a featurecolletion
                     if(type[0]=='Feature'){
                         let fc = [{
@@ -137,14 +155,23 @@ class FileDialog{
                         geoJSON = fc;
                     }
                     setupFeatureCollectionList(geoJSON);
-                    let replace = $('<button>').appendTo(_this.element.find('.finalize')).text('Replace existing layers');
-                    replace.on('click',function(){ atk.addFeatureCollections(geoJSON,true); });
-                    let add = $('<button>').appendTo(_this.element.find('.finalize')).text('Add new layers');
-                    add.on('click',function(){ atk.addFeatureCollections(geoJSON,false); });
+                    
+                    const replaceButton = document.createElement('button');
+                    _this.element.querySelector('.finalize').appendChild(replaceButton);
+                    replaceButton.innerText = 'Replace existing layers';
+                    replaceButton.addEventListener('click',()=>atk.addFeatureCollections(geoJSON,true));
+
+                    const addButton = document.createElement('button');
+                    _this.element.querySelector('.finalize').appendChild(addButton);
+                    addButton.innerText = 'Add new layers';
+                    addButton.addEventListener('click',()=>atk.addFeatureCollections(geoJSON,false));
                 }
                 fr.readAsText(file);
             })
-            finput.trigger('click');
+            
+            // Normal dispatchEvent doesn't work; use the alternative below to open the file dialog
+            // finput.dispatchEvent(new Event('click'));
+            finput['click']();
         }
         /**
          * Loads the feature collections from local storage and displays them in the file dialog. This function retrieves the feature collections stored in local storage
@@ -157,14 +184,26 @@ class FileDialog{
             let geoJSON=[];
             let filename=getFileName();
             let lskeys=Object.keys(window.localStorage);
-            let list = _this.element.find('.featurecollection-list').empty();
-            let div=$('<div>',{class:'localstorage-key-list'}).appendTo(list);
-            let items=lskeys.sort((a,b)=>a.localeCompare(b)).map(key=>$('<div>',{class:'localstorage-key',style:`order: ${key==filename?0:1}`}).text(key));
-            div.append(items);
-            $(list).find('.localstorage-key').on('click',function(){
-                let lsdata = window.localStorage.getItem($(this).text());
+            let listContainer = _this.element.querySelector('.featurecollection-list');
+            listContainer.innerText='';
+
+            
+            const list = document.createElement('div');
+            list.classList.add('localstorage-key-list');
+            listContainer.appendChild(list);
+
+            lskeys.sort((a,b)=>a.localeCompare(b)).forEach(key=>{
+                const div = document.createElement('div');
+                div.classList.add('localstorage-key');
+                div.style.order = key==filename ? 0 : 1;
+                div.innerText = key;
+                list.appendChild(div);
+            });
+            
+            list.querySelectorAll('.localstorage-key').forEach(e=>e.addEventListener('click', function(){
+                let lsdata = window.localStorage.getItem(this.textContent);
                 if(!lsdata){
-                    alert(`No data found in local storage for key=${$(this).text()}`);
+                    alert(`No data found in local storage for key=${this.textContent}`);
                     return;
                 }
                 try{
@@ -174,11 +213,17 @@ class FileDialog{
                     return;
                 }
                 setupFeatureCollectionList(geoJSON);
-                let replace = $('<button>').appendTo(_this.element.find('.finalize')).text('Replace existing layers');
-                replace.on('click',function(){ atk.addFeatureCollections(geoJSON, true); });
-                let add = $('<button>').appendTo(_this.element.find('.finalize')).text('Add new layers');
-                add.on('click',function(){ atk.addFeatureCollections(geoJSON, false); });
-            })
+                
+                const replace = document.createElement('button');
+                replace.innerText = 'Replace existing layers';
+                replace.addEventListener('click',()=>atk.addFeatureCollections(geoJSON, true));
+                _this.element.querySelector('.finalize').appendChild(replace);
+
+                const add = document.createElement('button');
+                add.innerText = 'Add new layers';
+                add.addEventListener('click',()=>atk.addFeatureCollections(geoJSON, false));
+                _this.element.querySelector('.finalize').appendChild(add);
+            }));
             
             
         }
@@ -192,16 +237,25 @@ class FileDialog{
             initDlg();
             let fcs = atk.toGeoJSON();
             let list = setupFeatureCollectionList(fcs);
-            let finishbutton = setupFinalize('Create file','Choose file name:',getFileName()+'-FeatureCollections.json');
-            finishbutton.on('click',function(){
-                $(this).parent().find('.download-link').remove();
+            let finishbutton = setupFinalize('Create file','Choose file name:',getFileName('-') + 'FeatureCollections.json');
+            finishbutton.addEventListener('click',function(){
+                this.parentElement.querySelector('.download-link')?.remove();
                 
-                let toSave=list.find('input:checked').toArray().map(function(cb){return $(cb).data('fc')});
+                let toSave=Array.from(list.querySelectorAll('input:checked')).map(cb => datastore.get(cb,'fc') );
                 let txt = JSON.stringify(toSave);
                 let blob = new Blob([txt],{type:'text/json'});
-                let filename=$(this).data('label'); 
-                let dl = $('<div>',{class:'download-link'}).insertAfter(this);
-                $('<a>',{href:window.URL.createObjectURL(blob),download:filename,target:'_blank'}).appendTo(dl).text('Download file');
+                let filename=this.getAttribute('data-label'); 
+                
+                const dl = document.createElement('div');
+                dl.classList.add('download-link');
+                this.parentElement.insertBefore(dl, this.nextSibling);
+
+                const a = document.createElement('a');
+                a.href = window.URL.createObjectURL(blob);
+                a.download = filename;
+                a.target = '_blank';
+                a.innerText = 'Download file';
+                dl.appendChild(a);
             })
         }
         /**
@@ -212,22 +266,33 @@ class FileDialog{
          */      
         function exportSVG(){
             initDlg();
-            let fcs = atk.toGeoJSON();
+            // let fcs = atk.toGeoJSON();
+            let fcs = atk.getFeatureCollectionGroups();
             let list = setupFeatureCollectionList(fcs);
-            let finishbutton = setupFinalize('Create file','Choose file name:',getFileName()+'-FeatureCollections.svg');
-            finishbutton.on('click',function(){
-                $(this).parent().find('.download-link').remove();
-                let toSave=list.find('input:checked').toArray().map(function(cb){return $(cb).data('fc')});
+            let finishbutton = setupFinalize('Create file','Choose file name:',getFileName('-')+'FeatureCollections.svg');
+            finishbutton.addEventListener('click',function(){
+                
+                this.parentElement.querySelector('.download-link')?.remove();
+                let toSave=Array.from(list.querySelectorAll('input:checked')).map(function(cb){return datastore.get(cb, 'fc')});
                 if(toSave.length>0){
                     let p = new paper.PaperScope();
                     p.setup();
                     toSave.forEach(function(s){
-                        p.project.addLayer(s.layer.clone({insert:false,deep:true}));
+                        p.project.activeLayer.addChildren(s.layer.clone({insert:false,deep:true}).children);
                     })
                     let blob = new Blob([p.project.exportSVG({asString:true,bounds:'content'})],{type:'text/svg'});
-                    let filename=$(this).data('label');
-                    let dl = $('<div>',{class:'download-link'}).insertAfter(this);
-                    $('<a>',{href:window.URL.createObjectURL(blob),download:filename,target:'_blank'}).appendTo(dl).text('Download file');
+                    let filename=this.getAttribute('data-label');
+
+                    const dl = document.createElement('div');
+                    dl.classList.add('download-link');
+                    this.parentElement.insertBefore(dl, this.nextSibling);
+
+                    const a = document.createElement('a');
+                    a.href = window.URL.createObjectURL(blob);
+                    a.download = filename;
+                    a.target = '_blank';
+                    a.innerText = 'Download file';
+                    dl.appendChild(a);
                 }
             })
         }
@@ -241,10 +306,10 @@ class FileDialog{
             initDlg();
             let fcs = atk.getFeatureCollectionGroups();
             let list = setupFeatureCollectionList(fcs);
-            let finishbutton = setupFinalize('Create file','Choose file name:',getFileName()+'-raster.png');
-            finishbutton.on('click',function(){
-                $(this).parent().find('.download-link').remove();
-                let toSave=list.find('input:checked').toArray().map(function(cb){return $(cb).data('fc')});
+            let finishbutton = setupFinalize('Create file','Choose file name:',getFileName('-')+'raster.png');
+            finishbutton.addEventListener('click',function(){
+                this.parentElement.querySelector('.download-link')?.remove();
+                let toSave=Array.from(list.querySelectorAll('input:checked')).map(function(cb){return datastore.get(cb, 'fc')});
                 if(toSave.length>0){
                     let p = new paper.PaperScope();
                     p.setup();
@@ -252,9 +317,18 @@ class FileDialog{
                         p.project.activeLayer.addChildren(s.layer.clone({insert:false,deep:true}).children);
                     })
                     // let blob = new Blob([p.project.activeLayer.rasterize({insert:false}).toDataURL()],{type:'image/png'});
-                    let filename=$(this).data(label);
-                    let dl = $('<div>',{class:'download-link'}).insertAfter(this);
-                    $('<a>',{href:p.project.activeLayer.rasterize({insert:false}).toDataURL(),download:filename,target:'_blank'}).appendTo(dl).text('Download file');
+                    let filename=this.getAttribute('data-label');
+
+                    const dl = document.createElement('div');
+                    dl.classList.add('download-link');
+                    this.parentElement.insertBefore(dl, this.nextSibling);
+
+                    const a = document.createElement('a');
+                    a.href = p.project.activeLayer.rasterize({insert:false}).toDataURL();
+                    a.download = filename;
+                    a.target = '_blank';
+                    a.innerText = 'Download file';
+                    dl.appendChild(a);
                 }
             })
         }
@@ -267,10 +341,12 @@ class FileDialog{
             let fcs = atk.toGeoJSON();
             let list = setupFeatureCollectionList(fcs);
             let finishbutton=setupFinalize('Save data','Local storage key:',getFileName(),true)
-            finishbutton.on('click',function(){
-                let toSave=list.find('input:checked').toArray().map(function(cb){return $(cb).data('fc')});
+            finishbutton.addEventListener('click',function(){
+                let toSave=Array.from(list.querySelectorAll('input:checked')).map(function(cb){
+                    return datastore.get(cb, 'fc');
+                });
                 let txt = JSON.stringify(toSave);
-                let filename=$(this).data('label');
+                let filename=this.getAttribute('data-label');
                 window.localStorage.setItem(filename,txt);
             })
         }
@@ -286,25 +362,35 @@ class FileDialog{
          */
         function setupFinalize(buttonText,editableLabel,editableContent,localstorage){
             function testLocalstorage(localstorage, text, div){
-                if(localstorage) Object.keys(localStorage).includes(text) ? div.addClass('key-exists') : div.removeClass('key-exists');
+                if(localstorage) Object.keys(localStorage).includes(text) ? div.classList.add('key-exists') : div.classList.remove('key-exists');
             }
-            let finalize=_this.element.find('.finalize');
-            let finishbutton = $('<button>').text(buttonText);
+            const finalize=_this.element.querySelector('.finalize');
+            const finishButton = document.createElement('button');
+            finishButton.innerText = buttonText;
+            finalize.appendChild(finishButton);
+
             let ec;
             if(editableLabel){
-                let div = $('<div>').appendTo(finalize);
-                div.append($('<div>').text(editableLabel));
-                ec = new EditableContent({initialContent:editableContent});
-                div.append(ec.element);
-                if(localstorage) div.addClass('localstorage-key-test');
-                ec.onChanged= (text)=>{
-                    finishbutton.data('label',text);
+                const div = document.createElement('div');
+                const div2 = document.createElement('div');
+                div.appendChild(div2);
+                finalize.appendChild(div);
+                div2.innerText = editableLabel;
+
+                ec = new EditableContent();
+                ec.setText(editableContent);
+                div.appendChild(ec.element);
+                if(localstorage) div.classList.add('localstorage-key-test');
+                ec.onChanged = (text)=>{
+                    finishButton.setAttribute('data-label',text);
                     testLocalstorage(localstorage, text, div);
                 }
                 testLocalstorage(localstorage, editableContent, div);
             }
-            finishbutton.appendTo(finalize).data({label:editableContent,ec:ec});
-            return finishbutton;
+            finalize.appendChild(finishButton);
+            finishButton.setAttribute('data-label',editableContent);
+            
+            return finishButton;
         }
         /**
          * Returns the HTML for the file dialog. This function generates the HTML markup for the file dialog, including the buttons and feature collection list.
@@ -341,27 +427,30 @@ class FileDialog{
      * Shows the file dialog.
      */
     show(){
-        this.element.dialog('open');
+        // this.element.dialog('open');
+        this.dialog.show();
     }
     /**
      * Hides the file dialog.
      */
     hide(){
-        this.element.dialog('close');
+        // this.element.dialog('close');
+        this.dialog.hide();
     }
     /**
      * Toggles the visibility of the file dialog.
      */
     toggle(){
-        this.element.dialog('isOpen') ? this.element.dialog('close') : this.element.dialog('open');
+        // this.element.dialog('isOpen') ? this.element.dialog('close') : this.element.dialog('open');
+        this.dialog.toggle();
     }
     /**
      * Calls a method on the dialog element.
      * @param {...any} args - The arguments to pass to the method.
      */
-    dialog(...args){
-        this.element.dialog(...args)
-    }
+    // dialog(...args){
+    //     this.element.dialog(...args)
+    // }
 }
 
 export {FileDialog};

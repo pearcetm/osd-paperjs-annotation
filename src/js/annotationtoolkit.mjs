@@ -263,7 +263,8 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
         this.paperScope.project.emit('items-changed');
     }
     /**
-     * Get the feature collection layers in the toolkit.
+     * Get the feature collection groups that the toolkit is managing.
+     * @param {paper.Layer} [parentLayer]  The layer to find feature collections within. If not specified, finds across all layers.
      * @returns {paper.Group[]} The array of paper groups representing feature collections.
      */
     getFeatureCollectionGroups(parentLayer){
@@ -291,16 +292,17 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
     static registerFeatureCollection(group){
         group.isGeoJSONFeatureCollection = true;
     }
+
     /**
      * Convert the feature collections in the toolkit to GeoJSON objects.
-     * @param {boolean} [pixelCoordinates] Whether the items should be scaled to the pixel coordinates of the image (true - default) or normalized by tiledImage or viewport width (false)
+     * @param {boolean} [imageCoordinates] Whether the items should be scaled to the pixel coordinates of the image (true - default) or normalized by tiledImage or viewport width (false)
      * @returns {object[]} The array of GeoJSON objects representing feature collections.
      */
-    toGeoJSON(pixelCoordinates = true){
+    toGeoJSON(imageCoordinates = true){
         //find all featureCollection items and convert to GeoJSON compatible structures
         return this.paperScope.project.getItems({match:i=>i.isGeoJSONFeatureCollection}).map(grp=>{
             let scaleFactor;
-            if(pixelCoordinates){
+            if(imageCoordinates){
                 scaleFactor = (grp.layer.tiledImage ? grp.layer.tiledImage.source.width : this.viewer.drawer.getCanvasSize().x) / this.overlay.scaleFactor;
                 grp.scale(scaleFactor, {x: 0, y: 0});
             }
@@ -313,12 +315,13 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
                 },
                 label:grp.displayName,
             }
-            if(pixelCoordinates){
+            if(imageCoordinates){
                 grp.scale(1/scaleFactor, {x: 0, y: 0});
             }
             return geoJSON;
         })
     }
+    
     /**
      * Convert the feature collections in the project to a JSON string.
      * @param {function} [replacer] - The replacer function for JSON.stringify().

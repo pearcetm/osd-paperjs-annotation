@@ -276,7 +276,8 @@ class AnnotationUI {
       .text('File')
       .prependTo(element.dialog('instance').classesElementLookup['ui-dialog-title'])
       .on('click', () => {
-        this._fileDialog.dialog('open');
+        // this._fileDialog.dialog('open');
+        this._fileDialog.show();
       });
     fb.button({
       showLabel: true,
