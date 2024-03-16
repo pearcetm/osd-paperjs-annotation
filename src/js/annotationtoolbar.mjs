@@ -81,7 +81,7 @@ class AnnotationToolbar{
         if(tools && !Array.isArray(tools)){
             throw('Bad option: if present, tools must be an Array of tool names or constructors to use.');
         }
-        this.ui = makeUI();
+        this.ui = this._makeUI();
         this.paperScope=paperScope;
 
         this.currentMode = null;
@@ -150,7 +150,6 @@ class AnnotationToolbar{
             let toolbarControl = toolObj.getToolbarControl();
             if(toolbarControl) this.addToolbarControl(toolbarControl);
 
-            // if(toolObj !== tools.default){
             toolObj.addEventListener('deactivated',ev => {
                 //If deactivation is triggered by another tool being activated, this condition will fail
                 if(ev.target == this.paperScope.getActiveTool()){
@@ -184,6 +183,10 @@ class AnnotationToolbar{
             }
         });
 
+    }
+
+    get element(){
+        return this._element;
     }
     
     /**
@@ -233,8 +236,11 @@ class AnnotationToolbar{
  * @throws {Error} Throws an error if the toolbar control's button element is not found.
  */    
     addToolbarControl(toolbarControl){
-        toolbarControl.button && toolbarControl.button.element && this.ui.buttongroup.buttons.push(toolbarControl.button)
-        toolbarControl.dropdown && this.ui.dropdowns.append(toolbarControl.dropdown);
+        const button = toolbarControl.button.element;
+        const dropdown = toolbarControl.dropdown;
+        this._buttonbar.appendChild(button);
+        this._dropdowns.appendChild(dropdown);
+
         toolbarControl.isEnabledForMode(this.currentMode) ? toolbarControl.button.enable() : toolbarControl.button.disable();
     }
 
@@ -242,71 +248,39 @@ class AnnotationToolbar{
  * Shows the Annotation Toolbar.
  */
     show(){
-        $(this.ui.buttongroup.element).show();
+        this.element.style.display = '';
     }
 /**
  * Hides the Annotation Toolbar.
  */
     hide(){
-        $(this.ui.buttongroup.element).hide();
+        this.element.style.display = 'none';
     }
     
-/**
- * Adds the Annotation Toolbar to an OpenSeadragon viewer.
- *
- * @param {Object} viewer - The OpenSeadragon viewer.
- * 
- * This method adds the Annotation Toolbar to an OpenSeadragon viewer. It creates an OpenSeadragon.ButtonGroup with the toolbar buttons and adds it to the OpenSeadragon.ControlAnchor.TOP_LEFT position of the viewer. The `.viewer-controls-topleft` class is added to the viewer controls.
- */
-    addToOpenSeadragon(viewer){
-        let bg = new OpenSeadragon.ButtonGroup({buttons:this.ui.buttongroup.buttons,element:this.ui.buttongroup.element});
-        viewer.addControl(bg.element,{anchor:OpenSeadragon.ControlAnchor.TOP_LEFT});
-        // get the new OpenSeadragon.Control object
-        this.control = viewer.controls[viewer.controls.length-1];
-        this.viewer = viewer;//save reference so we can remove/destroy this toolbar
-        let handler = event=>{
-            console.log('Mouse nav changed',event);
-            // this.control.setVisible(true);
-            // if mouse nav is enabled, enable autoFade, otherwise disable
-            if(event.overlay == this.paperScope.overlay){
-                this.control.autoFade = event.enabled;
-            }
-        }
-        this._mousenavhandler = handler;
-        this.viewer.addHandler('mouse-nav-changed',handler);
-        $(this.ui.buttongroup.element).append(this.ui.dropdowns);
-        $(viewer.controls.topleft).addClass('viewer-controls-topleft');
-        $('.toggles .btn').attr('style','');
-    }
 /**
  * Destroys the Annotation Toolbar.
  *
  */
     destroy(){
-        if(this.viewer){
-            this.viewer.removeControl(this.ui.buttongroup.element);
-            $(this.viewer.controls.topleft).removeClass('viewer-controls-topleft');
-            this.viewer.removeHandler(this._mousenavhandler);
-        } 
-        this.ui.dropdowns.parent().remove();
+        this.element.remove();
+    }
+
+    _makeUI(){
+        this._element = document.createElement('div');
+        this._buttonbar = document.createElement('div');
+        this._dropdowns = document.createElement('div');
+        this._element.appendChild(this._buttonbar);
+        this._element.appendChild(this._dropdowns);
+
+        const classes = 'annotation-ui-drawing-toolbar btn-group btn-group-sm mode-selection'.split(' ');
+        classes.forEach(c => this._element.classList.add(c));
+        
+        this._dropdowns.classList.add('dropdowns');
+
+        this._buttonbar.style.margin = '0 auto';
     } 
 }
 export {AnnotationToolbar};
 
 
-/**
- * Creates the user interface for the Annotation Toolbar.
- * @private
- * @returns {Object} The user interface object containing the button group and dropdowns.
- */
-function makeUI(){
-    //make a container div
-    let t = $('<div>',{class:'annotation-ui-drawing-toolbar btn-group btn-group-sm mode-selection'});
-    let bg = {buttons:[],element:t[0]};
-    let dropdowns=$('<div>',{class:'dropdowns'}).appendTo(t);
-    return {
-        buttongroup:bg,
-        dropdowns:dropdowns,
-    }
-}
 

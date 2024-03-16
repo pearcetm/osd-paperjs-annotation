@@ -95,9 +95,9 @@ class AnnotationUI {
      * @private
      */
     this._toolbar = new AnnotationToolbar(annotationToolkit.overlay.paperScope, opts.tools);
-    if (opts.addToolbar) {
-      this._toolbar.addToOpenSeadragon(_viewer);
-    }
+    // if (opts.addToolbar) {
+    //    this._toolbar.addToOpenSeadragon(_viewer);
+    // }
 
 
     /**
@@ -131,7 +131,8 @@ class AnnotationUI {
      */
     this._layerUI = new LayerUI(annotationToolkit, dialogOpts);
     if (opts.addLayerDialog) {
-      this._createJqueryUIdialog();
+      // this._createJqueryUIdialog();
+      this._addToViewer();
     }
 
     if(opts.autoOpen){
@@ -233,89 +234,120 @@ class AnnotationUI {
   }
 
   /**
+   * Set up the grid that adds the UI to the viewer
+   */
+  _addToViewer(){
+    // const element = this._viewer.element;
+    // const container = this._viewer.container;
+    const container = document.createElement('div');
+    container.style.display = 'grid';
+    container.style.gridTemplateRows = 'auto 1fr auto';
+    container.style.gridTemplateColumns = 'auto 1fr auto';
+    container.style.width = '100%';
+    container.style.height = '100%';
+    this._viewer.element.appendChild(container);
+    
+    const top = document.createElement('div');
+    const bottom = document.createElement('div');
+    const center = document.createElement('div');
+    const left = document.createElement('div');
+    const right = document.createElement('div');
+    [top, left, center, right, bottom].forEach(div => container.appendChild(div));
+    center.appendChild(this._viewer.container);
+    right.appendChild(this.element);
+    top.appendChild(this._toolbar.element);
+
+    top.style.gridColumn = '1 / 4';
+    bottom.style.gridColumn = '1 / 4';
+    center.style.position = 'relative';
+    // center.style.width = '100%';
+    // center.style.height = '100%';
+  }
+
+  /**
    * Creates a jQuery UI dialog for the LayerUI.
    * @private
    */
-  _createJqueryUIdialog() {
-    let element = $(this._layerUI.element);
-    document.body.appendChild(element[0]);
+  // _createJqueryUIdialog() {
+  //   let element = $(this._layerUI.element);
+  //   document.body.appendChild(element[0]);
 
-    let positioningElement = $((this._viewer.navigator || this._viewer).element);
+  //   let positioningElement = $((this._viewer.navigator || this._viewer).element);
 
-    element.on('element-added', function (ev) {
-      let el = $(ev.target);
-      refreshDialogPosition(el);
-    });
-    element.dialog({
-      open: onOpen,
-      resize: limitHeight,
-      autoOpen: false,
-      closeOnEscape: false,
-      height: 'auto',
-      appendTo: this._viewer.element,
-    });
-    element.closest('.ui-dialog').draggable('option', 'containment', 'parent');
+  //   element.on('element-added', function (ev) {
+  //     let el = $(ev.target);
+  //     refreshDialogPosition(el);
+  //   });
+  //   element.dialog({
+  //     open: onOpen,
+  //     resize: limitHeight,
+  //     autoOpen: false,
+  //     closeOnEscape: false,
+  //     height: 'auto',
+  //     appendTo: this._viewer.element,
+  //   });
+  //   element.closest('.ui-dialog').draggable('option', 'containment', 'parent');
 
-    this._layerUI.addHandler('show', () => {
-      element.dialog('open');
-    });
-    this._layerUI.addHandler('hide', () => {
-      element.dialog('close');
-    });
-    this._layerUI.addHandler('destroy', () => {
-      element.dialog('destroy');
-    });
+  //   this._layerUI.addHandler('show', () => {
+  //     element.dialog('open');
+  //   });
+  //   this._layerUI.addHandler('hide', () => {
+  //     element.dialog('close');
+  //   });
+  //   this._layerUI.addHandler('destroy', () => {
+  //     element.dialog('destroy');
+  //   });
 
-    //reset viewer's mouse tracker to parent container of viewer instead of inner container, so tracker captures UI dialogs as well
-    //to do: reset this on removal of the annotationUI?
-    this._viewer.outerTracker.setTracking(false);
-    this._viewer.outerTracker.element = this._viewer.element;
-    this._viewer.outerTracker.setTracking(true);
+  //   //reset viewer's mouse tracker to parent container of viewer instead of inner container, so tracker captures UI dialogs as well
+  //   //to do: reset this on removal of the annotationUI?
+  //   this._viewer.outerTracker.setTracking(false);
+  //   this._viewer.outerTracker.element = this._viewer.element;
+  //   this._viewer.outerTracker.setTracking(true);
 
-    let fb = $('<button>', { class: 'file-button' })
-      .text('File')
-      .prependTo(element.dialog('instance').classesElementLookup['ui-dialog-title'])
-      .on('click', () => {
-        // this._fileDialog.dialog('open');
-        this._fileDialog.show();
-      });
-    fb.button({
-      showLabel: true,
-    });
+  //   let fb = $('<button>', { class: 'file-button' })
+  //     .text('File')
+  //     .prependTo(element.dialog('instance').classesElementLookup['ui-dialog-title'])
+  //     .on('click', () => {
+  //       // this._fileDialog.dialog('open');
+  //       this._fileDialog.show();
+  //     });
+  //   fb.button({
+  //     showLabel: true,
+  //   });
 
-    function onOpen() {
-      positionDialog();
-    }
+  //   function onOpen() {
+  //     positionDialog();
+  //   }
 
-    function positionDialog(pos) {
-      let defaultPos = { my: 'right top', at: 'right top', of: positioningElement };
-      if (positioningElement.hasClass('navigator')) {
-        defaultPos = { my: 'right top', at: 'right bottom', of: positioningElement };
-      }
+  //   function positionDialog(pos) {
+  //     let defaultPos = { my: 'right top', at: 'right top', of: positioningElement };
+  //     if (positioningElement.hasClass('navigator')) {
+  //       defaultPos = { my: 'right top', at: 'right bottom', of: positioningElement };
+  //     }
 
-      pos = pos || defaultPos;
+  //     pos = pos || defaultPos;
 
-      element.dialog('option', 'position', pos);
-      window.setTimeout(limitHeight, 0);
-    }
+  //     element.dialog('option', 'position', pos);
+  //     window.setTimeout(limitHeight, 0);
+  //   }
 
-    function limitHeight() {
-      let topOfFCList = element.offset().top - $(window).scrollTop();
-      let bottomOfVisibleWindow = $(window).height();
-      let maxheight = bottomOfVisibleWindow - topOfFCList - (element.outerHeight() - element.height()) - 5;
-      element.css({ maxHeight: maxheight });
-    }
+  //   function limitHeight() {
+  //     let topOfFCList = element.offset().top - $(window).scrollTop();
+  //     let bottomOfVisibleWindow = $(window).height();
+  //     let maxheight = bottomOfVisibleWindow - topOfFCList - (element.outerHeight() - element.height()) - 5;
+  //     element.css({ maxHeight: maxheight });
+  //   }
 
-    function refreshDialogPosition(scrolltoelement) {
-      let pos = element.dialog('option', 'position');
-      positionDialog(pos);
-      scrolltoelement &&
-        setTimeout(() => {
-          //scrolltoelement[0].scrollIntoView(false)
-          scrolltoelement[0].scrollIntoView({ block: 'nearest', inline: 'nearest' });
-        }, 0);
-    }
-  }
+  //   function refreshDialogPosition(scrolltoelement) {
+  //     let pos = element.dialog('option', 'position');
+  //     positionDialog(pos);
+  //     scrolltoelement &&
+  //       setTimeout(() => {
+  //         //scrolltoelement[0].scrollIntoView(false)
+  //         scrolltoelement[0].scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  //       }, 0);
+  //   }
+  // }
 }
 
 export { AnnotationUI };

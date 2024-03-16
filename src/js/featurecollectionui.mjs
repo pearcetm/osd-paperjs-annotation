@@ -78,15 +78,6 @@ class FeatureCollectionUI{
         }
 
         this._featurelist=this.element.querySelector('.features-list');
-        // this._featurelist.sortable({
-        //     contain:'parent',
-        //     connectWith:`${init.guiSelector} .features-list`,
-        //     update:function(){
-        //         self._featurelist.children().each(function(idx,c){
-        //             self.group.addChild($(c).data('feature').paperItem);
-        //         })
-        //     },
-        // });
 
         this._dragAndDrop = new DragAndDrop({
             parent: this.element, 

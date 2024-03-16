@@ -37,7 +37,6 @@
  */
 
 .ui-dialog{
-    z-index:1001; /* Position it above the bootstrap navbar */
     font-size:14px;
 }
 .ui-dialog, .ui-dialog-content {
