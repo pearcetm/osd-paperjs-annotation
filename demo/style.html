@@ -1,8 +1,6 @@
 <!DOCTYPE html>
 <head>
     <title>Style Tool Demo</title>
-    <script type="text/javascript" src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.13.2/jquery-ui.min.js"></script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/openseadragon/4.0.0/openseadragon.min.js"></script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/paper.js/0.12.17/paper-full.js"></script>
     <link rel="stylesheet" href="./demo.css">
@@ -43,7 +41,7 @@
             let annotationToolkit = new AnnotationToolkit(viewer);
             annotationToolkit.addAnnotationUI({tools:["transform", "style", "polygon"], addButton:false, addFileButton:false});
 
-            $.get('./demo-annotation.json').then(x => {
+            fetch('./demo-annotation.json').then(r=>r.json()).then(x => {
                 // annotationToolkit.addFeatureCollections(x)
                 annotationToolkit.addFeatureCollections(x, true, viewer.world.getItemAt(0));
                 // annotationToolkit.addFeatureCollections(x, true, viewer.world.getItemAt(1));

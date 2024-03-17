@@ -1,7 +1,5 @@
 <head>
     <title>Transform Tool Demo</title>
-    <script type="text/javascript" src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.13.2/jquery-ui.min.js"></script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/openseadragon/4.0.0/openseadragon.min.js"></script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/paper.js/0.12.17/paper-full.js"></script>
     <link rel="stylesheet" href="./demo.css">
@@ -32,7 +30,7 @@
             let annotationToolkit = new AnnotationToolkit(viewer);
             annotationToolkit.addAnnotationUI({tools:["transform"], addButton:false, addFileButton:false});
 
-            $.get('./demo-annotation.json').then(x => annotationToolkit.addFeatureCollections(x));
+            fetch('./demo-annotation.json').then(r=>r.json()).then(x => annotationToolkit.addFeatureCollections(x));
         });
         
         let exampleviewer = OpenSeadragon({
@@ -58,7 +56,7 @@
             let exAnnotationToolkit = new AnnotationToolkit(exampleviewer);
             exAnnotationToolkit.addAnnotationUI({tools:["transform"], addButton:false, addFileButton:false});
         
-            $.get('./tissue-annotationtransform.json').then(x => exAnnotationToolkit.addFeatureCollections(x));
+            fetch('./tissue-annotationtransform.json').then(r=>r.json()).then(x => exAnnotationToolkit.addFeatureCollections(x));
         });
     </script>
 </head>
