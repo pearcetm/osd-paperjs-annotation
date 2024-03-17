@@ -278,8 +278,8 @@ class FeatureCollectionUI{
      * Toggle the visibility of the feature collection UI element and the paper group.
      */
     toggleVisibility(){
-        this.element.toggleClass('annotation-hidden');
-        this.group.visible = !this.element.hasClass('annotation-hidden');
+        this.element.classList.toggle('annotation-hidden');
+        this.group.visible = !this.element.classList.contains('annotation-hidden');
     }
     /**
      * Remove the paper layer associated with the feature collection.

@@ -74,8 +74,14 @@ class LayerUI extends OpenSeadragon.EventSource{
         });
         this.element.querySelector('.toggle-annotations').addEventListener('click',() => {
             let hidden = this.element.querySelectorAll('.annotation-ui-feature-collections .feature-collection.annotation-hidden');
-            if(hidden.length > 0) hidden.querySelectorAll('[data-action="show"]').forEach(a=>a.dispatchEvent(new Event('click')));
-            else this.element.querySelectorAll('.annotation-ui-feature-collections .feature-collection:not(.hidden) [data-action="hide"]').forEach(a=>a.dispatchEvent(new Event('click')));
+            if(hidden.length > 0){
+                hidden.forEach(e=>{
+                    e.querySelectorAll('[data-action="show"]').forEach(a=>a.dispatchEvent(new Event('click', {bubbles:true})));
+                })
+            } else {
+                const fcs = this.element.querySelectorAll('.annotation-ui-feature-collections .feature-collection:not(.hidden) [data-action="hide"]')
+                fcs.forEach(a=>a.dispatchEvent(new Event('click',{bubbles:true})));
+            }
         });
 
         this._dragAndDrop = new DragAndDrop({
@@ -268,9 +274,6 @@ function makeHTMLElement(){
                 <span class="annotation-opacity-container disable-when-annotations-hidden" title="Change fill opacity">
                     <input class="annotation-fill-opacity" type="range" min="0" max="1" step="0.01" value="0.25">
                 </span>
-            </div>
-            <div class='annotation-ui-toolbar disable-when-deactivated disable-when-annotations-hidden'>
-                <label>Feature Collections:</label>
             </div>
             <div class='annotation-ui-feature-collections disable-when-annotations-hidden disable-when-deactivated'></div>
             <div class='new-feature-collection disable-when-deactivated'><span class='glyphicon glyphicon-plus fa fa-plus'></span>Add Feature Collection</div>

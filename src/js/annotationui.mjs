@@ -288,13 +288,6 @@ class AnnotationUI {
     function moveHandler(ev){
       if(resizeRight.classList.contains('resizing')){
         if(ev.movementX){
-          // const bounds = resizeRight.getBoundingClientRect();
-          // const x = bounds.left + bounds.width/2;
-          // // don't keep resizing if the cursor doesn't match 
-          // if(ev.movementX < 0 && ev.x > x || ev.movementX > 0 && ev.x < x){
-          //   return;
-          // }
-          // resizeRight.nextSibling.style.width = resizeRight.nextSibling.offsetWidth - ev.movementX + 'px';
           const bounds = element.getBoundingClientRect();
           element.style.width = bounds.right - ev.x - offset + 'px';
         }
