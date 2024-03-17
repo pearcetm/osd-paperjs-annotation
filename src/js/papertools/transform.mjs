@@ -204,7 +204,7 @@ class TransformTool extends AnnotationUITool{
 
             // use transformed delta for the object we're transforming
             const delta = ev.delta;
-            
+
             Object.values(this._transformTool.corners).forEach(corner=>{
                 corner.refPos = corner.refPos.add(delta);
             })
@@ -272,11 +272,11 @@ class TransformTool extends AnnotationUITool{
      * This function activates the TransformTool, bringing it to the front, and sets up items for transformation.
      */
     enableTransformToolObject(){
-        this.project.toolLayer.bringToFront();
-        this._transformTool.visible=true;
-        this._transformTool.transformItems(this.items);
-        // this._transformTool.transformItems(this.getSelectedItems());
-        
+        if(this.items.length > 0){
+            this.project.toolLayer.bringToFront();
+            this._transformTool.visible=true;
+            this._transformTool.transformItems(this.items);
+        }
     }
     /**
      * A function that disables the TransformTool object after transforming selected items.
