@@ -38,6 +38,7 @@
 
 import {AnnotationUITool, AnnotationUIToolbarBase} from './annotationUITool.mjs';
 import { paper } from '../paperjs.mjs';
+import { isVisible } from '../utils/isvisible.mjs';
 
 /**
  * Represents a tool for modifying the visual styles of annotation items, including color and opacity.
@@ -203,13 +204,6 @@ import { paper } from '../paperjs.mjs';
     createMaskedImage(item){
         let mask = item.clone();
         let grp = new paper.Group([mask]);
-        // console.log('itemToAverage',itemToAverage);
-        let imgrect=this.project.overlay.viewer.viewport.viewportToViewerElementRectangle(this.project.overlay.viewer.world.getItemAt(0).getBounds());
-        let viewrect=this.project.overlay.viewer.viewport.viewportToViewerElementRectangle(this.project.overlay.viewer.viewport.getBounds());
-        let x = Math.floor(Math.max(imgrect.x, viewrect.x))-1;
-        let y = Math.floor(Math.max(imgrect.y, viewrect.y))-1;
-        let w = Math.ceil(Math.min(viewrect.x+viewrect.width, imgrect.x+imgrect.width))-x+2;
-        let h = Math.ceil(Math.min(viewrect.y+viewrect.height, imgrect.y+imgrect.height))-y+2;
 
         let mb = this.project.paperScope.view.projectToView(mask.bounds)
         let mx = mb.x;
@@ -219,7 +213,9 @@ import { paper } from '../paperjs.mjs';
         
         //Deal with pixel ratio other than one
         let r = this.project.paperScope.view.pixelRatio;
-        let newcanvas = $('<canvas>').attr({width:mw*r,height:mh*r})[0];
+        const newcanvas = document.createElement('canvas');
+        canvas.setAttribute('width', mw*r);
+        canvas.setAttribute('height', mh*r);
         newcanvas.getContext('2d').drawImage(this.project.overlay.viewer.drawer.canvas,mx*r,my*r,mw*r,mh*r,0,0,mw*r,mh*r);
         let dataurl = newcanvas.toDataURL();
         let raster = new paper.Raster({source:dataurl,position:mask.bounds.center});
@@ -261,6 +257,7 @@ import { paper } from '../paperjs.mjs';
             style[property]=opacity;
             if(item.isGeoJSONFeature){
                 item.updateFillOpacity();
+                item.updateStrokeOpacity();
             }
         });
     }
@@ -331,54 +328,67 @@ class StyleToolbar extends AnnotationUIToolbarBase{
     constructor(tool){
         super(tool);
         let self=this;
-        let html = $('<i>',{class:'fa-solid fa-palette'})[0];
-        this.button.configure(html,'Style Tool');
-        $(this.dropdown).append(this.uiHTML());
+        
+        const i = document.createElement('i');
+        i.classList.add('fa-solid','fa-palette');
+        this.button.configure(i, 'Style Tool');
+        this.dropdown.innerHTML = this.uiHTML();
+
         this._hierarchy = [];
 
-        $(this.dropdown).find('[data-action="pick-color"]').on('click',function(){
-            let type = $(this).data('type');
-            let colorinput = $(self.dropdown).find(`input[type="color"][data-type="${type}"]`);
-            $(self.dropdown).find('[data-action="pick-color"]').removeClass('active');
-            if(colorinput.is(':visible')){
-                $(self.dropdown).find('.colorpicker-row').addClass('hidden');
-            }
-            else{
-                $(self.dropdown).find('.colorpicker-row').addClass('hidden');
-                colorinput.closest('.colorpicker-row').removeClass('hidden');
-                $(this).addClass('active');
-            }
-        })
+        this.dropdown.querySelectorAll('[data-action="pick-color"]').forEach(e=>{
+            e.addEventListener('click',function(){
+                let type = this.getAttribute('data-type');
+                let colorinput = self.dropdown.querySelector(`input[type="color"][data-type="${type}"]`);
+                self.dropdown.querySelectorAll('[data-action="pick-color"]').forEach(e=> e.classList.remove('active'));
+                if(isVisible(colorinput)){
+                    self.dropdown.querySelectorAll('.colorpicker-row').forEach(e=>e.classList.add('hidden'));
+                }
+                else{
+                    self.dropdown.querySelectorAll('.colorpicker-row').forEach(e=>e.classList.add('hidden'));
+                    colorinput.closest('.colorpicker-row').classList.remove('hidden');
+                    this.classList.add('active');
+                }
+            })
+        });
 
-        $(this.dropdown).find('input[type="color"]').on('input',function(){
-            let type = $(this).data('type');
+        this.dropdown.querySelectorAll('input[type="color"]').forEach(e=>e.addEventListener('input',function(){
+            let type = this.getAttribute('data-type');
             self.tool.applyColor(this.value,type);
             type=='fill' && self.setFillButtonColor(new paper.Color(this.value))
             type=='stroke' && self.setStrokeButtonColor(new paper.Color(this.value))
-        });
-        $(this.dropdown).find('input[type="number"]').on('input',function(){
+        }));
+
+        this.dropdown.querySelectorAll('input[type="number"]').forEach(e=>e.addEventListener('input',function(){
             console.log('number input',this.value)
             self.tool.applyStrokeWidth(this.value);
-        })
-        $(this.dropdown).find('input[data-action="opacity"]').on('input',function(){
-            let type = $(this).data('type');
-            let prop = $(this).data('property');
+        }));
+
+        this.dropdown.querySelectorAll('input[data-action="opacity"]').forEach(e=>e.addEventListener('input',function(){
+            let type = this.getAttribute('data-type');
+            let prop = this.getAttribute('data-property');
             self.tool.applyOpacity(this.value,prop);
             type=='fill' && self.setFillButtonOpacity(this.value);
             type=='stroke' && self.setStrokeButtonOpacity(this.value);
-        })
-        $(this.dropdown).find('[data-action="from-image"]').on('click',function(){
+        }));
+
+        this.dropdown.querySelectorAll('[data-action="from-image"]').forEach(e=>e.addEventListener('click',function(){
             self.tool.pickColor().then((color)=>{
-                $(this).siblings('input[type="color"]').val(color.toCSS(true)).trigger('input');
+                this.parentElement.querySelectorAll('input[type="color"]').forEach(e=>{
+                    e.value = color.toCSS(true);
+                    e.dispatchEvent(new Event('input'));
+                });
             }).catch(error=>{});
-        });
-        $(this.dropdown).find('[data-action="from-average"]').on('click',function(){
-            let type = $(this).data('type');
+        }));
+
+        this.dropdown.querySelectorAll('[data-action="from-average"]').forEach(e=>e.addEventListener('click',function(){
+            let type = this.getAttribute('data-type');
             self.fromAverage(type);
-        });
-        $(this.dropdown).find('.style-item').on('click',function(){
+        }));
+
+        this.dropdown.querySelectorAll('.style-item').forEach(e=>e.addEventListener('click',function(){
             let items = self.tool.targetItems;
-            console.log('Style item clicked',items)
+            // console.log('Style item clicked',items)
             let allSelected = items.every(item=>item.selected);
             // let selectableItems = items.filter(item=>item.select);
             let selectableItems = items.filter(item=>item.isGeoJSONFeature);
@@ -387,8 +397,9 @@ class StyleToolbar extends AnnotationUIToolbarBase{
                 selectableItems.forEach(item=>allSelected ? item.deselect() : item.select());//select all if not all selected, else unselect all
             }
             self.updateTargetDescription();
-        })
-        $(this.dropdown).find('.hierarchy-up').on('click',function(){
+        }));
+
+        this.dropdown.querySelectorAll('.hierarchy-up').forEach(e=>e.addEventListener('click',function(){
             if(self._hierarchy && self._hierarchy.length>0){
                 self._hierarchy.index = (self._hierarchy.index+1) % self._hierarchy.length;
             }
@@ -422,7 +433,7 @@ class StyleToolbar extends AnnotationUIToolbarBase{
             self.tool.activateForItem(self._hierarchy[self._hierarchy.index]);
             self._hierarchy = hierarchyRef;//on activation this variable is cleared; reset here
             // console.log('Hierarchy up',items)
-        })
+        }));
     }
     
     /**
@@ -484,8 +495,9 @@ class StyleToolbar extends AnnotationUIToolbarBase{
     updateTargetDescription(){
         let targetDescription = this.tool.targetDescription;
         let allSelected = this.tool.targetItems.every(item=>item.selected && item.isGeoJSONFeature);
-        let element = $(this.dropdown).find('.style-item').text(targetDescription);
-        allSelected ? element.addClass('selected') : element.removeClass('selected');
+        let element = this.dropdown.querySelector('.style-item');
+        element.innerHTML = targetDescription;
+        allSelected ? element.classList.add('selected') : element.classList.remove('selected');
     }
     /**
      * Update the displayed style settings in the toolbar.
@@ -532,11 +544,11 @@ class StyleToolbar extends AnnotationUIToolbarBase{
         }
         let strokeWidth = targets.map(item=>item.rescale ? item.rescale.strokeWidth : item.strokeWidth);
         if(strokeWidth.length==1 || new Set(strokeWidth).size==1){
-            $(this.dropdown).find('input[type="number"]').val(strokeWidth[0]);
+            this.dropdown.querySelectorAll('input[type="number"]').forEach(e=>e.value = strokeWidth[0]);
         }
         else{
             // console.warn('Multiple stroke widths not implemented; clearing input')
-            $(this.dropdown).find('input[type="number"]').val('');
+            this.dropdown.querySelectorAll('input[type="number"]').forEach(e=>e.value='');
         }
     }
     /**
@@ -549,9 +561,9 @@ class StyleToolbar extends AnnotationUIToolbarBase{
         if(!color) color = new paper.Color('white');
         let val = color.toCSS(true);
         let textcolor = getContrastYIQ(color.toCSS(true));
-        $(this.dropdown).find('[data-type="fill"] .preview .text').css({color:textcolor});
-        $(this.dropdown).find('[data-type="fill"] .preview .color').css({'background-color':val,'outline-color':textcolor});
-        $(this.dropdown).find('input[type="color"][data-type="fill"]').val(val);
+        this.dropdown.querySelectorAll('[data-type="fill"] .preview .text').forEach(e=>e.style.color = textcolor);
+        this.dropdown.querySelectorAll('[data-type="fill"] .preview .color').forEach(e=>{e.style.backgroundColor=val; e.style.outlineColor=textcolor})
+        this.dropdown.querySelectorAll('input[type="color"][data-type="fill"]').forEach(e=>e.value = val);
     }
     /**
      * Set the color and text of the Stroke button.
@@ -563,25 +575,25 @@ class StyleToolbar extends AnnotationUIToolbarBase{
         if(!color) color = new paper.Color('black');
         let val = color.toCSS(true);
         let textcolor = getContrastYIQ(color.toCSS(true));
-        $(this.dropdown).find('[data-type="stroke"] .preview .text').css({color:textcolor});
-        $(this.dropdown).find('[data-type="stroke"] .preview .color').css({'background-color':val,'outline-color':textcolor});
-        $(this.dropdown).find('input[type="color"][data-type="stroke"]').val(val);
+        this.dropdown.querySelectorAll('[data-type="stroke"] .preview .text').forEach(e=>e.style.color = textcolor);
+        this.dropdown.querySelectorAll('[data-type="stroke"] .preview .color').forEach(e=>{e.style.backgroundColor=val; e.style.outlineColor=textcolor})
+        this.dropdown.querySelectorAll('input[type="color"][data-type="stroke"]').forEach(e=>e.value = val);
     }
     /**
      * Set the opacity of the Fill button.
      * @param {number} val - The opacity value to set for the Fill button.
      */
     setFillButtonOpacity(val){
-        $(this.dropdown).find('[data-type="fill"] .preview .bg').css({'opacity':val});
-        $(this.dropdown).find('[data-type="fill"][data-action="opacity"]').val(val);
+        this.dropdown.querySelectorAll('[data-type="fill"] .preview .bg').forEach(e=>e.style.opacity = val);
+        this.dropdown.querySelectorAll('[data-type="fill"][data-action="opacity"]').forEach(e=>e.value = val);
     }
     /**
      * Set the opacity of the Stroke button.
      * @param {number} val - The opacity value to set for the Stroke button.
      */
     setStrokeButtonOpacity(val){
-        $(this.dropdown).find('[data-type="stroke"] .preview .bg').css({'opacity':val});
-        $(this.dropdown).find('[data-type="stroke"][data-action="opacity"]').val(val);
+        this.dropdown.querySelectorAll('[data-type="stroke"] .preview .bg').forEach(e=>e.style.opacity = val);
+        this.dropdown.querySelectorAll('[data-type="stroke"][data-action="opacity"]').forEach(e=>e.value = val);
     }
 }
 export {StyleToolbar};
@@ -704,8 +716,13 @@ export {ColorpickerCursor};
     let raster = ((itemToAverage.project && itemToAverage.project.overlay) || itemToAverage.overlay).getViewportRaster();
     return new Promise(function(resolve,reject){
         raster.onLoad = function(){
-            let color = raster.getAverageColor(itemToAverage);
+            // clone the item and transform it back to viewport coordinates
+            const cloned = itemToAverage.clone();
+            cloned.transform(cloned.layer.matrix);
+            let color = raster.getAverageColor(cloned);
+            //clean up the cloned item and the raster
             raster.remove();
+            cloned.remove();
             if(!color){
                 reject('Error: The item must be visible on the screen to pick the average color of visible pixels. Please navigate and retry.')
             } 

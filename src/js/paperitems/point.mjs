@@ -249,8 +249,12 @@ class Point extends AnnotationItem{
      */
     _makeIcon(){
         //to-do: make the class(es) used to select a fontawesome icon a configurable option
-        let domText = $('<i>', { class: 'fa-solid fa-map-pin', style: 'visibility:hidden;' }).appendTo('body');
-        let computedStyle = window.getComputedStyle(domText[0], ':before');
+        const domText = document.createElement('i');
+        document.querySelector('body').appendChild(domText);
+        domText.classList.add('fa-solid', 'fa-map-pin');
+        domText.style.visibility='hidden';
+
+        let computedStyle = window.getComputedStyle(domText, ':before');
         this._iconText = computedStyle.content.substring(1, 2);
         this._iconFontFamily = computedStyle.fontFamily;
         this._iconFontWeight = computedStyle.fontWeight;

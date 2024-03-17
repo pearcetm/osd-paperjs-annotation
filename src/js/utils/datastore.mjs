@@ -22,7 +22,11 @@ class Datastore{
             this._map.set(element, new Map());
             return; //return undefined by default
         }
-        return this._map.get(element).get(key);
+        if(typeof key === 'undefined'){
+            return Object.fromEntries(this._map.get(element));
+        } else {
+            return this._map.get(element).get(key);
+        }
     }
     remove(element, key) {
         if (!this._map.has(element)) {

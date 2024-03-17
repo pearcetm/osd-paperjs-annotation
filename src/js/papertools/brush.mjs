@@ -264,20 +264,38 @@ class BrushToolbar extends AnnotationUIToolbarBase{
    */
     constructor(brushTool){
         super(brushTool);
-        let html = $('<i>',{class:'fa fa-brush fa-rotate-by',style:'--fa-rotate-angle: 225deg;'})[0];
-        this.button.configure(html,'Brush Tool');
         
-        let fdd = $('<div>',{'data-tool':'brush',class:'dropdown brush-toolbar'}).appendTo(this.dropdown);
-        let defaultRadius = 20;
-        $('<label>').text('Radius').appendTo(fdd)
-        this.rangeInput=$('<input>',{type:'range',min:1,max:100,value:defaultRadius}).appendTo(fdd).on('change',function(){
-                // console.log('Range input changed',$(this).val());
-                brushTool.setRadius($(this).val());
-            });
-        this.eraseButton=$('<button>',{class:'btn btn-secondary','data-action':'erase'}).appendTo(fdd).text('Erase').on('click',function(){
-            let erasing = $(this).toggleClass('active').hasClass('active');
+        const i = document.createElement('i');
+        i.classList.add('fa-solid', 'fa-brush', 'fa-rotate-by');
+        i.style.setProperty('--fa-rotate-angle','225deg');
+        this.button.configure(i,'Brush Tool');
+
+        const fdd = document.createElement('div');
+        fdd.classList.add('dropdown','brush-toolbar');
+        fdd.setAttribute('data-tool','brush');
+        this.dropdown.appendChild(fdd);
+        const label = document.createElement('label');
+        label.innerHTML = 'Radius';
+        fdd.appendChild(label);
+
+        let defaultRadius=20;
+        
+        this.rangeInput = document.createElement('input');
+        fdd.appendChild(this.rangeInput);
+        Object.assign(this.rangeInput, {type:'range', min:1, max: 100, step: 1, value:defaultRadius});
+        this.rangeInput.addEventListener('change', function(){
+            brushTool.setRadius(this.value);
+        });
+
+        this.eraseButton = document.createElement('button');
+        fdd.appendChild(this.eraseButton);
+        this.eraseButton.innerHTML = 'Eraser';
+        this.eraseButton.setAttribute('data-action','erase');
+        this.eraseButton.addEventListener('click',function(){
+            let erasing = this.classList.toggle('active');
             brushTool.setEraseMode(erasing);
         });
+
         setTimeout(()=>brushTool.setRadius(defaultRadius), 0);
     }
   /**
@@ -295,10 +313,12 @@ class BrushToolbar extends AnnotationUIToolbarBase{
    */
     updateBrushRadius(update){
         if(update.larger){
-            this.rangeInput.val(parseInt(this.rangeInput.val())+1).trigger('change');
+            this.rangeInput.value = parseInt(this.rangeInput.value) + parseInt(this.rangeInput.step);
+            this.rangeInput.dispatchEvent(new Event('change'));
         }
         else{
-            this.rangeInput.val(parseInt(this.rangeInput.val())-1).trigger('change');
+            this.rangeInput.value = parseInt(this.rangeInput.value) - parseInt(this.rangeInput.step);
+            this.rangeInput.dispatchEvent(new Event('change'));
         }
     }
   /**
@@ -306,6 +326,6 @@ class BrushToolbar extends AnnotationUIToolbarBase{
    * @param {boolean} erasing - A flag indicating whether the Erase Mode is active or not.
    */
     setEraseMode(erasing){
-        erasing ? this.eraseButton.addClass('active') : this.eraseButton.removeClass('active');
+        erasing ? this.eraseButton.classList.add('active') : this.eraseButton.classList.remove('active');
     }
 }

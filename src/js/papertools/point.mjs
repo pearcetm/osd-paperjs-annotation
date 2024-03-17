@@ -148,9 +148,14 @@ class PointToolbar extends AnnotationUIToolbarBase{
      */
     constructor(tool){
         super(tool);
-        let html = $('<i>',{class:'fa-solid fa-map-pin'})[0];
-        this.button.configure(html,'Point Tool');
-        this.instructions=$('<span>').text('').appendTo(this.dropdown);
+        
+        const i = document.createElement('i');
+        i.classList.add('fa-solid','fa-map-pin');
+        this.button.configure(i,'Point Tool');
+
+        this.instructions = document.createElement('span');
+        this.instructions.classList.add('instructions');
+        this.dropdown.appendChild(this.instructions);
     }
     /**
      * Check if the toolbar is enabled for the specified mode.
@@ -168,6 +173,7 @@ class PointToolbar extends AnnotationUIToolbarBase{
      * @description Updates the instructions on the toolbar based on the specified mode.
      */
     updateInstructions(mode){
-        this.instructions.text(mode=='new'?'Click to drop a pin' : mode=='Point' ? 'Drag to reposition' : '???' )
+        const text = mode=='new'?'Click to drop a pin' : mode=='Point' ? 'Drag to reposition' : '???';
+        this.instructions.innerHTML = text;
     }
 }

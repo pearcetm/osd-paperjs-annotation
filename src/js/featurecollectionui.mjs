@@ -78,15 +78,6 @@ class FeatureCollectionUI{
         }
 
         this._featurelist=this.element.querySelector('.features-list');
-        // this._featurelist.sortable({
-        //     contain:'parent',
-        //     connectWith:`${init.guiSelector} .features-list`,
-        //     update:function(){
-        //         self._featurelist.children().each(function(idx,c){
-        //             self.group.addChild($(c).data('feature').paperItem);
-        //         })
-        //     },
-        // });
 
         this._dragAndDrop = new DragAndDrop({
             parent: this.element, 
@@ -287,8 +278,8 @@ class FeatureCollectionUI{
      * Toggle the visibility of the feature collection UI element and the paper group.
      */
     toggleVisibility(){
-        this.element.toggleClass('annotation-hidden');
-        this.group.visible = !this.element.hasClass('annotation-hidden');
+        this.element.classList.toggle('annotation-hidden');
+        this.group.visible = !this.element.classList.contains('annotation-hidden');
     }
     /**
      * Remove the paper layer associated with the feature collection.

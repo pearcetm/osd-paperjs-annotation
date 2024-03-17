@@ -225,14 +225,19 @@ export{SelectTool};
 class SelectToolbar extends AnnotationUIToolbarBase{
     constructor(tool){
         super(tool);
-        $(this.dropdown).addClass('select-dropdown');
-        let html = $('<i>',{class:'fa-solid fa-arrow-pointer'})[0];
-        this.button.configure(html,'Selection Tool');
+        this.dropdown.classList.add('select-dropdown');
+        const i = document.createElement('i');
+        i.classList.add('fa-solid', 'fa-arrow-pointer');
+        this.button.configure(i,'Selection Tool');
         
-        let s = $('<div>',{'data-active':'select'}).appendTo(this.modeRow)
-        $('<span>').text('(Ctrl)click to select items.').appendTo(s);
-        
+        const s = document.createElement('div');
+        s.setAttribute('data-active', 'select');
+        this.dropdown.appendChild(s);
+        const span = document.createElement('span');
+        span.innerHTML = '(Ctrl)click to select items.';
+        s.append(span);        
     }
+    
     isEnabledForMode(mode){
         let itemsExist = this.tool.doAnnotationItemsExist();
         return itemsExist && [

@@ -138,13 +138,20 @@ class RasterToolbar extends AnnotationUIToolbarBase{
    */
     constructor(tool){
         super(tool);
-        let html=$('<i>',{class:'fa fa-image'})[0];
-        this.button.configure(html,'Raster Tool');
-        let d = $('<div>').appendTo(this.dropdown);
-        let button = $('<button>').text('Convert to raster').appendTo(d);
-        let span = $('<span>').text('Warning: this cannot be undone!').appendTo(d);
+        const i = document.createElement('i');
+        i.classList.add('fa-solid','fa-image');
+        this.button.configure(i,'raster Tool');
 
-        button.on('click',()=>tool.rasterize())
+        const d = document.createElement('div');
+        this.dropdown.appendChild(d);
+        const button = document.createElement('button');
+        button.innerHTML = 'Convert to raster';
+        d.appendChild(button);
+        const span = document.createElement('span');
+        span.innerHTML = 'Warning: this cannot be undone!';
+        d.appendChild(span);
+
+        button.addEventListener('click',()=>tool.rasterize())
     }
     /**
    * Checks if the RasterTool is enabled for the given mode.

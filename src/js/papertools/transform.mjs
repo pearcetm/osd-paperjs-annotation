@@ -198,13 +198,19 @@ class TransformTool extends AnnotationUITool{
         //Translation operations
         this.onMouseDrag = ev=>{
             if(!this._transformTool._moveOnDrag) return;
-            this._transformTool.translate(ev.delta);
+            
+            // use original delta for the tool's display rectangle and handles
+            this._transformTool.translate(ev.original.delta);
+
+            // use transformed delta for the object we're transforming
+            const delta = ev.delta;
+
             Object.values(this._transformTool.corners).forEach(corner=>{
-                corner.refPos = corner.refPos.add(ev.delta);
+                corner.refPos = corner.refPos.add(delta);
             })
             this._transformTool.transforming.forEach(item=>{
-                item.translate(ev.delta);
-                item.onTransform && item.onTransform('translate', ev.delta);
+                item.translate(delta);
+                item.onTransform && item.onTransform('translate', delta);
             });
         }
         
@@ -266,11 +272,11 @@ class TransformTool extends AnnotationUITool{
      * This function activates the TransformTool, bringing it to the front, and sets up items for transformation.
      */
     enableTransformToolObject(){
-        this.project.toolLayer.bringToFront();
-        this._transformTool.visible=true;
-        this._transformTool.transformItems(this.items);
-        // this._transformTool.transformItems(this.getSelectedItems());
-        
+        if(this.items.length > 0){
+            this.project.toolLayer.bringToFront();
+            this._transformTool.visible=true;
+            this._transformTool.transformItems(this.items);
+        }
     }
     /**
      * A function that disables the TransformTool object after transforming selected items.
@@ -347,9 +353,11 @@ class TransformToolbar extends AnnotationUIToolbarBase{
      */
     constructor(tool){
         super(tool);
-        $(this.dropdown).addClass('transform-dropdown');
-        let html = $('<i>',{class:'fa-solid fa-up-down-left-right'})[0];
-        this.button.configure(html,'Transform Tool');
+        this.dropdown.classList.add('transform-dropdown');
+        
+        const i = document.createElement('i');
+        i.classList.add('fa-solid','fa-up-down-left-right');
+        this.button.configure(i,'Transform Tool');
         
     }
     /**

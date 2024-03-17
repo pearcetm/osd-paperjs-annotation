@@ -35,9 +35,10 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-
+.annotation-ui-noselect{
+    user-select:none;
+}
 .ui-dialog{
-    z-index:1001; /* Position it above the bootstrap navbar */
     font-size:14px;
 }
 .ui-dialog, .ui-dialog-content {
@@ -52,10 +53,15 @@
 }
 .annotation-ui-mainwindow{
     height:100%;
+    width:16em;
+    min-width:12em;
     color:black;
     overflow:hidden;
     display:grid;
-    grid-template-rows: auto auto minmax(4em, 1fr) auto;
+    grid-template-rows: auto minmax(4em, 1fr) auto;
+    border:thin gray solid;
+    padding:2px;
+    box-sizing:border-box;
 }
 .annotation-visibility-controls{
     display:flex;
@@ -69,6 +75,9 @@
     flex-grow:0;
     display:flex;
     margin-right:5px;
+}
+.annotation-visibility-controls .annotation-opacity-container{
+    flex-grow:1;
 }
 .annotation-ui-mainwindow button.btn{
     padding:0 3px;
@@ -189,6 +198,60 @@
     cursor:not-allowed;
 }
 
+.annotation-ui-grid{
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    grid-template-columns: auto 1fr auto;
+    width: 100%;
+    height: 100%;
+}
+.annotation-ui-grid .center{
+    grid-column: 2 / 3;
+    grid-row: 2 / 3;
+    position:relative;
+}
+.annotation-ui-grid .top {
+    grid-column: 1 / 3;
+    grid-row: 1 / 2;
+    text-align:center;
+    border-bottom:thin gray solid;
+}
+.annotation-ui-grid .bottom {
+    grid-column: 1 / 3;
+    grid-row: 3 / 4;
+}
+.annotation-ui-grid .left {
+    grid-column: 1 / 2;
+    grid-row: 2 / 3;
+}
+.annotation-ui-grid .right {
+    grid-column: 3 / 4;
+    grid-row: 1 / 4;
+    position:relative;
+}
+.annotation-ui-grid .resize-right{
+    width: 15px;
+    left: -15px;
+    position: absolute;
+    background-color: rgb(196, 196, 196);
+    cursor: grab;
+    text-align:center;
+    user-select:none;
+    top:50%;
+    transform: translate(0, -50%);
+    padding:10px 0;
+    border-top-left-radius: 5px;
+    border-bottom-left-radius: 5px;
+}
+.annotation-ui-grid .resize-right::before{
+    content:'||';
+}
+.annotation-ui-grid .resize-right.resizing{
+    cursor:grabbing;
+}
+.annotation-ui-grid .right:not(:hover) .resize-right{
+    display:none;
+}
 
 .annotation-ui-drawing-toolbar .pseudohidden, .annotation-ui-drawing-toolbar .invisible{
     visibility:hidden;
@@ -200,7 +263,9 @@
 }
 .annotation-ui-drawing-toolbar{
     background-color:lightgray;
-    display: grid;
+    display: inline-block;
+    max-width:100%;
+    text-align:left;
 }
 .annotation-ui-drawing-toolbar button[disabled]{
     pointer-events:none;
@@ -217,16 +282,23 @@
 .annotation-ui-drawing-toolbar .dropdowns>*:not(.active){
     display:none;
 }
-.annotation-ui-drawing-toolbar>button.active, .annotation-ui-buttonbar>.btn.active{
+.annotation-ui-buttonbar>.btn.active{
     color:black;
     background-color:darkgray;
 }
-.annotation-ui-drawing-toolbar>button:not(.active), .annotation-ui-buttonbar>.btn:not(.active){
+.annotation-ui-buttonbar>.btn:not(.active){
     color:rgb(62, 62, 62);
     background-color:lightgrey;
 }
+.dropdowns-container{
+    position:relative;
+    background-color:inherit;
+}
 .dropdowns{
     color:black;
+    position:absolute;
+    background-color:inherit;
+    min-width:100%;
 }
 .dropdown{
     width:100%;
@@ -530,7 +602,7 @@ input[type=range] {
 }
 .btn {
     display: inline-block;
-    padding: 6px 12px;
+    padding: 2px 8px;
     margin-bottom: 0;
     font-size: 14px;
     /* font-weight: 400; */
