@@ -36,7 +36,6 @@
  * 
  */
 
-//requires jquery, jqueryui
 //styles in annotationui.css
 
 import { addCSS } from './addcss.mjs';
@@ -44,7 +43,6 @@ import { AnnotationToolbar } from './annotationtoolbar.mjs';
 import { LayerUI } from './layerui.mjs';
 import { FileDialog } from './filedialog.mjs';
 
-addCSS('https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.css', 'jquery-ui');
 addCSS('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css', 'font-awesome/6.1.1/css/all');
 addCSS('annotationui.css', 'annotationui');
 addCSS('osd-button.css', 'osd-button');

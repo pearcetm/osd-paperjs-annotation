@@ -1,5 +1,6 @@
 let webpack = require('webpack');
 let UnminifiedWebpackPlugin = require('unminified-webpack-plugin');
+let path = require('path');
 
 module.exports = {
     stats: {
@@ -28,18 +29,17 @@ module.exports = {
         },
     },
     devtool: 'source-map',
-    plugins: [
-        new webpack.ProvidePlugin({
-          "$":"jquery",
-          "jQuery":"jquery",
-          "window.jQuery":"jquery"
-        })
-    ],
     module:{
         parser: {
             javascript : { importMeta: false }
         },
         rules: [
+            {
+                exclude:[path.resolve(__dirname, 'demo')]
+            },
+            {
+                exclude:[path.resolve(__dirname, 'docs')]
+            },
             {
                 test: require.resolve("./src/js/osd-loader.mjs"),
                 loader: "imports-loader",
@@ -65,17 +65,6 @@ module.exports = {
                 },
             },
             {
-                test: require.resolve("./src/js/annotationui.mjs"),
-                loader: "imports-loader",
-                options: {
-                    type: "module",
-                    imports: [
-                        "side-effects jquery-ui/ui/widgets/dialog.js",
-                        "side-effects jquery-ui/ui/widgets/sortable.js"
-                    ]
-                },
-            },
-            {
                 test: /\.css$/,
                 use: ['style-loader', 'css-loader']
             },
@@ -90,6 +79,6 @@ module.exports = {
                 test: /\.png$/,
                 type: 'asset/resource'
             }
-        ],
+        ]
     }
 }
