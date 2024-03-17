@@ -237,14 +237,9 @@ class AnnotationUI {
    * Set up the grid that adds the UI to the viewer
    */
   _addToViewer(){
-    // const element = this._viewer.element;
-    // const container = this._viewer.container;
+    
     const container = document.createElement('div');
-    container.style.display = 'grid';
-    container.style.gridTemplateRows = 'auto 1fr auto';
-    container.style.gridTemplateColumns = 'auto 1fr auto';
-    container.style.width = '100%';
-    container.style.height = '100%';
+    
     this._viewer.element.appendChild(container);
     
     const top = document.createElement('div');
@@ -252,14 +247,68 @@ class AnnotationUI {
     const center = document.createElement('div');
     const left = document.createElement('div');
     const right = document.createElement('div');
-    [top, left, center, right, bottom].forEach(div => container.appendChild(div));
+    const resizeRight = document.createElement('div');
+    const classes={
+      'annotation-ui-grid':container,
+      'top':top,
+      'bottom':bottom,
+      'center':center,
+      'left':left,
+      'right':right,
+      'resize-right':resizeRight
+    }
+
+    Object.entries(classes).forEach(([name, node])=>node.classList.add(name));
+    [center, right, left, top, bottom].forEach(div => container.appendChild(div));
+
     center.appendChild(this._viewer.container);
+    right.appendChild(resizeRight);
     right.appendChild(this.element);
     top.appendChild(this._toolbar.element);
 
-    top.style.gridColumn = '1 / 4';
-    bottom.style.gridColumn = '1 / 4';
-    center.style.position = 'relative';
+    // keep a reference to the UI element
+    const element = this.element;
+
+    // add event handlers to do the resizing.
+    const body = document.querySelector('body');
+    let offset;
+
+    resizeRight.addEventListener('mousedown',function(ev){
+      this.classList.add('resizing');
+      body.classList.add('.annotation-ui-noselect');
+
+      document.addEventListener('mousemove', moveHandler);
+      document.addEventListener('mouseleave', finishResize);
+      document.addEventListener('mouseup', finishResize);
+
+      offset = element.getBoundingClientRect().left - ev.x;
+
+    });
+
+    function moveHandler(ev){
+      if(resizeRight.classList.contains('resizing')){
+        if(ev.movementX){
+          // const bounds = resizeRight.getBoundingClientRect();
+          // const x = bounds.left + bounds.width/2;
+          // // don't keep resizing if the cursor doesn't match 
+          // if(ev.movementX < 0 && ev.x > x || ev.movementX > 0 && ev.x < x){
+          //   return;
+          // }
+          // resizeRight.nextSibling.style.width = resizeRight.nextSibling.offsetWidth - ev.movementX + 'px';
+          const bounds = element.getBoundingClientRect();
+          element.style.width = bounds.right - ev.x - offset + 'px';
+        }
+        ev.preventDefault();
+      }
+    }
+    function finishResize(ev){
+      document.removeEventListener('mousemove', moveHandler);
+      document.removeEventListener('mouseleave', finishResize);
+      document.removeEventListener('mouseup', finishResize);
+      body.classList.remove('.annotation-ui-noselect');
+      resizeRight.classList.remove('resizing');
+    }
+    
   }
 
 }

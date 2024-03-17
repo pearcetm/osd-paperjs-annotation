@@ -248,7 +248,7 @@ class AnnotationToolbar{
  * Shows the Annotation Toolbar.
  */
     show(){
-        this.element.style.display = '';
+        this.element.style.display = 'inline-block';
     }
 /**
  * Hides the Annotation Toolbar.
@@ -269,15 +269,18 @@ class AnnotationToolbar{
         this._element = document.createElement('div');
         this._buttonbar = document.createElement('div');
         this._dropdowns = document.createElement('div');
+        const dropdownContainer = document.createElement('div');
         this._element.appendChild(this._buttonbar);
-        this._element.appendChild(this._dropdowns);
+        this._element.appendChild(dropdownContainer);
+        dropdownContainer.appendChild(this._dropdowns);
 
         const classes = 'annotation-ui-drawing-toolbar btn-group btn-group-sm mode-selection'.split(' ');
         classes.forEach(c => this._element.classList.add(c));
-        
-        this._dropdowns.classList.add('dropdowns');
 
-        this._buttonbar.style.margin = '0 auto';
+        dropdownContainer.classList.add('dropdowns-container');
+        this._dropdowns.classList.add('dropdowns');
+        this._buttonbar.classList.add('annotation-ui-buttonbar');
+
     } 
 }
 export {AnnotationToolbar};
