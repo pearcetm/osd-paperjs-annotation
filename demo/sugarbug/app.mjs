@@ -1,7 +1,7 @@
 
 import { AnnotationToolkit } from '../../src/js/annotationtoolkit.mjs';
 let styledef;
-$.get('./init.geoJSON').then(x=>{
+fetch('./init.geoJSON').then(r=>r.json()).then(x=>{
     styledef=x;
 })
 
@@ -18,7 +18,7 @@ v1.open(
     }
 )
 
-$('#file-picker').on('change',function(){
+document.querySelector('#file-picker').addEventListener('change',function(){
     // console.log('file-picker change', ev, this);
    let tileSources = Array.from(this.files).map(file=>{
         let obj = {
@@ -36,7 +36,7 @@ $('#file-picker').on('change',function(){
     v1.goToPage(0);
 })
 
-$('#get-results').on('click',function(){
+document.querySelector('#get-results').addEventListener('click',function(){
     //get current annotations
     if(!v1.annotationToolkit) return;
     v1.tileSources[v1.currentPage()].annotationStore = v1.annotationToolkit.toGeoJSON();
@@ -82,14 +82,12 @@ function createViewer(){
     let viewer = window.viewer = OpenSeadragon({
         element:'viewer',
         prefixUrl: "https://openseadragon.github.io/openseadragon/images/",
-        // prefixUrl:'/local/openseadragon/3.1.0/images/',
         minZoomImageRatio:0.01,
         maxZoomPixelRatio:16,
         visibilityRatio:0,
         crossOriginPolicy: 'Anonymous',
         ajaxWithCredentials: false,
         sequenceMode:true,
-        // constrainDuringPan:true,
     });
     
     viewer.addHandler('page',ev=>{
@@ -106,29 +104,22 @@ function createViewer(){
             ts.annotationStore = tk.toGeoJSON();
         })
         let ui=tk.addAnnotationUI({
-            autoOpen:true,
-            addLayerDialog:false,
-
+            autoOpen:true
         });
-        ui._layerUI.element.appendTo($('#gui-container')).on('element-added',(ev)=>{
-            let scrollToElement = $(ev.target);
+        ui._layerUI.element.addEventListener('element-added',(ev)=>{
+            let scrollToElement = ev.target;
             scrollToElement && setTimeout(()=>{
-                //scrolltoelement[0].scrollIntoView(false)
-                scrollToElement[0].scrollIntoView({block: "nearest", inline: "nearest"})
+                scrollToElement.scrollIntoView({block: "nearest", inline: "nearest"})
             }, 0);
         });
-        ui._layerUI.element.find('input.annotation-fill-opacity').val('0.5').trigger('input');
+        const fillOpacity = ui._layerUI.element.querySelector('input.annotation-fill-opacity');
+        fillOpacity.value = 0.5;
+        fillOpacity.dispatchEvent(new Event('change'));
         
         let json = ts.annotationStore || styledef;
         tk.addFeatureCollections(json);
 
-        $('#current-file').text(`${ts.file.name} (${ev.page+1} of ${ev.eventSource.tileSources.length})`)
-
-        // viewer.viewport.setRotation(30)
-        // window.view = tk.overlay.paperScope.view;
-        // window.project = tk.overlay.paperScope.project;
-        // window.view.onClick = (ev)=>console.log('view click',ev.point);
-        // window.ts = ts;
+        document.querySelector('#current-file').innerText = `${ts.file.name} (${ev.page+1} of ${ev.eventSource.tileSources.length})`;
     })
     return viewer;
 }

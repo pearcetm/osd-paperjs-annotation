@@ -57,6 +57,7 @@ import { Ellipse } from './paperitems/ellipse.mjs';
 //property definitions
 
 Object.defineProperty(paper.Item.prototype, 'displayName', displayNamePropertyDef());
+Object.defineProperty(paper.Item.prototype, 'featureCollection', featureCollectionPropertyDef());
 Object.defineProperty(paper.TextItem.prototype, 'content', textItemContentPropertyDef());
 Object.defineProperty(paper.Project.prototype, 'descendants', descendantsDefProject());
 
@@ -563,6 +564,18 @@ function displayNamePropertyDef(){
         },
         get: function displayName(){
             return this._displayName;
+        }
+    }
+}
+
+/**
+ * Define the featureCollection property for a paper item object.
+ * @private
+ */
+function featureCollectionPropertyDef(){
+    return {
+        get: function fc(){
+            return this.hierarchy.filter(i=>i.isGeoJSONFeatureCollection)[0];
         }
     }
 }

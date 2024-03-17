@@ -16,6 +16,10 @@ body{
 .content>div{
     border:thin black solid;
 }
+.right{
+    display:grid;
+    grid-template-rows:auto 1fr;
+}
 #header{
     grid-column:span 2;
     display:grid;

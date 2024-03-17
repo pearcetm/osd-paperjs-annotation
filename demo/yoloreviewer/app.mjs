@@ -74,10 +74,9 @@ function handleItemSelected(){
     if(selected.length){
         let item = selected[0];
         if(item.displayName == 'Creating...'){
-            // item.displayName = item.layer.displayName;
             let changeLabel = (event)=>{
                 window.setTimeout(()=>{
-                    event.item.displayName = event.item.layer.displayName;
+                    event.item.displayName = event.item.featureCollection.displayName;
                     setupReview();
                 });
             };
@@ -101,7 +100,7 @@ function setupReviewForItem(item){
     reviewIndex = index;
     $('#reviewer-controls .current-index').text(reviewIndex + 1); // add one for readability
     let dropdown = $('#reviewer-controls select')[0];
-    dropdown.value = item.layer.displayName;
+    dropdown.value = item.featureCollection?.displayName;
 }
 function removeItem(item){
     let index = items.indexOf(item);
@@ -151,13 +150,13 @@ function setupReview(){
 }
 
 function getFeaturesToReview(){
-    let items = tk.getFeatures().filter(f=>!(''+f.layer.displayName).match(/^ROI|ROI$/i) );
+    let items = tk.getFeatures().filter(f=>!(''+f.featureCollection?.displayName).match(/^ROI|ROI$/i) );
     return items;
 }
 function getSelectedFeatures(){
     let realSelection = getFeaturesToReview().filter(item=>item.selected);
     if(realSelection.length){
-        tk.getFeatures().filter(f=>!(''+f.layer.displayName.match(/^ROI|ROI$/i) )).forEach(item=>{
+        tk.getFeatures().filter(f=>!(''+f.featureCollection?.displayName.match(/^ROI|ROI$/i) )).forEach(item=>{
             item.deselect(true);
         });
     }
@@ -178,8 +177,8 @@ function getIndexOfSelection(selection){
 
 function alignToROI(){
     // console.log('alignToROI',event);
-    let ROI_layer = tk.overlay.paperScope.project.layers.filter(l=>l.displayName && l.displayName.match(/^ROI|ROI$/i) )[0];
-    let ROI = ROI_layer && ROI_layer.children[0];
+    let ROI_fc = tk.overlay.paperScope.project.layers.map(l=>l.descendants.filter(d=>d.displayName && d.displayName.match(/^ROI|ROI$/i))[0])[0];
+    let ROI = ROI_fc && ROI_fc.children[0];
     if(ROI){
         try{
             let path = ROI.children[0];
@@ -344,20 +343,22 @@ function createViewer(){
 
         let ui=tk.addAnnotationUI({
             autoOpen:true,
-            addLayerDialog:false,
             tools:['default','select','point','rectangle','style']
         });
-        ui._layerUI.element.appendTo($('#paper-gui')).on('element-added',(ev)=>{
-            let scrollToElement = $(ev.target);
+
+        const dsaGui = document.querySelector('#gui-container');
+        ui._layerUI.element.parentElement.insertBefore(dsaGui, ui._layerUI.element);
+        ui._layerUI.element.addEventListener('element-added',(ev)=>{
+            let scrollToElement = ev.target;
             scrollToElement && setTimeout(()=>{
-                scrollToElement[0].scrollIntoView({block: "nearest", inline: "nearest"})
+                scrollToElement.scrollIntoView({block: "nearest", inline: "nearest"})
             }, 0);
         });
-        ui._layerUI.element.find('input.annotation-fill-opacity').val('0.5').trigger('input');
+        const fillOpacity = ui._layerUI.element.querySelector('input.annotation-fill-opacity');
+        fillOpacity.value = 0.5;
+        fillOpacity.dispatchEvent(new Event('input'));
         
         toolbar = ui.toolbar;
-
-        $('#current-file').text(`${ts.name} (${ev.page+1} of ${ev.eventSource.tileSources.length})`);
 
     });
 

@@ -512,7 +512,7 @@ class PaperOverlay{
      * @private
      */
     _removeTiledImage(tiledImage){
-        tiledImage.paperLayer.remove();
+        tiledImage._paperLayerMap?.get(this.paperScope)?.remove();
     }
 
 

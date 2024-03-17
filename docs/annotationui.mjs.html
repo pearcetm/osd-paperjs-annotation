@@ -95,7 +95,7 @@ class AnnotationUI {
    * @param {boolean} [opts.addButton=true] - Determines if the AnnotationUI button should be added.
    * @param {boolean} [opts.addToolbar=true] - Determines if the AnnotationToolbar should be added.
    * @param {string[]} [opts.tools=null] - An array of tool names to use in the AnnotationToolbar. If not provided, all available tools will be used.
-   * @param {boolean} [opts.addLayerDialog=true] - Determines if the LayerUI dialog should be added.
+   * @param {boolean} [opts.addLayerUI=true] - Determines if the LayerUI dialog should be added.
    * @param {boolean} [opts.addFileButton=true] - Determines if the file button should be added for saving/loading annotations.
    * @param {boolean} [opts.buttonTogglesToolbar=true] - Determines if the AnnotationToolbar visibility is toggled by the AnnotationUI button.
    * @param {boolean} [opts.buttonTogglesLayerUI=true] - Determines if the LayerUI visibility is toggled by the AnnotationUI button.
@@ -107,7 +107,7 @@ class AnnotationUI {
       addButton: true,
       addToolbar: true,
       tools: null,
-      addLayerDialog: true,
+      addLayerUI: true,
       addFileButton: true,
       buttonTogglesToolbar: true,
       buttonTogglesLayerUI: true,
@@ -158,7 +158,7 @@ class AnnotationUI {
      * @private
      */
     this._layerUI = new LayerUI(annotationToolkit, dialogOpts);
-    if (opts.addLayerDialog) {
+    if (opts.addLayerUI) {
       this._createJqueryUIdialog();
     }
 

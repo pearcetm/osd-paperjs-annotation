@@ -36,7 +36,7 @@ v1.addHandler('open',()=>{
     tk.addAnnotationUI({autoOpen:true});
     window.tk = tk;
 
-    $.get('./demo-annotation.json').then(x=>{
+    fetch('./demo-annotation.json').then(x=>x.json()).then(x=>{
         //tk.addFeatureCollections(x);
         tk.addFeatureCollections(x, true, v1.world.getItemAt(0));
         // tk.addFeatureCollections(x, true, v1.world.getItemAt(1));

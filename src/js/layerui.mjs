@@ -145,7 +145,7 @@ class LayerUI extends OpenSeadragon.EventSource{
          */
         function setOpacity(o){
             let status = Array.from(self.element.querySelectorAll('.feature-collection')).reduce(function(ac,el){
-                if( el.classList.has('selected') ){
+                if( el.classList.contains('selected') ){
                     ac.selected.push(el);
                 }
                 else if( el.matches(':hover,.svg-hovered')){

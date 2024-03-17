@@ -42,6 +42,7 @@ import { domObjectFromHTML } from './utils/domObjectFromHTML.mjs';
 import { datastore } from './utils/datastore.mjs';
 import { DragAndDrop } from './utils/draganddrop.mjs';
 import { Placeholder } from './paperitems/placeholder.mjs';
+import { OpenSeadragon } from './osd-loader.mjs';
 
 /**
  * A user interface for managing feature collections. The FeatureCollectionUI class provides a user
@@ -171,7 +172,7 @@ class FeatureCollectionUI{
             let clonedProperties = {
                 fillColor:new paper.Color(props.fillColor),
                 strokeColor:new paper.Color(props.strokeColor),
-                rescale:$.extend(true,{},props.rescale),
+                rescale:OpenSeadragon.extend(true,{},props.rescale),
                 fillOpacity:props.fillOpacity,
                 strokeOpacity:props.strokeOpacity,
                 strokeWidth:props.strokeWidth,

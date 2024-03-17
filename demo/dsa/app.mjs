@@ -62,6 +62,26 @@ function createViewer(){
     });
 
     new RotationControlOverlay(viewer);
+
+    // tk defined at containing scope
+    let tk = new AnnotationToolkit(viewer);
+
+    // add project to window for debugging
+    window.project = tk.overlay.paperScope.project;
+    
+    tk.addOnceHandler('before-destroy',(ev)=>{
+        ts.annotationStore = tk.toGeoJSON();
+    })
+    let ui=tk.addAnnotationUI({
+        autoOpen:true
+    });
+    $(ui._layerUI.element).appendTo($('#paper-gui')).on('element-added',(ev)=>{
+        let scrollToElement = $(ev.target);
+        scrollToElement && setTimeout(()=>{
+            scrollToElement[0].scrollIntoView({block: "nearest", inline: "nearest"})
+        }, 0);
+    });
+    $(ui._layerUI.element).find('input.annotation-fill-opacity').val('0.5').trigger('input');
     
     viewer.addHandler('page',ev=>{
         //console.log('page',ev);
@@ -72,29 +92,6 @@ function createViewer(){
             fr.onload = () => ts.getImageInfo(fr.result);
         }
         
-        // tk defined at containing scope
-        let tk = new AnnotationToolkit(v1);
-
-        // add project to window for debugging
-        window.project = tk.overlay.paperScope.project;
-        
-        tk.addOnceHandler('before-destroy',(ev)=>{
-            ts.annotationStore = tk.toGeoJSON();
-        })
-        let ui=tk.addAnnotationUI({
-            autoOpen:true,
-            addLayerDialog:false,
-
-        });
-        $(ui._layerUI.element).appendTo($('#paper-gui')).on('element-added',(ev)=>{
-            let scrollToElement = $(ev.target);
-            scrollToElement && setTimeout(()=>{
-                scrollToElement[0].scrollIntoView({block: "nearest", inline: "nearest"})
-            }, 0);
-        });
-        $(ui._layerUI.element).find('input.annotation-fill-opacity').val('0.5').trigger('input');
-
-        // $('#current-file').text(`${ts.name} (${ev.page+1} of ${ev.eventSource.tileSources.length})`)
 
     })
     return viewer;
