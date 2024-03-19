@@ -60,7 +60,7 @@ class LayerUI extends OpenSeadragon.EventSource{
      */
     constructor(annotationToolkit){
         super();
-        let self=this;
+        let _this=this;
         this._tk = annotationToolkit
         this.paperScope = this._tk.paperScope;
         this.paperScope.project.on('feature-collection-added',ev=>this._onFeatureCollectionAdded(ev));
@@ -73,6 +73,13 @@ class LayerUI extends OpenSeadragon.EventSource{
             ev.preventDefault();
             this._tk.addEmptyFeatureCollectionGroup();
         });
+
+        this.element.querySelector('.annotation-ui-feature-collections').addEventListener('click', function(){
+            if(this.textContent.trim().length === 0){
+                _this._tk.addEmptyFeatureCollectionGroup();
+            }
+        });
+
         this.element.querySelector('.toggle-annotations').addEventListener('click',() => {
             let hidden = this.element.querySelectorAll('.annotation-ui-feature-collections .feature-collection.annotation-hidden');
             if(hidden.length > 0){
@@ -100,21 +107,21 @@ class LayerUI extends OpenSeadragon.EventSource{
         
         //set up delegated events
 
-        self.element.addEventListener('selected', function(ev){
+        this.element.addEventListener('selected', function(ev){
             if(ev.target.matches('.feature')){
                 ev.stopPropagation();
                 this.classList.add('selected');
                 this.scrollIntoView({block:'nearest'});
             }
         });
-        self.element.addEventListener('deselected', function(ev){
+        this.element.addEventListener('deselected', function(ev){
             if(ev.target.matches('.feature')){
                 ev.stopPropagation();
                 this.classList.remove('selected');
             }
         });
         
-        self.element.addEventListener('click', function(ev){
+        this.element.addEventListener('click', function(ev){
             if(ev.target.matches('.toggle-list')){
                 this.closest('.features').classList.toggle('collapsed');
                 ev.stopPropagation();
@@ -122,20 +129,20 @@ class LayerUI extends OpenSeadragon.EventSource{
             
         });
         
-        self.element.addEventListener('value-changed',function(){
-            self.element.querySelector('.feature.selected').dispatchEvent(new Event('selected'));
-            self.element.querySelector('.feature-collection.active').dispatchEvent(new Event('selected'));
+        this.element.addEventListener('value-changed',() => {
+            this.element.querySelector('.feature.selected').dispatchEvent(new Event('selected'));
+            this.element.querySelector('.feature-collection.active').dispatchEvent(new Event('selected'));
         });
 
-        const totalOpacitySlider= self.element.querySelector('input.annotation-total-opacity');
+        const totalOpacitySlider= this.element.querySelector('input.annotation-total-opacity');
         totalOpacitySlider.addEventListener('input',function(){
             setOpacity(this.value);
         })
         totalOpacitySlider.dispatchEvent(new Event('input'));
 
-        const fillOpacitySlider = self.element.querySelector('input.annotation-fill-opacity');
+        const fillOpacitySlider = this.element.querySelector('input.annotation-fill-opacity');
         fillOpacitySlider.addEventListener('input',function(){
-            self.paperScope.view.fillOpacity = this.value;
+            _this.paperScope.view.fillOpacity = this.value;
         });
         fillOpacitySlider.dispatchEvent(new Event('input'));
 
@@ -145,7 +152,7 @@ class LayerUI extends OpenSeadragon.EventSource{
          * @param {number} o - The opacity value between 0 and 1.
          */
         function setOpacity(o){
-            let status = Array.from(self.element.querySelectorAll('.feature-collection')).reduce(function(ac,el){
+            let status = Array.from(_this.element.querySelectorAll('.feature-collection')).reduce(function(ac,el){
                 if( el.classList.contains('selected') ){
                     ac.selected.push(el);
                 }
