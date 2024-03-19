@@ -40,6 +40,8 @@
 import { EditableContent } from "./utils/editablecontent.mjs";
 import { dialog } from "./utils/dialog.mjs";
 import { datastore} from "./utils/datastore.mjs";
+import { paper } from './paperjs.mjs';
+
 /**
  * The FileDialog class provides options for saving and loading feature collections as GeoJSON, exporting them as SVG or PNG files,
  * and storing them in local storage. It is designed to work with the AnnotationToolKit (atk) object to manage annotations.

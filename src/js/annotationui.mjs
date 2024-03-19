@@ -38,7 +38,7 @@
 
 //styles in annotationui.css
 
-import { addCSS } from './addcss.mjs';
+import { addCSS } from './utils/addcss.mjs';
 import { AnnotationToolbar } from './annotationtoolbar.mjs';
 import { LayerUI } from './layerui.mjs';
 import { FileDialog } from './filedialog.mjs';

@@ -44,6 +44,7 @@ import { DragAndDrop } from './utils/draganddrop.mjs';
 import { Placeholder } from './paperitems/placeholder.mjs';
 import { OpenSeadragon } from './osd-loader.mjs';
 import { convertFaIcons } from './utils/faIcon.mjs';
+import { paper } from './paperjs.mjs';
 
 /**
  * A user interface for managing feature collections. The FeatureCollectionUI class provides a user

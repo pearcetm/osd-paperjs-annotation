@@ -38,7 +38,7 @@
 
 import { OpenSeadragon } from './osd-loader.mjs';
 import { paper } from './paperjs.mjs';
-import { addCSS } from './addcss.mjs';
+import { addCSS } from './utils/addcss.mjs';
 import './paper-extensions.mjs';
 import './osd-extensions.mjs';
 import { makeFaIcon } from './utils/faIcon.mjs';
@@ -244,7 +244,6 @@ class PaperOverlay{
    * @returns {any} The button object.
    */
     addViewerButton(params={}){
-        addCSS('osd-button.css','osd-button');
         const prefixUrl=this.viewer.prefixUrl;
         let button = new OpenSeadragon.Button({
             tooltip: params.tooltip,

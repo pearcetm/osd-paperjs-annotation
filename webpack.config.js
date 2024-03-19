@@ -57,7 +57,7 @@ module.exports = {
                 },
             },
             {
-                test: require.resolve("./src/js/addcss.mjs"),
+                test: require.resolve("./src/js/utils/addcss.mjs"),
                 loader: "imports-loader",
                 options: {
                     type: "module",
