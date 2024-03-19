@@ -62,20 +62,40 @@ const iconDefs = {
     'fa-plus': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><path d="M256 80c0-17.7-14.3-32-32-32s-32 14.3-32 32V224H48c-17.7 0-32 14.3-32 32s14.3 32 32 32H192V432c0 17.7 14.3 32 32 32s32-14.3 32-32V288H400c17.7 0 32-14.3 32-32s-14.3-32-32-32H256V80z"/></svg>',
     'fa-caret-down': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><path d="M137.4 374.6c12.5 12.5 32.8 12.5 45.3 0l128-128c9.2-9.2 11.9-22.9 6.9-34.9s-16.6-19.8-29.6-19.8L32 192c-12.9 0-24.6 7.8-29.6 19.8s-2.2 25.7 6.9 34.9l128 128z"/></svg>',
     'fa-caret-up': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><path d="M182.6 137.4c-12.5-12.5-32.8-12.5-45.3 0l-128 128c-9.2 9.2-11.9 22.9-6.9 34.9s16.6 19.8 29.6 19.8H288c12.9 0 24.6-7.8 29.6-19.8s2.2-25.7-6.9-34.9l-128-128z"/></svg>',
+    'fa-camera':'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><path d="M149.1 64.8L138.7 96H64C28.7 96 0 124.7 0 160V416c0 35.3 28.7 64 64 64H448c35.3 0 64-28.7 64-64V160c0-35.3-28.7-64-64-64H373.3L362.9 64.8C356.4 45.2 338.1 32 317.4 32H194.6c-20.7 0-39 13.2-45.5 32.8zM256 192a96 96 0 1 1 0 192 96 96 0 1 1 0-192z"/></svg>',
 }
 
-const container = document.createElement('div');
-document.querySelector('body').appendChild(container);
-container.style.position = 'absolute';
-container.style.display = 'hidden';
-const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-container.appendChild(svg);
+let setupComplete = false;
 
-let htmlString = '';
-for(const [key,def] of Object.entries(iconDefs)){
-    htmlString += def.replace('<svg', `<symbol id="${key}"`).replace('/svg>', '/symbol>');
+function setupSymbols(){
+    if(setupComplete){
+        return;
+    }
+
+    const body = document.querySelector('body');
+
+    if(body){
+        const container = document.createElement('div');
+        body.appendChild(container);
+        container.style.position = 'absolute';
+        container.style.display = 'none';
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        container.appendChild(svg);
+
+        let htmlString = '';
+        for(const [key,def] of Object.entries(iconDefs)){
+            htmlString += def.replace('<svg', `<symbol id="${key}"`).replace('/svg>', '/symbol>');
+        }
+        svg.innerHTML = htmlString;
+    } else {
+        document.addEventListener("DOMContentLoaded", function() {
+            setupSymbols();
+        });
+    }
 }
-svg.innerHTML = htmlString;
+
+setupSymbols();
+
 
 /**
  * Create an SVG icon from a font-awesome class name. See iconDefs for the list of supported class names.

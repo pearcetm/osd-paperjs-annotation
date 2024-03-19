@@ -57,13 +57,14 @@ class RotationControlOverlay{
         this.dummyTool = new this.overlay.paperScope.Tool();//to capture things like mouseMove, keyDown etc (when actual tool is not active)
         this.dummyTool.activate();
         this._mouseNavEnabledAtActivation = true;
-        overlay.addViewerButton({
+        const button = overlay.addViewerButton({
             faIconClass:'fa-rotate',
             tooltip:'Rotate viewer',
             onClick:()=>{
                 tool.active ? this.deactivate() : this.activate();
             }
         });
+        button.element.querySelector('svg.icon')?.style.setProperty('width','1em');
      
     }
     /**
