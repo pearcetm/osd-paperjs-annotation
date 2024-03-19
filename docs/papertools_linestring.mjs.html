@@ -66,6 +66,8 @@
 
 import { AnnotationUIToolbarBase } from './annotationUITool.mjs';
 import {PolygonTool} from './polygon.mjs';
+import { paper } from '../paperjs.mjs';
+import { makeFaIcon } from '../utils/faIcon.mjs';
 
 /**
  * The LinestringTool class extends the PolygonTool and provides functionality for creating and modifying linestrings.
@@ -103,44 +105,45 @@ class LinestringTool extends PolygonTool{
         });
         self.project.toolLayer.addChild(this.cursor);
 
-        this.extensions.onActivate= function(){
-            self.cursor.radius = self.radius/self.project.getZoom();
-            self.cursor.strokeWidth=1/self.project.getZoom();
-            self.cursor.visible=true;
+        this.clickAction = 'startPath';
+
+        this.extensions.onActivate= ()=>{
+            this.cursor.radius = this.radius/this.project.getZoom();
+            this.cursor.strokeWidth=1/this.project.getZoom();
+            this.refreshCursorVisibility();
             tool.minDistance=4/self.project.getZoom();
             tool.maxDistance=10/self.project.getZoom();
-
-            self.targetLayer.addChild(self.drawingGroup);
         }
-        this.extensions.onDeactivate = function(finished){
-            self.cursor.visible=false;
+
+        this.extensions.onDeactivate = finished => {
+            this.cursor.visible=false;
             if(finished){
-                self.finish();
+                this.finish();
             } 
-
-            self.project.toolLayer.addChild(self.drawingGroup);
         }
-        /**
-         * Set the brush radius for the linestring tool.
-         * This function updates the brush radius used for drawing linestrings.
-         * The new radius is adjusted according to the current zoom level.
-         * @param {number} r - The new brush radius value to set.
-         * 
-         */        
-        this.setRadius=function(r){
-            this.radius = r;
-            this.cursor.radius=r/this.project.getZoom();
-        }
-
-        tool.onMouseWheel = function(ev){
-            // console.log('Wheel event',ev);
+        
+        tool.onMouseWheel = ev => {
             ev.preventDefault();
             ev.stopPropagation();
             if(ev.deltaY==0) return;//ignore lateral "scrolls"
-            // self.project.broadcast('brush-radius',{larger:ev.deltaY > 0});
-            self.toolbarControl.updateBrushRadius({larger:ev.deltaY &lt; 0});
+            
+            this.toolbarControl.updateBrushRadius({larger:ev.deltaY &lt; 0});
         }
     }
+
+    /**
+     * Set the brush radius for the linestring tool.
+     * This function updates the brush radius used for drawing linestrings.
+     * The new radius is adjusted according to the current zoom level.
+     * @param {number} r - The new brush radius value to set.
+     * 
+     */        
+    setRadius(r){
+        this.radius = r;
+        this.cursor.radius= r / this.project.getZoom();
+
+    }
+
 
     onMouseDown(ev){
         this.draggingSegment=null;
@@ -149,30 +152,26 @@ class LinestringTool extends PolygonTool{
             this.itemToCreate.initializeGeoJSONFeature('MultiLineString');
             this.refreshItems();
             
-            this.startNewPath(ev)
-            // console.log('initialized item')
+            this.startNewPath(ev);
             return;
         }
         
-        let dr = this.drawing();
-        let hitResult = (dr&amp;&amp;dr.path ||this.item).hitTest(ev.point,{fill:false,stroke:true,segments:true,tolerance:(5/this.project.getZoom())})
+        let hitResult = this.item?.hitTest(ev.point,{fill:false,stroke:false,segments:true,tolerance:this.getTolerance(5)})
         if(hitResult){
             //if erasing and hitResult is a segment, hitResult.segment.remove()
             if(hitResult.type=='segment' &amp;&amp; this.eraseMode){
                 hitResult.segment.remove();
             }
-            //if hitResult is the last segment and NOT erasing, finish the current path
-            else if(hitResult.type=='segment' &amp;&amp; dr &amp;&amp; hitResult.segment==dr.path.lastSegment){
-                this.finishCurrentPath();
-            }
+            
             //if hitResult is a segment and NOT erasing, save reference to hitResult.segment for dragging it
             else if(hitResult.type=='segment'){
                 this.draggingSegment = hitResult.segment;
             }
+
             //if hitResult is a stroke, add a point (unless in erase mode):
             else if(hitResult.type=='stroke' &amp;&amp; !this.eraseMode){
                 let insertIndex = hitResult.location.index +1;
-                let ns = hitResult.item.insert(insertIndex, ev.point);
+                hitResult.item.insert(insertIndex, ev.point);
             }
         }
         else{ //not drawing yet, but start now!
@@ -184,12 +183,24 @@ class LinestringTool extends PolygonTool{
     
     onMouseMove(ev){
         this.cursor.position=ev.original.point;
-        PolygonTool.prototype.onMouseMove.call(this, ev);
+
+        let hitResult = this.item?.hitTest(ev.point,{fill:false,stroke:false,segments:true,tolerance:this.getTolerance(5)})
+        if(hitResult){
+            let action = hitResult.type + (this.eraseMode ? '-erase' : '');
+            this.project.overlay.addClass('tool-action').setAttribute('data-tool-action',action);
+            this.clickAction = action;
+        }
+        else{
+            this.project.overlay.removeClass('tool-action').setAttribute('data-tool-action','');
+            this.clickAction = 'startPath';
+        }
+        
+        this.refreshCursorVisibility();
     }
     
     onMouseDrag(ev){
         this.cursor.position=ev.original.point;
-        // superOnMouseDrag(ev);
+        
         PolygonTool.prototype.onMouseDrag.call(this, ev);
         let dr = this.drawing();
         dr &amp;&amp; (dr.path.segments = this.simplifier.simplify(dr.path.segments.map(s=>s.point)));
@@ -214,8 +225,13 @@ class LinestringTool extends PolygonTool{
         this.drawingGroup.visible=true;
         this.drawingGroup.selected=true;
         this.drawingGroup.selectedColor= this.eraseMode ? 'red' : null;
-        this.drawing().path.set({strokeWidth:this.cursor.radius*2, strokeColor:this.item.strokeColor})
-        console.log('started new path')
+        let path = this.drawing().path;
+        path.set({
+            strokeWidth:this.radius  * 2 / this.targetLayer.scaling.x / this.project.getZoom(),
+            strokeColor:this.item.strokeColor,
+            strokeJoin: 'round',
+            strokeCap: 'round',
+        });
     }
     //override finishCurrentPath so it doesn't close the path
     /**
@@ -232,6 +248,10 @@ class LinestringTool extends PolygonTool{
             this.item.addChild(this.drawing().path);
         }
         this.drawingGroup.removeChildren();
+    }
+
+    refreshCursorVisibility(){
+        this.cursor.visible = !this.eraseMode &amp;&amp; this.clickAction==='startPath';
     }
 }
 export{LinestringTool};
@@ -255,19 +275,38 @@ class LinestringToolbar extends AnnotationUIToolbarBase{
      */
     constructor(linestringTool){
         super(linestringTool);
-        let html = $('&lt;i>',{class:'fa-solid fa-pen-nib'})[0];
-        this.button.configure(html,'Linestring Tool');
+        this.linestringTool = linestringTool;
+
+        const i = makeFaIcon('fa-pen-nib');
+        this.button.configure(i,'Linestring Tool');
         
-        let fdd = $('&lt;div>',{'data-tool':'linestring',class:'dropdown linestring-toolbar'}).prependTo(this.dropdown);
+        const fdd = document.createElement('div');
+        fdd.classList.add('dropdown','linestring-toolbar');
+        fdd.setAttribute('data-tool','linestring');
+        this.dropdown.appendChild(fdd);
+        const label = document.createElement('label');
+        label.innerHTML = 'Set pen width:';
+        fdd.appendChild(label);
+
+
         let defaultRadius=4;
-        $('&lt;label>').text('Set pen width:').appendTo(fdd);
-        this.rangeInput=$('&lt;input>',{type:'range',min:.2,max:12,step:0.1,value:defaultRadius}).appendTo(fdd).on('change',function(){
-            linestringTool.setRadius($(this).val());
+        
+        this.rangeInput = document.createElement('input');
+        fdd.appendChild(this.rangeInput);
+        Object.assign(this.rangeInput, {type:'range', min:0.2, max:12, step:0.1, value:defaultRadius});
+        this.rangeInput.addEventListener('change', function(){
+            linestringTool.setRadius(this.value);
         });
-        this.eraseButton=$('&lt;button>',{'data-action':'erase'}).text('Eraser').appendTo(fdd).on('click',function(){
-            let erasing = $(this).toggleClass('active').hasClass('active');
+
+        this.eraseButton = document.createElement('button');
+        fdd.appendChild(this.eraseButton);
+        this.eraseButton.innerHTML = 'Eraser';
+        this.eraseButton.setAttribute('data-action','erase');
+        this.eraseButton.addEventListener('click',function(){
+            let erasing = this.classList.toggle('active');
             linestringTool.setEraseMode(erasing);
         });
+        
         setTimeout(()=>linestringTool.setRadius(defaultRadius));
     }
     /**
@@ -282,10 +321,12 @@ class LinestringToolbar extends AnnotationUIToolbarBase{
      */
     updateBrushRadius(update){
         if(update.larger){
-            this.rangeInput.val(parseFloat(this.rangeInput.val())+parseFloat(this.rangeInput.attr('step'))).trigger('change');
+            this.rangeInput.value = parseFloat(this.rangeInput.value)+parseFloat(this.rangeInput.step);
+            this.rangeInput.dispatchEvent(new Event('change'));
         }
         else{
-            this.rangeInput.val(parseFloat(this.rangeInput.val())-parseFloat(this.rangeInput.attr('step'))).trigger('change');
+            this.rangeInput.value = parseFloat(this.rangeInput.value)-parseFloat(this.rangeInput.step);
+            this.rangeInput.dispatchEvent(new Event('change'));
         }
     }
         /**
@@ -309,7 +350,8 @@ class LinestringToolbar extends AnnotationUIToolbarBase{
      * @param {boolean} erasing - A boolean value indicating whether the erase mode should be enabled or disabled.
      */
     setEraseMode(erasing){
-        erasing ? this.eraseButton.addClass('active') : this.eraseButton.removeClass('active');
+        erasing ? this.eraseButton.classList.add('active') : this.eraseButton.classList.remove('active');
+        this.linestringTool.refreshCursorVisibility();
     }
 }</code></pre>
         </article>
@@ -321,13 +363,13 @@ class LinestringToolbar extends AnnotationUIToolbarBase{
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="OSDPaperjsAnnotation.html">OSDPaperjsAnnotation</a></li></ul><h3>Classes</h3><ul><li><a href="EditableContent.html">EditableContent</a></li><li><a href="Morph.html">Morph</a></li><li><a href="OSDPaperjsAnnotation.AnnotationItem.html">AnnotationItem</a></li><li><a href="OSDPaperjsAnnotation.AnnotationItemFactory.html">AnnotationItemFactory</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolbar.html">AnnotationToolbar</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolkit.html">AnnotationToolkit</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUI.html">AnnotationUI</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUITool.html">AnnotationUITool</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUITool.AnnotationUIToolbarBase.html">AnnotationUIToolbarBase</a></li><li><a href="OSDPaperjsAnnotation.BrushTool.html">BrushTool</a></li><li><a href="OSDPaperjsAnnotation.BrushTool.BrushToolbar.html">BrushToolbar</a></li><li><a href="OSDPaperjsAnnotation.DefaultTool.html">DefaultTool</a></li><li><a href="OSDPaperjsAnnotation.DefaultTool.DefaultToolbar.html">DefaultToolbar</a></li><li><a href="OSDPaperjsAnnotation.Ellipse.html">Ellipse</a></li><li><a href="OSDPaperjsAnnotation.EllipseTool.html">EllipseTool</a></li><li><a href="OSDPaperjsAnnotation.EllipseTool.EllipseToolbar.html">EllipseToolbar</a></li><li><a href="OSDPaperjsAnnotation.FeatureCollectionUI.html">FeatureCollectionUI</a></li><li><a href="OSDPaperjsAnnotation.FeatureUI.html">FeatureUI</a></li><li><a href="OSDPaperjsAnnotation.FileDialog.html">FileDialog</a></li><li><a href="OSDPaperjsAnnotation.LayerUI.html">LayerUI</a></li><li><a href="OSDPaperjsAnnotation.Linestring.html">Linestring</a></li><li><a href="OSDPaperjsAnnotation.LinestringTool.html">LinestringTool</a></li><li><a href="OSDPaperjsAnnotation.LinestringTool.LinestringToolbar.html">LinestringToolbar</a></li><li><a href="OSDPaperjsAnnotation.MultiLinestring.html">MultiLinestring</a></li><li><a href="OSDPaperjsAnnotation.MultiPolygon.html">MultiPolygon</a></li><li><a href="OSDPaperjsAnnotation.PaperOverlay.html">PaperOverlay</a></li><li><a href="OSDPaperjsAnnotation.Placeholder.html">Placeholder</a></li><li><a href="OSDPaperjsAnnotation.Point.html">Point</a></li><li><a href="OSDPaperjsAnnotation.PointText.html">PointText</a></li><li><a href="OSDPaperjsAnnotation.PointTextTool.html">PointTextTool</a></li><li><a href="OSDPaperjsAnnotation.PointTextTool.PointTextToolbar.html">PointTextToolbar</a></li><li><a href="OSDPaperjsAnnotation.PointTool.html">PointTool</a></li><li><a href="OSDPaperjsAnnotation.PointTool.PointToolbar.html">PointToolbar</a></li><li><a href="OSDPaperjsAnnotation.PolygonTool.html">PolygonTool</a></li><li><a href="OSDPaperjsAnnotation.PolygonTool.PolygonToolbar.html">PolygonToolbar</a></li><li><a href="OSDPaperjsAnnotation.Raster.html">Raster</a></li><li><a href="OSDPaperjsAnnotation.RasterTool.html">RasterTool</a></li><li><a href="OSDPaperjsAnnotation.RasterTool.RasterToolbar.html">RasterToolbar</a></li><li><a href="OSDPaperjsAnnotation.Rectangle.html">Rectangle</a></li><li><a href="OSDPaperjsAnnotation.RectangleTool.html">RectangleTool</a></li><li><a href="OSDPaperjsAnnotation.RectangleTool_RectToolbar.html">RectToolbar</a></li><li><a href="OSDPaperjsAnnotation.RotationControlOverlay.html">RotationControlOverlay</a></li><li><a href="OSDPaperjsAnnotation.RotationControlTool.html">RotationControlTool</a></li><li><a href="OSDPaperjsAnnotation.RotationControlWidget.html">RotationControlWidget</a></li><li><a href="OSDPaperjsAnnotation.StyleTool.html">StyleTool</a></li><li><a href="OSDPaperjsAnnotation.StyleTool.StyleToolbar.html">StyleToolbar</a></li><li><a href="OSDPaperjsAnnotation.ToolBase.html">ToolBase</a></li><li><a href="OSDPaperjsAnnotation.TransformTool.html">TransformTool</a></li><li><a href="OSDPaperjsAnnotation.TransformTool.TransformToolbar.html">TransformToolbar</a></li><li><a href="OSDPaperjsAnnotation.WandTool.html">WandTool</a></li><li><a href="OSDPaperjsAnnotation.WandTool.WandToolbar.html">WandToolbar</a></li><li><a href="SelectTool.html">SelectTool</a></li></ul><h3>Global</h3><ul><li><a href="global.html#_paper">_paper</a></li><li><a href="global.html#adaptiveOffsetCurve">adaptiveOffsetCurve</a></li><li><a href="global.html#connectAdjacentBezier">connectAdjacentBezier</a></li><li><a href="global.html#connectBeziers">connectBeziers</a></li><li><a href="global.html#getPointLineIntersections">getPointLineIntersections</a></li><li><a href="global.html#localImportsCompleted">localImportsCompleted</a></li><li><a href="global.html#makeRoundJoin">makeRoundJoin</a></li><li><a href="global.html#normalize">normalize</a></li><li><a href="global.html#offsetSegment">offsetSegment</a></li><li><a href="global.html#osd">osd</a></li><li><a href="global.html#removeIntersection">removeIntersection</a></li><li><a href="global.html#removeOutsiders">removeOutsiders</a></li><li><a href="global.html#updateFillOpacity">updateFillOpacity</a></li><li><a href="global.html#updateStrokeOpacity">updateStrokeOpacity</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="OSDPaperjsAnnotation.html">OSDPaperjsAnnotation</a></li></ul><h3>Classes</h3><ul><li><a href="Dialog.html">Dialog</a></li><li><a href="DragAndDrop.html">DragAndDrop</a></li><li><a href="Morph.html">Morph</a></li><li><a href="OSDPaperjsAnnotation.AnnotationItem.html">AnnotationItem</a></li><li><a href="OSDPaperjsAnnotation.AnnotationItemFactory.html">AnnotationItemFactory</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolbar.html">AnnotationToolbar</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolkit.html">AnnotationToolkit</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUI.html">AnnotationUI</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUITool.html">AnnotationUITool</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUITool.AnnotationUIToolbarBase.html">AnnotationUIToolbarBase</a></li><li><a href="OSDPaperjsAnnotation.BrushTool.html">BrushTool</a></li><li><a href="OSDPaperjsAnnotation.BrushTool.BrushToolbar.html">BrushToolbar</a></li><li><a href="OSDPaperjsAnnotation.DefaultTool.html">DefaultTool</a></li><li><a href="OSDPaperjsAnnotation.DefaultTool.DefaultToolbar.html">DefaultToolbar</a></li><li><a href="OSDPaperjsAnnotation.Ellipse.html">Ellipse</a></li><li><a href="OSDPaperjsAnnotation.EllipseTool.html">EllipseTool</a></li><li><a href="OSDPaperjsAnnotation.EllipseTool.EllipseToolbar.html">EllipseToolbar</a></li><li><a href="OSDPaperjsAnnotation.FeatureCollectionUI.html">FeatureCollectionUI</a></li><li><a href="OSDPaperjsAnnotation.FeatureUI.html">FeatureUI</a></li><li><a href="OSDPaperjsAnnotation.FileDialog.html">FileDialog</a></li><li><a href="OSDPaperjsAnnotation.LayerUI.html">LayerUI</a></li><li><a href="OSDPaperjsAnnotation.Linestring.html">Linestring</a></li><li><a href="OSDPaperjsAnnotation.LinestringTool.html">LinestringTool</a></li><li><a href="OSDPaperjsAnnotation.LinestringTool.LinestringToolbar.html">LinestringToolbar</a></li><li><a href="OSDPaperjsAnnotation.MultiLinestring.html">MultiLinestring</a></li><li><a href="OSDPaperjsAnnotation.MultiPolygon.html">MultiPolygon</a></li><li><a href="OSDPaperjsAnnotation.PaperOverlay.html">PaperOverlay</a></li><li><a href="OSDPaperjsAnnotation.Placeholder.html">Placeholder</a></li><li><a href="OSDPaperjsAnnotation.Point.html">Point</a></li><li><a href="OSDPaperjsAnnotation.PointText.html">PointText</a></li><li><a href="OSDPaperjsAnnotation.PointTextTool.html">PointTextTool</a></li><li><a href="OSDPaperjsAnnotation.PointTextTool.PointTextToolbar.html">PointTextToolbar</a></li><li><a href="OSDPaperjsAnnotation.PointTool.html">PointTool</a></li><li><a href="OSDPaperjsAnnotation.PointTool.PointToolbar.html">PointToolbar</a></li><li><a href="OSDPaperjsAnnotation.PolygonTool.html">PolygonTool</a></li><li><a href="OSDPaperjsAnnotation.PolygonTool.PolygonToolbar.html">PolygonToolbar</a></li><li><a href="OSDPaperjsAnnotation.Raster.html">Raster</a></li><li><a href="OSDPaperjsAnnotation.RasterTool.html">RasterTool</a></li><li><a href="OSDPaperjsAnnotation.RasterTool.RasterToolbar.html">RasterToolbar</a></li><li><a href="OSDPaperjsAnnotation.Rectangle.html">Rectangle</a></li><li><a href="OSDPaperjsAnnotation.RectangleTool.html">RectangleTool</a></li><li><a href="OSDPaperjsAnnotation.RectangleTool_RectToolbar.html">RectToolbar</a></li><li><a href="OSDPaperjsAnnotation.RotationControlOverlay.html">RotationControlOverlay</a></li><li><a href="OSDPaperjsAnnotation.RotationControlTool.html">RotationControlTool</a></li><li><a href="OSDPaperjsAnnotation.RotationControlWidget.html">RotationControlWidget</a></li><li><a href="OSDPaperjsAnnotation.StyleTool.html">StyleTool</a></li><li><a href="OSDPaperjsAnnotation.StyleTool.StyleToolbar.html">StyleToolbar</a></li><li><a href="OSDPaperjsAnnotation.ToolBase.html">ToolBase</a></li><li><a href="OSDPaperjsAnnotation.TransformTool.html">TransformTool</a></li><li><a href="OSDPaperjsAnnotation.TransformTool.TransformToolbar.html">TransformToolbar</a></li><li><a href="OSDPaperjsAnnotation.WandTool.html">WandTool</a></li><li><a href="OSDPaperjsAnnotation.WandTool.WandToolbar.html">WandToolbar</a></li><li><a href="SelectTool.html">SelectTool</a></li></ul><h3>Global</h3><ul><li><a href="global.html#_paper">_paper</a></li><li><a href="global.html#adaptiveOffsetCurve">adaptiveOffsetCurve</a></li><li><a href="global.html#connectAdjacentBezier">connectAdjacentBezier</a></li><li><a href="global.html#connectBeziers">connectBeziers</a></li><li><a href="global.html#convertFaIcons">convertFaIcons</a></li><li><a href="global.html#getPointLineIntersections">getPointLineIntersections</a></li><li><a href="global.html#iconDefs">iconDefs</a></li><li><a href="global.html#localImportsCompleted">localImportsCompleted</a></li><li><a href="global.html#makeFaIcon">makeFaIcon</a></li><li><a href="global.html#makeRoundJoin">makeRoundJoin</a></li><li><a href="global.html#normalize">normalize</a></li><li><a href="global.html#offsetSegment">offsetSegment</a></li><li><a href="global.html#osd">osd</a></li><li><a href="global.html#removeIntersection">removeIntersection</a></li><li><a href="global.html#removeOutsiders">removeOutsiders</a></li><li><a href="global.html#updateFillOpacity">updateFillOpacity</a></li><li><a href="global.html#updateStrokeOpacity">updateStrokeOpacity</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.0</a> on Tue Jan 02 2024 21:41:45 GMT-0500 (Eastern Standard Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.0</a> on Mon Mar 18 2024 22:07:42 GMT-0400 (Eastern Daylight Time)
 </footer>
 
 <script> prettyPrint(); </script>

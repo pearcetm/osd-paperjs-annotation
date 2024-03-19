@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Class: BrushToolbar</title>
+    <title>JSDoc: Class: Dialog</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,7 +17,7 @@
 
 <div id="main">
 
-    <h1 class="page-title">Class: BrushToolbar</h1>
+    <h1 class="page-title">Class: Dialog</h1>
 
     
 
@@ -28,11 +28,9 @@
 
 <header>
     
-        <h2><span class="attribs"><span class="type-signature"></span></span>
-            <span class="ancestors"><a href="OSDPaperjsAnnotation.html">OSDPaperjsAnnotation</a><a href="OSDPaperjsAnnotation.BrushTool.html">.BrushTool</a>.</span>BrushToolbar<span class="signature">(brushTool)</span><span class="type-signature"></span></h2>
+        <h2><span class="attribs"><span class="type-signature"></span></span>Dialog<span class="signature">(innerHTML)</span><span class="type-signature"></span></h2>
         
-            <div class="class-description">Represents the Brush Tool's toolbar in the Annotation Toolkit program.
-This toolbar provides options to set the brush radius and toggle Erase Mode.</div>
+            <div class="class-description">Bare-bones dialog implementation of a dialog</div>
         
     
 </header>
@@ -47,16 +45,12 @@ This toolbar provides options to set the brush radius and toggle Erase Mode.</di
     
 
     
-    <h4 class="name" id="BrushToolbar"><span class="type-signature"></span>new BrushToolbar<span class="signature">(brushTool)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="Dialog"><span class="type-signature"></span>new Dialog<span class="signature">(innerHTML)</span><span class="type-signature"></span></h4>
     
 
     
 
 
-
-<div class="description">
-    Create a BrushToolbar instance.
-</div>
 
 
 
@@ -91,13 +85,13 @@ This toolbar provides options to set the brush radius and toggle Erase Mode.</di
 
         <tr>
             
-                <td class="name"><code>brushTool</code></td>
+                <td class="name"><code>innerHTML</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type">BrushTool</span>
+<span class="param-type">String</span>
 
 
             
@@ -107,7 +101,7 @@ This toolbar provides options to set the brush radius and toggle Erase Mode.</di
 
             
 
-            <td class="description last">The parent BrushTool instance.</td>
+            <td class="description last"></td>
         </tr>
 
     
@@ -148,7 +142,7 @@ This toolbar provides options to set the brush radius and toggle Erase Mode.</di
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="papertools_brush.mjs.html">papertools/brush.mjs</a>, <a href="papertools_brush.mjs.html#line261">line 261</a>
+        <a href="utils_dialog.mjs.html">utils/dialog.mjs</a>, <a href="utils_dialog.mjs.html#line6">line 6</a>
     </li></ul></dd>
     
 
@@ -182,490 +176,11 @@ This toolbar provides options to set the brush radius and toggle Erase Mode.</di
     </div>
 
     
-        <h3 class="subsection-title">Extends</h3>
 
-        
-
-
-    <ul>
-        <li>AnnotationUIToolbarBase</li>
-    </ul>
-
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-        <h3 class="subsection-title">Methods</h3>
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="isEnabledForMode"><span class="type-signature"></span>isEnabledForMode<span class="signature">(mode)</span><span class="type-signature"> &rarr; {boolean}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    Check if the Brush Tool is enabled for the given mode.
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>mode</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">The current mode of the Annotation Toolkit program.</td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="papertools_brush.mjs.html">papertools/brush.mjs</a>, <a href="papertools_brush.mjs.html#line307">line 307</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-<div class="param-desc">
-    A flag indicating if the Brush Tool is enabled for the given mode.
-</div>
-
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">boolean</span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="setEraseMode"><span class="type-signature"></span>setEraseMode<span class="signature">(erasing)</span><span class="type-signature"></span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    Set the Erase Mode on the toolbar.
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>erasing</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">boolean</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">A flag indicating whether the Erase Mode is active or not.</td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="papertools_brush.mjs.html">papertools/brush.mjs</a>, <a href="papertools_brush.mjs.html#line329">line 329</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="updateBrushRadius"><span class="type-signature"></span>updateBrushRadius<span class="signature">(update)</span><span class="type-signature"></span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    Update the brush radius based on the provided update.
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>update</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Object</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">The update object specifying whether to make the brush radius larger or smaller.</td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-    <h5 class="subsection-title">Properties:</h5>
-
-    
-
-<table class="props">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>update.larger</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">boolean</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">A flag indicating whether to make the brush radius larger or smaller.</td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
     
 
     
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="papertools_brush.mjs.html">papertools/brush.mjs</a>, <a href="papertools_brush.mjs.html#line315">line 315</a>
-    </li></ul></dd>
     
 
     
@@ -673,28 +188,7 @@ This toolbar provides options to set the brush radius and toggle Erase Mode.</di
     
 
     
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
-        
     
 
     

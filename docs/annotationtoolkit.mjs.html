@@ -85,6 +85,7 @@ import { Ellipse } from './paperitems/ellipse.mjs';
 //property definitions
 
 Object.defineProperty(paper.Item.prototype, 'displayName', displayNamePropertyDef());
+Object.defineProperty(paper.Item.prototype, 'featureCollection', featureCollectionPropertyDef());
 Object.defineProperty(paper.TextItem.prototype, 'content', textItemContentPropertyDef());
 Object.defineProperty(paper.Project.prototype, 'descendants', descendantsDefProject());
 
@@ -127,6 +128,7 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
      * @param {object} [opts]
      * @param {object} [opts.addUI] a configuration object for the UI, if desired
      * @param {object} [opts.overlay] a PaperOverlay object to use
+     * @param {object} [opts.destroyOnViewerClose] whether to destroy the toolkit and its overlay when the viewer closes
      */
     constructor(openSeadragonViewer, opts = {}) {
         super();
@@ -139,7 +141,7 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
         this._defaultOptions = {
             addUI: false,
             overlay: null,
-            // initializeFeatureCollections:true,
+            destroyOnViewerClose: false,
         }
         this.options = Object.assign({}, this._defaultOptions, opts);
         
@@ -155,7 +157,10 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
         };
         this.viewer = openSeadragonViewer;
 
-        this.viewer.addOnceHandler('close', ()=>this.destroy()); //TO DO: make this an option, not a hard-coded default
+        if(this.options.destroyOnViewerClose){
+            this.viewer.addOnceHandler('close', ()=>this.destroy());
+        }
+        
 
         if(this.options.overlay){
             if(this.options.overlay instanceof PaperOverlay){
@@ -287,7 +292,8 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
         this.paperScope.project.emit('items-changed');
     }
     /**
-     * Get the feature collection layers in the toolkit.
+     * Get the feature collection groups that the toolkit is managing.
+     * @param {paper.Layer} [parentLayer]  The layer to find feature collections within. If not specified, finds across all layers.
      * @returns {paper.Group[]} The array of paper groups representing feature collections.
      */
     getFeatureCollectionGroups(parentLayer){
@@ -301,16 +307,31 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
     getFeatures(){
         return this.paperScope.project.getItems({match:i=>i.isGeoJSONFeature});
     }
+     /**
+     * Register an item as a GeoJSONFeature that the toolkit should track
+     * @param {paper.Item} item - The item to track as a geoJSONFeature
+     */
+    static registerFeature(item){
+        item.isGeoJSONFeature = true;
+    }
+     /**
+     * Register a group as a GeoJSONFeatureCollection that the toolkit should track
+     * @param {paper.Group} group - The group to track as a geoJSONFeatureCollection
+     */
+    static registerFeatureCollection(group){
+        group.isGeoJSONFeatureCollection = true;
+    }
+
     /**
      * Convert the feature collections in the toolkit to GeoJSON objects.
-     * @param {boolean} [pixelCoordinates] Whether the items should be scaled to the pixel coordinates of the image (true - default) or normalized by tiledImage or viewport width (false)
+     * @param {boolean} [imageCoordinates] Whether the items should be scaled to the pixel coordinates of the image (true - default) or normalized by tiledImage or viewport width (false)
      * @returns {object[]} The array of GeoJSON objects representing feature collections.
      */
-    toGeoJSON(pixelCoordinates = true){
+    toGeoJSON(imageCoordinates = true){
         //find all featureCollection items and convert to GeoJSON compatible structures
         return this.paperScope.project.getItems({match:i=>i.isGeoJSONFeatureCollection}).map(grp=>{
             let scaleFactor;
-            if(pixelCoordinates){
+            if(imageCoordinates){
                 scaleFactor = (grp.layer.tiledImage ? grp.layer.tiledImage.source.width : this.viewer.drawer.getCanvasSize().x) / this.overlay.scaleFactor;
                 grp.scale(scaleFactor, {x: 0, y: 0});
             }
@@ -323,12 +344,13 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
                 },
                 label:grp.displayName,
             }
-            if(pixelCoordinates){
+            if(imageCoordinates){
                 grp.scale(1/scaleFactor, {x: 0, y: 0});
             }
             return geoJSON;
         })
     }
+    
     /**
      * Convert the feature collections in the project to a JSON string.
      * @param {function} [replacer] - The replacer function for JSON.stringify().
@@ -345,7 +367,7 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
      * @param {OpenSeadragon.TiledImage | OpenSeadragon.Viewport | false} [parentImage] - Which image (or viewport) to add the object to
      * @param {boolean} [pixelCoordinates]
      */
-    loadGeoJSON(geoJSON, replaceCurrent, parentImage, pixelCoordinates = true){
+    loadGeoJSON(geoJSON, replaceCurrent, parentImage){
         let parentLayer = parentImage ? parentImage.paperLayer : false;
         if(replaceCurrent){
             this.getFeatureCollectionGroups(parentImage).forEach(grp=>grp.remove());
@@ -364,10 +386,6 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
                     let item = paper.Item.fromGeoJSON(feature);
                     group.addChild(item);
                 })
-                if(pixelCoordinates){
-                    group.scale(this.overlay.scaleFactor/group.layer.tiledImage.source.width, {x: 0, y: 0});
-                    // group.scale(this.overlay.scaleFactor/group.layer.tiledImage.source.width);
-                }
             }
             else{
                 console.warn('GeoJSON object not loaded: wrong type. Only FeatureCollection objects are currently supported');
@@ -382,6 +400,7 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
     addEmptyFeatureCollectionGroup(){
         return this._createFeatureCollectionGroup();
     }
+    
     /**
      * Create a new feature collection group in the project scope.
      * @private
@@ -417,7 +436,7 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
 
         let grp = new paper.Group();
         parent.addChild(grp);
-        grp.isGeoJSONFeatureCollection = true;
+        AnnotationToolkit.registerFeatureCollection(grp);
         let grpNum = this.getFeatureCollectionGroups().length;
         grp.name = grp.displayName = displayLabel!==null ? displayLabel : `Annotation Group ${grpNum}`;
         grp.defaultStyle = new paper.Style(this.paperScope.project.defaultStyle);
@@ -425,6 +444,13 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
         return grp;
     }
 
+    /**
+     * Make a placeholder annotation item
+     * @param {Object} style - options (e.g strokeColor) to pass to the paper item
+     */
+    makePlaceholderItem(style){
+        return new Placeholder(style);
+    }
     
 };
 
@@ -461,8 +487,8 @@ function applyBounds(boundingItems) {
         let bounds = boundingItems[0];
         intersection = bounds.intersect(this, { insert: false });
     }
-    else if (bounding.length > 1) {
-        let bounds = new paper.CompoundPath(bounding.map(b => b.clone().children).flat());
+    else if (boundingItems.length > 1) {
+        let bounds = new paper.CompoundPath(boundingItems.map(b => b.clone().children).flat());
         intersection = bounds.intersect(this, { insert: false });
         bounds.remove();
     }
@@ -570,6 +596,18 @@ function displayNamePropertyDef(){
     }
 }
 
+/**
+ * Define the featureCollection property for a paper item object.
+ * @private
+ */
+function featureCollectionPropertyDef(){
+    return {
+        get: function fc(){
+            return this.hierarchy.filter(i=>i.isGeoJSONFeatureCollection)[0];
+        }
+    }
+}
+
 
 /**
  * Define the descendants property for a paper project object.
@@ -636,8 +674,8 @@ function getInsertChildrenDef(){
  * Define the fill opacity property for a paper style object.
  *  @private
  *  @returns {object} The property descriptor object with the following properties:
- * - get: A function that returns the fill opacity value (a number between 0 and 1).
- * - set: A function that sets the fill opacity value (a number between 0 and 1).
+ * - get: A function that returns the text of the item.
+ * - set: A function that sets the text of the item and causes the 'content-changed' event to be fired.
  */
 function textItemContentPropertyDef(){
     let _set = paper.TextItem.prototype._setContent || Object.getOwnPropertyDescriptor(paper.TextItem.prototype, 'content').set;
@@ -661,13 +699,13 @@ function textItemContentPropertyDef(){
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="OSDPaperjsAnnotation.html">OSDPaperjsAnnotation</a></li></ul><h3>Classes</h3><ul><li><a href="EditableContent.html">EditableContent</a></li><li><a href="Morph.html">Morph</a></li><li><a href="OSDPaperjsAnnotation.AnnotationItem.html">AnnotationItem</a></li><li><a href="OSDPaperjsAnnotation.AnnotationItemFactory.html">AnnotationItemFactory</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolbar.html">AnnotationToolbar</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolkit.html">AnnotationToolkit</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUI.html">AnnotationUI</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUITool.html">AnnotationUITool</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUITool.AnnotationUIToolbarBase.html">AnnotationUIToolbarBase</a></li><li><a href="OSDPaperjsAnnotation.BrushTool.html">BrushTool</a></li><li><a href="OSDPaperjsAnnotation.BrushTool.BrushToolbar.html">BrushToolbar</a></li><li><a href="OSDPaperjsAnnotation.DefaultTool.html">DefaultTool</a></li><li><a href="OSDPaperjsAnnotation.DefaultTool.DefaultToolbar.html">DefaultToolbar</a></li><li><a href="OSDPaperjsAnnotation.Ellipse.html">Ellipse</a></li><li><a href="OSDPaperjsAnnotation.EllipseTool.html">EllipseTool</a></li><li><a href="OSDPaperjsAnnotation.EllipseTool.EllipseToolbar.html">EllipseToolbar</a></li><li><a href="OSDPaperjsAnnotation.FeatureCollectionUI.html">FeatureCollectionUI</a></li><li><a href="OSDPaperjsAnnotation.FeatureUI.html">FeatureUI</a></li><li><a href="OSDPaperjsAnnotation.FileDialog.html">FileDialog</a></li><li><a href="OSDPaperjsAnnotation.LayerUI.html">LayerUI</a></li><li><a href="OSDPaperjsAnnotation.Linestring.html">Linestring</a></li><li><a href="OSDPaperjsAnnotation.LinestringTool.html">LinestringTool</a></li><li><a href="OSDPaperjsAnnotation.LinestringTool.LinestringToolbar.html">LinestringToolbar</a></li><li><a href="OSDPaperjsAnnotation.MultiLinestring.html">MultiLinestring</a></li><li><a href="OSDPaperjsAnnotation.MultiPolygon.html">MultiPolygon</a></li><li><a href="OSDPaperjsAnnotation.PaperOverlay.html">PaperOverlay</a></li><li><a href="OSDPaperjsAnnotation.Placeholder.html">Placeholder</a></li><li><a href="OSDPaperjsAnnotation.Point.html">Point</a></li><li><a href="OSDPaperjsAnnotation.PointText.html">PointText</a></li><li><a href="OSDPaperjsAnnotation.PointTextTool.html">PointTextTool</a></li><li><a href="OSDPaperjsAnnotation.PointTextTool.PointTextToolbar.html">PointTextToolbar</a></li><li><a href="OSDPaperjsAnnotation.PointTool.html">PointTool</a></li><li><a href="OSDPaperjsAnnotation.PointTool.PointToolbar.html">PointToolbar</a></li><li><a href="OSDPaperjsAnnotation.PolygonTool.html">PolygonTool</a></li><li><a href="OSDPaperjsAnnotation.PolygonTool.PolygonToolbar.html">PolygonToolbar</a></li><li><a href="OSDPaperjsAnnotation.Raster.html">Raster</a></li><li><a href="OSDPaperjsAnnotation.RasterTool.html">RasterTool</a></li><li><a href="OSDPaperjsAnnotation.RasterTool.RasterToolbar.html">RasterToolbar</a></li><li><a href="OSDPaperjsAnnotation.Rectangle.html">Rectangle</a></li><li><a href="OSDPaperjsAnnotation.RectangleTool.html">RectangleTool</a></li><li><a href="OSDPaperjsAnnotation.RectangleTool_RectToolbar.html">RectToolbar</a></li><li><a href="OSDPaperjsAnnotation.RotationControlOverlay.html">RotationControlOverlay</a></li><li><a href="OSDPaperjsAnnotation.RotationControlTool.html">RotationControlTool</a></li><li><a href="OSDPaperjsAnnotation.RotationControlWidget.html">RotationControlWidget</a></li><li><a href="OSDPaperjsAnnotation.StyleTool.html">StyleTool</a></li><li><a href="OSDPaperjsAnnotation.StyleTool.StyleToolbar.html">StyleToolbar</a></li><li><a href="OSDPaperjsAnnotation.ToolBase.html">ToolBase</a></li><li><a href="OSDPaperjsAnnotation.TransformTool.html">TransformTool</a></li><li><a href="OSDPaperjsAnnotation.TransformTool.TransformToolbar.html">TransformToolbar</a></li><li><a href="OSDPaperjsAnnotation.WandTool.html">WandTool</a></li><li><a href="OSDPaperjsAnnotation.WandTool.WandToolbar.html">WandToolbar</a></li><li><a href="SelectTool.html">SelectTool</a></li></ul><h3>Global</h3><ul><li><a href="global.html#_paper">_paper</a></li><li><a href="global.html#adaptiveOffsetCurve">adaptiveOffsetCurve</a></li><li><a href="global.html#connectAdjacentBezier">connectAdjacentBezier</a></li><li><a href="global.html#connectBeziers">connectBeziers</a></li><li><a href="global.html#getPointLineIntersections">getPointLineIntersections</a></li><li><a href="global.html#localImportsCompleted">localImportsCompleted</a></li><li><a href="global.html#makeRoundJoin">makeRoundJoin</a></li><li><a href="global.html#normalize">normalize</a></li><li><a href="global.html#offsetSegment">offsetSegment</a></li><li><a href="global.html#osd">osd</a></li><li><a href="global.html#removeIntersection">removeIntersection</a></li><li><a href="global.html#removeOutsiders">removeOutsiders</a></li><li><a href="global.html#updateFillOpacity">updateFillOpacity</a></li><li><a href="global.html#updateStrokeOpacity">updateStrokeOpacity</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="OSDPaperjsAnnotation.html">OSDPaperjsAnnotation</a></li></ul><h3>Classes</h3><ul><li><a href="Dialog.html">Dialog</a></li><li><a href="DragAndDrop.html">DragAndDrop</a></li><li><a href="Morph.html">Morph</a></li><li><a href="OSDPaperjsAnnotation.AnnotationItem.html">AnnotationItem</a></li><li><a href="OSDPaperjsAnnotation.AnnotationItemFactory.html">AnnotationItemFactory</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolbar.html">AnnotationToolbar</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolkit.html">AnnotationToolkit</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUI.html">AnnotationUI</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUITool.html">AnnotationUITool</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUITool.AnnotationUIToolbarBase.html">AnnotationUIToolbarBase</a></li><li><a href="OSDPaperjsAnnotation.BrushTool.html">BrushTool</a></li><li><a href="OSDPaperjsAnnotation.BrushTool.BrushToolbar.html">BrushToolbar</a></li><li><a href="OSDPaperjsAnnotation.DefaultTool.html">DefaultTool</a></li><li><a href="OSDPaperjsAnnotation.DefaultTool.DefaultToolbar.html">DefaultToolbar</a></li><li><a href="OSDPaperjsAnnotation.Ellipse.html">Ellipse</a></li><li><a href="OSDPaperjsAnnotation.EllipseTool.html">EllipseTool</a></li><li><a href="OSDPaperjsAnnotation.EllipseTool.EllipseToolbar.html">EllipseToolbar</a></li><li><a href="OSDPaperjsAnnotation.FeatureCollectionUI.html">FeatureCollectionUI</a></li><li><a href="OSDPaperjsAnnotation.FeatureUI.html">FeatureUI</a></li><li><a href="OSDPaperjsAnnotation.FileDialog.html">FileDialog</a></li><li><a href="OSDPaperjsAnnotation.LayerUI.html">LayerUI</a></li><li><a href="OSDPaperjsAnnotation.Linestring.html">Linestring</a></li><li><a href="OSDPaperjsAnnotation.LinestringTool.html">LinestringTool</a></li><li><a href="OSDPaperjsAnnotation.LinestringTool.LinestringToolbar.html">LinestringToolbar</a></li><li><a href="OSDPaperjsAnnotation.MultiLinestring.html">MultiLinestring</a></li><li><a href="OSDPaperjsAnnotation.MultiPolygon.html">MultiPolygon</a></li><li><a href="OSDPaperjsAnnotation.PaperOverlay.html">PaperOverlay</a></li><li><a href="OSDPaperjsAnnotation.Placeholder.html">Placeholder</a></li><li><a href="OSDPaperjsAnnotation.Point.html">Point</a></li><li><a href="OSDPaperjsAnnotation.PointText.html">PointText</a></li><li><a href="OSDPaperjsAnnotation.PointTextTool.html">PointTextTool</a></li><li><a href="OSDPaperjsAnnotation.PointTextTool.PointTextToolbar.html">PointTextToolbar</a></li><li><a href="OSDPaperjsAnnotation.PointTool.html">PointTool</a></li><li><a href="OSDPaperjsAnnotation.PointTool.PointToolbar.html">PointToolbar</a></li><li><a href="OSDPaperjsAnnotation.PolygonTool.html">PolygonTool</a></li><li><a href="OSDPaperjsAnnotation.PolygonTool.PolygonToolbar.html">PolygonToolbar</a></li><li><a href="OSDPaperjsAnnotation.Raster.html">Raster</a></li><li><a href="OSDPaperjsAnnotation.RasterTool.html">RasterTool</a></li><li><a href="OSDPaperjsAnnotation.RasterTool.RasterToolbar.html">RasterToolbar</a></li><li><a href="OSDPaperjsAnnotation.Rectangle.html">Rectangle</a></li><li><a href="OSDPaperjsAnnotation.RectangleTool.html">RectangleTool</a></li><li><a href="OSDPaperjsAnnotation.RectangleTool_RectToolbar.html">RectToolbar</a></li><li><a href="OSDPaperjsAnnotation.RotationControlOverlay.html">RotationControlOverlay</a></li><li><a href="OSDPaperjsAnnotation.RotationControlTool.html">RotationControlTool</a></li><li><a href="OSDPaperjsAnnotation.RotationControlWidget.html">RotationControlWidget</a></li><li><a href="OSDPaperjsAnnotation.StyleTool.html">StyleTool</a></li><li><a href="OSDPaperjsAnnotation.StyleTool.StyleToolbar.html">StyleToolbar</a></li><li><a href="OSDPaperjsAnnotation.ToolBase.html">ToolBase</a></li><li><a href="OSDPaperjsAnnotation.TransformTool.html">TransformTool</a></li><li><a href="OSDPaperjsAnnotation.TransformTool.TransformToolbar.html">TransformToolbar</a></li><li><a href="OSDPaperjsAnnotation.WandTool.html">WandTool</a></li><li><a href="OSDPaperjsAnnotation.WandTool.WandToolbar.html">WandToolbar</a></li><li><a href="SelectTool.html">SelectTool</a></li></ul><h3>Global</h3><ul><li><a href="global.html#_paper">_paper</a></li><li><a href="global.html#adaptiveOffsetCurve">adaptiveOffsetCurve</a></li><li><a href="global.html#connectAdjacentBezier">connectAdjacentBezier</a></li><li><a href="global.html#connectBeziers">connectBeziers</a></li><li><a href="global.html#convertFaIcons">convertFaIcons</a></li><li><a href="global.html#getPointLineIntersections">getPointLineIntersections</a></li><li><a href="global.html#iconDefs">iconDefs</a></li><li><a href="global.html#localImportsCompleted">localImportsCompleted</a></li><li><a href="global.html#makeFaIcon">makeFaIcon</a></li><li><a href="global.html#makeRoundJoin">makeRoundJoin</a></li><li><a href="global.html#normalize">normalize</a></li><li><a href="global.html#offsetSegment">offsetSegment</a></li><li><a href="global.html#osd">osd</a></li><li><a href="global.html#removeIntersection">removeIntersection</a></li><li><a href="global.html#removeOutsiders">removeOutsiders</a></li><li><a href="global.html#updateFillOpacity">updateFillOpacity</a></li><li><a href="global.html#updateStrokeOpacity">updateStrokeOpacity</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.0</a> on Tue Jan 02 2024 21:41:45 GMT-0500 (Eastern Standard Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.0</a> on Mon Mar 18 2024 22:07:42 GMT-0400 (Eastern Daylight Time)
 </footer>
 
 <script> prettyPrint(); </script>

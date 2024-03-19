@@ -66,6 +66,9 @@
 
 import {EditableContent} from './utils/editablecontent.mjs';
 import { OpenSeadragon } from './osd-loader.mjs';
+import { domObjectFromHTML } from './utils/domObjectFromHTML.mjs';
+import { datastore } from './utils/datastore.mjs';
+import { convertFaIcons } from './utils/faIcon.mjs';
 
 /**
  * A user interface for managing features.
@@ -80,89 +83,81 @@ class FeatureUI{
      */
     constructor(paperItem){
         
-        let self=this;
         this.paperItem=paperItem;
         let el = this._element = makeFeatureElement();
+        convertFaIcons(el, [
+            'fa-palette',
+            'fa-trash-can',
+            'fa-binoculars',
+            'fa-crop-simple',
+        ]);
+
         this.paperItem.FeatureUI = this;
         this._editableName = new EditableContent();
-        el.find('.feature-item.name').empty().append(this._editableName.element);
-        this._editableName.onChanged = function(text){
-            self.setLabel(text,'user-defined');
+        el.querySelector('.feature-item.name').appendChild(this._editableName.element);
+        this._editableName.onChanged = text => {
+            this.setLabel(text,'user-defined');
         };
+        this._editableName.onEditClicked = function(event){
+            event.preventDefault();
+            event.stopPropagation();
+        }
         
-        // let guid= 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(c) {
-        //     let r = Math.random() * 16|0;
-        //     let v = c == 'x' ? r : (r&amp;0x3|0x8);
-        //     return v.toString(16);
-        // });
-
-        
-        el.data({feature:self});
-        el.find('[data-action]').on('click', function(ev){
-            //don't bubble up
-            ev.stopPropagation();
-            ev.preventDefault();
-            let action = $(ev.target).data('action');
-            switch(action){
-                case 'trash': self.removeItem(); break;
-                case 'edit': self.editClicked(); break;
-                case 'bounds': self.useAsBoundingElement(); break;
-                case 'style':self.openStyleEditor(ev); break;
-                case 'zoom-to':self.centerItem(); break;
-                default: console.log('No function set for action:',action);
+        datastore.set(el, {feature:this});
+        el.addEventListener('click', ev => {
+            if(ev.target.matches('[data-action]')){
+                //don't bubble up
+                ev.stopPropagation();
+                ev.stopImmediatePropagation();
+                ev.preventDefault();
+                let action = ev.target.dataset.action;
+                switch(action){
+                    case 'trash': this.removeItem(); break;
+                    case 'bounds': this.useAsBoundingElement(true); break;
+                    case 'style':this.openStyleEditor(ev); break;
+                    case 'zoom-to':this.centerItem(); break;
+                    default: console.log('No function set for action:',action);
+                }
             }
-            
         });
         
-        // $(this._editableName.element).on('value-changed',function(ev,val){
-        //     self.setLabel(val,'user-defined');
-        // });
-        el.on('click',function(ev){
+        el.addEventListener('click',ev => {
             ev.stopPropagation();
-            self.paperItem.toggle((ev.metaKey || ev.ctrlKey));
+            this.paperItem.toggle((ev.metaKey || ev.ctrlKey));
         })
-
-        
-        
-        // el.on('focusout','.editablecontent.editing .edit', function(){
-        //     let parent=$(this).closest('.editablecontent');
-        //     let oldtext = $(this).data('previous-text');
-        //     let newtext = $(this).text().trim();
-        //     if(newtext !== oldtext) parent.find('.edit').trigger('value-changed',newtext);
-        //     parent.removeClass('editing');
-        //     $(this).removeAttr('contenteditable').text(newtext);
-        // });
-        // el.on('keypress','.editablecontent.editing .edit', function(ev){
-        //     ev.stopPropagation();
-        //     if(ev.which==13){
-        //         ev.preventDefault();
-        //         $(this).blur();
-        //     }
-        // });
-        // el.on('keydown keyup','.editablecontent.editing .edit',function(ev){ev.stopPropagation()})
         
         this.element = el;
         this.paperItem.on({
-            'selected':function(){ el.addClass('selected').trigger('selected'); },
-            'deselected':function(){ el.removeClass('selected').trigger('deselected'); },
-            'selection:mouseenter':function(){el.addClass('item-hovered')},
-            'selection:mouseleave':function(){el.removeClass('item-hovered')},
-            'item-replaced':function(ev){
+            'selected':()=>{ 
+                el.classList.add('selected');
+                el.dispatchEvent(new Event('selected')); 
+            },
+            'deselected':()=>{ 
+                el.classList.remove('selected');
+                el.dispatchEvent(new Event('deselected')); 
+            },
+            'selection:mouseenter':()=>{ 
+                el.classList.add('item-hovered');
+            },
+            'selection:mouseleave':()=>{ 
+                el.classList.remove('item-hovered');
+            },
+            'item-replaced':(ev)=>{ 
                 // console.log('item-replaced',ev);
                 //check label first because it is dynamically fetched from the referenced this.paperItem object
-                if(self.label.source=='user-defined'){
-                    ev.item.displayName = self.label;
+                if(this.label.source=='user-defined'){
+                    ev.item.displayName = this.label;
                 }
-                self.paperItem = ev.item;
-                self.paperItem.FeatureUI=self;
-                self.updateLabel();
+                this.paperItem = ev.item;
+                this.paperItem.FeatureUI=this;
+                this.updateLabel();
             },
-            'display-name-changed':function(ev){
-                self.updateLabel();
+            'display-name-changed':(ev)=>{ 
+                this.updateLabel();
             },
-            'removed':function(ev){
-                if(ev.item == self.paperItem){
-                    self.remove();
+            'removed':(ev)=>{ 
+                if(ev.item == this.paperItem){
+                    this.remove();
                 }
             }
         });
@@ -213,22 +208,11 @@ class FeatureUI{
      * Remove the UI element associated with the feature.
      */
     remove(){
-        this._element.remove().trigger('removed');
+        this._element.remove();
+        this._element.dispatchEvent( new Event('removed') );
     }
-    /**
-     * Handle the edit clicked event on the UI element.
-     */
-    editClicked(){
-        let header = this._element.find('.editablecontent');
-        header.addClass('editing');
-        let ce = header.find('.edit').attr('contenteditable',true).focus();
-        ce.data('previous-text',ce.text());
-        let range = document.createRange();
-        range.selectNodeContents(ce[0]);
-        let selection = window.getSelection();
-        selection.removeAllRanges();
-        selection.addRange(range);
-    }
+    
+    
     /**
      * Use the feature as a bounding element.
      * @param {boolean} [toggle=false] - Whether to toggle the bounding element status or not.
@@ -236,13 +220,13 @@ class FeatureUI{
      */
     useAsBoundingElement(toggle=false){
         if(!this.paperItem.canBeBoundingElement) return false;
-        let element = this._element.find('[data-action="bounds"]');
+        let element = this._element.querySelector('[data-action="bounds"]');
         if(toggle){
-            element.find('[data-action="bounds"]').toggleClass('active');
+            element.classList.toggle('active');
         } else {
-            element.find('[data-action="bounds"]').addClass('active');
+            element.classList.add('active');
         }
-        let isActive = element.hasClass('active');
+        let isActive = element.classList.contains('active');
         this.paperItem.isBoundingElement = isActive;
         return isActive;
     }   
@@ -274,7 +258,6 @@ class FeatureUI{
         else{
             viewport.panTo(center, immediately);
         }
-        // console.log('centerItem clicked',rect)
     }
     
 }
@@ -287,7 +270,7 @@ export {FeatureUI};
 function makeFeatureElement(){
     let html = `
     &lt;div class='feature'>
-        &lt;div class='hoverable-actions'>
+        &lt;div class='annotation-header hoverable-actions'>
             &lt;span class='onhover fa-solid fa-crop-simple bounding-element' data-action="bounds" title='Bounding element'>&lt;/span>
             &lt;span class='feature-item name'>&lt;/span>
             &lt;span class='onhover fa-solid fa-palette' data-action='style' title='Open style editor'>&lt;/span>
@@ -296,7 +279,7 @@ function makeFeatureElement(){
         &lt;/div>
     &lt;/div>
     `;
-    return $(html);
+    return domObjectFromHTML(html);
 }</code></pre>
         </article>
     </section>
@@ -307,13 +290,13 @@ function makeFeatureElement(){
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="OSDPaperjsAnnotation.html">OSDPaperjsAnnotation</a></li></ul><h3>Classes</h3><ul><li><a href="EditableContent.html">EditableContent</a></li><li><a href="Morph.html">Morph</a></li><li><a href="OSDPaperjsAnnotation.AnnotationItem.html">AnnotationItem</a></li><li><a href="OSDPaperjsAnnotation.AnnotationItemFactory.html">AnnotationItemFactory</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolbar.html">AnnotationToolbar</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolkit.html">AnnotationToolkit</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUI.html">AnnotationUI</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUITool.html">AnnotationUITool</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUITool.AnnotationUIToolbarBase.html">AnnotationUIToolbarBase</a></li><li><a href="OSDPaperjsAnnotation.BrushTool.html">BrushTool</a></li><li><a href="OSDPaperjsAnnotation.BrushTool.BrushToolbar.html">BrushToolbar</a></li><li><a href="OSDPaperjsAnnotation.DefaultTool.html">DefaultTool</a></li><li><a href="OSDPaperjsAnnotation.DefaultTool.DefaultToolbar.html">DefaultToolbar</a></li><li><a href="OSDPaperjsAnnotation.Ellipse.html">Ellipse</a></li><li><a href="OSDPaperjsAnnotation.EllipseTool.html">EllipseTool</a></li><li><a href="OSDPaperjsAnnotation.EllipseTool.EllipseToolbar.html">EllipseToolbar</a></li><li><a href="OSDPaperjsAnnotation.FeatureCollectionUI.html">FeatureCollectionUI</a></li><li><a href="OSDPaperjsAnnotation.FeatureUI.html">FeatureUI</a></li><li><a href="OSDPaperjsAnnotation.FileDialog.html">FileDialog</a></li><li><a href="OSDPaperjsAnnotation.LayerUI.html">LayerUI</a></li><li><a href="OSDPaperjsAnnotation.Linestring.html">Linestring</a></li><li><a href="OSDPaperjsAnnotation.LinestringTool.html">LinestringTool</a></li><li><a href="OSDPaperjsAnnotation.LinestringTool.LinestringToolbar.html">LinestringToolbar</a></li><li><a href="OSDPaperjsAnnotation.MultiLinestring.html">MultiLinestring</a></li><li><a href="OSDPaperjsAnnotation.MultiPolygon.html">MultiPolygon</a></li><li><a href="OSDPaperjsAnnotation.PaperOverlay.html">PaperOverlay</a></li><li><a href="OSDPaperjsAnnotation.Placeholder.html">Placeholder</a></li><li><a href="OSDPaperjsAnnotation.Point.html">Point</a></li><li><a href="OSDPaperjsAnnotation.PointText.html">PointText</a></li><li><a href="OSDPaperjsAnnotation.PointTextTool.html">PointTextTool</a></li><li><a href="OSDPaperjsAnnotation.PointTextTool.PointTextToolbar.html">PointTextToolbar</a></li><li><a href="OSDPaperjsAnnotation.PointTool.html">PointTool</a></li><li><a href="OSDPaperjsAnnotation.PointTool.PointToolbar.html">PointToolbar</a></li><li><a href="OSDPaperjsAnnotation.PolygonTool.html">PolygonTool</a></li><li><a href="OSDPaperjsAnnotation.PolygonTool.PolygonToolbar.html">PolygonToolbar</a></li><li><a href="OSDPaperjsAnnotation.Raster.html">Raster</a></li><li><a href="OSDPaperjsAnnotation.RasterTool.html">RasterTool</a></li><li><a href="OSDPaperjsAnnotation.RasterTool.RasterToolbar.html">RasterToolbar</a></li><li><a href="OSDPaperjsAnnotation.Rectangle.html">Rectangle</a></li><li><a href="OSDPaperjsAnnotation.RectangleTool.html">RectangleTool</a></li><li><a href="OSDPaperjsAnnotation.RectangleTool_RectToolbar.html">RectToolbar</a></li><li><a href="OSDPaperjsAnnotation.RotationControlOverlay.html">RotationControlOverlay</a></li><li><a href="OSDPaperjsAnnotation.RotationControlTool.html">RotationControlTool</a></li><li><a href="OSDPaperjsAnnotation.RotationControlWidget.html">RotationControlWidget</a></li><li><a href="OSDPaperjsAnnotation.StyleTool.html">StyleTool</a></li><li><a href="OSDPaperjsAnnotation.StyleTool.StyleToolbar.html">StyleToolbar</a></li><li><a href="OSDPaperjsAnnotation.ToolBase.html">ToolBase</a></li><li><a href="OSDPaperjsAnnotation.TransformTool.html">TransformTool</a></li><li><a href="OSDPaperjsAnnotation.TransformTool.TransformToolbar.html">TransformToolbar</a></li><li><a href="OSDPaperjsAnnotation.WandTool.html">WandTool</a></li><li><a href="OSDPaperjsAnnotation.WandTool.WandToolbar.html">WandToolbar</a></li><li><a href="SelectTool.html">SelectTool</a></li></ul><h3>Global</h3><ul><li><a href="global.html#_paper">_paper</a></li><li><a href="global.html#adaptiveOffsetCurve">adaptiveOffsetCurve</a></li><li><a href="global.html#connectAdjacentBezier">connectAdjacentBezier</a></li><li><a href="global.html#connectBeziers">connectBeziers</a></li><li><a href="global.html#getPointLineIntersections">getPointLineIntersections</a></li><li><a href="global.html#localImportsCompleted">localImportsCompleted</a></li><li><a href="global.html#makeRoundJoin">makeRoundJoin</a></li><li><a href="global.html#normalize">normalize</a></li><li><a href="global.html#offsetSegment">offsetSegment</a></li><li><a href="global.html#osd">osd</a></li><li><a href="global.html#removeIntersection">removeIntersection</a></li><li><a href="global.html#removeOutsiders">removeOutsiders</a></li><li><a href="global.html#updateFillOpacity">updateFillOpacity</a></li><li><a href="global.html#updateStrokeOpacity">updateStrokeOpacity</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="OSDPaperjsAnnotation.html">OSDPaperjsAnnotation</a></li></ul><h3>Classes</h3><ul><li><a href="Dialog.html">Dialog</a></li><li><a href="DragAndDrop.html">DragAndDrop</a></li><li><a href="Morph.html">Morph</a></li><li><a href="OSDPaperjsAnnotation.AnnotationItem.html">AnnotationItem</a></li><li><a href="OSDPaperjsAnnotation.AnnotationItemFactory.html">AnnotationItemFactory</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolbar.html">AnnotationToolbar</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolkit.html">AnnotationToolkit</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUI.html">AnnotationUI</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUITool.html">AnnotationUITool</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUITool.AnnotationUIToolbarBase.html">AnnotationUIToolbarBase</a></li><li><a href="OSDPaperjsAnnotation.BrushTool.html">BrushTool</a></li><li><a href="OSDPaperjsAnnotation.BrushTool.BrushToolbar.html">BrushToolbar</a></li><li><a href="OSDPaperjsAnnotation.DefaultTool.html">DefaultTool</a></li><li><a href="OSDPaperjsAnnotation.DefaultTool.DefaultToolbar.html">DefaultToolbar</a></li><li><a href="OSDPaperjsAnnotation.Ellipse.html">Ellipse</a></li><li><a href="OSDPaperjsAnnotation.EllipseTool.html">EllipseTool</a></li><li><a href="OSDPaperjsAnnotation.EllipseTool.EllipseToolbar.html">EllipseToolbar</a></li><li><a href="OSDPaperjsAnnotation.FeatureCollectionUI.html">FeatureCollectionUI</a></li><li><a href="OSDPaperjsAnnotation.FeatureUI.html">FeatureUI</a></li><li><a href="OSDPaperjsAnnotation.FileDialog.html">FileDialog</a></li><li><a href="OSDPaperjsAnnotation.LayerUI.html">LayerUI</a></li><li><a href="OSDPaperjsAnnotation.Linestring.html">Linestring</a></li><li><a href="OSDPaperjsAnnotation.LinestringTool.html">LinestringTool</a></li><li><a href="OSDPaperjsAnnotation.LinestringTool.LinestringToolbar.html">LinestringToolbar</a></li><li><a href="OSDPaperjsAnnotation.MultiLinestring.html">MultiLinestring</a></li><li><a href="OSDPaperjsAnnotation.MultiPolygon.html">MultiPolygon</a></li><li><a href="OSDPaperjsAnnotation.PaperOverlay.html">PaperOverlay</a></li><li><a href="OSDPaperjsAnnotation.Placeholder.html">Placeholder</a></li><li><a href="OSDPaperjsAnnotation.Point.html">Point</a></li><li><a href="OSDPaperjsAnnotation.PointText.html">PointText</a></li><li><a href="OSDPaperjsAnnotation.PointTextTool.html">PointTextTool</a></li><li><a href="OSDPaperjsAnnotation.PointTextTool.PointTextToolbar.html">PointTextToolbar</a></li><li><a href="OSDPaperjsAnnotation.PointTool.html">PointTool</a></li><li><a href="OSDPaperjsAnnotation.PointTool.PointToolbar.html">PointToolbar</a></li><li><a href="OSDPaperjsAnnotation.PolygonTool.html">PolygonTool</a></li><li><a href="OSDPaperjsAnnotation.PolygonTool.PolygonToolbar.html">PolygonToolbar</a></li><li><a href="OSDPaperjsAnnotation.Raster.html">Raster</a></li><li><a href="OSDPaperjsAnnotation.RasterTool.html">RasterTool</a></li><li><a href="OSDPaperjsAnnotation.RasterTool.RasterToolbar.html">RasterToolbar</a></li><li><a href="OSDPaperjsAnnotation.Rectangle.html">Rectangle</a></li><li><a href="OSDPaperjsAnnotation.RectangleTool.html">RectangleTool</a></li><li><a href="OSDPaperjsAnnotation.RectangleTool_RectToolbar.html">RectToolbar</a></li><li><a href="OSDPaperjsAnnotation.RotationControlOverlay.html">RotationControlOverlay</a></li><li><a href="OSDPaperjsAnnotation.RotationControlTool.html">RotationControlTool</a></li><li><a href="OSDPaperjsAnnotation.RotationControlWidget.html">RotationControlWidget</a></li><li><a href="OSDPaperjsAnnotation.StyleTool.html">StyleTool</a></li><li><a href="OSDPaperjsAnnotation.StyleTool.StyleToolbar.html">StyleToolbar</a></li><li><a href="OSDPaperjsAnnotation.ToolBase.html">ToolBase</a></li><li><a href="OSDPaperjsAnnotation.TransformTool.html">TransformTool</a></li><li><a href="OSDPaperjsAnnotation.TransformTool.TransformToolbar.html">TransformToolbar</a></li><li><a href="OSDPaperjsAnnotation.WandTool.html">WandTool</a></li><li><a href="OSDPaperjsAnnotation.WandTool.WandToolbar.html">WandToolbar</a></li><li><a href="SelectTool.html">SelectTool</a></li></ul><h3>Global</h3><ul><li><a href="global.html#_paper">_paper</a></li><li><a href="global.html#adaptiveOffsetCurve">adaptiveOffsetCurve</a></li><li><a href="global.html#connectAdjacentBezier">connectAdjacentBezier</a></li><li><a href="global.html#connectBeziers">connectBeziers</a></li><li><a href="global.html#convertFaIcons">convertFaIcons</a></li><li><a href="global.html#getPointLineIntersections">getPointLineIntersections</a></li><li><a href="global.html#iconDefs">iconDefs</a></li><li><a href="global.html#localImportsCompleted">localImportsCompleted</a></li><li><a href="global.html#makeFaIcon">makeFaIcon</a></li><li><a href="global.html#makeRoundJoin">makeRoundJoin</a></li><li><a href="global.html#normalize">normalize</a></li><li><a href="global.html#offsetSegment">offsetSegment</a></li><li><a href="global.html#osd">osd</a></li><li><a href="global.html#removeIntersection">removeIntersection</a></li><li><a href="global.html#removeOutsiders">removeOutsiders</a></li><li><a href="global.html#updateFillOpacity">updateFillOpacity</a></li><li><a href="global.html#updateStrokeOpacity">updateStrokeOpacity</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.0</a> on Tue Jan 02 2024 21:41:45 GMT-0500 (Eastern Standard Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.0</a> on Mon Mar 18 2024 22:07:42 GMT-0400 (Eastern Daylight Time)
 </footer>
 
 <script> prettyPrint(); </script>

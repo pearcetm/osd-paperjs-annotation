@@ -47,7 +47,12 @@ export class DragAndDrop{
     /**
      * 
      * @param {Object} options 
-     * @returns 
+     * @param {HTMLElement} options.parent the parent element
+     * @param {String} options.selector the selector to use
+     * @param {HTMLElement} options.dropTarget the element to drop onto
+     * @param {function} [options.onDrop] a callback to call when drop occurs
+        
+     }}
      */
     constructor(options){
         if(!options.parent){

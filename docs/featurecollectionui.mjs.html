@@ -66,10 +66,19 @@
 
 import { FeatureUI } from './featureui.mjs';
 import { EditableContent } from './utils/editablecontent.mjs';
-
+import { domObjectFromHTML } from './utils/domObjectFromHTML.mjs';
+import { datastore } from './utils/datastore.mjs';
+import { DragAndDrop } from './utils/draganddrop.mjs';
+import { Placeholder } from './paperitems/placeholder.mjs';
+import { OpenSeadragon } from './osd-loader.mjs';
+import { convertFaIcons } from './utils/faIcon.mjs';
+import { paper } from './paperjs.mjs';
 
 /**
- * A user interface for managing feature collections. The FeatureCollectionUI class provides a user interface to manage feature collections on a paper.Layer object. It allows users to create, edit, and organize features within the collection. The class includes various functionalities, such as adding and removing features, setting opacity and fill opacity for the paper layer, and more.
+ * A user interface for managing feature collections. The FeatureCollectionUI class provides a user
+ *  interface to manage feature collections on a paper.Layer object. It allows users to create, edit,
+ *  and organize features within the collection. The class includes various functionalities, such as 
+ * adding and removing features, setting opacity and fill opacity for the paper layer, and more.
  * @class
  * @memberof OSDPaperjsAnnotation
  */
@@ -86,66 +95,84 @@ class FeatureCollectionUI{
      * @param {object} init - The initialization options.
      */
     constructor(group,init){
-        let self=this;
+        
         // this.toolbar = init.toolbar;
         this.element = makeFeatureCollectionElement();
+        convertFaIcons(this.element, [
+            'fa-palette',
+            'fa-trash-can',
+            'fa-eye',
+            'fa-eye-slash',
+            'fa-caret-down',
+            'fa-caret-up'
+        ]);
+
         this._editableName = new EditableContent();
-        this.element.find('.annotation-name.name').empty().append(this._editableName.element);
-        this._editableName.onChanged=function(text){
-            self.label = text;
+        this.element.querySelector('.annotation-name.name').appendChild(this._editableName.element);
+        this._editableName.onChanged = text => {
+            this.label = text;
+        }
+        this._editableName.onEditClicked = event => {
+            event.preventDefault();
+            event.stopPropagation();
         }
 
-        this._featurelist=this.element.find('.features-list');
-        this._featurelist.sortable({
-            contain:'parent',
-            connectWith:`${init.guiSelector} .features-list`,
-            update:function(){
-                self._featurelist.children().each(function(idx,c){
-                    self.group.addChild($(c).data('feature').paperItem);
-                })
-            },
+        this._featurelist=this.element.querySelector('.features-list');
+
+        this._dragAndDrop = new DragAndDrop({
+            parent: this.element, 
+            selector: '.features-list .feature', 
+            dropTarget: this._featurelist,
+            onDrop: ()=>{
+                this.features.forEach(f => this.group.addChild(f.paperItem));
+            }
         });
+
         this.group = group;
+        // add paperjs event handlers
         this.group.on({
-            'selection:mouseenter':function(){self.element.addClass('svg-hovered').trigger('mouseover')},
-            'selection:mouseleave':function(){self.element.removeClass('svg-hovered').trigger('mouseout')},
-            'selected':function(){self.element.addClass('selected').trigger('selected')},
-            'deselected':function(){self.element.removeClass('selected').trigger('deselected')},
-            'display-name-changed':function(ev){
-                self.updateLabel();
+            'selection:mouseenter':()=>{
+                this.element.classList.add('svg-hovered');
+                this.element.dispatchEvent(new Event('mouseover'));
             },
-            'removed':function(){
-                self.remove();
+            'selection:mouseleave':()=>{
+                this.element.classList.remove('svg-hovered');
+                this.element.dispatchEvent(new Event('mouseout'));
             },
-            'child-added':function(ev){
+            'selected':()=>{
+                this.element.classList.add('selected');
+                this.element.dispatchEvent(new Event('selected'));
+            },
+            'deselected':()=>{
+                this.element.classList.remove('selected');
+                this.element.dispatchEvent(new Event('deselected'));
+            },
+            'display-name-changed':()=>{
+                this.updateLabel();
+            },
+            'removed':()=>{
+                this.remove();
+            },
+            'child-added':(ev)=>{
                 let featureUI = ev.item.FeatureUI || new FeatureUI(ev.item);
-                self._addFeature(featureUI);
+                this._addFeature(featureUI);
             }
         });
 
         // expose this object as a property of the paper.js group
         this.group.featureCollectionUI = this;
 
-        /**
-         * Get the features in the feature collection.
-         * @member
-         * @returns {FeatureUI[]} The array of features.
-         */
-        this.features = function(){
-            return self._featurelist.find('.feature').map(function(_,el){
-                return $(el).data('feature');
-            }).toArray();
-        }
-        this.remove = function(){
-            self.element.remove();
+        
+        this.remove = ()=>{
+            this.element.remove();
         }
         /**
          * Get the number of features in the feature collection.
          * @member
          * @returns {number} The number of features.
          */
-        this.numFeatures = function(){
-            return self.features().length;
+        this.numFeatures = ()=>{
+            return this.features.length;
         }
 
         /**
@@ -154,11 +181,11 @@ class FeatureCollectionUI{
          * @param {FeatureUI} f - The feature to add.
          * @returns {jQuery} The jQuery object of the feature element.
          */
-        this._addFeature=function(f){
+        this._addFeature = f => {
             f.paperItem.updateFillOpacity();
-            self._featurelist.append(f.element);
-            self._sortableDebounce &amp;&amp; window.clearTimeout(self._sortableDebounce);
-            self._sortableDebounce = window.setTimeout(()=>$(`${init.guiSelector} .features-list .feature`).length>100 ? self._featurelist.sortable('disable') : self._featurelist.sortable('refresh'), 15);
+            this._featurelist.appendChild(f.element);
+            this._sortableDebounce &amp;&amp; window.clearTimeout(this._sortableDebounce);
+            self._sortableDebounce = window.setTimeout(()=>this._dragAndDrop.refresh(), 15);
             return f.element; 
         }
         /**
@@ -184,77 +211,83 @@ class FeatureCollectionUI{
             let clonedProperties = {
                 fillColor:new paper.Color(props.fillColor),
                 strokeColor:new paper.Color(props.strokeColor),
-                rescale:$.extend(true,{},props.rescale),
+                rescale:OpenSeadragon.extend(true,{},props.rescale),
                 fillOpacity:props.fillOpacity,
                 strokeOpacity:props.strokeOpacity,
                 strokeWidth:props.strokeWidth,
             }
-            let style = new paper.Style(clonedProperties);
-            let geoJSON = {
-                type:'Feature',
-                geometry:null,
-                properties:style,
-            }
-            let placeholder = paper.Item.fromGeoJSON(geoJSON);
-            this.group.addChild(placeholder);
-            return placeholder;
+            let placeholder = new Placeholder(clonedProperties);
+            this.group.addChild(placeholder.paperItem);
+            return placeholder.paperItem;
+        }
+
+        
+        const setOpacity = o=>{
+            this.group.opacity = o;
+        }
+        
+        const setFillOpacity = o => {
+            this.group.fillOpacity = o;
         }
 
         this.ui={
             setOpacity:setOpacity,
             setFillOpacity:setFillOpacity,
         }
-        function setOpacity(o){
-            self.group.opacity = o;
-        }
-        function setFillOpacity(o){
-            self.group.fillOpacity = o;
-        }
         
+        datastore.set(this.element, {featureCollection: this});
         
-        self.element.data({featureCollection:self});//bind reference to self to the element, for use with rearranging/sorting layers
+        this.label = this.group.displayName;
 
-        self.label = this.group.displayName;
-
-        if(!self._featurelist.sortable('option','disabled') == false){
-            self._featurelist.sortable('refresh');
-        }
-        
-
-        self.element.on('click',function(ev){
+        this.element.addEventListener('click',ev=>{
             ev.stopPropagation();
         })
-        self.element.find('.toggle-list').on('click',function(ev){
-            let numFeatures = self._featurelist.children().length;
-            self.element.find('.num-annotations').text(numFeatures);
-            self.element.find('.features-summary').attr('data-num-elements',numFeatures);
-            self.element.find('.features').toggleClass('collapsed');
+        this.element.querySelector('.toggle-list').addEventListener('click',ev=>{
+            let numFeatures = this._featurelist.children.length;
+            this.element.querySelector('.num-annotations').textContent = numFeatures;
+            this.element.querySelector('.features-summary').dataset.numElements = numFeatures;
+            this.element.querySelector('.features').classList.toggle('collapsed');
             ev.stopPropagation();
             ev.preventDefault();
         });
 
-        self.element.find('.annotation-header [data-action]').on('click',function(ev){
-            //don't bubble up
-            ev.stopPropagation();
-            ev.preventDefault();
-            let action = $(ev.target).data('action');
-            switch(action){
-                case 'trash': self.removeLayer(true); break;
-                // case 'edit': self.editClicked(); break;
-                case 'style': self.openStyleEditor(ev); break;
-                case 'show': self.toggleVisibility(); break;
-                case 'hide': self.toggleVisibility(); break;
-                default: console.log('No function set for action:',action);
+        this.element.addEventListener('click', ev => {
+
+            if(ev.target.matches('.annotation-header [data-action]')){
+                //don't bubble up
+                ev.stopPropagation();
+                ev.stopImmediatePropagation();
+                ev.preventDefault();
+                
+                let action = ev.target.dataset.action;
+                switch(action){
+                    case 'trash': this.removeLayer(true); break;
+                    case 'style': this.openStyleEditor(ev); break;
+                    case 'show': this.toggleVisibility(); break;
+                    case 'hide': this.toggleVisibility(); break;
+                    default: console.log('No function set for action:',action);
+                }
             }
             
         });
-        self.element.find('.new-feature').on('click',function(ev){
+        this.element.querySelector('.new-feature').addEventListener('click',ev => {
             ev.stopPropagation();
-            let item = self.createFeature();
+            let item = this.createFeature();
             item.select();
         });
 
         return this;
+    }
+    
+    /**
+    * Get the features in the feature collection.
+    * @member
+    * @returns {FeatureUI[]} The array of features.
+    */
+    get features(){
+       return Array.from(this._featurelist.querySelectorAll('.feature')).map(element => {
+           return datastore.get(element, 'feature');
+       });
     }
     get label(){
         return this.group.displayName;
@@ -285,8 +318,8 @@ class FeatureCollectionUI{
      * Toggle the visibility of the feature collection UI element and the paper group.
      */
     toggleVisibility(){
-        this.element.toggleClass('annotation-hidden');
-        this.group.visible = !this.element.hasClass('annotation-hidden');
+        this.element.classList.toggle('annotation-hidden');
+        this.group.visible = !this.element.classList.contains('annotation-hidden');
     }
     /**
      * Remove the paper layer associated with the feature collection.
@@ -298,20 +331,6 @@ class FeatureCollectionUI{
         } else {
 
         }
-    }
-    /**
-     * Handle the edit clicked event on the UI element.
-     */
-    editClicked(){
-        let header = this.element.find('.annotation-header');
-        header.addClass('editing');
-        let ce = header.find('.edit').attr('contenteditable',true).focus();
-        ce.data('previous-text',ce.text());
-        let range = document.createRange();
-        range.selectNodeContents(ce[0]);
-        let selection = window.getSelection();
-        selection.removeAllRanges();
-        selection.addRange(range);  
     }
     /**
      * Open the style editor for the feature collection.
@@ -354,7 +373,7 @@ function makeFeatureCollectionElement(){
         &lt;/div>
     &lt;/div>
     `;
-    return $(html);
+    return domObjectFromHTML(html);
 }</code></pre>
         </article>
     </section>
@@ -365,13 +384,13 @@ function makeFeatureCollectionElement(){
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="OSDPaperjsAnnotation.html">OSDPaperjsAnnotation</a></li></ul><h3>Classes</h3><ul><li><a href="EditableContent.html">EditableContent</a></li><li><a href="Morph.html">Morph</a></li><li><a href="OSDPaperjsAnnotation.AnnotationItem.html">AnnotationItem</a></li><li><a href="OSDPaperjsAnnotation.AnnotationItemFactory.html">AnnotationItemFactory</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolbar.html">AnnotationToolbar</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolkit.html">AnnotationToolkit</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUI.html">AnnotationUI</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUITool.html">AnnotationUITool</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUITool.AnnotationUIToolbarBase.html">AnnotationUIToolbarBase</a></li><li><a href="OSDPaperjsAnnotation.BrushTool.html">BrushTool</a></li><li><a href="OSDPaperjsAnnotation.BrushTool.BrushToolbar.html">BrushToolbar</a></li><li><a href="OSDPaperjsAnnotation.DefaultTool.html">DefaultTool</a></li><li><a href="OSDPaperjsAnnotation.DefaultTool.DefaultToolbar.html">DefaultToolbar</a></li><li><a href="OSDPaperjsAnnotation.Ellipse.html">Ellipse</a></li><li><a href="OSDPaperjsAnnotation.EllipseTool.html">EllipseTool</a></li><li><a href="OSDPaperjsAnnotation.EllipseTool.EllipseToolbar.html">EllipseToolbar</a></li><li><a href="OSDPaperjsAnnotation.FeatureCollectionUI.html">FeatureCollectionUI</a></li><li><a href="OSDPaperjsAnnotation.FeatureUI.html">FeatureUI</a></li><li><a href="OSDPaperjsAnnotation.FileDialog.html">FileDialog</a></li><li><a href="OSDPaperjsAnnotation.LayerUI.html">LayerUI</a></li><li><a href="OSDPaperjsAnnotation.Linestring.html">Linestring</a></li><li><a href="OSDPaperjsAnnotation.LinestringTool.html">LinestringTool</a></li><li><a href="OSDPaperjsAnnotation.LinestringTool.LinestringToolbar.html">LinestringToolbar</a></li><li><a href="OSDPaperjsAnnotation.MultiLinestring.html">MultiLinestring</a></li><li><a href="OSDPaperjsAnnotation.MultiPolygon.html">MultiPolygon</a></li><li><a href="OSDPaperjsAnnotation.PaperOverlay.html">PaperOverlay</a></li><li><a href="OSDPaperjsAnnotation.Placeholder.html">Placeholder</a></li><li><a href="OSDPaperjsAnnotation.Point.html">Point</a></li><li><a href="OSDPaperjsAnnotation.PointText.html">PointText</a></li><li><a href="OSDPaperjsAnnotation.PointTextTool.html">PointTextTool</a></li><li><a href="OSDPaperjsAnnotation.PointTextTool.PointTextToolbar.html">PointTextToolbar</a></li><li><a href="OSDPaperjsAnnotation.PointTool.html">PointTool</a></li><li><a href="OSDPaperjsAnnotation.PointTool.PointToolbar.html">PointToolbar</a></li><li><a href="OSDPaperjsAnnotation.PolygonTool.html">PolygonTool</a></li><li><a href="OSDPaperjsAnnotation.PolygonTool.PolygonToolbar.html">PolygonToolbar</a></li><li><a href="OSDPaperjsAnnotation.Raster.html">Raster</a></li><li><a href="OSDPaperjsAnnotation.RasterTool.html">RasterTool</a></li><li><a href="OSDPaperjsAnnotation.RasterTool.RasterToolbar.html">RasterToolbar</a></li><li><a href="OSDPaperjsAnnotation.Rectangle.html">Rectangle</a></li><li><a href="OSDPaperjsAnnotation.RectangleTool.html">RectangleTool</a></li><li><a href="OSDPaperjsAnnotation.RectangleTool_RectToolbar.html">RectToolbar</a></li><li><a href="OSDPaperjsAnnotation.RotationControlOverlay.html">RotationControlOverlay</a></li><li><a href="OSDPaperjsAnnotation.RotationControlTool.html">RotationControlTool</a></li><li><a href="OSDPaperjsAnnotation.RotationControlWidget.html">RotationControlWidget</a></li><li><a href="OSDPaperjsAnnotation.StyleTool.html">StyleTool</a></li><li><a href="OSDPaperjsAnnotation.StyleTool.StyleToolbar.html">StyleToolbar</a></li><li><a href="OSDPaperjsAnnotation.ToolBase.html">ToolBase</a></li><li><a href="OSDPaperjsAnnotation.TransformTool.html">TransformTool</a></li><li><a href="OSDPaperjsAnnotation.TransformTool.TransformToolbar.html">TransformToolbar</a></li><li><a href="OSDPaperjsAnnotation.WandTool.html">WandTool</a></li><li><a href="OSDPaperjsAnnotation.WandTool.WandToolbar.html">WandToolbar</a></li><li><a href="SelectTool.html">SelectTool</a></li></ul><h3>Global</h3><ul><li><a href="global.html#_paper">_paper</a></li><li><a href="global.html#adaptiveOffsetCurve">adaptiveOffsetCurve</a></li><li><a href="global.html#connectAdjacentBezier">connectAdjacentBezier</a></li><li><a href="global.html#connectBeziers">connectBeziers</a></li><li><a href="global.html#getPointLineIntersections">getPointLineIntersections</a></li><li><a href="global.html#localImportsCompleted">localImportsCompleted</a></li><li><a href="global.html#makeRoundJoin">makeRoundJoin</a></li><li><a href="global.html#normalize">normalize</a></li><li><a href="global.html#offsetSegment">offsetSegment</a></li><li><a href="global.html#osd">osd</a></li><li><a href="global.html#removeIntersection">removeIntersection</a></li><li><a href="global.html#removeOutsiders">removeOutsiders</a></li><li><a href="global.html#updateFillOpacity">updateFillOpacity</a></li><li><a href="global.html#updateStrokeOpacity">updateStrokeOpacity</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="OSDPaperjsAnnotation.html">OSDPaperjsAnnotation</a></li></ul><h3>Classes</h3><ul><li><a href="Dialog.html">Dialog</a></li><li><a href="DragAndDrop.html">DragAndDrop</a></li><li><a href="Morph.html">Morph</a></li><li><a href="OSDPaperjsAnnotation.AnnotationItem.html">AnnotationItem</a></li><li><a href="OSDPaperjsAnnotation.AnnotationItemFactory.html">AnnotationItemFactory</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolbar.html">AnnotationToolbar</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolkit.html">AnnotationToolkit</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUI.html">AnnotationUI</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUITool.html">AnnotationUITool</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUITool.AnnotationUIToolbarBase.html">AnnotationUIToolbarBase</a></li><li><a href="OSDPaperjsAnnotation.BrushTool.html">BrushTool</a></li><li><a href="OSDPaperjsAnnotation.BrushTool.BrushToolbar.html">BrushToolbar</a></li><li><a href="OSDPaperjsAnnotation.DefaultTool.html">DefaultTool</a></li><li><a href="OSDPaperjsAnnotation.DefaultTool.DefaultToolbar.html">DefaultToolbar</a></li><li><a href="OSDPaperjsAnnotation.Ellipse.html">Ellipse</a></li><li><a href="OSDPaperjsAnnotation.EllipseTool.html">EllipseTool</a></li><li><a href="OSDPaperjsAnnotation.EllipseTool.EllipseToolbar.html">EllipseToolbar</a></li><li><a href="OSDPaperjsAnnotation.FeatureCollectionUI.html">FeatureCollectionUI</a></li><li><a href="OSDPaperjsAnnotation.FeatureUI.html">FeatureUI</a></li><li><a href="OSDPaperjsAnnotation.FileDialog.html">FileDialog</a></li><li><a href="OSDPaperjsAnnotation.LayerUI.html">LayerUI</a></li><li><a href="OSDPaperjsAnnotation.Linestring.html">Linestring</a></li><li><a href="OSDPaperjsAnnotation.LinestringTool.html">LinestringTool</a></li><li><a href="OSDPaperjsAnnotation.LinestringTool.LinestringToolbar.html">LinestringToolbar</a></li><li><a href="OSDPaperjsAnnotation.MultiLinestring.html">MultiLinestring</a></li><li><a href="OSDPaperjsAnnotation.MultiPolygon.html">MultiPolygon</a></li><li><a href="OSDPaperjsAnnotation.PaperOverlay.html">PaperOverlay</a></li><li><a href="OSDPaperjsAnnotation.Placeholder.html">Placeholder</a></li><li><a href="OSDPaperjsAnnotation.Point.html">Point</a></li><li><a href="OSDPaperjsAnnotation.PointText.html">PointText</a></li><li><a href="OSDPaperjsAnnotation.PointTextTool.html">PointTextTool</a></li><li><a href="OSDPaperjsAnnotation.PointTextTool.PointTextToolbar.html">PointTextToolbar</a></li><li><a href="OSDPaperjsAnnotation.PointTool.html">PointTool</a></li><li><a href="OSDPaperjsAnnotation.PointTool.PointToolbar.html">PointToolbar</a></li><li><a href="OSDPaperjsAnnotation.PolygonTool.html">PolygonTool</a></li><li><a href="OSDPaperjsAnnotation.PolygonTool.PolygonToolbar.html">PolygonToolbar</a></li><li><a href="OSDPaperjsAnnotation.Raster.html">Raster</a></li><li><a href="OSDPaperjsAnnotation.RasterTool.html">RasterTool</a></li><li><a href="OSDPaperjsAnnotation.RasterTool.RasterToolbar.html">RasterToolbar</a></li><li><a href="OSDPaperjsAnnotation.Rectangle.html">Rectangle</a></li><li><a href="OSDPaperjsAnnotation.RectangleTool.html">RectangleTool</a></li><li><a href="OSDPaperjsAnnotation.RectangleTool_RectToolbar.html">RectToolbar</a></li><li><a href="OSDPaperjsAnnotation.RotationControlOverlay.html">RotationControlOverlay</a></li><li><a href="OSDPaperjsAnnotation.RotationControlTool.html">RotationControlTool</a></li><li><a href="OSDPaperjsAnnotation.RotationControlWidget.html">RotationControlWidget</a></li><li><a href="OSDPaperjsAnnotation.StyleTool.html">StyleTool</a></li><li><a href="OSDPaperjsAnnotation.StyleTool.StyleToolbar.html">StyleToolbar</a></li><li><a href="OSDPaperjsAnnotation.ToolBase.html">ToolBase</a></li><li><a href="OSDPaperjsAnnotation.TransformTool.html">TransformTool</a></li><li><a href="OSDPaperjsAnnotation.TransformTool.TransformToolbar.html">TransformToolbar</a></li><li><a href="OSDPaperjsAnnotation.WandTool.html">WandTool</a></li><li><a href="OSDPaperjsAnnotation.WandTool.WandToolbar.html">WandToolbar</a></li><li><a href="SelectTool.html">SelectTool</a></li></ul><h3>Global</h3><ul><li><a href="global.html#_paper">_paper</a></li><li><a href="global.html#adaptiveOffsetCurve">adaptiveOffsetCurve</a></li><li><a href="global.html#connectAdjacentBezier">connectAdjacentBezier</a></li><li><a href="global.html#connectBeziers">connectBeziers</a></li><li><a href="global.html#convertFaIcons">convertFaIcons</a></li><li><a href="global.html#getPointLineIntersections">getPointLineIntersections</a></li><li><a href="global.html#iconDefs">iconDefs</a></li><li><a href="global.html#localImportsCompleted">localImportsCompleted</a></li><li><a href="global.html#makeFaIcon">makeFaIcon</a></li><li><a href="global.html#makeRoundJoin">makeRoundJoin</a></li><li><a href="global.html#normalize">normalize</a></li><li><a href="global.html#offsetSegment">offsetSegment</a></li><li><a href="global.html#osd">osd</a></li><li><a href="global.html#removeIntersection">removeIntersection</a></li><li><a href="global.html#removeOutsiders">removeOutsiders</a></li><li><a href="global.html#updateFillOpacity">updateFillOpacity</a></li><li><a href="global.html#updateStrokeOpacity">updateStrokeOpacity</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.0</a> on Tue Jan 02 2024 21:41:45 GMT-0500 (Eastern Standard Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.0</a> on Mon Mar 18 2024 22:07:42 GMT-0400 (Eastern Daylight Time)
 </footer>
 
 <script> prettyPrint(); </script>

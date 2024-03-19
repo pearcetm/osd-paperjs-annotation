@@ -81,7 +81,7 @@ svg.innerHTML = htmlString;
  * Create an SVG icon from a font-awesome class name. See iconDefs for the list of supported class names.
  * @param {String} classname
  * @param {boolean} [currentColor] Whether to use the currentColor property for the fill color
- * @returns 
+ * @returns the newly created svg element with class 'icon'
  */
 export function makeFaIcon(classname, currentColor=true){
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -101,7 +101,6 @@ export function makeFaIcon(classname, currentColor=true){
  * @param {HTMLElement} element the parent to search within
  * @param {Array} [faClassesToReplace] an optional array of strings of fontawesome class names to convert. Defaults to all classes in iconDefs above.
  * @param {Array} [faClassesToRemove] an optional array of strings to remove from the class list. Default: ['fa', 'fa-solid'] 
- * @returns 
  */
 export function convertFaIcons(element, faClassesToReplace, faClassesToRemove = ['fa', 'fa-solid']){
     if(!faClassesToReplace){

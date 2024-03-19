@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Source: osd-extensions.mjs</title>
+    <title>JSDoc: Source: utils/addcss.mjs</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,7 +17,7 @@
 
 <div id="main">
 
-    <h1 class="page-title">Source: osd-extensions.mjs</h1>
+    <h1 class="page-title">Source: utils/addcss.mjs</h1>
 
     
 
@@ -63,154 +63,56 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-
-import { PaperOverlay } from "./paper-overlay.mjs";
-import { OpenSeadragon } from "./osd-loader.mjs";
-import { paper } from './paperjs.mjs';
-
-Object.defineProperty(OpenSeadragon.Viewer.prototype, 'paperLayer', paperLayerDef());
-Object.defineProperty(OpenSeadragon.TiledImage.prototype, 'paperLayer', paperLayerDef());
-Object.defineProperty(OpenSeadragon.Viewport.prototype, 'paperLayer', paperLayerDef());
-Object.defineProperty(OpenSeadragon.TiledImage.prototype, '_paperLayerMap', paperLayerMapDef());
-Object.defineProperty(OpenSeadragon.Viewer.prototype, '_paperLayerMap', paperLayerMapDef());
-Object.defineProperty(OpenSeadragon.Viewport.prototype, '_paperLayerMap', paperLayerMapDef());
-Object.defineProperty(OpenSeadragon.Viewer.prototype, 'paperItems', paperItemsDef());
-Object.defineProperty(OpenSeadragon.TiledImage.prototype, 'paperItems', paperItemsDef());
-Object.defineProperty(OpenSeadragon.Viewport.prototype, 'paperItems', paperItemsDef());
-OpenSeadragon.Viewer.prototype._setupPaper = _setupPaper;
-OpenSeadragon.Viewport.prototype._setupPaper = _setupPaper;
-OpenSeadragon.TiledImage.prototype._setupPaper = _setupPaperForTiledImage;
-OpenSeadragon.Viewer.prototype.addPaperItem = addPaperItem;
-OpenSeadragon.Viewport.prototype.addPaperItem = addPaperItem;
-OpenSeadragon.TiledImage.prototype.addPaperItem = addPaperItem;
-
+const localImportsCompleted = typeof importedCSS !== 'undefined';
 /**
- * Creates a PaperOverlay for this viewer. See {@link PaperOverlay} for options.
- * @returns {PaperOverlay} The overlay that was created
- */
-OpenSeadragon.Viewer.prototype.createPaperOverlay = function(){ 
-    let overlay = new PaperOverlay(this, ...arguments);
-    return overlay;
-};
-
-/**
- * Define the paperItems property for a tiledImage.
- * @private
- * @returns {object} The property descriptor object.
- * @property {function} get - The getter function for paperItems.
- *   @returns {paper.Item[]} The array of paper item objects representing the items belonging to this TiledImage.
- */
-function paperItemsDef(){
-    return {
-        get: function paperItems(){
-            return this.paperLayer.children;
-        }
-    }
-}
-
-
-/**
- * @private
- */
-function _createPaperLayer(osdObject, paperScope){
-    let layer = new paper.Layer({applyMatrix:false});
-    paperScope.project.addLayer(layer);
-    osdObject._paperLayerMap.set(paperScope, layer);
-    return layer;
-}
-
-/**
- * Define the paperLayer property for a tiledImage.
- * @private
- * @returns {object} The property descriptor object.
- * @property {function} get - The getter function for paperGroup.
- *   @returns {paper.Layer} The group that serves as the parent of all paper items belonging to this TiledImage.
- */
-function paperLayerDef(){
-    return {
-        get: function paperLayer(){
-            let numScopes = this._paperLayerMap.size;
-            if( numScopes === 1){
-                return this._paperLayerMap.values().next().value;
-            } else if (numScopes === 0){
-                return null;
-            } else {
-                return this._paperLayerMap.get(paper) || null;
-            }
-        }
-    }
-}
-/**
- * Define the _paperLayerMap property for a tiledImage. Initializes the Map object the first time it is accessed.
- * @private
- * @returns {object} The property descriptor object.
- * @property {function} get - The getter function for paperGroup.
- *   @returns {Map} The mapping from paper.Scope to the layer within the scope corresponding to this object
- */
-function paperLayerMapDef(){
-    return {
-        get: function _paperLayerMap(){
-            if(!this.__paperLayerMap){
-                this.__paperLayerMap = new Map();
-            }
-            return this.__paperLayerMap;
-        }
-    }
-}
-/**
- * @private
  * 
+ * A regular expression pattern to check for in existing CSS links in the document, used to avoid duplicating CSS files. If the pattern is found in the document, the new link is not added. For consistency, the pattern is also checked against the url parameter to make sure it will exist in the document after adding the new link. If the pattern is not found in the url, an error is logged to the console and the file is not added
+ * test
+ * @memberof OSDPaperjsAnnotation#
+ * @param {string} url - The URL of the CSS file to add.
+ * @param {string} [nameToCheck] - The name pattern to check in the URL. If provided,
+ * @returns {void}
  */
-function _setupPaperForTiledImage(overlay){
-    let layer = _setupPaper.call(this, overlay);
-    let tiledImage = this;
-    layer.tiledImage = tiledImage;
-    
-    let degrees = this.getRotation();
-    let bounds = this.getBounds();
-    
-    layer.matrix.rotate(degrees, (bounds.x+bounds.width/2) * overlay.scaleFactor, (bounds.y+bounds.height/2) * overlay.scaleFactor);
-    layer.matrix.translate({x: bounds.x * overlay.scaleFactor, y: bounds.y * overlay.scaleFactor});
-    layer.matrix.scale(bounds.width * overlay.scaleFactor / this.source.width );
-    
-    tiledImage.addHandler('bounds-change',ev=>{
-        // console.log('bounds-change',ev);
-        console.log('TODO implement scaling');
-        let degrees = this.getRotation();
-        let bounds = this.getBoundsNoRotate();
-        let matrix = new paper.Matrix();
-
-        console.log(degrees, bounds);
-
-        matrix.rotate(degrees, (bounds.x+bounds.width/2) * overlay.scaleFactor, (bounds.y+bounds.height/2) * overlay.scaleFactor);
-        matrix.translate({x: bounds.x * overlay.scaleFactor, y: bounds.y * overlay.scaleFactor});
-        matrix.scale(bounds.width * overlay.scaleFactor / this.source.width );
-
-        layer.matrix.set(matrix);
-    });
-}
-
-/**
- * @private
- * @returns {paper.Layer}
- */
-function _setupPaper(overlay){
-    return _createPaperLayer(this, overlay.paperScope);
-}
-
-
-/**
- * @private
- */
-function addPaperItem(item){
-    if(this.paperLayer){
-        this.paperLayer.addChild(item);
-        item.applyRescale();
-    } else {
-        console.error('No layer has been set up in the active paper scope for this object. Does a scope need to be activated?');
+function addCSS(url, nameToCheck){
+    if(localImportsCompleted){
+        // console.log('Already imported', url);
+        return;
     }
+    // convert relative url to absolute
+    
+    if(!url.startsWith('http')){
+        url = `${import.meta.url.match(/(.*?)js\/utils\/[^\/]*$/)[1]}css/${url}`;
+    }
+
+    
+
+    if(nameToCheck){
+        let pattern=`\/${nameToCheck}\.(?:min\.)?css`;
+        let urlMatchesPattern = url.match(pattern);
+
+        if(!urlMatchesPattern){
+            console.error(`addCSS error: pattern(${pattern}) not found in url (${url})`)
+            return;
+        }
+
+        let found = Array.from(document.head.getElementsByTagName('link')).filter(link=>{
+            return link.href.match(pattern)
+        });
+
+        if(found.length>0){
+            return;
+        }
+        
+    }
+    
+    let link = document.createElement('link');
+    link.rel='stylesheet';
+    link.href=url;
+    document.head.appendChild(link);
+    
 }
-</code></pre>
+
+export {addCSS}</code></pre>
         </article>
     </section>
 

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Class: Point</title>
+    <title>JSDoc: Class: DragAndDrop</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,7 +17,7 @@
 
 <div id="main">
 
-    <h1 class="page-title">Class: Point</h1>
+    <h1 class="page-title">Class: DragAndDrop</h1>
 
     
 
@@ -28,10 +28,7 @@
 
 <header>
     
-        <h2><span class="attribs"><span class="type-signature"></span></span>
-            <span class="ancestors"><a href="OSDPaperjsAnnotation.html">OSDPaperjsAnnotation</a>.</span>Point<span class="signature">(geoJSON)</span><span class="type-signature"></span></h2>
-        
-            <div class="class-description">Represents a point annotation item.</div>
+        <h2><span class="attribs"><span class="type-signature"></span></span>DragAndDrop<span class="signature">(options)</span><span class="type-signature"></span></h2>
         
     
 </header>
@@ -42,11 +39,9 @@
         
 
     
-    <h2>Constructor</h2>
-    
 
     
-    <h4 class="name" id="Point"><span class="type-signature"></span>new Point<span class="signature">(geoJSON)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="DragAndDrop"><span class="type-signature"></span>new DragAndDrop<span class="signature">(options)</span><span class="type-signature"></span></h4>
     
 
     
@@ -54,7 +49,9 @@
 
 
 <div class="description">
-    The `Point` class represents a point annotation item. It inherits from the `AnnotationItem` class and provides methods to work with point annotations.
+    Set up an element to let children be dragged and dropped to rearrange their order.
+Styling and certain functionality depend on css properties (currently found in annotationui.css)
+targed with class names prefixed with draganddrop-
 </div>
 
 
@@ -90,7 +87,7 @@
 
         <tr>
             
-                <td class="name"><code>geoJSON</code></td>
+                <td class="name"><code>options</code></td>
             
 
             <td class="type">
@@ -106,23 +103,11 @@
 
             
 
-            <td class="description last">The GeoJSON object containing annotation data.</td>
-        </tr>
+            <td class="description last">
+                <h6>Properties</h6>
+                
 
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-    <h5 class="subsection-title">Properties:</h5>
-
-    
-
-<table class="props">
+<table class="params">
     <thead>
     <tr>
         
@@ -131,6 +116,8 @@
 
         <th>Type</th>
 
+        
+        <th>Attributes</th>
         
 
         
@@ -144,28 +131,142 @@
 
         <tr>
             
-                <td class="name"><code>_paperItem</code></td>
+                <td class="name"><code>parent</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type">paper.Group</span>
+<span class="param-type">HTMLElement</span>
 
 
             
             </td>
 
             
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
 
             
 
-            <td class="description last">The associated paper item representing the point.</td>
+            <td class="description last">the parent element</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>selector</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">String</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last">the selector to use</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>dropTarget</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">HTMLElement</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last">the element to drop onto</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>onDrop</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last">a callback to call when drop occurs
+        
+     }}</td>
         </tr>
 
     
     </tbody>
 </table>
+
+            </td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
 
 
 
@@ -199,7 +300,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="paperitems_point.mjs.html">paperitems/point.mjs</a>, <a href="paperitems_point.mjs.html#line51">line 51</a>
+        <a href="utils_draganddrop.mjs.html">utils/draganddrop.mjs</a>, <a href="utils_draganddrop.mjs.html#line46">line 46</a>
     </li></ul></dd>
     
 
@@ -233,16 +334,16 @@
     </div>
 
     
-        <h3 class="subsection-title">Extends</h3>
 
-        
+    
 
+    
+        <h3 class="subsection-title">Classes</h3>
 
-    <ul>
-        <li>AnnotationItem</li>
-    </ul>
-
-
+        <dl>
+            <dt><a href="DragAndDrop.html">DragAndDrop</a></dt>
+            <dd></dd>
+        </dl>
     
 
     
@@ -251,76 +352,6 @@
 
     
 
-    
-
-    
-
-    
-        <h3 class="subsection-title">Members</h3>
-
-        
-            
-<h4 class="name" id=".supportsType"><span class="type-signature">(static) </span>supportsType<span class="type-signature"></span></h4>
-
-
-
-
-<div class="description">
-    This static method provides information that the Point annotation item has a type of 'Point'.
-</div>
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="paperitems_point.mjs.html">paperitems/point.mjs</a>, <a href="paperitems_point.mjs.html#line147">line 147</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-        
     
 
     
@@ -332,7 +363,7 @@
     
 
     
-    <h4 class="name" id="getCoordinates"><span class="type-signature"></span>getCoordinates<span class="signature">()</span><span class="type-signature"> &rarr; {Array}</span></h4>
+    <h4 class="name" id="refresh"><span class="type-signature"></span>refresh<span class="signature">()</span><span class="type-signature"></span></h4>
     
 
     
@@ -340,7 +371,7 @@
 
 
 <div class="description">
-    This method returns an array of coordinates representing the position of the point.
+    Add draggable attribute to children that match the selector passed in at creation
 </div>
 
 
@@ -384,413 +415,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="paperitems_point.mjs.html">paperitems/point.mjs</a>, <a href="paperitems_point.mjs.html#line157">line 157</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-<div class="param-desc">
-    An array containing the x and y coordinates.
-</div>
-
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">Array</span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="getStyleProperties"><span class="type-signature"></span>getStyleProperties<span class="signature">()</span><span class="type-signature"> &rarr; {Object}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    This method returns the style properties of the point in JSON format.
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="paperitems_point.mjs.html">paperitems/point.mjs</a>, <a href="paperitems_point.mjs.html#line167">line 167</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-<div class="param-desc">
-    The style properties in JSON format.
-</div>
-
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">Object</span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="setStyle"><span class="type-signature"></span>setStyle<span class="signature">(props)</span><span class="type-signature"></span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    This method sets the style properties of the point using the provided properties object.
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>props</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Object</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">The style properties to set.</td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="paperitems_point.mjs.html">paperitems/point.mjs</a>, <a href="paperitems_point.mjs.html#line132">line 132</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id=".onTransform"><span class="type-signature">(static) </span>onTransform<span class="signature">(operation)</span><span class="type-signature"></span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    This static method performs actions during a transformation on the point, such as rotation or scaling. It handles both rotation and scaling transformations of the point annotation.
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>operation</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">The type of transformation operation.</td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="paperitems_point.mjs.html">paperitems/point.mjs</a>, <a href="paperitems_point.mjs.html#line176">line 176</a>
+        <a href="utils_draganddrop.mjs.html">utils/draganddrop.mjs</a>, <a href="utils_draganddrop.mjs.html#line174">line 174</a>
     </li></ul></dd>
     
 

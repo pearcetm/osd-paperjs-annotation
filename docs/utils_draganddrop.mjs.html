@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Source: osd-extensions.mjs</title>
+    <title>JSDoc: Source: utils/draganddrop.mjs</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,7 +17,7 @@
 
 <div id="main">
 
-    <h1 class="page-title">Source: osd-extensions.mjs</h1>
+    <h1 class="page-title">Source: utils/draganddrop.mjs</h1>
 
     
 
@@ -64,153 +64,155 @@
  * 
  */
 
-import { PaperOverlay } from "./paper-overlay.mjs";
-import { OpenSeadragon } from "./osd-loader.mjs";
-import { paper } from './paperjs.mjs';
-
-Object.defineProperty(OpenSeadragon.Viewer.prototype, 'paperLayer', paperLayerDef());
-Object.defineProperty(OpenSeadragon.TiledImage.prototype, 'paperLayer', paperLayerDef());
-Object.defineProperty(OpenSeadragon.Viewport.prototype, 'paperLayer', paperLayerDef());
-Object.defineProperty(OpenSeadragon.TiledImage.prototype, '_paperLayerMap', paperLayerMapDef());
-Object.defineProperty(OpenSeadragon.Viewer.prototype, '_paperLayerMap', paperLayerMapDef());
-Object.defineProperty(OpenSeadragon.Viewport.prototype, '_paperLayerMap', paperLayerMapDef());
-Object.defineProperty(OpenSeadragon.Viewer.prototype, 'paperItems', paperItemsDef());
-Object.defineProperty(OpenSeadragon.TiledImage.prototype, 'paperItems', paperItemsDef());
-Object.defineProperty(OpenSeadragon.Viewport.prototype, 'paperItems', paperItemsDef());
-OpenSeadragon.Viewer.prototype._setupPaper = _setupPaper;
-OpenSeadragon.Viewport.prototype._setupPaper = _setupPaper;
-OpenSeadragon.TiledImage.prototype._setupPaper = _setupPaperForTiledImage;
-OpenSeadragon.Viewer.prototype.addPaperItem = addPaperItem;
-OpenSeadragon.Viewport.prototype.addPaperItem = addPaperItem;
-OpenSeadragon.TiledImage.prototype.addPaperItem = addPaperItem;
-
 /**
- * Creates a PaperOverlay for this viewer. See {@link PaperOverlay} for options.
- * @returns {PaperOverlay} The overlay that was created
- */
-OpenSeadragon.Viewer.prototype.createPaperOverlay = function(){ 
-    let overlay = new PaperOverlay(this, ...arguments);
-    return overlay;
-};
-
-/**
- * Define the paperItems property for a tiledImage.
- * @private
- * @returns {object} The property descriptor object.
- * @property {function} get - The getter function for paperItems.
- *   @returns {paper.Item[]} The array of paper item objects representing the items belonging to this TiledImage.
- */
-function paperItemsDef(){
-    return {
-        get: function paperItems(){
-            return this.paperLayer.children;
-        }
-    }
-}
-
-
-/**
- * @private
- */
-function _createPaperLayer(osdObject, paperScope){
-    let layer = new paper.Layer({applyMatrix:false});
-    paperScope.project.addLayer(layer);
-    osdObject._paperLayerMap.set(paperScope, layer);
-    return layer;
-}
-
-/**
- * Define the paperLayer property for a tiledImage.
- * @private
- * @returns {object} The property descriptor object.
- * @property {function} get - The getter function for paperGroup.
- *   @returns {paper.Layer} The group that serves as the parent of all paper items belonging to this TiledImage.
- */
-function paperLayerDef(){
-    return {
-        get: function paperLayer(){
-            let numScopes = this._paperLayerMap.size;
-            if( numScopes === 1){
-                return this._paperLayerMap.values().next().value;
-            } else if (numScopes === 0){
-                return null;
-            } else {
-                return this._paperLayerMap.get(paper) || null;
-            }
-        }
-    }
-}
-/**
- * Define the _paperLayerMap property for a tiledImage. Initializes the Map object the first time it is accessed.
- * @private
- * @returns {object} The property descriptor object.
- * @property {function} get - The getter function for paperGroup.
- *   @returns {Map} The mapping from paper.Scope to the layer within the scope corresponding to this object
- */
-function paperLayerMapDef(){
-    return {
-        get: function _paperLayerMap(){
-            if(!this.__paperLayerMap){
-                this.__paperLayerMap = new Map();
-            }
-            return this.__paperLayerMap;
-        }
-    }
-}
-/**
- * @private
+ * @class
+ * @description Set up an element to let children be dragged and dropped to rearrange their order.
+ * Styling and certain functionality depend on css properties (currently found in annotationui.css)
+ * targed with class names prefixed with draganddrop-
  * 
  */
-function _setupPaperForTiledImage(overlay){
-    let layer = _setupPaper.call(this, overlay);
-    let tiledImage = this;
-    layer.tiledImage = tiledImage;
-    
-    let degrees = this.getRotation();
-    let bounds = this.getBounds();
-    
-    layer.matrix.rotate(degrees, (bounds.x+bounds.width/2) * overlay.scaleFactor, (bounds.y+bounds.height/2) * overlay.scaleFactor);
-    layer.matrix.translate({x: bounds.x * overlay.scaleFactor, y: bounds.y * overlay.scaleFactor});
-    layer.matrix.scale(bounds.width * overlay.scaleFactor / this.source.width );
-    
-    tiledImage.addHandler('bounds-change',ev=>{
-        // console.log('bounds-change',ev);
-        console.log('TODO implement scaling');
-        let degrees = this.getRotation();
-        let bounds = this.getBoundsNoRotate();
-        let matrix = new paper.Matrix();
+export class DragAndDrop{
+    /**
+     * 
+     * @param {Object} options 
+     * @param {HTMLElement} options.parent the parent element
+     * @param {String} options.selector the selector to use
+     * @param {HTMLElement} options.dropTarget the element to drop onto
+     * @param {function} [options.onDrop] a callback to call when drop occurs
+        
+     }}
+     */
+    constructor(options){
+        if(!options.parent){
+            console.error('element is required');
+            return;
+        }
+        if(!options.selector){
+            console.error('selector is required');
+            return;
+        }
+        if(!options.dropTarget){
+            console.error('droptarget is required');
+            return;
+        }
 
-        console.log(degrees, bounds);
+        this.element = options.parent;
+        this.selector = options.selector;
+        this.droptarget = options.dropTarget;
+        this.onDrop = options.onDrop;
 
-        matrix.rotate(degrees, (bounds.x+bounds.width/2) * overlay.scaleFactor, (bounds.y+bounds.height/2) * overlay.scaleFactor);
-        matrix.translate({x: bounds.x * overlay.scaleFactor, y: bounds.y * overlay.scaleFactor});
-        matrix.scale(bounds.width * overlay.scaleFactor / this.source.width );
+        this.placeholder = null;
+        this.dragging = null;
 
-        layer.matrix.set(matrix);
-    });
-}
-
-/**
- * @private
- * @returns {paper.Layer}
- */
-function _setupPaper(overlay){
-    return _createPaperLayer(this, overlay.paperScope);
-}
+        this.refresh();
 
 
-/**
- * @private
- */
-function addPaperItem(item){
-    if(this.paperLayer){
-        this.paperLayer.addChild(item);
-        item.applyRescale();
-    } else {
-        console.error('No layer has been set up in the active paper scope for this object. Does a scope need to be activated?');
+        this.droptarget.addEventListener('dragover',ev => {
+            ev.preventDefault();
+            return false;
+        });
+        this.droptarget.addEventListener('dragleave',ev=>{
+            ev.preventDefault();
+            return false;
+        });
+        this.droptarget.addEventListener('dragend',ev=>{
+            if(!this.dragging){
+                return;
+            }
+            ev.preventDefault();
+            this.cleanupDropTarget();
+            return false;
+        });
+        this.element.addEventListener('dragstart',ev=>{
+            if(ev.target.matches(this.selector)){
+                ev.stopPropagation();
+                this.dragging = ev.target;
+                this.placeholder = ev.target.cloneNode(true);
+                this.placeholder.classList.add('draganddrop-placeholder');
+                // this.dragging.parentNode.insertBefore(this.placeholder, this.dragging);
+                ev.target.classList.add('draganddrop-dragging');
+                this.setupDropTarget();
+            }
+        });
+        this.element.addEventListener('dragend',ev=>{
+            if(ev.target.matches(this.selector)){
+                ev.stopPropagation();
+                ev.target.classList.remove('draganddrop-dragging', 'draganddrop-hide');
+
+                if(this.placeholder){
+                    this.placeholder.remove();
+                }
+                this.placeholder = null;
+                this.dragging = null;
+
+                this.cleanupDropTarget();
+            }
+            
+        });
+        this.element.addEventListener('dragleave',ev=>{
+            if(ev.target.matches(this.selector)){
+                ev.stopPropagation();
+            }
+            
+        });
+        this.element.addEventListener('drop',ev=>{
+            if(this.dragging &amp;&amp; this.placeholder.parentNode == this.droptarget){
+                ev.stopPropagation();
+                this.placeholder.replaceWith(this.dragging);
+                this.dragging = null;
+                this.placeholder = null;
+
+                if(this.onDrop){
+                    this.onDrop();
+                }
+            }
+        });
+        this.element.addEventListener('dragover',ev=>{
+            if(!this.dragging){
+                return;
+            }
+            ev.preventDefault();
+            this.dragging.classList.add('draganddrop-hide');
+            if(ev.target.matches(this.selector)){
+                ev.stopPropagation();
+                
+                let top=ev.target.getBoundingClientRect().top;
+                let bottom=ev.target.getBoundingClientRect().bottom;
+                if(this.placeholder == ev.target){
+                    // console.log('returning');
+                    return;
+                }
+                if(ev.clientY&lt;(top+bottom)/2) {
+                    ev.target.parentNode.insertBefore(this.placeholder, ev.target);
+                }
+                else {
+                    ev.target.parentNode.insertBefore(this.placeholder, ev.target.nextSibling);
+                }
+            } else if(ev.target == this.element){
+                this.droptarget.appendChild(this.placeholder);
+                ev.stopPropagation();
+            }
+            
+        });
     }
-}
-</code></pre>
+
+    /**
+     * Add draggable attribute to children that match the selector passed in at creation
+     */
+    refresh(){
+        this.element.querySelectorAll(this.selector).forEach(element => {
+            element.setAttribute('draggable', true);
+        })
+    }
+
+    setupDropTarget(){
+        this.droptarget.classList.add('draganddrop-drop-target');
+    }
+
+    cleanupDropTarget(){
+        this.droptarget.classList.remove('draganddrop-drop-target');
+    }
+}</code></pre>
         </article>
     </section>
 
