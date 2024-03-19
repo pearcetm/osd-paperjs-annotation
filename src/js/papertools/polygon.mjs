@@ -65,6 +65,8 @@ class PolygonTool extends AnnotationUITool{
         let tool = this.tool;
         this._lastClickTime = 0;
         this.drawingGroup = new paper.Group();
+        this._currentItem = null;
+        this._currentItemSelectedColor = null;
         this.project.toolLayer.addChild(this.drawingGroup);
         this.drawingGroup.visible=false;  
         this.draggingSegment = null;
@@ -84,6 +86,7 @@ class PolygonTool extends AnnotationUITool{
             self.drawingGroup.visible=true;
             self.drawingGroup.selected=true;
             self.targetLayer.addChild(self.drawingGroup);
+            self._cacheCurrentItem();
         }
         /**
          * Event handler when the tool is deactivated.
@@ -95,6 +98,11 @@ class PolygonTool extends AnnotationUITool{
             if(finished){
                 self.finish();
                 self.project.toolLayer.addChild(self.drawingGroup);
+                self.drawingGroup.removeChildren();
+                self.drawingGroup.visible = false;
+                self.drawingGroup.selected = false;
+                self._restoreCachedItem();
+                self._currentItem = null;
             }
         }
         
@@ -137,8 +145,21 @@ class PolygonTool extends AnnotationUITool{
         }
     
     }
+    _cacheCurrentItem(){
+        self._currentItem = this.item;
+        self._currentItem && (self._currentItem.selectedColor = self._currentItemSelectedColor);
+    }
+    _restoreCachedItem(){
+        self._currentItem && (self._currentItem.selectedColor = self._currentItemSelectedColor);
+    }
     onSelectionChanged(){
+        this._restoreCachedItem();
+        this._cacheCurrentItem();
+        
         this.targetLayer.addChild(this.drawingGroup);
+        this.drawingGroup.removeChildren();
+
+        this.setEraseMode(this.eraseMode);
     }
     onMouseDown(ev){
         this.draggingSegment=null;
@@ -243,7 +264,7 @@ class PolygonTool extends AnnotationUITool{
      * Finalizes the current polygon drawing and performs necessary cleanup.
      */
     finish(){
-        this.finishCurrentPath();
+        // this.finishCurrentPath();
         this.setEraseMode(false);
         this.draggingSegment=null;
         this.project.overlay.removeClass('tool-action').setAttribute('data-tool-action','');
@@ -308,8 +329,8 @@ class PolygonTool extends AnnotationUITool{
      * Completes the current polygon path and updates the annotation accordingly.
      */
     finishCurrentPath(){
-        let dr = this.drawing()
-        if(!dr || !this.item) return;
+        let dr = this.drawing();
+        if(!dr || !this.item || !this.item.parent) return;
         dr.path.closed=true;
             
         let result = this.eraseMode ? this.item.subtract(dr.path,{insert:false}) : this.item.unite(dr.path,{insert:false});
