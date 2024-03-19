@@ -39,6 +39,7 @@
 import { AnnotationUIToolbarBase } from './annotationUITool.mjs';
 import {PolygonTool} from './polygon.mjs';
 import { paper } from '../paperjs.mjs';
+import { makeFaIcon } from '../utils/faIcon.mjs';
 
 /**
  * The LinestringTool class extends the PolygonTool and provides functionality for creating and modifying linestrings.
@@ -248,8 +249,7 @@ class LinestringToolbar extends AnnotationUIToolbarBase{
         super(linestringTool);
         this.linestringTool = linestringTool;
 
-        const i = document.createElement('i');
-        i.classList.add('fa-solid','fa-pen-nib');
+        const i = makeFaIcon('fa-pen-nib');
         this.button.configure(i,'Linestring Tool');
         
         const fdd = document.createElement('div');

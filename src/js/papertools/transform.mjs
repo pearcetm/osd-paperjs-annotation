@@ -38,6 +38,7 @@
 
 import {AnnotationUITool, AnnotationUIToolbarBase} from './annotationUITool.mjs';
 import { paper } from '../paperjs.mjs';
+import { makeFaIcon } from '../utils/faIcon.mjs';
 /**
  * The TransformTool class extends the AnnotationUITool and provides functionality for transforming selected items on the canvas.
  * @memberof OSDPaperjsAnnotation
@@ -355,8 +356,7 @@ class TransformToolbar extends AnnotationUIToolbarBase{
         super(tool);
         this.dropdown.classList.add('transform-dropdown');
         
-        const i = document.createElement('i');
-        i.classList.add('fa-solid','fa-up-down-left-right');
+        const i = makeFaIcon('fa-up-down-left-right');
         this.button.configure(i,'Transform Tool');
         
     }

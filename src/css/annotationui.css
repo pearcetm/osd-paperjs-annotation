@@ -624,3 +624,17 @@ input[type=range] {
 .btn.btn-sm{
     font-size:12px;
 }
+
+.icon {
+    width: 1em;
+    height: 1em;
+    vertical-align: -0.125em;
+}
+/* Items with [data-action] are supposed to be clickable but if the sub-object gets the click it doesn't work, so stop pointer events on children */
+[data-action]>*{
+    pointer-events:none;
+}
+
+.rotate-by{
+    transform:rotate(var(--rotate-angle));
+}

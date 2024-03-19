@@ -35,9 +35,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-import '@fortawesome/fontawesome-free/css/all.min.css';
+
 import '../css/editablecontent.css';
-import '../css/osd-button.css';
 import '../css/annotationui.css';
 
 

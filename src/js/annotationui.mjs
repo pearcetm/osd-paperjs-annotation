@@ -43,9 +43,7 @@ import { AnnotationToolbar } from './annotationtoolbar.mjs';
 import { LayerUI } from './layerui.mjs';
 import { FileDialog } from './filedialog.mjs';
 
-addCSS('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css', 'font-awesome/6.1.1/css/all');
 addCSS('annotationui.css', 'annotationui');
-addCSS('osd-button.css', 'osd-button');
 addCSS('editablecontent.css', 'editablecontent');
 
 /**
@@ -93,10 +91,6 @@ class AnnotationUI {
      * @private
      */
     this._toolbar = new AnnotationToolbar(annotationToolkit.overlay.paperScope, opts.tools);
-    // if (opts.addToolbar) {
-    //    this._toolbar.addToOpenSeadragon(_viewer);
-    // }
-
 
     /**
      * _fileDialog: FileDialog UI for loading/saving data
@@ -110,7 +104,7 @@ class AnnotationUI {
         onClick: () => {
           this._fileDialog.toggle();
         },
-        faIconClasses: 'fa-solid fa-save',
+        faIconClass: 'fa-save',
         tooltip: 'Save/Load Annotations',
       });
     }
@@ -159,7 +153,7 @@ class AnnotationUI {
             this.options.buttonTogglesLayerUI && this._layerUI.hide();
           }
         },
-        faIconClasses: 'fa-solid fa-pencil',
+        faIconClass: 'fa-pencil',
         tooltip: 'Annotation Interface',
       });
     }

@@ -39,6 +39,7 @@
 import {AnnotationUITool, AnnotationUIToolbarBase} from './annotationUITool.mjs';
 import { PointText } from '../paperitems/pointtext.mjs';
 import { paper } from '../paperjs.mjs';
+import { makeFaIcon } from '../utils/faIcon.mjs';
 
 /**
  * The PointTextTool class empowers the annotation UI with the ability to add point-based text annotations.
@@ -193,8 +194,7 @@ class PointTextToolbar extends AnnotationUIToolbarBase{
         super(tool);
         let self = this;
 
-        const i = document.createElement('i');
-        i.classList.add('fa-solid','fa-font');
+        const i = makeFaIcon('fa-font');
         this.button.configure(i,'Text Tool');
 
         this.instructions = document.createElement('span');

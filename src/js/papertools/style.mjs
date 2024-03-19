@@ -39,6 +39,7 @@
 import {AnnotationUITool, AnnotationUIToolbarBase} from './annotationUITool.mjs';
 import { paper } from '../paperjs.mjs';
 import { isVisible } from '../utils/isvisible.mjs';
+import { convertFaIcons, makeFaIcon } from '../utils/faIcon.mjs';
 
 /**
  * Represents a tool for modifying the visual styles of annotation items, including color and opacity.
@@ -329,10 +330,11 @@ class StyleToolbar extends AnnotationUIToolbarBase{
         super(tool);
         let self=this;
         
-        const i = document.createElement('i');
-        i.classList.add('fa-solid','fa-palette');
+        
+        const i = makeFaIcon('fa-palette');
         this.button.configure(i, 'Style Tool');
         this.dropdown.innerHTML = this.uiHTML();
+        convertFaIcons(this.dropdown);
 
         this._hierarchy = [];
 

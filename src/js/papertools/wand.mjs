@@ -42,6 +42,7 @@ import {Morph} from '../utils/morph.mjs';
 import { makeMagicWand } from '../utils/magicwand.mjs';
 import { paper } from '../paperjs.mjs';
 import { datastore } from '../utils/datastore.mjs';
+import { makeFaIcon } from '../utils/faIcon.mjs';
 
 /**
  * The `WandTool` class represents a powerful tool designed for making selections with a magic wand-like effect. 
@@ -493,8 +494,9 @@ class WandToolbar extends AnnotationUIToolbarBase{
     constructor(wandTool){
         super(wandTool);
         
-        let html = document.createElement('i');
-        html.classList.add("fa-solid", "fa-wand-magic-sparkles", "fa-rotate-270");
+        let html = makeFaIcon('fa-wand-magic-sparkles');
+        html.classList.add('rotate-by');
+        html.style.setProperty('--rotate-angle', '270deg');
         this.button.configure(html,'Magic Wand Tool');
         
         let fdd = document.createElement('div');

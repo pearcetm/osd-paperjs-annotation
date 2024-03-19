@@ -38,6 +38,7 @@
 
 import {AnnotationUITool, AnnotationUIToolbarBase} from './annotationUITool.mjs';
 import { paper } from '../paperjs.mjs';
+import { makeFaIcon } from '../utils/faIcon.mjs';
 /**
  * The RasterTool class extends the AnnotationUITool and provides functionality for rasterizing annotations.
  * @extends AnnotationUITool
@@ -138,8 +139,8 @@ class RasterToolbar extends AnnotationUIToolbarBase{
    */
     constructor(tool){
         super(tool);
-        const i = document.createElement('i');
-        i.classList.add('fa-solid','fa-image');
+       
+        const i = makeFaIcon('fa-image');
         this.button.configure(i,'raster Tool');
 
         const d = document.createElement('div');

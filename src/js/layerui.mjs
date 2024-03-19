@@ -42,6 +42,7 @@ import { FeatureCollectionUI } from './featurecollectionui.mjs';
 import { domObjectFromHTML } from './utils/domObjectFromHTML.mjs';
 import { datastore } from './utils/datastore.mjs';
 import { DragAndDrop } from './utils/draganddrop.mjs';
+import { convertFaIcons } from './utils/faIcon.mjs';
 
 /**
  * A user interface for managing layers of feature collections.
@@ -65,7 +66,7 @@ class LayerUI extends OpenSeadragon.EventSource{
         this.paperScope.project.on('feature-collection-added',ev=>this._onFeatureCollectionAdded(ev));
         
         this.element = makeHTMLElement();
-        
+        convertFaIcons(this.element);
         
         this.element.querySelector('.new-feature-collection').addEventListener('click', ev => {
             ev.stopPropagation();

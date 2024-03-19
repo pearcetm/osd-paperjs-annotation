@@ -39,6 +39,7 @@
 import {AnnotationUITool, AnnotationUIToolbarBase} from './annotationUITool.mjs';
 import { Point } from '../paperitems/point.mjs';
 import { paper } from '../paperjs.mjs';
+import { makeFaIcon } from '../utils/faIcon.mjs';
 /**
  * Represents the PointTool class that allows users to create and manipulate Point features on the Paper.js project.
  * This tool provides functionality for creating points on the map, moving them, and updating their properties.
@@ -149,8 +150,7 @@ class PointToolbar extends AnnotationUIToolbarBase{
     constructor(tool){
         super(tool);
         
-        const i = document.createElement('i');
-        i.classList.add('fa-solid','fa-map-pin');
+        const i = makeFaIcon('fa-map-pin');
         this.button.configure(i,'Point Tool');
 
         this.instructions = document.createElement('span');

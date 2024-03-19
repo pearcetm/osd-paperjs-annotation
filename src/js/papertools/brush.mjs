@@ -39,6 +39,7 @@
 import {AnnotationUITool, AnnotationUIToolbarBase} from './annotationUITool.mjs';
 import {PaperOffset} from '../paper-offset.mjs';
 import { paper } from '../paperjs.mjs';
+import { makeFaIcon } from '../utils/faIcon.mjs';
 /**
  * Represents a brush tool for creating and modifying annotations.
  * @class
@@ -265,9 +266,9 @@ class BrushToolbar extends AnnotationUIToolbarBase{
     constructor(brushTool){
         super(brushTool);
         
-        const i = document.createElement('i');
-        i.classList.add('fa-solid', 'fa-brush', 'fa-rotate-by');
-        i.style.setProperty('--fa-rotate-angle','225deg');
+        const i = makeFaIcon('fa-brush');
+        i.classList.add('rotate-by');
+        i.style.setProperty('--rotate-angle','225deg');
         this.button.configure(i,'Brush Tool');
 
         const fdd = document.createElement('div');

@@ -38,6 +38,7 @@
 
 import {AnnotationUITool, AnnotationUIToolbarBase} from './annotationUITool.mjs';
 import { paper } from '../paperjs.mjs';
+import { makeFaIcon } from '../utils/faIcon.mjs';
 
 /**
  * Represents the SelectTool class that extends the AnnotationUITool.
@@ -226,8 +227,8 @@ class SelectToolbar extends AnnotationUIToolbarBase{
     constructor(tool){
         super(tool);
         this.dropdown.classList.add('select-dropdown');
-        const i = document.createElement('i');
-        i.classList.add('fa-solid', 'fa-arrow-pointer');
+        
+        const i = makeFaIcon('fa-arrow-pointer');
         this.button.configure(i,'Selection Tool');
         
         const s = document.createElement('div');

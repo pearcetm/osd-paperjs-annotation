@@ -43,6 +43,7 @@ import { datastore } from './utils/datastore.mjs';
 import { DragAndDrop } from './utils/draganddrop.mjs';
 import { Placeholder } from './paperitems/placeholder.mjs';
 import { OpenSeadragon } from './osd-loader.mjs';
+import { convertFaIcons } from './utils/faIcon.mjs';
 
 /**
  * A user interface for managing feature collections. The FeatureCollectionUI class provides a user
@@ -68,6 +69,15 @@ class FeatureCollectionUI{
         
         // this.toolbar = init.toolbar;
         this.element = makeFeatureCollectionElement();
+        convertFaIcons(this.element, [
+            'fa-palette',
+            'fa-trash-can',
+            'fa-eye',
+            'fa-eye-slash',
+            'fa-caret-down',
+            'fa-caret-up'
+        ]);
+
         this._editableName = new EditableContent();
         this.element.querySelector('.annotation-name.name').appendChild(this._editableName.element);
         this._editableName.onChanged = text => {

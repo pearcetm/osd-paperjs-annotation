@@ -36,12 +36,10 @@
  * 
  */
 
-.fa, .fa-solid{
-    font-weight:900;
-}
+ 
 .button-icon-fa{
     position:absolute;
-    top:calc(50% - 2px);
+    top:calc(50% - 4px);
     left:50%;
     transform:translate(-50%, -50%);
     color:#01010187;

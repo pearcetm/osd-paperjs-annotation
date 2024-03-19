@@ -38,6 +38,7 @@
 
 import {AnnotationUITool, AnnotationUIToolbarBase} from './annotationUITool.mjs';
 import { paper } from '../paperjs.mjs';
+import { makeFaIcon } from '../utils/faIcon.mjs';
 /**
  * Represents an Ellipse Tool in the Annotation Toolkit program.
  * This tool allows users to create and modify ellipses on the canvas.
@@ -279,8 +280,7 @@ class EllipseToolbar extends AnnotationUIToolbarBase{
     constructor(tool){
         super(tool);
         
-        const i = document.createElement('i');
-        i.classList.add('fa-regular','fa-circle');
+        const i = makeFaIcon('fa-circle');
         this.button.configure(i,'Ellipse Tool');
         
         this.instructions = document.createElement('span');

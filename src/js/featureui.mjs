@@ -40,6 +40,7 @@ import {EditableContent} from './utils/editablecontent.mjs';
 import { OpenSeadragon } from './osd-loader.mjs';
 import { domObjectFromHTML } from './utils/domObjectFromHTML.mjs';
 import { datastore } from './utils/datastore.mjs';
+import { convertFaIcons } from './utils/faIcon.mjs';
 
 /**
  * A user interface for managing features.
@@ -56,6 +57,13 @@ class FeatureUI{
         
         this.paperItem=paperItem;
         let el = this._element = makeFeatureElement();
+        convertFaIcons(el, [
+            'fa-palette',
+            'fa-trash-can',
+            'fa-binoculars',
+            'fa-crop-simple',
+        ]);
+
         this.paperItem.FeatureUI = this;
         this._editableName = new EditableContent();
         el.querySelector('.feature-item.name').appendChild(this._editableName.element);

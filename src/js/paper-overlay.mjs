@@ -41,6 +41,7 @@ import { paper } from './paperjs.mjs';
 import { addCSS } from './addcss.mjs';
 import './paper-extensions.mjs';
 import './osd-extensions.mjs';
+import { makeFaIcon } from './utils/faIcon.mjs';
         
 (function (OpenSeadragon) {
 
@@ -239,11 +240,10 @@ class PaperOverlay{
    * @param {Object} params - The parameters for the button.
    * @param {string} params.tooltip - The tooltip text for the button.
    * @param {string} params.onClick - The function to be called when the button is clicked.
-   * @param {string} params.faIconClasses - Space-separated list of Font Awesome icon classes for the button icon.
+   * @param {string} params.faIconClass - Font Awesome icon classes for the button icon.
    * @returns {any} The button object.
    */
     addViewerButton(params={}){
-        addCSS('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css','font-awesome/6.1.1/css/all');
         addCSS('osd-button.css','osd-button');
         const prefixUrl=this.viewer.prefixUrl;
         let button = new OpenSeadragon.Button({
@@ -254,9 +254,9 @@ class PaperOverlay{
             srcDown: prefixUrl+`button_pressed.png`,
             onClick: params.onClick,
         });
-        if(params.faIconClasses){
-            let i = document.createElement('i');
-            i.classList.add(...params.faIconClasses.split(/\s/), 'button-icon-fa');
+        if(params.faIconClass){
+            let i = makeFaIcon(params.faIconClass);
+            i.style = 'position:absolute;top:calc(50% - 4px);left:50%;transform:translate(-50%, -50%);color:#01010187;';
             button.element.appendChild(i);
         }
         this.viewer.buttonGroup.buttons.push(button);

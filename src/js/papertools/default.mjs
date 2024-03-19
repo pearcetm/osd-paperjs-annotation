@@ -38,6 +38,7 @@
 
 import {AnnotationUITool, AnnotationUIToolbarBase} from './annotationUITool.mjs';
 import { paper } from '../paperjs.mjs';
+import { makeFaIcon } from '../utils/faIcon.mjs';
 /**
  * Default annotation tool that extends the AnnotationUITool class.
  * Used for image navigation and interaction with annotations.
@@ -81,8 +82,7 @@ class DefaultToolbar extends AnnotationUIToolbarBase{
     constructor(tool){
         super(tool);
         
-        const i = document.createElement('i');
-        i.classList.add('fa-solid', 'fa-hand');
+        const i = makeFaIcon('fa-hand');
         this.button.configure(i,'Image Navigation Tool');
         
     }

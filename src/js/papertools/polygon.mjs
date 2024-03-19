@@ -38,6 +38,7 @@
 
 import {AnnotationUITool, AnnotationUIToolbarBase} from './annotationUITool.mjs';
 import { paper } from '../paperjs.mjs';
+import { makeFaIcon } from '../utils/faIcon.mjs';
 /**
  * Represents a polygon annotation tool that allows users to create and manipulate polygons on a canvas.
  * Inherits functionality from the AnnotationUITool class.
@@ -385,8 +386,7 @@ class PolygonToolbar extends AnnotationUIToolbarBase{
     constructor(polyTool){
         super(polyTool);
         
-        const i = document.createElement('i');
-        i.classList.add('fa-solid','fa-draw-polygon');
+        const i = makeFaIcon('fa-draw-polygon');
         this.button.configure(i,'Polygon Tool');
         
         const fdd = document.createElement('div');

@@ -38,6 +38,7 @@
 
 import {AnnotationUITool, AnnotationUIToolbarBase} from './annotationUITool.mjs';
 import { paper } from '../paperjs.mjs';
+import { makeFaIcon } from '../utils/faIcon.mjs';
 
 /**
  * The RectangleTool class extends the AnnotationUITool and provides functionality for creating and modifying rectangles.
@@ -264,8 +265,8 @@ class RectToolbar extends AnnotationUIToolbarBase{
      */
     constructor(tool){
         super(tool);
-        const i = document.createElement('i');
-        i.classList.add('fa-solid','fa-vector-square');
+        
+        const i = makeFaIcon('fa-vector-square');
         this.button.configure(i,'Rectangle Tool');
         
         this.instructions = document.createElement('span');

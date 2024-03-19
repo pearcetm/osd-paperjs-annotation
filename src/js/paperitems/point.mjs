@@ -39,6 +39,7 @@
 import { AnnotationItem } from "./annotationitem.mjs";
 import { OpenSeadragon } from '../osd-loader.mjs';
 import { paper } from '../paperjs.mjs';
+import { makeFaIcon } from "../utils/faIcon.mjs";
 
 /**
  * Represents a point annotation item.
@@ -249,9 +250,8 @@ class Point extends AnnotationItem{
      */
     _makeIcon(){
         //to-do: make the class(es) used to select a fontawesome icon a configurable option
-        const domText = document.createElement('i');
+        const domText = makeFaIcon('fa-map-pin');
         document.querySelector('body').appendChild(domText);
-        domText.classList.add('fa-solid', 'fa-map-pin');
         domText.style.visibility='hidden';
 
         let computedStyle = window.getComputedStyle(domText, ':before');

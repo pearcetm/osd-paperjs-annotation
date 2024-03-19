@@ -39,9 +39,6 @@
 import { OpenSeadragon } from './osd-loader.mjs';
 import { ToolBase } from './papertools/base.mjs';
 import {PaperOverlay} from './paper-overlay.mjs';
-import {addCSS} from './addcss.mjs';
-addCSS('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css','font-awesome/6.1.1/css/all');
-addCSS('osd-button.css','osd-button');
 
 /**
  * @class
@@ -60,7 +57,7 @@ class RotationControlOverlay{
         this.dummyTool.activate();
         this._mouseNavEnabledAtActivation = true;
         overlay.addViewerButton({
-            faIconClasses:'fa-solid fa-rotate',
+            faIconClass:'fa-rotate',
             tooltip:'Rotate viewer',
             onClick:()=>{
                 tool.active ? this.deactivate() : this.activate();
