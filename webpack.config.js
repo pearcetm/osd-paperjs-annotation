@@ -61,19 +61,12 @@ module.exports = {
                 loader: "imports-loader",
                 options: {
                     type: "module",
-                    imports: "named ./importcss.mjs importedCSS",
+                    imports: "named ../importcss.mjs importedCSS",
                 },
             },
             {
                 test: /\.css$/,
                 use: ['style-loader', 'css-loader']
-            },
-            {
-                test: /\.(woff|woff2|eot|ttf|otf)$/,
-                loader: "file-loader",
-                options: {
-                  outputPath: "../fonts",
-                }
             },
             {
                 test: /\.png$/,
