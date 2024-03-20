@@ -207,7 +207,7 @@ class TransformTool extends AnnotationUITool{
             const delta = ev.delta;
 
             Object.values(this._transformTool.corners).forEach(corner=>{
-                corner.refPos = corner.refPos.add(delta);
+                corner.refPos = corner.refPos.add(ev.original.delta);
             })
             this._transformTool.transforming.forEach(item=>{
                 item.translate(delta);
