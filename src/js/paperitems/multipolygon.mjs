@@ -57,12 +57,15 @@ class MultiPolygon extends AnnotationItem{
     constructor(geoJSON){
         super(geoJSON);
 
-        if (geoJSON.geometry.type !== 'MultiPolygon') {
-            error('Bad geoJSON object: type !=="MultiPolygon"');
+        // if (geoJSON.geometry.type !== 'MultiPolygon') {
+        //     error('Bad geoJSON object: type !=="MultiPolygon"');
+        // }
+        if(!this._supportsGeoJSONObj(geoJSON)){
+            error(`Bad geoJSON object: geometry type ${geoJSON.geometry?.type} is not supported by this factory.`)
         }
         //GeoJSON MultiPolygons are arrays of array of arrays of points
-        //Flatten the first level so it's an array of array of points
-        let coords = geoJSON.geometry.coordinates.flat();
+        //If type==MultiPolygon, flatten the first level so it's an array of array of points
+        let coords = geoJSON.geometry.type.toLowerCase()==='multipolygon' ? geoJSON.geometry.coordinates.flat() : geoJSON.geometry.coordinates;
         let paths = coords.map(function (points) {
             let pts = points.map(function (point) {
                 return new paper.Point(point[0], point[1]);
@@ -82,17 +85,31 @@ class MultiPolygon extends AnnotationItem{
 
         this.paperItem = poly;
     }
+    
     /**
-     * Retrieves the supported types by the MultiPolygon annotation item.
+     * Retrieves the supported types by the Ellipse annotation item.
      * @static
-     * @returns {Object} An object with type property.
-     * @description This static method provides information about the supported type by the MultiPolygon annotation item class.
+     * @param { String } type
+     * @param { String } [subtype]
+     * @returns {Boolean} Whether this constructor supports the requested type/subtype
      */
-    static get supportsType(){
+    static supportsGeoJSONType(type, subtype = null){
+        return ['polygon','multipolygon'].includes(type.toLowerCase()) && subtype === null;
+    }
+
+    /**
+     * Get the type of this object.
+     * @returns { Object } with fields `type in ['MultiPolygon', 'Polygon']`
+     */
+    getGeoJSONType(){
+        const type = this.paperItem.children.length > 1 ? 'MultiPolygon' : 'Polygon';
+            
         return {
-            type: 'MultiPolygon'
+            type: type,
         }
     }
+
+
     /**
      * Retrieves the coordinates of the multi-polygon.
      * @returns {Array} An array of arrays representing the coordinates of the polygons and holes.

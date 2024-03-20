@@ -143,18 +143,29 @@ class Raster extends AnnotationItem{
         
         this.paperItem = grp;
     }
+
     /**
      * Retrieves the supported types by the Raster annotation item.
      * @static
-     * @returns {Object} An object with type and subtype properties.
-     * @description This static method provides information about the supported types by the Raster annotation item class.
+     * @param { String } type
+     * @param { String } [subtype]
+     * @returns {Boolean} Whether this constructor supports the requested type/subtype
      */
-    static get supportsType(){
+    static supportsGeoJSONType(type, subtype){
+        return type.toLowerCase() === 'geometrycollection' && subtype.toLowerCase() === 'raster';
+    }
+
+    /**
+     * Get the type of this object.
+     * @returns { Object } with fields `type === 'GeometryCollection'` and `subtype === 'Raster'`
+     */
+    getGeoJSONType(){
         return {
             type: 'GeometryCollection',
             subtype: 'Raster'
         }
     }
+
     /**
      * Convert the raster annotation to a GeoJSON geometry.
      * @returns {Object} The GeoJSON representation of the raster annotation.

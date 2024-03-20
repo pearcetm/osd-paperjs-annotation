@@ -56,25 +56,32 @@ class AnnotationItem{
      * @description This constructor initializes a new annotation item based on the provided GeoJSON feature. It validates the GeoJSON geometry type and sets up the associated paper item and properties.
      */
     constructor(feature){
-        if(GeometryTypes.includes( (feature.geometry && feature.geometry.type) || feature.geometry ) === false){
+        if(GeometryTypes.includes( (feature.geometry?.type) || feature.geometry ) === false){
             throw('Bad GeoJSON Geometry type');
         }
         this._paperItem = null;
         this._props = feature.properties || {};
         this.userdata = Object.assign({}, this._props.userdata);//ensure userdata field exists
     }
+    
     /**
-     * Retrieves the supported types by the annotation item.
-     * @static
-     * @returns {Object} An object with type and subtype properties.
-     * @description This static method provides information about the supported types by the annotation item class.
+     * Tests whether the geojson type and (optional) subtype are supported by this type of annotation item
+     * @param { String } type 
+     * @param  { String } [subtype] 
+     * @returns 
      */
-    static get supportsType(){
-        return {
-            type: undefined,
-            subtype: undefined,
-        }
+    static supportsGeoJSONType(type, subtype){
+        return false; // base class returns false
     }
+
+    /**
+     * @param {Object} obj the GeoJSON object to test
+     * @returns {Boolean} whether this object is supported
+     */
+    _supportsGeoJSONObj(obj){
+        return this.constructor.supportsGeoJSONType(obj.geometry?.type, obj.geometry?.properties?.subtype);
+    }
+
     /**
      * Retrieves the coordinates of the annotation item.
      * @returns {Array} An array of coordinates.
@@ -103,12 +110,22 @@ class AnnotationItem{
     static onTransform(){}
 
     /**
-     * Retrieves the supported types by the annotation item.
-     * @returns {Object} An object with type and subtype properties.
-     * @description This method provides information about the supported types by the annotation item instance.
+     * Tests whether a given GeoJSON geometry type and optional `properties.subtype` are supported
+     * @param { String } type
+     * @param { String } [subtype]
      */
-    get supportsType(){
-        return this.constructor.supportsType;
+    supportsGeoJSONType(type, subtype){
+        return this.constructor.supportsGeoJSONType(type, subtype);
+    }
+    /**
+     * 
+     * @returns {Object} object with fields 'type' and optionally 'subtype'
+     */
+    getGeoJSONType(){
+        return {
+            type: undefined,
+            subtype: undefined
+        }
     }
     /**
      * Retrieves the label of the annotation item.
@@ -117,7 +134,12 @@ class AnnotationItem{
      * display name of the associated paper item or falls back to the subtype or type from supported types.
      */
     getLabel(){
-        return this.paperItem.displayName || this.constructor.supportsType.subtype || this.constructor.supportsType.type;
+        if(this.paperItem.displayName){
+            return this.paperItem.displayName;
+        } else {
+            const typeInfo = this.getGeoJSONType();
+            return typeInfo.subtype || typeInfo.type;
+        }
     }
     /**
      * Retrieves the type of the annotation item.
@@ -125,7 +147,7 @@ class AnnotationItem{
      * @description This property returns the type from the supported types associated with the annotation item.
      */
     get type(){
-        return this.constructor.supportsType.type;
+        return this.getGeoJSONType().type;
     }
     /**
      * Retrieves the subtype of the annotation item.
@@ -133,7 +155,7 @@ class AnnotationItem{
      * @description This property returns the subtype from the supported types associated with the annotation item.
      */
     get subtype(){
-        return this.constructor.supportsType.subtype;
+        return this.getGeoJSONType().subtype;
     }
 
     get paperItem(){
@@ -238,13 +260,13 @@ class AnnotationItemFactory{
      * @static
      * @param {Function} ctor - The constructor function for creating AnnotationItem instances.
      * @throws {string} Throws an error if the provided constructor does not implement the necessary API.
-     * @description This static method registers a constructor to the AnnotationItemFactory. It checks whether the constructor implements the required static accessor supportsType.
+     * @description This static method registers a constructor to the AnnotationItemFactory. It checks whether the constructor implements the required static accessor supportsGeoJSONType.
      */
     static register(ctor){
-        //to do: add logic to test whether the object has implemented the necessary API
-        if(ctor.supportsType === AnnotationItem.supportsType){
-            console.error('Static accessor supportsType must be implemented');
-            throw('Static accessor supportsType must be implemented');
+        //test whether the object has implemented the necessary API
+        if(ctor.supportsGeoJSONType === AnnotationItem.supportsGeoJSONType){
+            console.error('Static accessor supportsGeoJSONType must be implemented');
+            throw('Static accessor supportsGeoJSONType must be implemented');
         }
         if(!_constructors.includes(ctor)){
             _constructors.push(ctor);
@@ -263,14 +285,10 @@ class AnnotationItemFactory{
             return;
         }
 
-        let geometry = geoJSON.geometry;
-        let gprops = geometry && geometry.properties || {};
-        // let properties = geoJSON.properties;
+        let geomType = geoJSON.geometry?.type;
+        let geomSubtype = geoJSON.geometry?.properties?.subtype;
 
-        let geomType = geometry && geometry.type || undefined;
-        let geomSubtype = gprops.subtype;
-
-        let constructors = _constructors.filter(c=>c.supportsType.type==geomType && c.supportsType.subtype === geomSubtype);
+        let constructors = _constructors.filter(c=>c.supportsGeoJSONType(geomType, geomSubtype) );
         
         return constructors.slice(-1)[0]; //return the most recent constructor that supports this type
     }

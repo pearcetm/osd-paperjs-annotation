@@ -93,15 +93,26 @@ class Ellipse extends AnnotationItem{
     /**
      * Retrieves the supported types by the Ellipse annotation item.
      * @static
-     * @returns {Object} An object with type and subtype properties.
-     * @description This static method provides information about the supported types by the Ellipse annotation item class.
+     * @param { String } type
+     * @param { String } [subtype]
+     * @returns {Boolean} Whether this constructor supports the requested type/subtype
      */
-    static get supportsType(){
+    static supportsGeoJSONType(type, subtype){
+        return type.toLowerCase() === 'point' && subtype.toLowerCase() === 'ellipse';
+    }
+
+    /**
+     * Get the type of this object.
+     * @returns { Object } with fields `type === 'Point'` and `subtype === 'Ellipse'`
+     */
+    getGeoJSONType(){
         return {
             type: 'Point',
             subtype: 'Ellipse'
         }
     }
+
+
     /**
      * Retrieves the coordinates of the center of the ellipse.
      * @returns {Array} An array containing the x and y coordinates of the center.

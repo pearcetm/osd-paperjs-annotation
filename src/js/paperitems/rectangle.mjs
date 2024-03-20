@@ -92,18 +92,29 @@ class Rectangle extends AnnotationItem{
 
         this.paperItem = poly;
     }
+
     /**
      * Retrieves the supported types by the Rectangle annotation item.
      * @static
-     * @returns {Object} An object with type and subtype properties.
-     * @description This static method provides information about the supported types by the Rectangle annotation item class.
+     * @param { String } type
+     * @param { String } [subtype]
+     * @returns {Boolean} Whether this constructor supports the requested type/subtype
      */
-    static get supportsType(){
+    static supportsGeoJSONType(type, subtype){
+        return type.toLowerCase() === 'point' && subtype.toLowerCase() === 'rectangle';
+    }
+
+    /**
+     * Get the type of this object.
+     * @returns { Object } with fields `type === 'Point'` and `subtype === 'Rectangle'`
+     */
+    getGeoJSONType(){
         return {
             type: 'Point',
             subtype: 'Rectangle'
         }
     }
+
     /**
      * Retrieves the coordinates of the rectangle.
      * @returns {Array} An array containing the x and y coordinates of the rectangle.

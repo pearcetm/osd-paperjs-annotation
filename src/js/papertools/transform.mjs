@@ -138,7 +138,6 @@ class TransformTool extends AnnotationUITool{
              ctrl.onMouseDrag = function(ev){
                 let rotation=this.parent.rotation;
                 let delta=ev.delta.rotate(-rotation);
-                
                 let refPos = this.parent.corners[this.opposite].position;
 
                 if(ev.modifiers.command || ev.modifiers.control){
@@ -372,6 +371,7 @@ class TransformToolbar extends AnnotationUIToolbarBase{
         return selectedItems.length>0 && [
             'select',
             'multiselection',
+            'Polygon',
             'MultiPolygon',
             'Point:Rectangle',
             'Point:Ellipse',

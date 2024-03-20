@@ -61,7 +61,7 @@ class PolygonTool extends AnnotationUITool{
      */
     constructor(paperScope){
         super(paperScope);
-        let self = this;
+        let _this = this;
         let tool = this.tool;
         this._lastClickTime = 0;
         this.drawingGroup = new paper.Group();
@@ -81,12 +81,12 @@ class PolygonTool extends AnnotationUITool{
          * @private
          */
         this.extensions.onActivate = function(){
-            tool.minDistance=4/self.project.getZoom();
-            tool.maxDistance=20/self.project.getZoom();
-            self.drawingGroup.visible=true;
-            self.drawingGroup.selected=true;
-            self.targetLayer.addChild(self.drawingGroup);
-            self._cacheCurrentItem();
+            tool.minDistance=4/_this.project.getZoom();
+            tool.maxDistance=20/_this.project.getZoom();
+            _this.drawingGroup.visible=true;
+            _this.drawingGroup.selected=true;
+            _this.targetLayer.addChild(_this.drawingGroup);
+            _this._cacheCurrentItem();
         }
         /**
          * Event handler when the tool is deactivated.
@@ -96,13 +96,13 @@ class PolygonTool extends AnnotationUITool{
          */
         this.extensions.onDeactivate= function(finished){
             if(finished){
-                self.finish();
-                self.project.toolLayer.addChild(self.drawingGroup);
-                self.drawingGroup.removeChildren();
-                self.drawingGroup.visible = false;
-                self.drawingGroup.selected = false;
-                self._restoreCachedItem();
-                self._currentItem = null;
+                _this.finish();
+                _this.project.toolLayer.addChild(_this.drawingGroup);
+                _this.drawingGroup.removeChildren();
+                _this.drawingGroup.visible = false;
+                _this.drawingGroup.selected = false;
+                _this._restoreCachedItem();
+                _this._currentItem = null;
             }
         }
         
@@ -115,20 +115,18 @@ class PolygonTool extends AnnotationUITool{
          */
         tool.extensions.onKeyDown=function(ev){
             if(ev.key=='e'){
-                if(self.eraseMode===false){
-                    self.setEraseMode(true);
+                if(_this.eraseMode===false){
+                    _this.setEraseMode(true);
                 }
-                else if(self.eraseMode===true) {
-                    self.eraseMode='keyhold';
+                else if(_this.eraseMode===true) {
+                    _this.eraseMode='keyhold';
                 }
             }
             if ((ev.event.metaKey||ev.event.ctrlKey) && !ev.event.shiftKey && ev.event.key === 'z') {
-                console.log('Undo!');
-                self.undo();
+                _this.undo();
             }
             if ((ev.event.metaKey||ev.event.ctrlKey) && ev.event.shiftKey && ev.event.key === 'z') {
-                console.log('Redo!');
-                self.redo();
+                _this.redo();
             }
         }
         /**
@@ -138,28 +136,30 @@ class PolygonTool extends AnnotationUITool{
          * @param {paper.KeyEvent} ev - The key event.
          */
         tool.extensions.onKeyUp=function(ev){
-            if(ev.key=='e' && self.eraseMode=='keyhold'){
-                self.setEraseMode(false);
+            if(ev.key=='e' && _this.eraseMode=='keyhold'){
+                _this.setEraseMode(false);
             }
             
         }
     
     }
     _cacheCurrentItem(){
-        self._currentItem = this.item;
-        self._currentItem && (self._currentItem.selectedColor = self._currentItemSelectedColor);
+        this._currentItem = this.item;
+        this._currentItem && (this._currentItem.selectedColor = this._currentItemSelectedColor);
     }
     _restoreCachedItem(){
-        self._currentItem && (self._currentItem.selectedColor = self._currentItemSelectedColor);
+        this._currentItem && (this._currentItem.selectedColor = this._currentItemSelectedColor);
     }
     onSelectionChanged(){
-        this._restoreCachedItem();
-        this._cacheCurrentItem();
-        
-        this.targetLayer.addChild(this.drawingGroup);
-        this.drawingGroup.removeChildren();
+        if(this.item !== this._currentItem){
+            this._restoreCachedItem();
+            this._cacheCurrentItem();
+            
+            this.targetLayer.addChild(this.drawingGroup);
+            this.drawingGroup.removeChildren();
 
-        this.setEraseMode(this.eraseMode);
+            this.setEraseMode(this.eraseMode);
+        }
     }
     onMouseDown(ev){
         this.draggingSegment=null;
@@ -173,7 +173,7 @@ class PolygonTool extends AnnotationUITool{
         if(this.itemToCreate){
             this.itemToCreate.initializeGeoJSONFeature('MultiPolygon');
             this.refreshItems();
-            
+            this._cacheCurrentItem();
             this.saveHistory();        
         }
 
@@ -364,7 +364,7 @@ class PolygonTool extends AnnotationUITool{
      * Undoes the last annotation action, restoring the previous state.
      */
     undo(){
-        console.log('undoing');
+        
         let history=(this.item.history||[]);
         let idx = (history.position || 0) +1;
         if(idx<history.length){
@@ -379,7 +379,7 @@ class PolygonTool extends AnnotationUITool{
      * Redoes the previously undone annotation action, restoring the next state.
      */
     redo(){
-        console.log('redoing');
+        
         let history=(this.item.history||[]);
         let idx = (history.position || 0) -1;
         if(idx>=0){
@@ -466,7 +466,7 @@ class PolygonToolbar extends AnnotationUIToolbarBase{
      * @returns {boolean} True if enabled, false otherwise.
      */
     isEnabledForMode(mode){
-        return ['new','MultiPolygon'].includes(mode);
+        return ['new','MultiPolygon', 'Polygon'].includes(mode);
     }
     /**
      * Set the erase mode for the toolbar, updating UI state.

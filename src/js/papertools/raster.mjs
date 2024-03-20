@@ -161,6 +161,6 @@ class RasterToolbar extends AnnotationUIToolbarBase{
    * @returns {boolean} - Returns true if the RasterTool is enabled for the given mode, false otherwise.
    */
     isEnabledForMode(mode){
-        return ['MultiPolygon','Point:Rectangle','Point:Ellipse'].includes(mode);
+        return ['Polygon','MultiPolygon','Point:Rectangle','Point:Ellipse'].includes(mode);
     }
 }

@@ -79,17 +79,29 @@ class MultiLinestring extends AnnotationItem{
         this.paperItem = grp;
     
     }
+    
     /**
-     * Retrieves the supported types by the MultiLinestring annotation item.
+     * Retrieves the supported types by the MultiLineString annotation item.
      * @static
-     * @returns {Object} An object with type property.
-     * @description This static method provides information about the supported type by the MultiLinestring annotation item class.
+     * @param { String } type
+     * @param { String } [subtype]
+     * @returns {Boolean} Whether this constructor supports the requested type/subtype
      */
-    static get supportsType(){
+    static supportsGeoJSONType(type, subtype = null){
+        return type.toLowerCase() === 'multilinestring' && subtype === null;
+    }
+
+    /**
+     * Get the type of this object.
+     * @returns { Object } with fields `type === 'MultiLineString'`
+     */
+    getGeoJSONType(){
         return {
             type: 'MultiLineString',
         }
     }
+
+
     /**
      * Retrieves the coordinates of the multi-linestring.
      * @returns {Array} An array containing arrays of x and y coordinates for each point.

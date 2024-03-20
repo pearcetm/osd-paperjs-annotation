@@ -61,17 +61,29 @@ class Placeholder extends AnnotationItem{
 
         this.paperItem.initializeGeoJSONFeature = initialize;
     }
+
     /**
      * Retrieves the supported types by the Placeholder annotation item.
      * @static
-     * @returns {Object} An object with type property set to null.
-     * @description This static method provides information that the Placeholder annotation item does not have a specific type.
+     * @param { String } type
+     * @param { String } [subtype]
+     * @returns {Boolean} Whether this constructor supports the requested type/subtype
      */
-    static get supportsType(){
+    static supportsGeoJSONType(type, subtype = null){
+        return type.toLowerCase() === null && subtype === null;
+    }
+
+    /**
+     * Get the type of this object.
+     * @returns { Object } with fields `type === null`
+     */
+    getGeoJSONType(){
         return {
             type: null
         }
     }
+
+
     /**
      * Retrieves the coordinates of the placeholder.
      * @returns {Array} An empty array.

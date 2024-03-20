@@ -622,7 +622,7 @@ class WandToolbar extends AnnotationUIToolbarBase{
      * @returns {boolean} True if the toolbar should be enabled for the given mode; otherwise, false.
      */
     isEnabledForMode(mode){
-        return ['new','MultiPolygon'].includes(mode);
+        return ['new','Polygon','MultiPolygon'].includes(mode);
     }
     /**
      * Set the threshold value in the threshold input element.

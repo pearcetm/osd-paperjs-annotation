@@ -141,14 +141,25 @@ class Point extends AnnotationItem{
     /**
      * Retrieves the supported types by the Point annotation item.
      * @static
-     * @returns {Object} An object with type property set to 'Point'.
-     * @description This static method provides information that the Point annotation item has a type of 'Point'.
+     * @param { String } type
+     * @param { String } [subtype]
+     * @returns {Boolean} Whether this constructor supports the requested type/subtype
      */
-    static get supportsType(){
+    static supportsGeoJSONType(type, subtype=null){
+        return type.toLowerCase() === 'point' && subtype === null;
+    }
+
+    /**
+     * Get the type of this object.
+     * @returns { Object } with fields `type === 'Point'`
+     */
+    getGeoJSONType(){
         return {
-            type: 'Point'
+            type: 'Point',
         }
     }
+
+
     /**
      * Retrieves the coordinates of the point.
      * @returns {Array} An array containing the x and y coordinates.

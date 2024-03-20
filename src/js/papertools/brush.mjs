@@ -305,7 +305,7 @@ class BrushToolbar extends AnnotationUIToolbarBase{
    * @returns {boolean} A flag indicating if the Brush Tool is enabled for the given mode.
    */
     isEnabledForMode(mode){
-        return ['new','MultiPolygon'].includes(mode);
+        return ['new','Polygon','MultiPolygon'].includes(mode);
     }
   /**
    * Update the brush radius based on the provided update.

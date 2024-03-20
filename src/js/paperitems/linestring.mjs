@@ -76,15 +76,25 @@ class Linestring extends AnnotationItem{
         this.paperItem = grp;
     
     }
+    
     /**
      * Retrieves the supported types by the Linestring annotation item.
      * @static
-     * @returns {Object} An object with type property.
-     * @description This static method provides information about the supported type by the Linestring annotation item class.
+     * @param { String } type
+     * @param { String } [subtype]
+     * @returns {Boolean} Whether this constructor supports the requested type/subtype
      */
-    static get supportsType(){
+    static supportsGeoJSONType(type, subtype = null){
+        return type.toLowerCase() === 'linestring' && subtype === null;
+    }
+
+    /**
+     * Get the type of this object.
+     * @returns { Object } with fields `type === 'Linestring'`
+     */
+    getGeoJSONType(){
         return {
-            type: 'LineString',
+            type: 'Linestring',
         }
     }
         /**

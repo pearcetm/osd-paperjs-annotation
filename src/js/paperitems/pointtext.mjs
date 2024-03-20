@@ -147,16 +147,26 @@ class PointText extends AnnotationItem{
     }
 
     /**
-     * Get the supported annotation types for the class.
+     * Retrieves the supported types by the PointText annotation item.
      * @static
-     * @returns {Object} The supported annotation types.
+     * @param { String } type
+     * @param { String } [subtype]
+     * @returns {Boolean} Whether this constructor supports the requested type/subtype
      */
-    static get supportsType(){
+    static supportsGeoJSONType(type, subtype){
+        return type.toLowerCase() === 'point' && subtype.toLowerCase() === 'pointtext';
+    }
+
+    /**
+     * Get the type of this object.
+     * @returns { Object } with fields `type === 'Point'` and `subtype === 'PointText'`
+     */
+    getGeoJSONType(){
         return {
             type: 'Point',
-            subtype:'PointText',
+            subtype: 'PointText'
         }
-    }   
+    }
 
     /**
     * Get the coordinates of the point.
