@@ -38,7 +38,7 @@
 
 import {AnnotationUITool, AnnotationUIToolbarBase} from './annotationUITool.mjs';
 import { Point } from '../paperitems/point.mjs';
-import { paper } from '../paperjs.mjs';
+// import { paper } from '../paperjs.mjs';
 import { makeFaIcon } from '../utils/faIcon.mjs';
 /**
  * Represents the PointTool class that allows users to create and manipulate Point features on the Paper.js project.
@@ -62,8 +62,7 @@ class PointTool extends AnnotationUITool{
         super(paperScope);
         
         let cursor = new Point({geometry:{type:'Point',coordinates:[0,0]},properties:{label:'Point Tool'}}).paperItem;
-        cursor.fillColor=null;
-        cursor.strokeColor='grey';
+        
         cursor.visible=false;
         delete cursor.isGeoJSONFeature; // remove this field since this isn't really part of the GeoJSON structure
         
@@ -77,7 +76,7 @@ class PointTool extends AnnotationUITool{
         
         this.extensions.onActivate = ()=>{
             this.project.toolLayer.bringToFront();
-            if(this.itemToCreate) this.cursor.visible = true;
+            this.setCursorProps();
         }
         
         
@@ -89,10 +88,20 @@ class PointTool extends AnnotationUITool{
         
         
         this.onSelectionChanged = ()=>{
-            this.cursor.visible = !!this.itemToCreate;
+            this.setCursorProps();
         }
         
-    } 
+    }
+    
+    setCursorProps(){
+        if(this.itemToCreate){
+            this.cursor.fillColor = this.itemToCreate.fillColor;
+            this.cursor.strokeColor = this.itemToCreate.strokeColor;
+            this.cursor.visible = true;
+        } else {
+            this.cursor.visible = false;
+        }
+    }
     
     onMouseMove(ev){
         this.cursor.position = ev.original.point;

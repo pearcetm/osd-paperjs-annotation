@@ -375,7 +375,7 @@ class TransformToolbar extends AnnotationUIToolbarBase{
             'MultiPolygon',
             'Point:Rectangle',
             'Point:Ellipse',
-            'Point',
+            // 'Point', // disable for Point because neither resize nor scaling work for that object type
             'LineString',
             'GeometryCollection:Raster',
         ].includes(mode) && new Set(selectedItems.map(item=>item.layer)).size == 1;

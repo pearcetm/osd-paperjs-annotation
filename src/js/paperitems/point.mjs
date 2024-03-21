@@ -62,7 +62,7 @@ class Point extends AnnotationItem{
         if (geoJSON.geometry.type !== 'Point') {
             error('Bad geoJSON object: type !=="Point"');
         }
-        let radius = 8.0;
+        let radius = 6.0;
         let coords = geoJSON.geometry.coordinates.slice(0, 2);
         
         let point = new paper.Group();
@@ -76,68 +76,27 @@ class Point extends AnnotationItem{
 
         let stem = new paper.Path.Line(new paper.Point(0, 0), new paper.Point(0, -radius));
         point.addChild(stem);
-
+        
         let ball = new paper.Path.Circle(new paper.Point(0, -radius*1.5), radius/2);
         point.addChild(ball);
-
-        // this._symbolItem = new paper.SymbolItem(this.pointSymbol);
-        // this._symbolItem.scale(15, 15);
-        // this._symbolItem.translate(0, -10);
-        // point.addChild(this._symbolItem);
-    
-        // // let textitem = new paper.PointText({
-        // //     point: new paper.Point(0, 0),
-        // //     pivot: new paper.Point(0, 0),
-        // //     content: this.iconText,
-        // //     fontFamily: this.iconFontFamily,
-        // //     fontWeight: this.iconFontWeight,
-        // //     fontSize: 18,
-        // //     // strokeWidth: 1, //keep this constant
-        // // });
-        // // point.addChild(textitem);
-
-        // //to-do: make this automatic somehow, instead of hard-coded...
-        // //the problem is that the bounding box of the text for some reason is not tight to the visual object.
-        // // textitem.translate(new paper.Point(-6, -2)); 
-    
+        
         point.position = new paper.Point(...coords);
         point.scaleFactor = point.project._scope.scaleByCurrentZoom(1);
         point.scale(point.scaleFactor, circle.bounds.center);
-        // // textitem.strokeWidth = point.strokeWidth / point.scaleFactor;
-    
+       
         point.rescale = point.rescale || {};
     
         point.rescale.size = function (z) {
             point.scale(1 / (point.scaleFactor * z));
             point.scaleFactor = 1 / z;
-            // textitem.strokeWidth = 1; //keep constant; reset after strokewidth is set on overall item
         };
         
-        // point.rotate(-point.view.getRotation());
-        // point.view.on('rotate',function(ev){point.rotate(-ev.rotatedBy)});
         point.applyRescale();
+
         
         this.paperItem = point;
 
-        // define style getter/setter so that style propagates to/from children
-        // Object.defineProperty(point, 'style', {   
-        //     get: ()=>{ return point.children[0].style },
-        //     set: style=> { point.children.forEach(child=>child.style = style); }
-        // });
-        // // override fillOpacity property definition so that style getter/setter doesn't mess with fillOpacity
-        // Object.defineProperty(point, 'fillOpacity', {   
-        //     get: function(){
-        //         return this._style.fillOpacity;
-        //     },
-        //     set: function(opacity){
-        //         this._style.fillOpacity = opacity;
-        //     }
-        // });
-        
     }
-    // get pointSymbol(){
-    //     return _pointSymbol || makeSymbol();
-    // }
     /**
      * Set the style properties of the point.
      * @param {Object} props - The style properties to set.
