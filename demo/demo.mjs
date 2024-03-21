@@ -34,7 +34,7 @@ let v1 =window.v1 = OpenSeadragon({
 });
 v1.addOnceHandler('open',()=>{
     new RotationControlOverlay(v1);
-    let tk = new AnnotationToolkit(v1);
+    let tk = new AnnotationToolkit(v1, {cacheAnnotations:true});
     tk.addAnnotationUI({autoOpen:true});
     window.tk = tk;
 

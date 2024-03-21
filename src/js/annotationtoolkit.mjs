@@ -51,7 +51,7 @@ import { Point } from './paperitems/point.mjs';
 import { PointText } from './paperitems/pointtext.mjs';
 import { Rectangle } from './paperitems/rectangle.mjs';
 import { Ellipse } from './paperitems/ellipse.mjs';
-
+import { cyrb53 } from './utils/hash.mjs';
 
 //extend paper prototypes to add functionality
 //property definitions
@@ -104,6 +104,7 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
      * @param {object} [opts.addUI] a configuration object for the UI, if desired
      * @param {object} [opts.overlay] a PaperOverlay object to use
      * @param {object} [opts.destroyOnViewerClose] whether to destroy the toolkit and its overlay when the viewer closes
+     * @param {object} [opts.cacheAnnotations] whether to keep annotations in memory for images which aren't currently open
      */
     constructor(openSeadragonViewer, opts = {}) {
         super();
@@ -117,6 +118,7 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
             addUI: false,
             overlay: null,
             destroyOnViewerClose: false,
+            cacheAnnotations: false,
         }
         this.options = Object.assign({}, this._defaultOptions, opts);
         
@@ -131,12 +133,8 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
             }
         };
         this.viewer = openSeadragonViewer;
-
-        if(this.options.destroyOnViewerClose){
-            this.viewer.addOnceHandler('close', ()=>this.destroy());
-        }
         
-
+        // set up overlay. If one is passed in, use it. Otherwise, create one.
         if(this.options.overlay){
             if(this.options.overlay instanceof PaperOverlay){
                 this.overlay = this.options.overlay;
@@ -144,18 +142,33 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
         } else {
             this.overlay = new PaperOverlay(this.viewer, {type: 'image'});
         }
-        
-        
         this.paperScope.project.defaultStyle = new paper.Style();
         this.paperScope.project.defaultStyle.set(this.defaultStyle);
 
-        
-
+        // set the overlay to auto rescale items
         this.overlay.autoRescaleItems(true);
+
+        // optionally destroy the annotation toolkit when the viewer closes
+        if(this.options.destroyOnViewerClose){
+            this.viewer.addOnceHandler('close', ()=>this.destroy());
+        }
 
         //bind a reference to this to the viewer and the paperScope, for convenient access
         this.viewer.annotationToolkit = this;
         this.paperScope.annotationToolkit = this;
+
+        this.viewer.world.addHandler('add-item',ev=>{
+            console.log('item added', ev);
+            if(this.options.cacheAnnotations){
+                this._loadCachedAnnotations(ev.item);
+            }
+        })
+        this.viewer.world.addHandler('remove-item',ev=>{
+            console.log('item removed', ev);
+            if(this.options.cacheAnnotations){
+                this._cacheAnnotations(ev.item);
+            }
+        }, false, 1);
 
 
         //register item constructors
@@ -172,8 +185,8 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
         paper.Item.fromGeoJSON = AnnotationItemFactory.itemFromGeoJSON;
         paper.Item.fromAnnotationItem = AnnotationItemFactory.itemFromAnnotationItem;
 
+        this._cached = {};
 
-        //handle options
         if(this.options.addUI){
             let uiOpts = {}
             if(typeof opts.addUI === 'object'){
@@ -181,8 +194,6 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
             }
             this.addAnnotationUI(uiOpts)
         }
-
-
 
     }
 
@@ -214,6 +225,39 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
         return this.overlay.paperScope;
     }
 
+    /**
+     * Empty any cached annotations
+     */
+    clearCache(){
+        this._cached = {};
+    }
+
+    /**
+     * save the current feature collections to the cache
+     * @param {TiledImage} tiledImage 
+     * @private
+     */
+    _cacheAnnotations(tiledImage){
+        try{
+            const key = cyrb53(JSON.stringify(tiledImage.source));
+            const featureCollections = tiledImage.paperLayer.getItems({match: item=>item.isGeoJSONFeatureCollection});
+            this._cached[key] = featureCollections;
+        } catch(e){
+            console.error('Error with caching', e);
+        }
+    }
+
+    _loadCachedAnnotations(tiledImage){
+        try{
+            const key = cyrb53(JSON.stringify(tiledImage.source));
+            const featureCollections = this._cached[key] || [];
+            for(const fcGroup of featureCollections){
+                this._addFeatureCollectionGroupToLayer(fcGroup, tiledImage.paperLayer);
+            }
+        } catch(e){
+            console.error('Error with fetching from cache', e);
+        }
+    }
 
     /**
      * Add an annotation UI to the toolkit.
@@ -419,13 +463,21 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
         }
 
         let grp = new paper.Group();
-        parent.addChild(grp);
-        AnnotationToolkit.registerFeatureCollection(grp);
+        this._addFeatureCollectionGroupToLayer(grp, parent);
         let grpNum = this.getFeatureCollectionGroups().length;
         grp.name = grp.displayName = displayLabel!==null ? displayLabel : `Annotation Group ${grpNum}`;
         grp.defaultStyle = new paper.Style(this.paperScope.project.defaultStyle);
-        this.paperScope.project.emit('feature-collection-added',{group:grp});
         return grp;
+    }
+
+    _addFeatureCollectionGroupToLayer(fcGroup, layer){
+        layer.addChild(fcGroup);
+        AnnotationToolkit.registerFeatureCollection(fcGroup);
+        this.paperScope.project.emit('feature-collection-added',{group:fcGroup});
+        // re-insert children to trigger events
+        if(fcGroup.children){
+            fcGroup.insertChildren(0, fcGroup.children);
+        }
     }
 
     /**
