@@ -64,10 +64,12 @@ Object.defineProperty(paper.Project.prototype, 'descendants', descendantsDefProj
 //extend remove function to emit events for GeoJSON type annotation objects
 let origRemove=paper.Item.prototype.remove;
 paper.Item.prototype.remove=function(){
+    const childrenToFireRemove = this.getItems({match: item=>item.isGeoJSONFeatureCollection});
     (this.isGeoJSONFeature || this.isGeoJSONFeatureCollection) && this.project.emit('item-removed',{item: this});
-    this.getItems({match: item=>item.isGeoJSONFeatureCollection}).forEach(fc => fc.remove());
+    childrenToFireRemove.forEach(fc => this.project.emit('item-removed', {item: fc}));
     origRemove.call(this);
-    (this.isGeoJSONFeature || this.isGeoJSONFeatureCollection) && this.emit('removed',{item:this});
+    (this.isGeoJSONFeature || this.isGeoJSONFeatureCollection) && this.emit('removed',{item: this});
+    childrenToFireRemove.forEach(fc => this.project.emit('removed', {item: fc}));
 }
 //function definitions
 paper.Group.prototype.insertChildren=getInsertChildrenDef();
