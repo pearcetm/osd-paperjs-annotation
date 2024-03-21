@@ -98,7 +98,7 @@ class Ellipse extends AnnotationItem{
      * @returns {Boolean} Whether this constructor supports the requested type/subtype
      */
     static supportsGeoJSONType(type, subtype){
-        return type.toLowerCase() === 'point' && subtype.toLowerCase() === 'ellipse';
+        return type.toLowerCase() === 'point' && subtype?.toLowerCase() === 'ellipse';
     }
 
     /**

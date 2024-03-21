@@ -152,7 +152,7 @@ class Raster extends AnnotationItem{
      * @returns {Boolean} Whether this constructor supports the requested type/subtype
      */
     static supportsGeoJSONType(type, subtype){
-        return type.toLowerCase() === 'geometrycollection' && subtype.toLowerCase() === 'raster';
+        return type.toLowerCase() === 'geometrycollection' && subtype?.toLowerCase() === 'raster';
     }
 
     /**

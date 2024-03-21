@@ -39,7 +39,8 @@
 import { AnnotationItem } from "./annotationitem.mjs";
 import { OpenSeadragon } from '../osd-loader.mjs';
 import { paper } from '../paperjs.mjs';
-import { makeFaIcon } from "../utils/faIcon.mjs";
+// import { makeFaIcon } from "../utils/faIcon.mjs";
+
 
 /**
  * Represents a point annotation item.
@@ -72,58 +73,71 @@ class Point extends AnnotationItem{
         circle.scale(new paper.Point(1, 0.5), new paper.Point(0, 0));
     
         point.addChild(circle);
-    
-    
-        let textitem = new paper.PointText({
-            point: new paper.Point(0, 0),
-            pivot: new paper.Point(0, 0),
-            content: this.iconText,
-            fontFamily: this.iconFontFamily,
-            fontWeight: this.iconFontWeight,
-            fontSize: 18,
-            // strokeWidth: 1, //keep this constant
-        });
-        point.addChild(textitem);
 
-        //to-do: make this automatic somehow, instead of hard-coded...
-        //the problem is that the bounding box of the text for some reason is not tight to the visual object.
-        textitem.translate(new paper.Point(-6, -2)); 
+        let stem = new paper.Path.Line(new paper.Point(0, 0), new paper.Point(0, -radius));
+        point.addChild(stem);
+
+        let ball = new paper.Path.Circle(new paper.Point(0, -radius*1.5), radius/2);
+        point.addChild(ball);
+
+        // this._symbolItem = new paper.SymbolItem(this.pointSymbol);
+        // this._symbolItem.scale(15, 15);
+        // this._symbolItem.translate(0, -10);
+        // point.addChild(this._symbolItem);
+    
+        // // let textitem = new paper.PointText({
+        // //     point: new paper.Point(0, 0),
+        // //     pivot: new paper.Point(0, 0),
+        // //     content: this.iconText,
+        // //     fontFamily: this.iconFontFamily,
+        // //     fontWeight: this.iconFontWeight,
+        // //     fontSize: 18,
+        // //     // strokeWidth: 1, //keep this constant
+        // // });
+        // // point.addChild(textitem);
+
+        // //to-do: make this automatic somehow, instead of hard-coded...
+        // //the problem is that the bounding box of the text for some reason is not tight to the visual object.
+        // // textitem.translate(new paper.Point(-6, -2)); 
     
         point.position = new paper.Point(...coords);
         point.scaleFactor = point.project._scope.scaleByCurrentZoom(1);
         point.scale(point.scaleFactor, circle.bounds.center);
-        textitem.strokeWidth = point.strokeWidth / point.scaleFactor;
+        // // textitem.strokeWidth = point.strokeWidth / point.scaleFactor;
     
         point.rescale = point.rescale || {};
     
         point.rescale.size = function (z) {
             point.scale(1 / (point.scaleFactor * z));
             point.scaleFactor = 1 / z;
-            textitem.strokeWidth = 1; //keep constant; reset after strokewidth is set on overall item
+            // textitem.strokeWidth = 1; //keep constant; reset after strokewidth is set on overall item
         };
         
-        point.rotate(-point.view.getRotation());
-        point.view.on('rotate',function(ev){point.rotate(-ev.rotatedBy)});
+        // point.rotate(-point.view.getRotation());
+        // point.view.on('rotate',function(ev){point.rotate(-ev.rotatedBy)});
         point.applyRescale();
         
         this.paperItem = point;
 
         // define style getter/setter so that style propagates to/from children
-        Object.defineProperty(point, 'style', {   
-            get: ()=>{ return point.children[0].style },
-            set: style=> { point.children.forEach(child=>child.style = style); }
-        });
-        // override fillOpacity property definition so that style getter/setter doesn't mess with fillOpacity
-        Object.defineProperty(point, 'fillOpacity', {   
-            get: function(){
-                return this._style.fillOpacity;
-            },
-            set: function(opacity){
-                this._style.fillOpacity = opacity;
-            }
-        });
+        // Object.defineProperty(point, 'style', {   
+        //     get: ()=>{ return point.children[0].style },
+        //     set: style=> { point.children.forEach(child=>child.style = style); }
+        // });
+        // // override fillOpacity property definition so that style getter/setter doesn't mess with fillOpacity
+        // Object.defineProperty(point, 'fillOpacity', {   
+        //     get: function(){
+        //         return this._style.fillOpacity;
+        //     },
+        //     set: function(opacity){
+        //         this._style.fillOpacity = opacity;
+        //     }
+        // });
         
     }
+    // get pointSymbol(){
+    //     return _pointSymbol || makeSymbol();
+    // }
     /**
      * Set the style properties of the point.
      * @param {Object} props - The style properties to set.
@@ -217,60 +231,39 @@ class Point extends AnnotationItem{
         }
     }
 
-    /**
-     * Get the icon text for the point's icon.
-     * @private
-     * @returns {string} - The icon text.
-     */
-    get iconText(){
-        if(!this._iconText){
-            this._makeIcon();
-        }
-        return this._iconText;
-    }
-    /**
-     * Get the icon font family for the point's icon.
-     * @private
-     * @returns {string} - The icon font family.
-     */
-    get iconFontFamily(){
-        if(!this._iconFontFamily){
-            this._makeIcon();
-        }
-        return this._iconFontFamily;
-    }
-    /**
-     * Get the icon font weight for the point's icon.
-     * @private
-     * @returns {string} - The icon font weight.
-     */
-    get iconFontWeight(){
-        if(!this._iconFontWeight){
-            this._makeIcon();
-        }
-        return this._iconFontWeight;
-    }
-
-    //private
-    /**
-     * Generate the icon text, font family, and font weight for the point's icon.
-     * @private
-     * @memberof OSDPaperjsAnnotation.Point
-     * @returns {void}
-     * @description This private method generates the necessary text content, font family, and font weight for the point's icon. It uses a hidden DOM element to extract the computed styles and content of the FontAwesome icon, which is then used to populate the icon properties.
-     */
-    _makeIcon(){
-        //to-do: make the class(es) used to select a fontawesome icon a configurable option
-        const domText = makeFaIcon('fa-map-pin');
-        document.querySelector('body').appendChild(domText);
-        domText.style.visibility='hidden';
-
-        let computedStyle = window.getComputedStyle(domText, ':before');
-        this._iconText = computedStyle.content.substring(1, 2);
-        this._iconFontFamily = computedStyle.fontFamily;
-        this._iconFontWeight = computedStyle.fontWeight;
-        domText.remove();
-    }
+    // /**
+    //  * Get the icon text for the point's icon.
+    //  * @private
+    //  * @returns {string} - The icon text.
+    //  */
+    // get iconText(){
+    //     if(!this._iconText){
+    //         this._makeIcon();
+    //     }
+    //     return this._iconText;
+    // }
+    // /**
+    //  * Get the icon font family for the point's icon.
+    //  * @private
+    //  * @returns {string} - The icon font family.
+    //  */
+    // get iconFontFamily(){
+    //     if(!this._iconFontFamily){
+    //         this._makeIcon();
+    //     }
+    //     return this._iconFontFamily;
+    // }
+    // /**
+    //  * Get the icon font weight for the point's icon.
+    //  * @private
+    //  * @returns {string} - The icon font weight.
+    //  */
+    // get iconFontWeight(){
+    //     if(!this._iconFontWeight){
+    //         this._makeIcon();
+    //     }
+    //     return this._iconFontWeight;
+    // }
     
 }
 export{Point};

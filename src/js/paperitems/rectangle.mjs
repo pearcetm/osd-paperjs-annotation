@@ -101,7 +101,7 @@ class Rectangle extends AnnotationItem{
      * @returns {Boolean} Whether this constructor supports the requested type/subtype
      */
     static supportsGeoJSONType(type, subtype){
-        return type.toLowerCase() === 'point' && subtype.toLowerCase() === 'rectangle';
+        return type.toLowerCase() === 'point' && subtype?.toLowerCase() === 'rectangle';
     }
 
     /**
