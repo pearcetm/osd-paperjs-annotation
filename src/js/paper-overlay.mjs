@@ -512,6 +512,7 @@ class PaperOverlay{
      */
     _removeTiledImage(tiledImage){
         tiledImage._paperLayerMap?.get(this.paperScope)?.remove();
+        tiledImage._paperLayerMap?.delete(this.paperScope);
     }
 
 
