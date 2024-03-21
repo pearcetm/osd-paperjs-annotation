@@ -260,6 +260,7 @@ class WandTool extends AnnotationUITool{
         
         let viewRect = new paper.Path.Rectangle(new paper.Point(0.1,0.1), new paper.Point(this.preview.width-0.1,this.preview.height-0.1), {insert:false})
         let toUnite = maskToPath(this.MagicWand, wandOutput,);
+        toUnite.translate(-0.75, -0.75); // adjust path to account for pixel offset of maskToPath algorithm. 0.75 is empirical.
         let dilated = maskToPath(this.MagicWand, wandOutput,'dilate');
         let toErase = viewRect.subtract(dilated,{insert:false});
         
