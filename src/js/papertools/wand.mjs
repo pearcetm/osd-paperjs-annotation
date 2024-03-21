@@ -178,7 +178,7 @@ class WandTool extends AnnotationUITool{
         this.colorPicker.element.visible=false;     
     }
     onMouseDrag(ev){
-        let delta = ev.point.subtract(ev.downPoint).multiply(this.project.getZoom());
+        let delta = ev.original.point.subtract(ev.original.downPoint).multiply(this.project.getZoom());
         if(this.reduceMode) delta = delta.multiply(-1); //invert effect of dragging when in reduce mode for more intuitive user experience
         let s=Math.round((delta.x+delta.y*-1)/2);
         this.threshold=Math.min(Math.max(this.startThreshold+s, this.minThreshold), this.maxThreshold);
