@@ -65,6 +65,7 @@ Object.defineProperty(paper.Project.prototype, 'descendants', descendantsDefProj
 let origRemove=paper.Item.prototype.remove;
 paper.Item.prototype.remove=function(){
     (this.isGeoJSONFeature || this.isGeoJSONFeatureCollection) && this.project.emit('item-removed',{item: this});
+    this.getItems({match: item=>item.isGeoJSONFeatureCollection}).forEach(fc => fc.remove());
     origRemove.call(this);
     (this.isGeoJSONFeature || this.isGeoJSONFeatureCollection) && this.emit('removed',{item:this});
 }

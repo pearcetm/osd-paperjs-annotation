@@ -21,7 +21,9 @@ let v1 =window.v1 = OpenSeadragon({
         //         },
         //     x:1,
         // },
+        "https://openseadragon.github.io/example-images/highsmith/highsmith.dzi"
     ],
+    sequenceMode:true,
     minZoomImageRatio:0.01,
     visibilityRatio:0,
     crossOriginPolicy: 'Anonymous',
@@ -30,7 +32,7 @@ let v1 =window.v1 = OpenSeadragon({
     //     dragToPan:false,
     // }
 });
-v1.addHandler('open',()=>{
+v1.addOnceHandler('open',()=>{
     new RotationControlOverlay(v1);
     let tk = new AnnotationToolkit(v1);
     tk.addAnnotationUI({autoOpen:true});
