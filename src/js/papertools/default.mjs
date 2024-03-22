@@ -60,7 +60,9 @@ class DefaultTool extends AnnotationUITool{
 
     onDeactivate(){}
 
-    onActivate(){} 
+    onActivate(){
+        this.resetCanvasZIndex();
+    } 
 }
 export{DefaultTool};
 

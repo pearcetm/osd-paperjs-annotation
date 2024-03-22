@@ -98,6 +98,8 @@ class AnnotationUITool extends ToolBase{
         this.toolbarControl.activate();//console.log('toolbar control activated')
         previousTool && previousTool != this && previousTool.deactivate(true);
 
+        this.raiseCanvasZIndex();
+
         this.onActivate();
         this.broadcast('activated',{target:this});
     }
@@ -110,8 +112,35 @@ class AnnotationUITool extends ToolBase{
         this._active=false;
         this.toolbarControl.deactivate();
 
+        this.resetCanvasZIndex();
+        
         this.onDeactivate(finishToolAction);
         this.broadcast('deactivated',{target:this}); 
+    }
+
+    /**
+     * Raise the viewer canvas's z-index so that toolbars don't interfere
+     */
+    raiseCanvasZIndex(){
+        //raise the viewer's canvas to the top of the z-stack of the container element so that the toolbars don't interfere
+        const viewer = this.project.paperScope.overlay.viewer;
+        const canvas = viewer.canvas;
+        this._canvasPriorZIndex = window.getComputedStyle(canvas)['z-index'];
+        const siblings = Array.from(viewer.canvas.parentElement.children).filter(c => c!==canvas);
+        const maxZ = Math.max(...siblings.map(el => {
+            const z = window.getComputedStyle(el)['z-index'];
+            return z === 'auto' ? 0 : parseInt(z);
+        }));
+        canvas.style['z-index'] = maxZ + 1;
+    }
+
+    /**
+     * Return the viewer canvas to its original z-index 
+     */
+    resetCanvasZIndex(){
+        //reset z-index of viewer canvas
+        const canvas = this.project.paperScope.overlay.viewer.canvas;
+        canvas.style['z-index'] = this._canvasPriorZIndex;
     }
     /**
      * Get the associated toolbar control for the tool.
