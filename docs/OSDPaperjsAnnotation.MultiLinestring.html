@@ -285,18 +285,32 @@
     
 
     
-        <h3 class="subsection-title">Members</h3>
+
+    
+        <h3 class="subsection-title">Methods</h3>
 
         
             
-<h4 class="name" id=".supportsType"><span class="type-signature">(static) </span>supportsType<span class="type-signature"></span></h4>
 
+    
+
+    
+    <h4 class="name" id="getCoordinates"><span class="type-signature"></span>getCoordinates<span class="signature">()</span><span class="type-signature"> &rarr; {Array}</span></h4>
+    
+
+    
 
 
 
 <div class="description">
-    This static method provides information about the supported type by the MultiLinestring annotation item class.
+    This method returns an array of arrays representing the coordinates of each point in the multi-linestring.
 </div>
+
+
+
+
+
+
 
 
 
@@ -333,7 +347,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="paperitems_multilinestring.mjs.html">paperitems/multilinestring.mjs</a>, <a href="paperitems_multilinestring.mjs.html#line88">line 88</a>
+        <a href="paperitems_multilinestring.mjs.html">paperitems/multilinestring.mjs</a>, <a href="paperitems_multilinestring.mjs.html#line110">line 110</a>
     </li></ul></dd>
     
 
@@ -349,11 +363,41 @@
 
 
 
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
         
-    
+<div class="param-desc">
+    An array containing arrays of x and y coordinates for each point.
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Array</span>
+
+
+    </dd>
+</dl>
 
     
-        <h3 class="subsection-title">Methods</h3>
+
+
+
+
 
         
             
@@ -361,7 +405,7 @@
     
 
     
-    <h4 class="name" id="getCoordinates"><span class="type-signature"></span>getCoordinates<span class="signature">()</span><span class="type-signature"> &rarr; {Array}</span></h4>
+    <h4 class="name" id="getGeoJSONType"><span class="type-signature"></span>getGeoJSONType<span class="signature">()</span><span class="type-signature"> &rarr; {Object}</span></h4>
     
 
     
@@ -369,7 +413,7 @@
 
 
 <div class="description">
-    This method returns an array of arrays representing the coordinates of each point in the multi-linestring.
+    Get the type of this object.
 </div>
 
 
@@ -442,7 +486,7 @@
 
         
 <div class="param-desc">
-    An array containing arrays of x and y coordinates for each point.
+    with fields `type === 'MultiLineString'`
 </div>
 
 
@@ -453,7 +497,7 @@
     </dt>
     <dd>
         
-<span class="param-type">Array</span>
+<span class="param-type">Object</span>
 
 
     </dd>
@@ -523,7 +567,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="paperitems_multilinestring.mjs.html">paperitems/multilinestring.mjs</a>, <a href="paperitems_multilinestring.mjs.html#line107">line 107</a>
+        <a href="paperitems_multilinestring.mjs.html">paperitems/multilinestring.mjs</a>, <a href="paperitems_multilinestring.mjs.html#line119">line 119</a>
     </li></ul></dd>
     
 
@@ -633,7 +677,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="paperitems_multilinestring.mjs.html">paperitems/multilinestring.mjs</a>, <a href="paperitems_multilinestring.mjs.html#line119">line 119</a>
+        <a href="paperitems_multilinestring.mjs.html">paperitems/multilinestring.mjs</a>, <a href="paperitems_multilinestring.mjs.html#line131">line 131</a>
     </li></ul></dd>
     
 
@@ -792,7 +836,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="paperitems_multilinestring.mjs.html">paperitems/multilinestring.mjs</a>, <a href="paperitems_multilinestring.mjs.html#line127">line 127</a>
+        <a href="paperitems_multilinestring.mjs.html">paperitems/multilinestring.mjs</a>, <a href="paperitems_multilinestring.mjs.html#line139">line 139</a>
     </li></ul></dd>
     
 
@@ -823,6 +867,220 @@
 
 
         
+            
+
+    
+
+    
+    <h4 class="name" id=".supportsGeoJSONType"><span class="type-signature">(static) </span>supportsGeoJSONType<span class="signature">(type, subtype<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {Boolean}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    Retrieves the supported types by the MultiLineString annotation item.
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>type</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">String</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>subtype</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">String</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    null
+                
+                </td>
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="paperitems_multilinestring.mjs.html">paperitems/multilinestring.mjs</a>, <a href="paperitems_multilinestring.mjs.html#line90">line 90</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    Whether this constructor supports the requested type/subtype
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Boolean</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
     
 
     
@@ -844,7 +1102,7 @@
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.0</a> on Mon Mar 18 2024 22:07:42 GMT-0400 (Eastern Daylight Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.0</a> on Thu Mar 21 2024 22:40:25 GMT-0400 (Eastern Daylight Time)
 </footer>
 
 <script> prettyPrint(); </script>

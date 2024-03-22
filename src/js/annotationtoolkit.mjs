@@ -344,13 +344,11 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
     /**
      * Convert the feature collections in the toolkit to GeoJSON objects.
      * @param {Object} [options] 
-     * @param {Boolean} [options.imageCoordinates] Whether the items should be scaled to the pixel coordinates of the image (true - default) or normalized by tiledImage or viewport width (false)
      * @param {Layer} [options.layer] The specific layer to use
      * @returns {Object[]} The array of GeoJSON objects representing feature collections.
      */
     toGeoJSON(options){
         const defaults = {
-            imageCoordinates:true,
             layer:null,
         }
         options = Object.assign(defaults, options);
@@ -358,11 +356,7 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
         const parent = options.layer || this.paperScope.project;
         //find all featureCollection items and convert to GeoJSON compatible structures
         return parent.getItems({match:i=>i.isGeoJSONFeatureCollection}).map(grp=>{
-            let scaleFactor;
-            if(options.imageCoordinates){
-                scaleFactor = (grp.layer.tiledImage ? grp.layer.tiledImage.source.width : this.viewer.drawer.getCanvasSize().x) / this.overlay.scaleFactor;
-                grp.scale(scaleFactor, {x: 0, y: 0});
-            }
+            
             let geoJSON = {
                 type:'FeatureCollection',
                 features: grp.descendants.filter(d=>d.annotationItem).map(d=>d.annotationItem.toGeoJSONFeature()),
@@ -372,9 +366,7 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
                 },
                 label:grp.displayName,
             }
-            if(options.imageCoordinates){
-                grp.scale(1/scaleFactor, {x: 0, y: 0});
-            }
+            
             return geoJSON;
         })
     }

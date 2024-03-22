@@ -68,7 +68,7 @@ class AnnotationItem{
      * Tests whether the geojson type and (optional) subtype are supported by this type of annotation item
      * @param { String } type 
      * @param  { String } [subtype] 
-     * @returns 
+     * @returns { Boolean } The base class always returns false; inheritinc classes override this with class-specific logic
      */
     static supportsGeoJSONType(type, subtype){
         return false; // base class returns false

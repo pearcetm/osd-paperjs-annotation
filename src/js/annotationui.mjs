@@ -123,7 +123,6 @@ class AnnotationUI {
      */
     this._layerUI = new LayerUI(annotationToolkit, dialogOpts);
     if (opts.addLayerUI) {
-      // this._createJqueryUIdialog();
       this._addToViewer();
     }
 

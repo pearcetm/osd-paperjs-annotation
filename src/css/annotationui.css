@@ -209,6 +209,7 @@
     grid-column: 2 / 3;
     grid-row: 2 / 3;
     position:relative;
+    z-index:0; /* reset the z-index basis for this container so children can be manipulated independently of siblings */
 }
 .annotation-ui-grid .top {
     grid-column: 1 / 3;
