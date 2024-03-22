@@ -172,7 +172,6 @@ class FileDialog{
             })
             
             // Normal dispatchEvent doesn't work; use the alternative below to open the file dialog
-            // finput.dispatchEvent(new Event('click'));
             finput['click']();
         }
         /**

@@ -191,6 +191,9 @@ class Raster extends AnnotationItem{
             geometries:clipGroup.children.map(item=>{
                 let feature = item._annotationItem.toGeoJSONFeature();
                 let geometry = feature.geometry;
+                if(!geometry.properties){
+                    geometry.properties = {};
+                }
                 geometry.properties.strokeColor = feature.properties.strokeColor;
                 geometry.properties.strokeWidth = feature.properties.strokeWidth;
                 geometry.properties.rescale = feature.properties.rescale;

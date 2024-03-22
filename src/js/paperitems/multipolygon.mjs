@@ -57,16 +57,20 @@ class MultiPolygon extends AnnotationItem{
     constructor(geoJSON){
         super(geoJSON);
 
-        // if (geoJSON.geometry.type !== 'MultiPolygon') {
-        //     error('Bad geoJSON object: type !=="MultiPolygon"');
-        // }
         if(!this._supportsGeoJSONObj(geoJSON)){
             error(`Bad geoJSON object: geometry type ${geoJSON.geometry?.type} is not supported by this factory.`)
         }
-        //GeoJSON MultiPolygons are arrays of array of arrays of points
-        //If type==MultiPolygon, flatten the first level so it's an array of array of points
-        let coords = geoJSON.geometry.type.toLowerCase()==='multipolygon' ? geoJSON.geometry.coordinates.flat() : geoJSON.geometry.coordinates;
-        let paths = coords.map(function (points) {
+        // GeoJSON Polygons are arrays of arrays of points. The first is the external linear ring, while the rest are internal "hole" linear rings.
+        // GeoJSON MultiPolygons are arrays of Polygons.
+        // For type==MultiPolygon, flatten the outer array
+        let linearRings;
+        if(geoJSON.geometry.type.toLowerCase() === 'multipolygon'){
+            linearRings = geoJSON.geometry.coordinates.flat();
+        } else {
+            linearRings = geoJSON.geometry.coordinates;
+        } 
+        
+        let paths = linearRings.map(function (points) {
             let pts = points.map(function (point) {
                 return new paper.Point(point[0], point[1]);
             });
@@ -102,7 +106,8 @@ class MultiPolygon extends AnnotationItem{
      * @returns { Object } with fields `type in ['MultiPolygon', 'Polygon']`
      */
     getGeoJSONType(){
-        const type = this.paperItem.children.length > 1 ? 'MultiPolygon' : 'Polygon';
+        let polygons = this.paperItem.children.filter(c=>c.area > 0 && c.segments.length>2);
+        const type = polygons.length > 1 ? 'MultiPolygon' : 'Polygon';
             
         return {
             type: type,
@@ -133,6 +138,9 @@ class MultiPolygon extends AnnotationItem{
                 }
             })
         })
+        if(out.length === 1){
+            out = out[0]; // unwrap the first element for type===Polygon
+        }
         return out;
     }
     /**
