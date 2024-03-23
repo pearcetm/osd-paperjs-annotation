@@ -29,7 +29,7 @@
 <header>
     
         <h2><span class="attribs"><span class="type-signature"></span></span>
-            <span class="ancestors"><a href="OSDPaperjsAnnotation.html">OSDPaperjsAnnotation</a>.</span>FeatureCollectionUI<span class="signature">(layer, init)</span><span class="type-signature"></span></h2>
+            <span class="ancestors"><a href="OSDPaperjsAnnotation.html">OSDPaperjsAnnotation</a>.</span>FeatureCollectionUI<span class="signature">(group, opts<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h2>
         
             <div class="class-description">A user interface for managing feature collections. The FeatureCollectionUI class provides a user
  interface to manage feature collections on a paper.Layer object. It allows users to create, edit,
@@ -49,7 +49,7 @@ adding and removing features, setting opacity and fill opacity for the paper lay
     
 
     
-    <h4 class="name" id="FeatureCollectionUI"><span class="type-signature"></span>new FeatureCollectionUI<span class="signature">(layer, init)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="FeatureCollectionUI"><span class="type-signature"></span>new FeatureCollectionUI<span class="signature">(group, opts<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
     
 
     
@@ -81,6 +81,8 @@ adding and removing features, setting opacity and fill opacity for the paper lay
         <th>Type</th>
 
         
+        <th>Attributes</th>
+        
 
         
 
@@ -93,30 +95,38 @@ adding and removing features, setting opacity and fill opacity for the paper lay
 
         <tr>
             
-                <td class="name"><code>layer</code></td>
+                <td class="name"><code>group</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type">paper.Layer</span>
+<span class="param-type">paper.Group</span>
 
 
             
             </td>
 
             
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
 
             
 
-            <td class="description last">The paper layer object.</td>
+            <td class="description last">The paper group object.</td>
         </tr>
 
     
 
         <tr>
             
-                <td class="name"><code>init</code></td>
+                <td class="name"><code>opts</code></td>
             
 
             <td class="type">
@@ -129,10 +139,81 @@ adding and removing features, setting opacity and fill opacity for the paper lay
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
 
             
 
-            <td class="description last">The initialization options.</td>
+            <td class="description last">The initialization options.
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>iconFactory</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="IconFactory.html">IconFactory</a></span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last">the IconFactory to use</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
         </tr>
 
     
@@ -216,36 +297,13 @@ adding and removing features, setting opacity and fill opacity for the paper lay
 
         <tr>
             
-                <td class="name"><code>guiSelector</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">The selector for the GUI element.</td>
-        </tr>
-
-    
-
-        <tr>
-            
                 <td class="name"><code>element</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type">jQuery</span>
+<span class="param-type">HTMLElement</span>
 
 
             
@@ -255,7 +313,7 @@ adding and removing features, setting opacity and fill opacity for the paper lay
 
             
 
-            <td class="description last">The jQuery object representing the HTML element of the feature collection UI.</td>
+            <td class="description last">The HTML element of the feature collection UI.</td>
         </tr>
 
     
@@ -388,7 +446,7 @@ adding and removing features, setting opacity and fill opacity for the paper lay
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="featurecollectionui.mjs.html">featurecollectionui.mjs</a>, <a href="featurecollectionui.mjs.html#line156">line 156</a>
+        <a href="featurecollectionui.mjs.html">featurecollectionui.mjs</a>, <a href="featurecollectionui.mjs.html#line149">line 149</a>
     </li></ul></dd>
     
 
@@ -687,7 +745,7 @@ This function also creates a geoJSON object for the feature and converts it to a
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="featurecollectionui.mjs.html">featurecollectionui.mjs</a>, <a href="featurecollectionui.mjs.html#line180">line 180</a>
+        <a href="featurecollectionui.mjs.html">featurecollectionui.mjs</a>, <a href="featurecollectionui.mjs.html#line173">line 173</a>
     </li></ul></dd>
     
 
@@ -749,7 +807,7 @@ This function also creates a geoJSON object for the feature and converts it to a
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="featurecollectionui.mjs.html">featurecollectionui.mjs</a>, <a href="featurecollectionui.mjs.html#line259">line 259</a>
+        <a href="featurecollectionui.mjs.html">featurecollectionui.mjs</a>, <a href="featurecollectionui.mjs.html#line252">line 252</a>
     </li></ul></dd>
     
 
@@ -811,7 +869,7 @@ This function also creates a geoJSON object for the feature and converts it to a
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="featurecollectionui.mjs.html">featurecollectionui.mjs</a>, <a href="featurecollectionui.mjs.html#line146">line 146</a>
+        <a href="featurecollectionui.mjs.html">featurecollectionui.mjs</a>, <a href="featurecollectionui.mjs.html#line139">line 139</a>
     </li></ul></dd>
     
 
@@ -940,7 +998,7 @@ This function also creates a geoJSON object for the feature and converts it to a
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="featurecollectionui.mjs.html">featurecollectionui.mjs</a>, <a href="featurecollectionui.mjs.html#line312">line 312</a>
+        <a href="featurecollectionui.mjs.html">featurecollectionui.mjs</a>, <a href="featurecollectionui.mjs.html#line305">line 305</a>
     </li></ul></dd>
     
 
@@ -1097,7 +1155,7 @@ This function also creates a geoJSON object for the feature and converts it to a
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="featurecollectionui.mjs.html">featurecollectionui.mjs</a>, <a href="featurecollectionui.mjs.html#line300">line 300</a>
+        <a href="featurecollectionui.mjs.html">featurecollectionui.mjs</a>, <a href="featurecollectionui.mjs.html#line293">line 293</a>
     </li></ul></dd>
     
 
@@ -1257,7 +1315,7 @@ This function also creates a geoJSON object for the feature and converts it to a
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="featurecollectionui.mjs.html">featurecollectionui.mjs</a>, <a href="featurecollectionui.mjs.html#line276">line 276</a>
+        <a href="featurecollectionui.mjs.html">featurecollectionui.mjs</a>, <a href="featurecollectionui.mjs.html#line269">line 269</a>
     </li></ul></dd>
     
 
@@ -1367,7 +1425,7 @@ This function also creates a geoJSON object for the feature and converts it to a
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="featurecollectionui.mjs.html">featurecollectionui.mjs</a>, <a href="featurecollectionui.mjs.html#line292">line 292</a>
+        <a href="featurecollectionui.mjs.html">featurecollectionui.mjs</a>, <a href="featurecollectionui.mjs.html#line285">line 285</a>
     </li></ul></dd>
     
 
@@ -1455,7 +1513,7 @@ This function also creates a geoJSON object for the feature and converts it to a
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="featurecollectionui.mjs.html">featurecollectionui.mjs</a>, <a href="featurecollectionui.mjs.html#line286">line 286</a>
+        <a href="featurecollectionui.mjs.html">featurecollectionui.mjs</a>, <a href="featurecollectionui.mjs.html#line279">line 279</a>
     </li></ul></dd>
     
 
@@ -1501,13 +1559,13 @@ This function also creates a geoJSON object for the feature and converts it to a
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="OSDPaperjsAnnotation.html">OSDPaperjsAnnotation</a></li></ul><h3>Classes</h3><ul><li><a href="Dialog.html">Dialog</a></li><li><a href="DragAndDrop.html">DragAndDrop</a></li><li><a href="Morph.html">Morph</a></li><li><a href="OSDPaperjsAnnotation.AnnotationItem.html">AnnotationItem</a></li><li><a href="OSDPaperjsAnnotation.AnnotationItemFactory.html">AnnotationItemFactory</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolbar.html">AnnotationToolbar</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolkit.html">AnnotationToolkit</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUI.html">AnnotationUI</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUITool.html">AnnotationUITool</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUITool.AnnotationUIToolbarBase.html">AnnotationUIToolbarBase</a></li><li><a href="OSDPaperjsAnnotation.BrushTool.html">BrushTool</a></li><li><a href="OSDPaperjsAnnotation.BrushTool.BrushToolbar.html">BrushToolbar</a></li><li><a href="OSDPaperjsAnnotation.DefaultTool.html">DefaultTool</a></li><li><a href="OSDPaperjsAnnotation.DefaultTool.DefaultToolbar.html">DefaultToolbar</a></li><li><a href="OSDPaperjsAnnotation.Ellipse.html">Ellipse</a></li><li><a href="OSDPaperjsAnnotation.EllipseTool.html">EllipseTool</a></li><li><a href="OSDPaperjsAnnotation.EllipseTool.EllipseToolbar.html">EllipseToolbar</a></li><li><a href="OSDPaperjsAnnotation.FeatureCollectionUI.html">FeatureCollectionUI</a></li><li><a href="OSDPaperjsAnnotation.FeatureUI.html">FeatureUI</a></li><li><a href="OSDPaperjsAnnotation.FileDialog.html">FileDialog</a></li><li><a href="OSDPaperjsAnnotation.LayerUI.html">LayerUI</a></li><li><a href="OSDPaperjsAnnotation.Linestring.html">Linestring</a></li><li><a href="OSDPaperjsAnnotation.LinestringTool.html">LinestringTool</a></li><li><a href="OSDPaperjsAnnotation.LinestringTool.LinestringToolbar.html">LinestringToolbar</a></li><li><a href="OSDPaperjsAnnotation.MultiLinestring.html">MultiLinestring</a></li><li><a href="OSDPaperjsAnnotation.MultiPolygon.html">MultiPolygon</a></li><li><a href="OSDPaperjsAnnotation.PaperOverlay.html">PaperOverlay</a></li><li><a href="OSDPaperjsAnnotation.Placeholder.html">Placeholder</a></li><li><a href="OSDPaperjsAnnotation.Point.html">Point</a></li><li><a href="OSDPaperjsAnnotation.PointText.html">PointText</a></li><li><a href="OSDPaperjsAnnotation.PointTextTool.html">PointTextTool</a></li><li><a href="OSDPaperjsAnnotation.PointTextTool.PointTextToolbar.html">PointTextToolbar</a></li><li><a href="OSDPaperjsAnnotation.PointTool.html">PointTool</a></li><li><a href="OSDPaperjsAnnotation.PointTool.PointToolbar.html">PointToolbar</a></li><li><a href="OSDPaperjsAnnotation.PolygonTool.html">PolygonTool</a></li><li><a href="OSDPaperjsAnnotation.PolygonTool.PolygonToolbar.html">PolygonToolbar</a></li><li><a href="OSDPaperjsAnnotation.Raster.html">Raster</a></li><li><a href="OSDPaperjsAnnotation.RasterTool.html">RasterTool</a></li><li><a href="OSDPaperjsAnnotation.RasterTool.RasterToolbar.html">RasterToolbar</a></li><li><a href="OSDPaperjsAnnotation.Rectangle.html">Rectangle</a></li><li><a href="OSDPaperjsAnnotation.RectangleTool.html">RectangleTool</a></li><li><a href="OSDPaperjsAnnotation.RectangleTool_RectToolbar.html">RectToolbar</a></li><li><a href="OSDPaperjsAnnotation.RotationControlOverlay.html">RotationControlOverlay</a></li><li><a href="OSDPaperjsAnnotation.RotationControlTool.html">RotationControlTool</a></li><li><a href="OSDPaperjsAnnotation.RotationControlWidget.html">RotationControlWidget</a></li><li><a href="OSDPaperjsAnnotation.StyleTool.html">StyleTool</a></li><li><a href="OSDPaperjsAnnotation.StyleTool.StyleToolbar.html">StyleToolbar</a></li><li><a href="OSDPaperjsAnnotation.ToolBase.html">ToolBase</a></li><li><a href="OSDPaperjsAnnotation.TransformTool.html">TransformTool</a></li><li><a href="OSDPaperjsAnnotation.TransformTool.TransformToolbar.html">TransformToolbar</a></li><li><a href="OSDPaperjsAnnotation.WandTool.html">WandTool</a></li><li><a href="OSDPaperjsAnnotation.WandTool.WandToolbar.html">WandToolbar</a></li><li><a href="SelectTool.html">SelectTool</a></li></ul><h3>Global</h3><ul><li><a href="global.html#_paper">_paper</a></li><li><a href="global.html#adaptiveOffsetCurve">adaptiveOffsetCurve</a></li><li><a href="global.html#connectAdjacentBezier">connectAdjacentBezier</a></li><li><a href="global.html#connectBeziers">connectBeziers</a></li><li><a href="global.html#convertFaIcons">convertFaIcons</a></li><li><a href="global.html#getPointLineIntersections">getPointLineIntersections</a></li><li><a href="global.html#iconDefs">iconDefs</a></li><li><a href="global.html#localImportsCompleted">localImportsCompleted</a></li><li><a href="global.html#makeFaIcon">makeFaIcon</a></li><li><a href="global.html#makeRoundJoin">makeRoundJoin</a></li><li><a href="global.html#normalize">normalize</a></li><li><a href="global.html#offsetSegment">offsetSegment</a></li><li><a href="global.html#osd">osd</a></li><li><a href="global.html#removeIntersection">removeIntersection</a></li><li><a href="global.html#removeOutsiders">removeOutsiders</a></li><li><a href="global.html#updateFillOpacity">updateFillOpacity</a></li><li><a href="global.html#updateStrokeOpacity">updateStrokeOpacity</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="OSDPaperjsAnnotation.html">OSDPaperjsAnnotation</a></li></ul><h3>Classes</h3><ul><li><a href="Dialog.html">Dialog</a></li><li><a href="DragAndDrop.html">DragAndDrop</a></li><li><a href="EditableContent.html">EditableContent</a></li><li><a href="Morph.html">Morph</a></li><li><a href="OSDPaperjsAnnotation.AnnotationItem.html">AnnotationItem</a></li><li><a href="OSDPaperjsAnnotation.AnnotationItemFactory.html">AnnotationItemFactory</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolbar.html">AnnotationToolbar</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolkit.html">AnnotationToolkit</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUI.html">AnnotationUI</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUITool.html">AnnotationUITool</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUITool.AnnotationUIToolbarBase.html">AnnotationUIToolbarBase</a></li><li><a href="OSDPaperjsAnnotation.BrushTool.html">BrushTool</a></li><li><a href="OSDPaperjsAnnotation.BrushTool.BrushToolbar.html">BrushToolbar</a></li><li><a href="OSDPaperjsAnnotation.DefaultTool.html">DefaultTool</a></li><li><a href="OSDPaperjsAnnotation.DefaultTool.DefaultToolbar.html">DefaultToolbar</a></li><li><a href="OSDPaperjsAnnotation.Ellipse.html">Ellipse</a></li><li><a href="OSDPaperjsAnnotation.EllipseTool.html">EllipseTool</a></li><li><a href="OSDPaperjsAnnotation.EllipseTool.EllipseToolbar.html">EllipseToolbar</a></li><li><a href="OSDPaperjsAnnotation.FeatureCollectionUI.html">FeatureCollectionUI</a></li><li><a href="OSDPaperjsAnnotation.FeatureUI.html">FeatureUI</a></li><li><a href="OSDPaperjsAnnotation.FileDialog.html">FileDialog</a></li><li><a href="OSDPaperjsAnnotation.LayerUI.html">LayerUI</a></li><li><a href="OSDPaperjsAnnotation.Linestring.html">Linestring</a></li><li><a href="OSDPaperjsAnnotation.LinestringTool.html">LinestringTool</a></li><li><a href="OSDPaperjsAnnotation.LinestringTool.LinestringToolbar.html">LinestringToolbar</a></li><li><a href="OSDPaperjsAnnotation.MultiLinestring.html">MultiLinestring</a></li><li><a href="OSDPaperjsAnnotation.MultiPolygon.html">MultiPolygon</a></li><li><a href="OSDPaperjsAnnotation.PaperOverlay.html">PaperOverlay</a></li><li><a href="OSDPaperjsAnnotation.Placeholder.html">Placeholder</a></li><li><a href="OSDPaperjsAnnotation.Point.html">Point</a></li><li><a href="OSDPaperjsAnnotation.PointText.html">PointText</a></li><li><a href="OSDPaperjsAnnotation.PointTextTool.html">PointTextTool</a></li><li><a href="OSDPaperjsAnnotation.PointTextTool.PointTextToolbar.html">PointTextToolbar</a></li><li><a href="OSDPaperjsAnnotation.PointTool.html">PointTool</a></li><li><a href="OSDPaperjsAnnotation.PointTool.PointToolbar.html">PointToolbar</a></li><li><a href="OSDPaperjsAnnotation.PolygonTool.html">PolygonTool</a></li><li><a href="OSDPaperjsAnnotation.PolygonTool.PolygonToolbar.html">PolygonToolbar</a></li><li><a href="OSDPaperjsAnnotation.Raster.html">Raster</a></li><li><a href="OSDPaperjsAnnotation.RasterTool.html">RasterTool</a></li><li><a href="OSDPaperjsAnnotation.RasterTool.RasterToolbar.html">RasterToolbar</a></li><li><a href="OSDPaperjsAnnotation.Rectangle.html">Rectangle</a></li><li><a href="OSDPaperjsAnnotation.RectangleTool.html">RectangleTool</a></li><li><a href="OSDPaperjsAnnotation.RectangleTool_RectToolbar.html">RectToolbar</a></li><li><a href="OSDPaperjsAnnotation.RotationControlOverlay.html">RotationControlOverlay</a></li><li><a href="OSDPaperjsAnnotation.RotationControlTool.html">RotationControlTool</a></li><li><a href="OSDPaperjsAnnotation.RotationControlWidget.html">RotationControlWidget</a></li><li><a href="OSDPaperjsAnnotation.StyleTool.html">StyleTool</a></li><li><a href="OSDPaperjsAnnotation.StyleTool.StyleToolbar.html">StyleToolbar</a></li><li><a href="OSDPaperjsAnnotation.ToolBase.html">ToolBase</a></li><li><a href="OSDPaperjsAnnotation.TransformTool.html">TransformTool</a></li><li><a href="OSDPaperjsAnnotation.TransformTool.TransformToolbar.html">TransformToolbar</a></li><li><a href="OSDPaperjsAnnotation.WandTool.html">WandTool</a></li><li><a href="OSDPaperjsAnnotation.WandTool.WandToolbar.html">WandToolbar</a></li><li><a href="SelectTool.html">SelectTool</a></li></ul><h3>Global</h3><ul><li><a href="global.html#_paper">_paper</a></li><li><a href="global.html#adaptiveOffsetCurve">adaptiveOffsetCurve</a></li><li><a href="global.html#connectAdjacentBezier">connectAdjacentBezier</a></li><li><a href="global.html#connectBeziers">connectBeziers</a></li><li><a href="global.html#convertFaIcons">convertFaIcons</a></li><li><a href="global.html#getPointLineIntersections">getPointLineIntersections</a></li><li><a href="global.html#iconDefs">iconDefs</a></li><li><a href="global.html#localImportsCompleted">localImportsCompleted</a></li><li><a href="global.html#makeFaIcon">makeFaIcon</a></li><li><a href="global.html#makeRoundJoin">makeRoundJoin</a></li><li><a href="global.html#normalize">normalize</a></li><li><a href="global.html#offsetSegment">offsetSegment</a></li><li><a href="global.html#osd">osd</a></li><li><a href="global.html#removeIntersection">removeIntersection</a></li><li><a href="global.html#removeOutsiders">removeOutsiders</a></li><li><a href="global.html#updateFillOpacity">updateFillOpacity</a></li><li><a href="global.html#updateStrokeOpacity">updateStrokeOpacity</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.0</a> on Thu Mar 21 2024 22:40:25 GMT-0400 (Eastern Daylight Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.0</a> on Sat Mar 23 2024 06:59:47 GMT-0400 (Eastern Daylight Time)
 </footer>
 
 <script> prettyPrint(); </script>
