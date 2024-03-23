@@ -65,18 +65,52 @@ const iconDefs = {
     'fa-camera':'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><path d="M149.1 64.8L138.7 96H64C28.7 96 0 124.7 0 160V416c0 35.3 28.7 64 64 64H448c35.3 0 64-28.7 64-64V160c0-35.3-28.7-64-64-64H373.3L362.9 64.8C356.4 45.2 338.1 32 317.4 32H194.6c-20.7 0-39 13.2-45.5 32.8zM256 192a96 96 0 1 1 0 192 96 96 0 1 1 0-192z"/></svg>',
 }
 
-let setupComplete = false;
 
-function setupSymbols(){
-    if(setupComplete){
-        return;
+export class IconFactory{
+    constructor(container){
+        this._setupSymbols(container);
     }
 
-    const body = document.querySelector('body');
+    /**
+     * Create an SVG icon from a font-awesome class name. See iconDefs for the list of supported class names.
+     * @param {String} classname
+     * @param {boolean} [currentColor] Whether to use the currentColor property for the fill color
+     * @returns the newly created svg element with class 'icon'
+     */
+    makeFaIcon(classname, currentColor=true){
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.classList.add('icon');
+        if(currentColor){
+            svg.setAttribute('fill', 'currentColor');
+        }
+        const el = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+        el.setAttribute('href', `#${classname}`);
+        svg.appendChild(el);
+        return svg;
+    }
 
-    if(body){
+    /**
+     * Find descendants of a parent element and convert font awesome classes into svg icons. See iconDefs for the list of supported class names.
+     * @param {HTMLElement} element the parent to search within
+     * @param {Array} [faClassesToReplace] an optional array of strings of fontawesome class names to convert. Defaults to all classes in iconDefs above.
+     * @param {Array} [faClassesToRemove] an optional array of strings to remove from the class list. Default: ['fa', 'fa-solid'] 
+     */
+    convertFaIcons(element, faClassesToReplace, faClassesToRemove = ['fa', 'fa-solid']){
+        if(!faClassesToReplace){
+            faClassesToReplace = Object.keys(iconDefs);
+        }
+        for(const classname of faClassesToReplace){
+            element.querySelectorAll(`.${classname}`).forEach(e=>{
+                const svg = this.makeFaIcon(classname);
+                e.classList.remove(classname, ...faClassesToRemove);
+                e.appendChild(svg);
+            })
+        }
+    }
+
+    _setupSymbols(parent){
         const container = document.createElement('div');
-        body.appendChild(container);
+        parent.appendChild(container);
         container.style.position = 'absolute';
         container.style.display = 'none';
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -87,34 +121,34 @@ function setupSymbols(){
             htmlString += def.replace('<svg', `<symbol id="${key}"`).replace('/svg>', '/symbol>');
         }
         svg.innerHTML = htmlString;
-    } else {
-        document.addEventListener("DOMContentLoaded", function() {
-            setupSymbols();
-        });
     }
 }
 
-setupSymbols();
-
-
 /**
- * Create an SVG icon from a font-awesome class name. See iconDefs for the list of supported class names.
- * @param {String} classname
- * @param {boolean} [currentColor] Whether to use the currentColor property for the fill color
- * @returns the newly created svg element with class 'icon'
- */
+     * Create an SVG icon from a font-awesome class name. See iconDefs for the list of supported class names.
+     * @param {String} classname
+     * @param {boolean} [currentColor] Whether to use the currentColor property for the fill color
+     * @returns the newly created svg element with class 'icon'
+     */
 export function makeFaIcon(classname, currentColor=true){
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+
+    const template = document.createElement('template');
+    const html = iconDefs[classname];
+    let svg;
+    if(html){
+        template.innerHTML = iconDefs[classname];
+        svg = template.content.children[0];
+    } else {
+        svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    }
+
     svg.classList.add('icon');
     if(currentColor){
         svg.setAttribute('fill', 'currentColor');
     }
-    const el = document.createElementNS('http://www.w3.org/2000/svg', 'use');
-    el.setAttribute('href', `#${classname}`);
-    svg.appendChild(el);
+    
     return svg;
 }
-
 
 /**
  * Find descendants of a parent element and convert font awesome classes into svg icons. See iconDefs for the list of supported class names.

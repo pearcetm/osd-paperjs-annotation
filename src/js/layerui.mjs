@@ -42,7 +42,7 @@ import { FeatureCollectionUI } from './featurecollectionui.mjs';
 import { domObjectFromHTML } from './utils/domObjectFromHTML.mjs';
 import { datastore } from './utils/datastore.mjs';
 import { DragAndDrop } from './utils/draganddrop.mjs';
-import { convertFaIcons } from './utils/faIcon.mjs';
+import { IconFactory } from './utils/faIcon.mjs';
 
 /**
  * A user interface for managing layers of feature collections.
@@ -66,7 +66,8 @@ class LayerUI extends OpenSeadragon.EventSource{
         this.paperScope.project.on('feature-collection-added',ev=>this._onFeatureCollectionAdded(ev));
         
         this.element = makeHTMLElement();
-        convertFaIcons(this.element);
+        this.iconFactory = new IconFactory(this.element.querySelector('.icon-factory-container'));
+        this.iconFactory.convertFaIcons(this.element);
         
         this.element.querySelector('.new-feature-collection').addEventListener('click', ev => {
             ev.stopPropagation();
@@ -250,7 +251,9 @@ class LayerUI extends OpenSeadragon.EventSource{
     _onFeatureCollectionAdded(ev){
         let grp = ev.group;
         
-        let fc=new FeatureCollectionUI(grp, {guiSelector:`[data-ui-id="${this.element.dataset.uiId}"]`});
+        let fc=new FeatureCollectionUI(grp, {
+            iconFactory: this.iconFactory
+        });
         this.element.querySelector('.annotation-ui-feature-collections').appendChild(fc.element);
         this._dragAndDrop.refresh();
         fc.element.dispatchEvent(new Event('element-added'));
@@ -285,6 +288,7 @@ function makeHTMLElement(){
             </div>
             <div class='annotation-ui-feature-collections disable-when-annotations-hidden disable-when-deactivated'></div>
             <div class='new-feature-collection disable-when-deactivated'><span class='glyphicon glyphicon-plus fa fa-plus'></span>Add Feature Collection</div>
+            <div class='icon-factory-container'></div>
         </div>`;
     let element = domObjectFromHTML(html);
     let guid= 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(c) {

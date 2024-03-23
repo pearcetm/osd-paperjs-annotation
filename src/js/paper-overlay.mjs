@@ -114,7 +114,7 @@ class PaperOverlay{
         this.overlayType = opts.overlayType;
         
         viewer.PaperOverlays.push(this);
-        
+
         let ctr = counter();
         this._id = 'paper-overlay-canvas-' + ctr;
 

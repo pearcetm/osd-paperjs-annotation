@@ -109,19 +109,11 @@ class AnnotationUI {
       });
     }
 
-
-    let dialogOpts = {
-      filename: _viewer.world.getItemAt(0) && this._viewer.world.getItemAt(0).source.name, //todo make this work with multiple tiledImages
-      positioningElement: (this, _viewer.navigator || this._viewer).element,
-      appendTo: this._viewer.element,
-      toolbar: this._toolbar,
-    };
-
     /**
      * _layerUI: LayerUI: graphical user interface for this annotation layer
      * @private
      */
-    this._layerUI = new LayerUI(annotationToolkit, dialogOpts);
+    this._layerUI = new LayerUI(annotationToolkit);
     if (opts.addLayerUI) {
       this._addToViewer();
     }

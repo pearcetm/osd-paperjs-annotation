@@ -38,11 +38,17 @@
 
 import { makeFaIcon } from "./faIcon.mjs";
 
-
+/**
+ * @class EditableContent
+ * @param {Object} [opts] options
+ * @param {String} [opts.initialContent] The initial content for the editable element. Default = 'Enter text...'
+ * @param {IconFactory} [opts.iconFactory] An icon factory instance to use
+ */
 export class EditableContent{
     constructor(opts){
         let defaultOpts = {
             initialContent:'Enter text...',
+            iconFactory: null,
         }
         opts = Object.assign({}, defaultOpts, opts);
 
@@ -66,7 +72,7 @@ export class EditableContent{
         this._oldtext='';
 
         // let buttonicon = document.createElement('span');
-        let buttonicon = makeFaIcon('fa-edit');
+        let buttonicon = opts.iconFactory ? opts.iconFactory.makeFaIcon('fa-edit') : makeFaIcon('fa-edit');
         this._button.appendChild(buttonicon);
         buttonicon.classList.add('edit-button', 'onhover');
 

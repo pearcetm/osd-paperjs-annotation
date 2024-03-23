@@ -52,17 +52,14 @@ class FeatureUI{
      * Create a new FeatureUI instance.
      * @constructor
      * @param {paper.Item} paperItem - The paper item object.
+     * @param {object} [opts] - The initialization options.
+     * @param {IconFactory} [opts.iconFactory] - the IconFactory to use
      */
-    constructor(paperItem){
+    constructor(paperItem, opts){
         
         this.paperItem=paperItem;
         let el = this._element = makeFeatureElement();
-        convertFaIcons(el, [
-            'fa-palette',
-            'fa-trash-can',
-            'fa-binoculars',
-            'fa-crop-simple',
-        ]);
+        opts.iconFactory ? opts.iconFactory.convertFaIcons(el) : convertFaIcons(el);
 
         this.paperItem.FeatureUI = this;
         this._editableName = new EditableContent();

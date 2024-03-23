@@ -61,25 +61,18 @@ class FeatureCollectionUI{
      * @constructor
      * @property {string} displayName - The display name of the group.
      * @property {paper.Item} paperItem - The paper item object.
-     * @property {string} guiSelector - The selector for the GUI element.
-     * @property {jQuery} element - The jQuery object representing the HTML element of the feature collection UI.
-     * @param {paper.Layer} layer - The paper layer object.
-     * @param {object} init - The initialization options.
+     * @property {HTMLElement} element - The HTML element of the feature collection UI.
+     * @param {paper.Group} group - The paper group object.
+     * @param {object} [opts] - The initialization options.
+     * @param {IconFactory} [opts.iconFactory] - the IconFactory to use
      */
-    constructor(group,init){
+    constructor(group,opts){
         
         // this.toolbar = init.toolbar;
         this.element = makeFeatureCollectionElement();
-        convertFaIcons(this.element, [
-            'fa-palette',
-            'fa-trash-can',
-            'fa-eye',
-            'fa-eye-slash',
-            'fa-caret-down',
-            'fa-caret-up'
-        ]);
+        opts.iconFactory ? opts.iconFactory.convertFaIcons(this.element) : convertFaIcons(this.element);
 
-        this._editableName = new EditableContent();
+        this._editableName = new EditableContent({iconFactory: opts.iconFactory});
         this.element.querySelector('.annotation-name.name').appendChild(this._editableName.element);
         this._editableName.onChanged = text => {
             this.label = text;
@@ -126,7 +119,7 @@ class FeatureCollectionUI{
                 this.remove();
             },
             'child-added':(ev)=>{
-                let featureUI = ev.item.FeatureUI || new FeatureUI(ev.item);
+                let featureUI = ev.item.FeatureUI || new FeatureUI(ev.item, opts);
                 this._addFeature(featureUI);
             }
         });
