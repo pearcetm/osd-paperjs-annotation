@@ -58,7 +58,7 @@
     color:black;
     overflow:hidden;
     display:grid;
-    grid-template-rows: auto minmax(4em, 1fr) auto;
+    grid-template-rows: auto auto minmax(4em, 1fr) auto;
     border:thin gray solid;
     padding:2px;
     box-sizing:border-box;

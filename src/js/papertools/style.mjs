@@ -728,7 +728,7 @@ export {ColorpickerCursor};
             if(!color){
                 reject('Error: The item must be visible on the screen to pick the average color of visible pixels. Please navigate and retry.')
             } 
-            console.log('in getViewportRaster().onLoad; color=',color);
+            
             resolve(color);
         }
     });

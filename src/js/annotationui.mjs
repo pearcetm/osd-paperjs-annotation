@@ -113,7 +113,7 @@ class AnnotationUI {
      * _layerUI: LayerUI: graphical user interface for this annotation layer
      * @private
      */
-    this._layerUI = new LayerUI(annotationToolkit);
+    this._layerUI = new LayerUI(annotationToolkit, opts.addFileButton);
     if (opts.addLayerUI) {
       this._addToViewer();
     }

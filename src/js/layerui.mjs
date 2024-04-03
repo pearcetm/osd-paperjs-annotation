@@ -58,7 +58,7 @@ class LayerUI extends OpenSeadragon.EventSource{
      * @property {HTMLElement} element - The HTML element associated with the LayerUI instance. refer to typedef for subproperties
      * @param {AnnotationToolkit} annotationToolkit - The paper scope object.
      */
-    constructor(annotationToolkit){
+    constructor(annotationToolkit, addFileButton){
         super();
         let _this=this;
         this._tk = annotationToolkit
@@ -273,6 +273,7 @@ export{LayerUI};
 function makeHTMLElement(){
     let html = `
         <div class="annotation-ui-mainwindow" title="Annotations">
+            <div><span class='fa-save'></span> <span class="annotation-ui-title">Annotation Interface</span></div>
             <div class='annotation-ui-toolbar annotation-visibility-controls'>                
                 <div class="visibility-buttons btn-group btn-group-sm disable-when-deactivated" role="group">
                     <button class="btn btn-default toggle-annotations" type="button" title="Toggle annotations">
