@@ -222,6 +222,7 @@ class WandTool extends AnnotationUITool{
      */
     setReduceMode(erase){
         this.reduceMode=erase;
+        this.getImageData(); //reset the masks
     }
     /**
      * Sets whether the flood mode is enabled.
@@ -248,7 +249,7 @@ class WandTool extends AnnotationUITool{
         let wandOutput = {
             width:this.imageData.width,
             height:this.imageData.height,
-            data:this.imageData.binaryMask,
+            data:this.imageData.wandMask,
             bounds:{
                 minX:0,
                 minY:0,
@@ -257,40 +258,24 @@ class WandTool extends AnnotationUITool{
             }
         };
         
-        
-        let viewRect = new paper.Path.Rectangle(new paper.Point(0.1,0.1), new paper.Point(this.preview.width-0.1,this.preview.height-0.1), {insert:false})
-        let toUnite = maskToPath(this.MagicWand, wandOutput,);
-        toUnite.translate(-1, -1); // adjust path to account for pixel offset of maskToPath algorithm. Value of 1 is empirical.
-        let dilated = maskToPath(this.MagicWand, wandOutput,'dilate');
-        let toErase = viewRect.subtract(dilated,{insert:false});
-        
-        [viewRect, toUnite, toErase].forEach(item=>{
-            item.translate(-this.preview.width/2, -this.preview.height/2);
-            item.matrix = this.preview.matrix;
-        });
-
-        let n1 = this.item.subtract(toErase,{insert:false});
-        n1 = n1.toCompoundPath();
-        // removeDuplicates(n1);
-        
-        let newPath = n1.unite(toUnite,{insert:false});
-        
-        newPath = newPath.toCompoundPath();
-        
-        toUnite.remove();
-        toErase.remove();
-        dilated.remove();
-        n1.remove();
-        newPath.remove();//if wand tool stops working move this back after the swapping of children
-        viewRect.remove();
-
-        let success =  newPath !== n1;
-        if(success){
-            // console.log('Wand tool setting item children')
-            // this.item.layer.matrix.inverseTransform(newPath);
-            newPath.transform(this.item.layer.matrix.inverted());
-            this.item.removeChildren();
-            this.item.addChildren(newPath.children);
+        if(this.reduceMode){
+            let toSubtract = maskToPath(this.MagicWand, wandOutput);
+            toSubtract.translate(-1, -1); // adjust path to account for pixel offset of maskToPath algorithm. Value of 1 is empirical.
+            toSubtract.translate(-this.preview.width/2, -this.preview.height/2);
+            toSubtract.matrix = this.preview.matrix;
+            toSubtract.transform(this.item.layer.matrix.inverted());
+            let subtracted = this.item.subtract(toSubtract, false).toCompoundPath();
+            toSubtract.remove();
+            this.item.children = subtracted.children;
+        } else {
+            let toUnite = maskToPath(this.MagicWand, wandOutput);
+            toUnite.translate(-1, -1); // adjust path to account for pixel offset of maskToPath algorithm. Value of 1 is empirical.
+            toUnite.translate(-this.preview.width/2, -this.preview.height/2);
+            toUnite.matrix = this.preview.matrix;
+            toUnite.transform(this.item.layer.matrix.inverted());
+            let united = this.item.unite(toUnite, false).toCompoundPath();
+            toUnite.remove();
+            this.item.children = united.children;
         }
         
         
@@ -300,7 +285,7 @@ class WandTool extends AnnotationUITool{
     /**
      * Retrieves image data for processing the magic wand operation.
      */
-    async getImageData(){
+    getImageData(){
         let self=this;
         let imageData = self.project.overlay.getImageData();
         
@@ -348,11 +333,13 @@ class WandTool extends AnnotationUITool{
         self.imageData = {
             width:imageData.width,
             height:imageData.height,
-            data:imageData.data,
             bytes:4,
+            data:imageData.data,
+            binaryMask:  new Uint8ClampedArray(imageData.width * imageData.height),
+            wandMask:  new Uint8ClampedArray(imageData.width * imageData.height),
             colorMask:cm,
         }
-        self.imageData.binaryMask = new Uint8ClampedArray(self.imageData.width * self.imageData.height);
+        // self.imageData.binaryMask = new Uint8ClampedArray(self.imageData.width * self.imageData.height);
         for(let i = 0, m=0; i<self.imageData.data.length; i+= self.imageData.bytes, m+=1){
             self.imageData.binaryMask[m]=self.imageData.colorMask.data[i+1] ? 1 : 0;//green channel is for current item
         }
@@ -389,6 +376,7 @@ class WandTool extends AnnotationUITool{
         }
         
         let bm = this.imageData.binaryMask;
+        let wm = this.imageData.wandMask;
         let ds = this.imageData.dragStartMask;
         let cm = this.imageData.colorMask.data;
         let mw = magicWandOutput.data;
@@ -400,26 +388,30 @@ class WandTool extends AnnotationUITool{
         if(this.replaceMode && !this.reduceMode){ //start from the initial item (cm[i+1]>0) and add pixels from magicWandOutput (mw[m]) if allowed (cm[i]==0)
             for(let i = 0, m=0; i<cm.length; i+= this.imageData.bytes, m+=1){
                 bm[m] = cm[i+1]>0 || (cm[i]==0 && mw[m]);
+                wm[m] = mw[m];
             }
         }
         else if(this.replaceMode && this.reduceMode){ //start from initial item (cm[i+1]>0) and remove pixels from mw[m] if allowed (cm[i]==0)
             for(let i = 0, m=0; i<cm.length; i+= this.imageData.bytes, m+=1){
                 bm[m] = cm[i+1]>0 && !(cm[i]==0 && mw[m]);
+                wm[m] = mw[m];
             }
         }
         else if(!this.replaceMode && !this.reduceMode){ //start from dragstart (ds[m]) and add pixels from mw[m] if allowed (cm[i]==0)
             for(let i = 0, m=0; i<cm.length; i+= this.imageData.bytes, m+=1){
                 bm[m] = ds[m] || (cm[i]==0 && mw[m]);
+                wm[m] = wm[m] || mw[m];
             }
         }
         else if(!this.replaceMode && this.reduceMode){ //start from dragstart (ds[m]) and remove pixels from mw[m] if allowed (cm[i]==0)
             for(let i = 0, m=0; i<cm.length; i+= this.imageData.bytes, m+=1){
                 bm[m] = ds[m] && !(cm[i]==0 && mw[m]);
+                wm[m] = wm[m] || mw[m];
             }
         }
 
         // imgPreview(this.getDataURL(this.imageData.binaryMask));
-        this.rasterPreview(this.imageData.binaryMask,this.imageData.sampleColor || magicWandOutput.sampleColor);
+        this.rasterPreview(this.imageData.binaryMask, this.imageData.sampleColor || magicWandOutput.sampleColor);
         
     }
     
@@ -446,7 +438,6 @@ class WandTool extends AnnotationUITool{
         window.preview = this.preview;
 
         this.project.toolLayer.insertChild(0, this.preview);//add the raster to the bottom of the tool layer
-        console.log('New preview',this.preview.id, this.preview.parent.id, this.preview.bounds);
         
         let c;
         let imdata=this.preview.createImageData(this.preview.size);
