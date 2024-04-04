@@ -1,6 +1,7 @@
 
 import { AnnotationToolkit } from '../src/js/annotationtoolkit.mjs';
 import { RotationControlOverlay } from '../src/js/rotationcontrol.mjs';
+import { ScreenshotOverlay } from '../src/js/overlays/screenshot/screenshot.mjs';
 
 let v1 =window.v1 = OpenSeadragon({
     element:'basic-viewer',
@@ -13,14 +14,6 @@ let v1 =window.v1 = OpenSeadragon({
                 },
             x:0,
         },
-        // {
-        //     tileSource:{
-        //             type: 'image',
-        //             url:  './grand-canyon-landscape-overlooking.jpg',
-        //             buildPyramid: false,
-        //         },
-        //     x:1,
-        // },
         "https://openseadragon.github.io/example-images/highsmith/highsmith.dzi"
     ],
     sequenceMode:true,
@@ -28,31 +21,18 @@ let v1 =window.v1 = OpenSeadragon({
     visibilityRatio:0,
     crossOriginPolicy: 'Anonymous',
     ajaxWithCredentials: false,
-    // gestureSettingsMouse:{
-    //     dragToPan:false,
-    // }
 });
 v1.addOnceHandler('open',()=>{
     new RotationControlOverlay(v1);
+    new ScreenshotOverlay(v1);
     let tk = new AnnotationToolkit(v1, {cacheAnnotations:true});
     tk.addAnnotationUI({autoOpen:true});
     window.tk = tk;
 
     fetch('./demo-annotation.json').then(x=>x.json()).then(x=>{
-        //tk.addFeatureCollections(x);
         tk.addFeatureCollections(x, true, v1.world.getItemAt(0));
-        // tk.addFeatureCollections(x, true, v1.world.getItemAt(1));
     });
 
-    // v1.addTiledImage({
-    //     tileSource:{
-    //             type: 'image',
-    //             url:  './grand-canyon-landscape-overlooking.jpg',
-    //             buildPyramid: false,
-    //         },
-    //     x:1,
-    //     index: -1,
-    // },)
 });
 
 
