@@ -69,7 +69,7 @@ import { convertFaIcons, makeFaIcon } from '../utils/faIcon.mjs';
         this.cursor = this.colorpicker.element;
         this.cursor.applyRescale();
 
-        this.extensions.onActivate = function(){ console.log('style tool onActivate')
+        this.extensions.onActivate = function(){
             if(self.pickingColor){
                 self.project.overlay.addClass('tool-action').setAttribute('data-tool-action','colorpicker');
                 self.cursor.visible=true;
@@ -78,7 +78,7 @@ import { convertFaIcons, makeFaIcon } from '../utils/faIcon.mjs';
             // self.tool.captureUserInput(!!self.pickingColor);
             self.captureUserInput(!!self.pickingColor);
         };
-        this.extensions.onDeactivate = function(finished){  console.log('style tool onDeactivate')
+        this.extensions.onDeactivate = function(finished){
             self.project.overlay.removeClass('tool-action').setAttribute('data-tool-action','');
             self.cursor.visible=false;
             if(finished){
@@ -120,19 +120,14 @@ import { convertFaIcons, makeFaIcon } from '../utils/faIcon.mjs';
         this.activate();
         this.toolbarControl.updateDisplay();
         this._ignoreNextSelectionChange=false;
-        // console.log('finished activateForItem')
     }
     /**
      * Event handler for selection changes, updating the target items and the toolbar display.
      */
     onSelectionChanged(){
         if(!this._ignoreNextSelectionChange){
-            // console.log('onSelctionChanged handled')
             this.targetItems = this.items;
             this.toolbarControl.updateDisplay();
-        }
-        else{
-            // console.log('onSelctionChanged ignored')
         }
         this._ignoreNextSelectionChange=false;
     }
@@ -189,7 +184,6 @@ import { convertFaIcons, makeFaIcon } from '../utils/faIcon.mjs';
      * Cancel the color picker interface and reject the associated Promise.
      */
     cancelColorpicker(){
-        // console.log('canceling colorpicker')
         this.cursor.addTo(this.project.toolLayer);
         this.pickingColor=false;
         this.cursor.visible = false;            
@@ -232,7 +226,6 @@ import { convertFaIcons, makeFaIcon } from '../utils/faIcon.mjs';
      * @param {number} value - The stroke width value to apply.
      */
     applyStrokeWidth(value){
-        // console.log('applyStrokeWidth',this.targetItems,value);
         this.targetItems.forEach(item=>{
             if(item.defaultStyle) item=item.defaultStyle;
 
@@ -362,7 +355,6 @@ class StyleToolbar extends AnnotationUIToolbarBase{
         }));
 
         this.dropdown.querySelectorAll('input[type="number"]').forEach(e=>e.addEventListener('input',function(){
-            console.log('number input',this.value)
             self.tool.applyStrokeWidth(this.value);
         }));
 
@@ -390,9 +382,8 @@ class StyleToolbar extends AnnotationUIToolbarBase{
 
         this.dropdown.querySelectorAll('.style-item').forEach(e=>e.addEventListener('click',function(){
             let items = self.tool.targetItems;
-            // console.log('Style item clicked',items)
             let allSelected = items.every(item=>item.selected);
-            // let selectableItems = items.filter(item=>item.select);
+            
             let selectableItems = items.filter(item=>item.isGeoJSONFeature);
             if(selectableItems.length > 0){
                 self.tool._ignoreNextSelectionChange = true;
@@ -434,7 +425,6 @@ class StyleToolbar extends AnnotationUIToolbarBase{
             let hierarchyRef = self._hierarchy;
             self.tool.activateForItem(self._hierarchy[self._hierarchy.index]);
             self._hierarchy = hierarchyRef;//on activation this variable is cleared; reset here
-            // console.log('Hierarchy up',items)
         }));
     }
     
@@ -443,11 +433,9 @@ class StyleToolbar extends AnnotationUIToolbarBase{
      * @param {string} type - The type of style ('fill' or 'stroke').
      */
     fromAverage(type){
-        console.log('fromAverage called')
         let self=this;
         let promises = this.tool.targetItems.map(item=>{
             return getAverageColor(item).then( (color)=> {
-                // console.log('color calculated',color,item)
                 self.tool.applyColor(color,type,item);
             }) 
         });
@@ -507,7 +495,7 @@ class StyleToolbar extends AnnotationUIToolbarBase{
     updateDisplay(){
         this._hierarchy = [];
         let targets = this.tool.targetItemStyles;
-        // console.log('Style toolbar update display',targets)
+        
         this.updateTargetDescription();
 
         let fillColor = targets.map(item=>item.fillColor);
@@ -515,7 +503,6 @@ class StyleToolbar extends AnnotationUIToolbarBase{
             this.setFillButtonColor(fillColor[0])
         }
         else{
-            // console.warn('Multiple colors not implemented')
             this.setFillButtonColor();
         }
         
@@ -615,6 +602,7 @@ export {StyleToolbar};
     parent.addChild(cursor);
     //desired rotation is negative of view rotation value
     cursor.view.on('rotate',ev=>cursor.rotate(-ev.rotatedBy));
+    cursor.view.on('flip', ev=>cursor.scale(-1, 1));
     cursor.numRows=cursorGridSize;
     cursor.numColumns=cursorGridSize;
 
@@ -650,6 +638,11 @@ export {StyleToolbar};
     b.sendToBack();//this sets b as the first child, requiring 1-based indexing of grid in mousemove handler
     cursor.applyRescale = function(){cursor.children.forEach(child=>child.applyRescale());}
 
+    // flip the cursor if needed
+    if(cursor.view.getFlipped()){
+        cursor.scale(-1, 1);
+    }
+
     /**
      * Update the position of the color picker cursor and retrieve colors from the image.
      * @param {paper.Point} point - The point in the view where the cursor is positioned.
@@ -657,18 +650,19 @@ export {StyleToolbar};
     this.updatePosition = function(point){
         cursor.position=point;
         
-        let o = cursor.project.overlay.getCanvasCoordinates(point.x, point.y);
+        let o = cursor.project.overlay.paperToCanvasCoordinates(point.x, point.y);
         let x = Math.round(o.x)-Math.floor(cursor.numColumns/2);
         let y = Math.round(o.y)-Math.floor(cursor.numRows/2);
         let w = cursor.numColumns;
         let h = cursor.numRows;
-        let r = cursor.view.pixelRatio            
+        let r = cursor.view.pixelRatio;
+        
         let imdata = cursor.project.overlay.getImageData(x*r,y*r,w*r,h*r);
         ctx.clearRect(0, 0, w, h);
         window.createImageBitmap(imdata).then(bitmap=>{
             ctx.drawImage(bitmap, 0,0, cursor.numColumns, cursor.numRows);
             let data = ctx.getImageData(0, 0, w, h);
-            // console.log(data);
+            
             let i, p;
             for(i=0, p=1; i<data.data.length; i+=4, p+=1){
                 cursor.children[p].fillColor.red = data.data[i]/255;
@@ -678,27 +672,6 @@ export {StyleToolbar};
             cursor.borderElement.fillColor = cursor.centerCell.fillColor;
             this.selectedColor = cursor.centerCell.fillColor;  
         })
-
-        //downsample if needed
-        // function getval(i){
-        //     if(r==1) return imdata.data[i]/255;
-        //     let values=Array.from({length:r}).map((_,col)=>{
-        //         return Array.from({length:r}).map((_,row)=>{
-        //             return imdata.data[i + (col*4) + (row*w*r*4)];
-        //         })
-        //     }).flat().filter(v=>typeof v !== 'undefined');
-        //     return (values.reduce((a,v)=>a+=v,0)/values.length)/255;
-        // }
-        
-        // let p=1;
-        // for(var row=0; row<h*r; row += r){
-        //     for(var col=0;col<w*r; col += r, p += 1){
-        //         let i = 4*(col + (row*w*r));
-        //         self.cursor.children[p].fillColor.red = getval(i);
-        //         self.cursor.children[p].fillColor.green = getval(i+1);
-        //         self.cursor.children[p].fillColor.blue = getval(i+2);
-        //     }
-        // }
         
     }
     return this;

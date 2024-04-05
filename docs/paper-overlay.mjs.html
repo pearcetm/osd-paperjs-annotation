@@ -473,7 +473,7 @@ class PaperOverlay{
     /**
      * Convert from paper coordinate frame on the viewport level to the pixel on the underlying canvas element
      */
-    getCanvasCoordinates(x, y){
+    paperToCanvasCoordinates(x, y){
         let point = new OpenSeadragon.Point(x, y).divide(this.scaleFactor);
         return this.viewer.viewport.viewportToViewerElementCoordinates(point);
     }

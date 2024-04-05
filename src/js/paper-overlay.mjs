@@ -63,19 +63,7 @@ import { makeFaIcon } from './utils/faIcon.mjs';
         }
     });
     
-    /**
-     * Sets the rotation of the view.
-     * @function setRotation
-     * @memberof OSDPaperjsAnnotation.paperjsOverlay#
-     * @param {number} degrees - The number of degrees to rotate.
-     * @param {any} center - The center point of the rotation.
-     */
-    paper.View.prototype.setRotation = function(degrees, center){
-        let degreesToRotate = degrees - (this._rotation || 0)
-        this.rotate(degreesToRotate, center);
-        this._rotation = OpenSeadragon.positiveModulo(degrees, 360);
-        this.emit('rotate',{rotatedBy:degreesToRotate, currentRotation:this._rotation, center:center});
-    }
+    
 
     
 
@@ -191,9 +179,11 @@ class PaperOverlay{
         this.onViewerDestroy=(self=>function(){
             self.destroy(true);
         })(this);
+        
         this.onViewportChange=(self=>function(){
             self._updatePaperView();
         })(this);
+        
         this.onViewerResetSize=(self=>function(ev){
             //need to setTimeout to wait for some value (viewport.getZoom()?) to actually be updated before doing our update
             //need to check for destroyed because this will get called as part of the viewer destroy chain, and we've set the timeout
@@ -206,21 +196,35 @@ class PaperOverlay{
                 self._updatePaperView(true);
             });
         })(this);
+        
         this.onViewerResize=(self=>function(){
             self._resize();
             self.paperScope.view.emit('resize',{size:new paper.Size(self._containerWidth, self._containerHeight)})
             self._updatePaperView();
         })(this);
+        
         this.onViewerRotate=(self=>function(ev){
             //TODO: change from this to self; confirm nothing breaks
             this._pivot = ev.pivot || this._getCenter();
+        })(this);
+
+        this.onViewerFlip=(self=>function(ev){
+            // console.log('viewer flipped', ev.flipped, ev.eventSource);
+            // if(self.paperScope.view.scaling.x < 0){
+
+            // } else {
+
+            // }= ev.flipped ? -1 : 1;
+            // self.paperScope.view.scale(-1, 1);
+            self.paperScope.view.setFlipped(ev.flipped);
         })(this);
 
         viewer.addHandler('resize',this.onViewerResize);
         viewer.addHandler('reset-size',this.onViewerResetSize)
         
         viewer.addHandler('viewport-change', this.onViewportChange);
-        viewer.addHandler('rotate',this.onViewerRotate);
+        viewer.addHandler('rotate', this.onViewerRotate);
+        viewer.addHandler('flip', this.onViewerFlip);
 
         viewer.addOnceHandler('destroy', this.onViewerDestroy);
         
@@ -302,6 +306,7 @@ class PaperOverlay{
             this.viewer.removeHandler('resize',this.onViewerResize);
             this.viewer.removeHandler('reset-size',this.onViewerResetSize);
             this.viewer.removeHandler('rotate',this.onViewerRotate);
+            this.viewer.removeHandler('rotate',this.onViewerFlip);
             this.viewer.world.removeHandler('add-item', this.onAddItem);
             this.viewer.world.removeHandler('remove-item', this.onRemoveItem);
             this.setOSDMouseNavEnabled(true);
@@ -432,7 +437,7 @@ class PaperOverlay{
     //-----------
   /**
    * Rescales all items in the overlay according to the current zoom level of the viewer.
-   * This method manually rescales all Paper.js items that have the `rescale` property set to true.
+   * This method manually rescales all Paper.js items that have the `rescale` property set to a truthy value.
    * The rescaling is based on the current zoom level of the viewer, ensuring that the items maintain their relative size on the viewer.
    * @see {@link autoRescaleItems}
    */
@@ -443,9 +448,9 @@ class PaperOverlay{
     }
 
     /**
-     * Convert from paper coordinate frame on the viewport level to the pixel on the underlying canvas element
+     * Convert from paper coordinate frame to the pixel on the underlying canvas element
      */
-    getCanvasCoordinates(x, y){
+    paperToCanvasCoordinates(x, y){
         let point = new OpenSeadragon.Point(x, y).divide(this.scaleFactor);
         return this.viewer.viewport.viewportToViewerElementCoordinates(point);
     }
@@ -465,6 +470,12 @@ class PaperOverlay{
         y = y || 0;
         w = w == undefined ? this.viewer.drawer.canvas.width : w;
         h = h == undefined ? this.viewer.drawer.canvas.height : h;
+        
+        // deal with flipping the x coordinate if needed
+        if(this.ps.view.getFlipped()){
+            x = this.viewer.drawer.canvas.width - x - w;
+        }
+        
         return this.viewer.drawer.canvas.getContext('2d',{willReadFrequently:true}).getImageData(x, y, w, h);
     }
 
@@ -492,6 +503,9 @@ class PaperOverlay{
         raster.rotate(rotation);
         let scaleFactor = view.viewSize.width / view.getZoom() / this.viewer.drawer.canvas.width;
         raster.scale(scaleFactor);
+        if(view.scaling.x < 1){
+            raster.scale(-1, 1);
+        }
        
         return raster;
     }

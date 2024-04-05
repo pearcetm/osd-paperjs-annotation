@@ -37,6 +37,53 @@
  */
 
 import { paper } from './paperjs.mjs';
+import { OpenSeadragon } from './osd-loader.mjs';
+
+// monkey patch to fix view.zoom when negative scaling is applied
+paper.View.prototype.getZoom = function() {
+    var scaling = this._decompose().scaling;
+    // Use average since it can be non-uniform.
+    return (Math.abs(scaling.x) + Math.abs(scaling.y)) / 2;
+}
+
+/**
+ * Sets the rotation of the view.
+ * @function setRotation
+ * @memberof OSDPaperjsAnnotation.paperjsOverlay#
+ * @param {number} degrees - The number of degrees to rotate.
+ * @param {any} center - The center point of the rotation.
+ */
+paper.View.prototype.setRotation = function(degrees, center){
+    let degreesToRotate = degrees - (this._rotation || 0)
+    this.rotate(degreesToRotate, center);
+    this._rotation = OpenSeadragon.positiveModulo(degrees, 360);
+    this.emit('rotate',{rotatedBy:degreesToRotate, currentRotation:this._rotation, center:center});
+}
+
+/**
+ * Sets the flip of the view.
+ * @function setRotation
+ * @memberof OSDPaperjsAnnotation.paperjsOverlay#
+ * @param {Boolean} flipped - Whether the view is flipped or not.
+ */
+paper.View.prototype.setFlipped = function(flipped){
+    const isFlipped = this.getFlipped();
+    console.log(`setting flipped from ${isFlipped} to ${flipped}`);
+    if(flipped !== isFlipped){
+        this.scale(-1, 1);
+        this.emit('flip',{flipped: flipped});
+    }
+}
+
+/**
+ * Gets the current flipped status of the of the view.
+ * @function setRotation
+ * @memberof OSDPaperjsAnnotation.paperjsOverlay#
+ * @param {Boolean} flipped - Whether the view is flipped or not.
+ */
+paper.View.prototype.getFlipped = function(flipped){
+    return this.scaling.x * this.scaling.y < 0;
+}
 
 Object.defineProperty(paper.Item.prototype, 'hierarchy', hierarchyDef());
 Object.defineProperty(paper.Item.prototype, 'descendants', descendantsDef());
