@@ -301,15 +301,6 @@ class ScreenshotOverlay{
         let viewportRect = vp.viewerElementToViewportRectangle( boundsRect );
         let imageBounds = vp.viewportToImageRectangle(viewportRect);
 
-        // let a = vp.viewerElementToImageCoordinates(new OpenSeadragon.Point(bounds.x, bounds.y)).rotate(vp.getRotation(), vp.getCenter());
-        // let b = vp.viewerElementToImageCoordinates(new OpenSeadragon.Point(bounds.x+bounds.width, bounds.y+bounds.height)).rotate(vp.getRotation(), vp.getCenter());
-        
-        // let ix = Math.min(a.x, b.x);
-        // let iy = Math.min(a.y, b.y);
-        // let iw = Math.max(a.x, b.x) - ix;
-        // let ih = Math.max(a.y, b.y) - iy;
-        
-        // let imageRect = {width: iw, height: ih};
         const scaleFactor =  Math.max(imageBounds.width, imageBounds.height) / Math.max(boundsRect.width, boundsRect.height);
         let imageRect = {width: boundsRect.width * scaleFactor, height: boundsRect.height * scaleFactor};
 
@@ -348,7 +339,6 @@ class ScreenshotOverlay{
             let option = document.createElement('option');
             select.appendChild(option);
             option.textContent = `${Math.round(w)} x ${Math.round(h)}`;
-            console.log('Adding option', option.textContent);
             option.setAttribute('data-dims', JSON.stringify(data));
             if(w > maxDim || h > maxDim || w*h > maxArea){
                 // if the canvas is too big, don't even offer it as an option
@@ -365,11 +355,9 @@ class ScreenshotOverlay{
             scaleFactor: bounds.width / imageRect.width,
         }
         let option = document.createElement('option');
-            select.appendChild(option);
-            option.textContent = `${Math.round(w)} x ${Math.round(h)}`;
-
-            console.log('Adding option', option.textContent);
-            option.setAttribute('data-dims', JSON.stringify(data));
+        select.appendChild(option);
+        option.textContent = `${Math.round(w)} x ${Math.round(h)}`;
+        option.setAttribute('data-dims', JSON.stringify(data));
         
         this.dialog.classList.remove('hidden');
     }
