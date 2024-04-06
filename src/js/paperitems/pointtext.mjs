@@ -239,7 +239,7 @@ class PointText extends AnnotationItem{
 
         let boundsNoRotate = this.textitem.getInternalBounds();
         let scale = 1 / this.textitem.layer.scaling.x;
-        let offset = new paper.Point(-boundsNoRotate.width * scale/2, -boundsNoRotate.height * scale/2).divide(this.textitem.view.zoom).rotate(-this.textitem.view.getRotation());
+        let offset = new paper.Point(-boundsNoRotate.width * scale/2, -boundsNoRotate.height * scale/2).divide(this.textitem.view.getZoom()).rotate(-this.textitem.view.getRotation());
         this.textitem.position = this.circle.bounds.center.add(offset);
     }
     

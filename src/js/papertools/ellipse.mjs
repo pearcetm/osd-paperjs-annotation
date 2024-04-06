@@ -150,6 +150,9 @@ class EllipseTool extends AnnotationUITool{
         let center = this.item.bounds.center;
         if(this.mode=='creating'){
             let angle = -this.item.view.getRotation();
+            if(this.item.view.getFlipped()){
+                angle = angle - 180;
+            }
             
             if(ev.modifiers.command || ev.modifiers.control){
                 let delta = ev.point.subtract(ev.downPoint);
@@ -160,7 +163,8 @@ class EllipseTool extends AnnotationUITool{
             } else {
                 currPt = ev.point;
             }
-            let r=new paper.Rectangle(ev.downPoint.rotate(-angle,center),currPt.rotate(-angle, center));
+            
+            let r=new paper.Rectangle(ev.downPoint.rotate(-angle,center),currPt.rotate(-angle, center)); 
             let ellipse = new paper.Path.Ellipse(r).rotate(angle);
             this.item.children[0].set({segments: ellipse.segments});
             ellipse.remove();

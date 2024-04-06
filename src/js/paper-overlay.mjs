@@ -569,8 +569,8 @@ class PaperOverlay{
         }
 
         let viewportZoom = this.viewer.viewport.getZoom(true);
-        let oldZoom = this.paperScope.view.zoom;
-        this.paperScope.view.zoom = this.viewer.viewport._containerInnerSize.x * viewportZoom / this.scaleFactor;
+        let oldZoom = this.paperScope.view.getZoom();
+        this.paperScope.view.setZoom(this.viewer.viewport._containerInnerSize.x * viewportZoom / this.scaleFactor);
         
         let center = this._getCenter();
         this.viewer.drawer.canvas.pixelRatio = window.devicePixelRatio;
@@ -580,14 +580,10 @@ class PaperOverlay{
         let pivot = this._getPivot();
         this.paperScope.view.setRotation(degrees, pivot);
         
-        if(Math.abs(this.paperScope.view.zoom - oldZoom)>0.0000001){
-            this.paperScope.view.emit('zoom-changed',{zoom:this.paperScope.view.zoom});
+        const newZoom = this.paperScope.view.getZoom();
+        if(Math.abs(newZoom - oldZoom)>0.0000001){
+            this.paperScope.view.emit('zoom-changed',{zoom:newZoom});
         }
-
-        // if(this.viewer.paperLayer){
-        //     let matrix = this.viewer.paperLayer.matrix;
-        //     matrix.scale(matrix.scaling.divide(this.paperScope.view.zoom) );
-        // }
 
         this.paperScope.view.update();
     }

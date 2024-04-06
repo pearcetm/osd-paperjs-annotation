@@ -248,8 +248,10 @@ class SelectToolbar extends AnnotationUIToolbarBase{
             'Polygon',
             'MultiPolygon',
             'Point:Rectangle',
+            'Point:Ellipse',
             'Point',
             'LineString',
+            'MultiLineString',
             'GeometryColletion:Raster',
         ].includes(mode);
     }
