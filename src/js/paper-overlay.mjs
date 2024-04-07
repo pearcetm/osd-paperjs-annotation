@@ -209,14 +209,8 @@ class PaperOverlay{
         })(this);
 
         this.onViewerFlip=(self=>function(ev){
-            // console.log('viewer flipped', ev.flipped, ev.eventSource);
-            // if(self.paperScope.view.scaling.x < 0){
-
-            // } else {
-
-            // }= ev.flipped ? -1 : 1;
-            // self.paperScope.view.scale(-1, 1);
-            self.paperScope.view.setFlipped(ev.flipped);
+            let angle = self.overlayType==='image' ? viewer.viewport.getRotation() : 0;
+            self.paperScope.view.setFlipped(ev.flipped, angle);
         })(this);
 
         viewer.addHandler('resize',this.onViewerResize);

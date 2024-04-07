@@ -108,6 +108,10 @@ class RotationControlTool extends ToolBase{
         let bounds = paperScope.view.bounds;
         let widget = new RotationControlWidget(paperScope.view.bounds.center, setAngle, close);
 
+        paperScope.view.on('flip',()=>{
+            widget.closeButton.scale(-1, 1, widget.item.bounds.center);
+        });
+
         let viewer = paperScope.overlay.viewer;
 
         viewer.addHandler('rotate', (ev)=>widget.setCurrentRotation(ev.degrees));
@@ -274,7 +278,6 @@ function RotationControlWidget(center, setAngle, close){
     closeButton.set({fillColor:'red',strokeColor:'black',opacity:0.7});
     closeButton.position = new paper.Point(radius*1.5, -radius*1.5), 
     group.addChild(closeButton);
-
     
     group.pivot = circle.bounds.center;//make the center of the circle the pivot for the entire  controller
     group.position = center;//set position after adding all children so it is applied to all

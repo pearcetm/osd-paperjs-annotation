@@ -65,12 +65,15 @@ paper.View.prototype.setRotation = function(degrees, center){
  * @function setRotation
  * @memberof OSDPaperjsAnnotation.paperjsOverlay#
  * @param {Boolean} flipped - Whether the view is flipped or not.
+ * @param { number } currentRotation - the current rotation of the viewer in degrees
  */
-paper.View.prototype.setFlipped = function(flipped){
+paper.View.prototype.setFlipped = function(flipped, currentRotation){
     const isFlipped = this.getFlipped();
-    console.log(`setting flipped from ${isFlipped} to ${flipped}`);
+    console.log(`setting flipped from ${isFlipped} to ${flipped}; rotation = ${currentRotation} degrees`);
     if(flipped !== isFlipped){
+        this.rotate(-currentRotation);
         this.scale(-1, 1);
+        this.rotate(currentRotation);
         this.emit('flip',{flipped: flipped});
     }
 }
