@@ -209,7 +209,7 @@ class PaperOverlay{
         })(this);
 
         this.onViewerFlip=(self=>function(ev){
-            let angle = self.overlayType==='image' ? viewer.viewport.getRotation() : 0;
+            let angle = self.overlayType==='image' ? viewer.viewport.getRotation(true) : 0;
             self.paperScope.view.setFlipped(ev.flipped, angle);
         })(this);
 
@@ -466,7 +466,7 @@ class PaperOverlay{
         h = h == undefined ? this.viewer.drawer.canvas.height : h;
         
         // deal with flipping the x coordinate if needed
-        if(this.ps.view.getFlipped()){
+        if(this.ps.view.getFlipped()){ console.log('flipping')
             x = this.viewer.drawer.canvas.width - x - w;
         }
         
@@ -497,8 +497,12 @@ class PaperOverlay{
         raster.rotate(rotation);
         let scaleFactor = view.viewSize.width / view.getZoom() / this.viewer.drawer.canvas.width;
         raster.scale(scaleFactor);
-        if(view.scaling.x < 1){
+        
+        if(view.getFlipped()){
+            const angle = view.getRotation();
+            raster.rotate(-angle);
             raster.scale(-1, 1);
+            raster.rotate(angle)
         }
        
         return raster;
