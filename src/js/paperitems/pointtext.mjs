@@ -116,7 +116,6 @@ class PointText extends AnnotationItem{
             point.rotate(-angle);
             point.scale(-1, 1);
             point.rotate(angle);
-            if(point.xxx) console.log('Handle flip, angle = ', angle)
         }
         
         if(point.view.getFlipped()){
@@ -261,11 +260,6 @@ class PointText extends AnnotationItem{
         let rotation = flipped ? 180 - this.textitem.view.getRotation() : this.textitem.view.getRotation();
         let offset = new paper.Point(offsetX, offsetY).divide(this.textitem.view.getZoom()).rotate(-rotation);
         this.textitem.position = this.circle.bounds.center.add(offset);
-        if(this.paperItem.xxx){
-            console.log(this.textitem.content, 'offset', offset, 'rotation', rotation)
-        } else if(this.paperItem.xxy){
-            console.log('gape', 'offset', offset, 'rotation', rotation)
-        }
     }
     
 }

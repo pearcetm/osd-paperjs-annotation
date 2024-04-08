@@ -600,9 +600,18 @@ export {StyleToolbar};
     let cursor = new paper.Group({visible:false, applyMatrix:false});
     this.element = cursor;
     parent.addChild(cursor);
+
+    function handleFlip(){
+        const angle = cursor.view.getFlipped() ? cursor.view.getRotation() : 180 - cursor.view.getRotation();
+        cursor.rotate(-angle);
+        cursor.scale(-1, 1);
+        cursor.rotate(angle);
+    }
+
     //desired rotation is negative of view rotation value
     cursor.view.on('rotate',ev=>cursor.rotate(-ev.rotatedBy));
-    cursor.view.on('flip', ev=>cursor.scale(-1, 1));
+    cursor.view.on('flip', handleFlip);
+
     cursor.numRows=cursorGridSize;
     cursor.numColumns=cursorGridSize;
 
@@ -640,7 +649,7 @@ export {StyleToolbar};
 
     // flip the cursor if needed
     if(cursor.view.getFlipped()){
-        cursor.scale(-1, 1);
+        handleFlip();
     }
 
     /**
