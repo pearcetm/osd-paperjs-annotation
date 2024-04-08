@@ -466,7 +466,7 @@ class PaperOverlay{
         h = h == undefined ? this.viewer.drawer.canvas.height : h;
         
         // deal with flipping the x coordinate if needed
-        if(this.ps.view.getFlipped()){ console.log('flipping')
+        if(this.ps.view.getFlipped()){
             x = this.viewer.drawer.canvas.width - x - w;
         }
         
