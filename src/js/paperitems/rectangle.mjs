@@ -155,42 +155,28 @@ class Rectangle extends AnnotationItem{
     static onTransform(){
         let operation = arguments[0];
         switch(operation){
-            case 'rotate':{
-                let segments = this.children[0].segments;
-                segments.map((s, i) => {
-                    let c = s.point.transform(this.matrix);
-                    let s2 = segments[(i+1) % 4];
-                    let c2 = s2.point.transform(this.matrix);
-                    let vec = c2.subtract(c).divide(2);
-                    let mp = c.add(vec);//.transform(this.matrix); 
-                    
-                    mp.normal = vec.rotate(-90).normalize();
-                    mp.segments = [s, s2];
-                    return mp;
-                });
-                break;
-            }
             case 'scale':{
-                let p = arguments[1]; //reference position
+                let p = this.layer.matrix.inverseTransform(arguments[1]); //reference position
                 let r = arguments[2]; //rotation
                 let m = arguments[3]; //matrix
-
-                this.matrix.append(m.inverted()); //undo previous operation
+                
+                this.matrix.append(m.inverted()); //undo previous default operation that was already applied
                 
                 //scale the midpoints of each edge of the rectangle per the transform operation
                 //while projecting the operation onto the normal vector, to maintain rectanglar shape 
                 let segments = this.children[0].segments;
                 segments.map((s, i) => {
-                    let c = s.point.transform(this.matrix);
-                    let s2 = segments[(i+1) % 4];
-                    let c2 = s2.point.transform(this.matrix);
-                    let vec = c2.subtract(c).divide(2);
-                    let mp = c.add(vec);
+                    let c = s.point.transform(this.matrix); // first corner
+                    let s2 = segments[(i+1) % 4]; // next segment
+                    let c2 = s2.point.transform(this.matrix); // next corner
+                    let vec = c2.subtract(c).divide(2); // vector from c to midpoint
+                    let mp = c.add(vec); // midpoint of the side
                     
-                    mp.normal = vec.rotate(-90).normalize();
-                    mp.segments = [s, s2];
+                    mp.normal = vec.rotate(-90).normalize(); // normal vector for this side of the rectangle
+                    mp.segments = [s, s2]; // keep track of which segments are on each end of this side
                     return mp;
                 }).forEach((midpoint) => {
+                    // now adjust each corner position to keep the sides of the rect parallel to their previous orientation
                     let a = midpoint.subtract(p);
                     let ar = a.rotate(-r); 
                     let br = ar.multiply(m.scaling);
