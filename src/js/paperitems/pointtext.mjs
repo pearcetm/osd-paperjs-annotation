@@ -109,9 +109,29 @@ class PointText extends AnnotationItem{
             point.scaleFactor = 1 / z;
             textitem.strokeWidth = 0; //keep constant; reset after strokewidth is set on overall item
         };
+
+        function handleFlip(){
+            // const angle = point.view.getRotation(); 
+            const angle = point.view.getFlipped() ? point.view.getRotation() : 180 - point.view.getRotation();
+            point.rotate(-angle);
+            point.scale(-1, 1);
+            point.rotate(angle);
+            if(point.xxx) console.log('Handle flip, angle = ', angle)
+        }
         
-        point.rotate(-point.view.getRotation());
-        point.view.on('rotate',function(ev){point.rotate(-ev.rotatedBy)});
+        if(point.view.getFlipped()){
+            handleFlip();  
+        }
+        const offsetAngle = point.view.getFlipped() ? 180 - point.view.getRotation() : -point.view.getRotation();
+        point.rotate(offsetAngle);  
+
+        point.view.on('rotate',ev => {
+            const angle = -ev.rotatedBy;
+            point.rotate(angle)
+        });
+        point.view.on('flip', () => {
+            handleFlip();
+        });
         point.applyRescale();
         
 
@@ -234,13 +254,18 @@ class PointText extends AnnotationItem{
     }
 
     refreshTextOffset(){
-        // let scale = 1 / this.textitem.layer.scaling.x;
-        // this.textitem.translate(new paper.Point(-this.textitem.bounds.width * scale/2, -(this.textitem.bounds.height * scale/2))); 
-
+        const flipped = this.textitem.view.getFlipped();
         let boundsNoRotate = this.textitem.getInternalBounds();
-        let scale = 1 / this.textitem.layer.scaling.x;
-        let offset = new paper.Point(-boundsNoRotate.width * scale/2, -boundsNoRotate.height * scale/2).divide(this.textitem.view.getZoom()).rotate(-this.textitem.view.getRotation());
+        let offsetX = boundsNoRotate.width / 2 / this.textitem.layer.scaling.x * (flipped ? 1 : -1);
+        let offsetY = -boundsNoRotate.height / 2 / this.textitem.layer.scaling.x;
+        let rotation = flipped ? 180 - this.textitem.view.getRotation() : this.textitem.view.getRotation();
+        let offset = new paper.Point(offsetX, offsetY).divide(this.textitem.view.getZoom()).rotate(-rotation);
         this.textitem.position = this.circle.bounds.center.add(offset);
+        if(this.paperItem.xxx){
+            console.log(this.textitem.content, 'offset', offset, 'rotation', rotation)
+        } else if(this.paperItem.xxy){
+            console.log('gape', 'offset', offset, 'rotation', rotation)
+        }
     }
     
 }

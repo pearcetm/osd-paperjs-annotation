@@ -69,7 +69,6 @@ paper.View.prototype.setRotation = function(degrees, center){
  */
 paper.View.prototype.setFlipped = function(flipped, currentRotation){
     const isFlipped = this.getFlipped();
-    console.log(`setting flipped from ${isFlipped} to ${flipped}; rotation = ${currentRotation} degrees`);
     if(flipped !== isFlipped){
         this.rotate(-currentRotation);
         this.scale(-1, 1);
