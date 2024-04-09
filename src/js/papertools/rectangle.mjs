@@ -204,7 +204,7 @@ class RectangleTool extends AnnotationUITool{
         let refPt, currPt, cursorPt, angle;
         let center = this.item.center;
         if(this.mode=='creating'){
-            angle = -this.item.view.getRotation();
+            angle = -(this.item.view.getRotation() + this.item.layer.getRotation());
             refPt = ev.downPoint;
             
             if(ev.modifiers.command || ev.modifiers.control){

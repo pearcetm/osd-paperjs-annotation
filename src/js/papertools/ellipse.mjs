@@ -149,7 +149,7 @@ class EllipseTool extends AnnotationUITool{
         let currPt;
         let center = this.item.bounds.center;
         if(this.mode=='creating'){
-            let angle = -this.item.view.getRotation();
+            let angle = -(this.item.view.getRotation() + this.item.layer.getRotation());
             if(this.item.view.getFlipped()){
                 angle = 180 - angle;
             }
