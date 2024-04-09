@@ -135,7 +135,11 @@ class TransformTool extends AnnotationUITool{
              ctrl.anchor=c[0];
              ctrl.opposite=c[1];
              ctrl.onMouseDown = function(ev){ev.stopPropagation();}
+
+             // scaling operations
              ctrl.onMouseDrag = function(ev){
+                // first handle the bounding box
+                let layerAngle = self.targetLayer.getRotation();
                 let rotation=this.parent.rotation;
                 let delta=ev.delta.rotate(-rotation);
                 let refPos = this.parent.corners[this.opposite].position;
@@ -148,7 +152,7 @@ class TransformTool extends AnnotationUITool{
                 let newPos = this.position.add(delta);
                 let oldSize=new paper.Rectangle(refPos,oldPos).size;
                 let newSize=new paper.Rectangle(refPos,newPos).size;
-                let sf = newSize.divide(oldSize);
+                let scaleFactor = newSize.divide(oldSize);
                 
                 let refPosX = refPos.transform(this.parent.matrix);
                 let refPosZ = this.parent.matrix.inverseTransform(this.parent.corners[this.opposite].refPos);
@@ -156,14 +160,15 @@ class TransformTool extends AnnotationUITool{
                 refPosZ = self.targetMatrix.inverseTransform(refPosZ);
 
                 this.parent.transforming.forEach( item=>{
-                    let matrix = new paper.Matrix().scale(sf.width,sf.height,refPosZ); 
+                    let matrix = new paper.Matrix().rotate(-layerAngle, refPosZ).scale(scaleFactor.width,scaleFactor.height,refPosZ).rotate(layerAngle, refPosZ); 
 
                     item.matrix.append(matrix);
                     item.onTransform && item.onTransform('scale', refPosX, rotation, matrix);
                 });
                 
-                this.parent.boundingRect.scale(sf.width,sf.height,refPos);
+                this.parent.boundingRect.scale(scaleFactor.width,scaleFactor.height,refPos);
                 this.parent.setBounds(true);
+
              }
              acc[c[0]]=ctrl;
              return acc;
@@ -175,10 +180,8 @@ class TransformTool extends AnnotationUITool{
         this._transformTool.addChild(this._transformTool.rotationHandle);
         this._transformTool.rotationHandle.onMouseDown = function(ev){ev.stopPropagation();}
         this._transformTool.rotationHandle.onMouseDrag = function(ev){
+            
             let parentMatrix=this.parent.matrix;
-
-            //parentMatrix = parentMatrix.prepend(self.targetMatrix);
-
             let center=parentMatrix.transform(this.parent.boundingRect.position);
             
             let oldVec = ev.point.subtract(ev.delta).subtract(center);
@@ -219,17 +222,19 @@ class TransformTool extends AnnotationUITool{
         this._transformTool.setBounds=function(useExistingBoundingRect=false){
             if(!useExistingBoundingRect){
                 let bounds=this.transforming.reduce((acc,item)=>{
+                    item.transform(self.targetLayer.matrix);
                     acc.minX = acc.minX===null?item.bounds.topLeft.x : Math.min(acc.minX,item.bounds.topLeft.x);
                     acc.minY = acc.minY===null?item.bounds.topLeft.y : Math.min(acc.minY,item.bounds.topLeft.y);
                     acc.maxX = acc.maxX===null?item.bounds.bottomRight.x : Math.max(acc.maxX,item.bounds.bottomRight.x);
                     acc.maxY = acc.maxY===null?item.bounds.bottomRight.y : Math.max(acc.maxY,item.bounds.bottomRight.y);
+                    item.transform(self.targetLayer.matrix.inverted())
                     return acc;
                 },{minX:null,minY:null,maxX:null,maxY:null});
 
                 // bounds = self.targetMatrix.transform(bounds);
 
-                let topLeft = self.targetMatrix.transform(new paper.Point(bounds.minX,bounds.minY));
-                let bottomRight = self.targetMatrix.transform(new paper.Point(bounds.maxX,bounds.maxY));
+                let topLeft = new paper.Point(bounds.minX,bounds.minY);
+                let bottomRight = new paper.Point(bounds.maxX,bounds.maxY);
                 let rect = new paper.Rectangle(topLeft, bottomRight);
                 this.matrix.reset();
                 this.boundingRect.set({position:rect.center,size:rect.size});
