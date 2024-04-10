@@ -21,6 +21,7 @@ let v1 =window.v1 = OpenSeadragon({
     visibilityRatio:0,
     crossOriginPolicy: 'Anonymous',
     ajaxWithCredentials: false,
+    drawer:'webgl',
 });
 v1.addOnceHandler('open',()=>{
     new RotationControlOverlay(v1);
