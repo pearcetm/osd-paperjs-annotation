@@ -284,8 +284,8 @@ function preparePath(path, offset) {
     source.reduce({});
     if (!path.clockwise) {
         source.reverse();
-        offset = -offset;
-    }
+        offset = -offset; 
+    } 
     return [source, offset];
 }
 function offsetSimpleShape(path, offset, join, limit) {

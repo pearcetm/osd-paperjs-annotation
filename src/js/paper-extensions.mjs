@@ -382,3 +382,9 @@ function strokePropertyDefItem(){
         }
     }
 }
+
+// patch isClockwise by adding a small epsilon value to account for floating point errors
+paper.PathItem.prototype.isClockwise = function() {
+    return this.getArea() >= -0.00000001;
+}
+Object.defineProperty(paper.PathItem.prototype, 'clockwise', {get: function cw(){ return this.isClockwise(); }});

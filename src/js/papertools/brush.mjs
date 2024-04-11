@@ -218,6 +218,11 @@ import { makeFaIcon } from '../utils/faIcon.mjs';
         
         if(path.segments.length>1){                
             shape = PaperOffset.offsetStroke(path, radius, {join:'round',cap:'round', insert:true });
+            if(!shape.contains(path.segments[0].point)){
+                console.error('Oops! Bad stroke offset! Trying to correct');
+                path.segments[0].point.x += 0.001;
+                shape = PaperOffset.offsetStroke(path, radius, {join:'round',cap:'round', insert:true });
+            }
         }
         else{
             shape = new paper.Path.RegularPolygon({center: path.firstSegment.point, radius: radius, sides: 360 });
@@ -239,12 +244,23 @@ import { makeFaIcon } from '../utils/faIcon.mjs';
             result = this.item.subtract(shape,{insert:false});
         }
         else{
-            result = this.item.unite(shape,{insert:false});    
+            result = this.item.unite(shape,{insert:false});  
+            // The below code is useful for debugging tiny holes in united paths  
+            // if(result?.children){
+            //     console.log('Num children', result.children.length);
+            //     result.children.forEach(c => console.log('area', c.area));
+            // }
         }
         if(result){
             result=result.toCompoundPath();
+            const childrenToAdd = result.children.filter(c => {
+                // filter out holes with tiny area (area <= 10) - an arbitrary, empirical threshold
+                return c.area > 0 || Math.abs(c.area) > 10;
+            });
+            
             this.item.removeChildren();
-            this.item.addChildren(result.children);
+            this.item.addChildren(childrenToAdd);
+            
             result.remove();     
         }
         shape.remove();
