@@ -209,7 +209,7 @@ class PaperOverlay{
         })(this);
 
         this.onViewerFlip=(self=>function(ev){
-            self.paperScope.view.setFlipped(ev.flipped, -viewer.viewport.getRotation(true));
+            self.paperScope.view.setFlipped(ev.flipped, viewer.viewport.getRotation(true));
         })(this);
 
         viewer.addHandler('resize',this.onViewerResize);
@@ -299,7 +299,7 @@ class PaperOverlay{
             this.viewer.removeHandler('resize',this.onViewerResize);
             this.viewer.removeHandler('reset-size',this.onViewerResetSize);
             this.viewer.removeHandler('rotate',this.onViewerRotate);
-            this.viewer.removeHandler('rotate',this.onViewerFlip);
+            this.viewer.removeHandler('flip',this.onViewerFlip);
             this.viewer.world.removeHandler('add-item', this.onAddItem);
             this.viewer.world.removeHandler('remove-item', this.onRemoveItem);
             this.setOSDMouseNavEnabled(true);
