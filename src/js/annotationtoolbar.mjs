@@ -133,6 +133,8 @@ class AnnotationToolbar{
         if(toolsToUse.indexOf('default') == -1){
             toolsToUse = ['default', ...toolsToUse];
         }
+        //activate our paperScope before creating the tools
+        this.paperScope.activate();
         toolsToUse.forEach(t => {
             if(typeof t === 'string'){
                 if(!this.toolConstructors[t]){
