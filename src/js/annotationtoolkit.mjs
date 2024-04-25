@@ -158,13 +158,11 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
         this.paperScope.annotationToolkit = this;
 
         this.viewer.world.addHandler('add-item',ev=>{
-            console.log('item added', ev);
             if(this.options.cacheAnnotations){
                 this._loadCachedAnnotations(ev.item);
             }
         })
         this.viewer.world.addHandler('remove-item',ev=>{
-            console.log('item removed', ev);
             if(this.options.cacheAnnotations){
                 this._cacheAnnotations(ev.item);
             }
