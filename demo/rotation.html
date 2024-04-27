@@ -7,8 +7,9 @@
 
 
     <script type="module">
-        import{ AnnotationToolkit } from '../src/js/annotationtoolkit.mjs';
-        // Basic viewer setup
+      import {RotationControlOverlay} from '../src/js/rotationcontrol.mjs'
+
+      // Basic viewer setup
         let viewer = OpenSeadragon({
             element: 'rotating-viewer',
             prefixUrl: "https://openseadragon.github.io/openseadragon/images/",
@@ -23,7 +24,9 @@
             ajaxWithCredentials: false
         });
 
-        viewer.addHandler('open', () => {});
+        viewer.addHandler('open', () => {
+            new RotationControlOverlay(viewer);
+        });
     </script>
  </head>
  <body>
