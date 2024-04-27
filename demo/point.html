@@ -1,12 +1,11 @@
 <!DOCTYPE html>
+<html>
 <head>
     <title>Point Tool Demo</title>
     <script type="text/javascript" src="./openseadragon/openseadragon.min.js"></script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/paper.js/0.12.17/paper-full.js"></script>
     <link rel="stylesheet" href="./demo.css">
-
     <script type="module">
-        import { AnnotationToolbar } from '../src/js/annotationtoolbar.mjs';
         import{ AnnotationToolkit } from '../src/js/annotationtoolkit.mjs';
         // Basic viewer setup
         let viewer = window.viewer = OpenSeadragon({
@@ -49,7 +48,7 @@
                 // annotationToolkit.addFeatureCollections(x, true, viewer.world.getItemAt(1));
             });
         });
-        
+
     </script>
 </head>
 <body>
@@ -78,9 +77,7 @@
                     The Point Tool is designed to work with other annotation items created using supported tools. It allows you to interact with these annotations and efficiently manage them on the map.
                 </p>
             </div>
-            
-            </div>
         </div>
-
-    </body>
+    </div>
+</body>
 </html>

@@ -1,11 +1,10 @@
 <!DOCTYPE html>
-
+<html>
 <head>
     <title>Style Tool Demo</title>
     <script type="text/javascript" src="./openseadragon/openseadragon.min.js"></script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/paper.js/0.12.17/paper-full.js"></script>
     <link rel="stylesheet" href="./demo.css">
-
     <script type="module">
         import { PaperOverlay } from '../src/js/paper-overlay.mjs';
         import {RotationControlOverlay} from '../src/js/rotationcontrol.mjs'
@@ -32,8 +31,8 @@
         viewer.addHandler('open', () => {
             new RotationControlOverlay(viewer);
         });
-        
-        
+
+
     </script>
 </head>
 <body>
@@ -41,7 +40,6 @@
         <div class="demo">
             <h3>Paper Overlay Demo</h3>
             <div id="viewer" class="viewer"></div>
-            
         </div>
     </div>
 </body>

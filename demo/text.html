@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<html>
 <head>
     <title>Text Tool Demo</title>
     <script type="text/javascript" src="./openseadragon/openseadragon.min.js"></script>
@@ -6,7 +7,6 @@
     <link rel="stylesheet" href="./demo.css">
 
     <script type="module">
-        import { AnnotationToolbar } from '../src/js/annotationtoolbar.mjs';
         import{ AnnotationToolkit } from '../src/js/annotationtoolkit.mjs';
         // Basic viewer setup
         let viewer = window.viewer = OpenSeadragon({
@@ -65,15 +65,15 @@
                     <li><strong>Customizing the Style:</strong> The text's style can be customized. You can change the font size, stroke width, fill color, etc by using the style tool from the toolkit, please look at the style demo for a more indepth exaplanation. </li>
                     <li><strong>Saving Changes:</strong> Any changes made to the text annotations are automatically saved.</li>
                 </ol>
-            
+
                 <div>
                     <h4>Note:</h4>
                     <p>
                         Text annotations created using the Text Toolbox Tool are point-based and may lose scalability when scaled. Ensure that you create annotations at appropriate sizes to maintain clarity in your map.
                     </p>
                 </div>
-                
             </div>
         </div>
-    </body>
+    </div>
+</body>
 </html>
