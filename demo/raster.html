@@ -68,7 +68,7 @@
             let exAnnotationToolkit = new AnnotationToolkit(exampleviewer);
             exAnnotationToolkit.addAnnotationUI({tools:["transform", "raster"], addButton:false, addFileButton:false});
 
-            $.get('./tissue-annotation.json').then(x => exAnnotationToolkit.addFeatureCollections(x));
+            fetch('./tissue-annotation.json').then(r => r.json()).then(x => exAnnotationToolkit.addFeatureCollections(x));
         });
     </script>
 </head>
