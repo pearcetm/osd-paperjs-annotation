@@ -46,30 +46,30 @@
             });
         });
 
-        // let exampleviewer = OpenSeadragon({
-        //     element: 'example-viewer',
-        //     prefixUrl: "https://openseadragon.github.io/openseadragon/images/",
-        //     tileSources: {
-        //         type: 'image',
-        //         url: './tissue.jpg',
-        //         buildPyramid: true
-        //     },
-        //     minZoomImageRatio: 0.01,
-        //     visibilityRatio: 0,
-        //     crossOriginPolicy: 'Anonymous',
-        //     ajaxWithCredentials: false
-        // });
+        let exampleviewer = OpenSeadragon({
+            element: 'example-viewer',
+            prefixUrl: "https://openseadragon.github.io/openseadragon/images/",
+            tileSources: {
+                type: 'image',
+                url: './tissue.jpg',
+                buildPyramid: true
+            },
+            minZoomImageRatio: 0.01,
+            visibilityRatio: 0,
+            crossOriginPolicy: 'Anonymous',
+            ajaxWithCredentials: false
+        });
 
-        // exampleviewer.addHandler('open', () => {
-        //     let exPaperScope = new paper.PaperScope(); // Create a new PaperScope
-        //     exPaperScope.setup('example-canvas'); // Set up Paper.js with the specified canvas ID
+        exampleviewer.addHandler('open', () => {
+            let exPaperScope = new paper.PaperScope(); // Create a new PaperScope
+            exPaperScope.setup('example-canvas'); // Set up Paper.js with the specified canvas ID
 
-        //     // Create the AnnotationToolkit instance for the example viewer
-        //     let exAnnotationToolkit = new AnnotationToolkit(exampleviewer);
-        //     exAnnotationToolkit.addAnnotationUI({tools:["transform", "raster"], addButton:false, addFileButton:false});
+            // Create the AnnotationToolkit instance for the example viewer
+            let exAnnotationToolkit = new AnnotationToolkit(exampleviewer);
+            exAnnotationToolkit.addAnnotationUI({tools:["transform", "raster"], addButton:false, addFileButton:false});
 
-        //     $.get('./tissue-annotation.json').then(x => exAnnotationToolkit.addFeatureCollections(x));
-        // });
+            $.get('./tissue-annotation.json').then(x => exAnnotationToolkit.addFeatureCollections(x));
+        });
     </script>
 </head>
 <body>
@@ -117,5 +117,5 @@
             </div>
         </div>
     </div>
-</body>
+    </body>
 </html>
