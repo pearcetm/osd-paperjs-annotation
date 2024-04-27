@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<html>
 <head>
     <title>Rotation Control Demo</title>
     <script type="text/javascript" src="./openseadragon/openseadragon.min.js"></script>
@@ -10,40 +11,40 @@
       import {RotationControlOverlay} from '../src/js/rotationcontrol.mjs'
 
       // Basic viewer setup
-        let viewer = OpenSeadragon({
-            element: 'rotating-viewer',
-            prefixUrl: "https://openseadragon.github.io/openseadragon/images/",
-            tileSources: {
-                type: 'image',
-                url: 'https://openseadragon.github.io/example-images/grand-canyon-landscape-overlooking.jpg',
-                buildPyramid: false
-            },
-            minZoomImageRatio: 0.01,
-            visibilityRatio: 0,
-            crossOriginPolicy: 'Anonymous',
-            ajaxWithCredentials: false
-        });
+      let viewer = OpenSeadragon({
+        element: 'rotating-viewer',
+        prefixUrl: "https://openseadragon.github.io/openseadragon/images/",
+        tileSources: {
+          type: 'image',
+          url: 'https://openseadragon.github.io/example-images/grand-canyon-landscape-overlooking.jpg',
+          buildPyramid: false
+        },
+        minZoomImageRatio: 0.01,
+        visibilityRatio: 0,
+        crossOriginPolicy: 'Anonymous',
+        ajaxWithCredentials: false
+      });
 
-        viewer.addHandler('open', () => {
-            new RotationControlOverlay(viewer);
-        });
+      viewer.addHandler('open', () => {
+        new RotationControlOverlay(viewer);
+      });
     </script>
- </head>
- <body>
-     <div class="content">
-         <div class="demo">
-             <h3>Rotation Control Overlay Demo</h3>
-             <div id="rotating-viewer" class="viewer"></div>
-             <div>
+</head>
+<body>
+    <div class="content">
+        <div class="demo">
+            <h3>Rotation Control Overlay Demo</h3>
+            <div id="rotating-viewer" class="viewer"></div>
+            <div>
                 <h4>How to use:</h4>
                 <p>Toggle the controller using the button on the upper left toolbar.</p>
                 <p>Rotate the image using the following options:
-                    <ul>
-                        <li>Click the control boxes at the cardinal directions (N, E, S, W) to jump to those angles</li>
-                        <li>Click and drag the cross-hair controller to the desired center point for the rotation</li>
-                        <li>Click and drag the indicator dot to directly set the orientation</li>
-                        <li>Click and drag other places on the viewer. A line shows you the axis between the center point and your cursor, for alignment with features in the image. </li>
-                    </ul>
+                <ul>
+                    <li>Click the control boxes at the cardinal directions (N, E, S, W) to jump to those angles</li>
+                    <li>Click and drag the cross-hair controller to the desired center point for the rotation</li>
+                    <li>Click and drag the indicator dot to directly set the orientation</li>
+                    <li>Click and drag other places on the viewer. A line shows you the axis between the center point and your cursor, for alignment with features in the image. </li>
+                </ul>
                 </p>
                 <p>
                     While the controller is active, hold the shift key to zoom/pan the image. The controller will reactivate after the key press.
@@ -52,7 +53,6 @@
 
                 <h4>Code:</h4>
                 <pre>
-
                     // Must be placed inside a module: script with type="module" for import to work
                     import {RotationControlOverlay} from '../src/js/rotationcontrol.mjs'
 
@@ -75,9 +75,9 @@
                     viewer.addHandler('open',()=>{
                         new RotationControlOverlay(viewer)
                     });
-
                 </pre>
-             </div>
-         </div>
-     </div>
- </body>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
