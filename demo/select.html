@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<html>
 <head>
     <title>Select Tool Demo</title>
     <script type="text/javascript" src="./openseadragon/openseadragon.min.js"></script>
@@ -6,7 +7,6 @@
     <link rel="stylesheet" href="./demo.css">
 
     <script type="module">
-        import { AnnotationToolbar } from '../src/js/annotationtoolbar.mjs';
         import{ AnnotationToolkit } from '../src/js/annotationtoolkit.mjs';
         // Basic viewer setup
         let viewer = window.viewer = OpenSeadragon({
@@ -76,12 +76,8 @@
                     <li><strong>Escape:</strong> Press the 'Escape' key to clear the selection and deselect all items.</li>
                 </ul>
             </div>
-            <div>
-            </div>
         </div>
-        
     </div>
-
 </body>
 </html>
 

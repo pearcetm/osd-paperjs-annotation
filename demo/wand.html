@@ -1,3 +1,5 @@
+<!DOCTYPE html>
+<html>
 <head>
     <title>Magic Wand Tool Demo</title>
     <script type="text/javascript" src="./openseadragon/openseadragon.min.js"></script>
@@ -5,7 +7,6 @@
     <link rel="stylesheet" href="./demo.css">
 
     <script type="module">
-        import { AnnotationToolbar } from '../src/js/annotationtoolbar.mjs';
         import{ AnnotationToolkit } from '../src/js/annotationtoolkit.mjs';
         // Basic viewer setup
         let viewer = window.viewer = OpenSeadragon({
@@ -46,7 +47,7 @@
                 annotationToolkit.addFeatureCollections(x, true, viewer.world.getItemAt(1));
             });
         });
-        
+
         // let exampleviewer = OpenSeadragon({
         //     element: 'example-viewer',
         //     prefixUrl: "https://openseadragon.github.io/openseadragon/images/",
@@ -64,11 +65,11 @@
         // exampleviewer.addHandler('open', () => {
         //     let exPaperScope = new paper.PaperScope(); // Create a new PaperScope
         //     exPaperScope.setup('example-canvas'); // Set up Paper.js with the specified canvas ID
-        
+
         //     // Create the AnnotationToolkit instance for the example viewer
         //     let exAnnotationToolkit = new AnnotationToolkit(exampleviewer);
         //     exAnnotationToolkit.addAnnotationUI({tools:["wand"], addButton:false, addFileButton:false});
-        
+
         //     $.get('./tissue-annotation.json').then(x => exAnnotationToolkit.addFeatureCollections(x));
         // });
     </script>
@@ -93,7 +94,7 @@
                     <li><strong>Threshold Adjustment:</strong> While holding the mouse button down, you can adjust the threshold by dragging the mouse left or right. The selection will update dynamically as you drag.</li>
                     <li><strong>Apply and Finish:</strong> Use the "Apply" button in the tool's toolbar to apply the changes to the selection. If you're done with the selection, click the "Done" button to finish using the Wand Tool.</li>
                 </ol>
-            
+
                 <div>
                     <h4>Note:</h4>
                     <p>
@@ -119,6 +120,8 @@
                     </ol>
                     <div id="example-viewer" class="viewer"></div>
                 </div> -->
-
+            </div>
+        </div>
+    </div>
 </body>
 </html>

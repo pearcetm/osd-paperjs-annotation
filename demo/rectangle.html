@@ -4,9 +4,7 @@
     <script type="text/javascript" src="./openseadragon/openseadragon.min.js"></script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/paper.js/0.12.17/paper-full.js"></script>
     <link rel="stylesheet" href="./demo.css">
-
     <script type="module">
-        import { AnnotationToolbar } from '../src/js/annotationtoolbar.mjs';
         import{ AnnotationToolkit } from '../src/js/annotationtoolkit.mjs';
         // Basic viewer setup
         let viewer = OpenSeadragon({
@@ -49,8 +47,8 @@
                 // annotationToolkit.addFeatureCollections(x, true, viewer.world.getItemAt(1));
             });
         });
-        
-        
+
+
     </script>
 </head>
 <body>
@@ -85,10 +83,9 @@
                     </li>
                     <li><strong>Finish Modifying:</strong> Once you are done creating or modifying the rectangle,
                         release the mouse button.</li>
+                </ol>
              </div>
         </div>
-        
     </div>
-
 </body>
 </html>
