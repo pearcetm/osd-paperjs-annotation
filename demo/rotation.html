@@ -7,8 +7,7 @@
 
 
     <script type="module">
-        import {RotationControlOverlay} from '../src/js/rotationcontrol.mjs'
-
+        import{ AnnotationToolkit } from '../src/js/annotationtoolkit.mjs';
         // Basic viewer setup
         let viewer = OpenSeadragon({
             element: 'rotating-viewer',
@@ -25,7 +24,39 @@
         });
 
         viewer.addHandler('open', () => {
-            new RotationControlOverlay(viewer)
+            let paperScope = new paper.PaperScope(); // Create a new PaperScope
+            paperScope.setup('brush-canvas'); // Set up Paper.js with the specified canvas ID
+
+            // Create the AnnotationToolkit instance with annotationUI selecting a tool and add feature collections
+            let annotationToolkit = new AnnotationToolkit(viewer);
+            annotationToolkit.addAnnotationUI({tools:["select"], addButton:false, addFileButton:false});
+
+            $.get('./demo-annotation.json').then(x => annotationToolkit.addFeatureCollections(x));
+        });
+
+        let exampleviewer = OpenSeadragon({
+            element: 'example-viewer',
+            prefixUrl: "https://openseadragon.github.io/openseadragon/images/",
+            tileSources: {
+                type: 'image',
+                url: './tissue.jpg',
+                buildPyramid: true
+            },
+            minZoomImageRatio: 0.01,
+            visibilityRatio: 0,
+            crossOriginPolicy: 'Anonymous',
+            ajaxWithCredentials: false
+        });
+
+        exampleviewer.addHandler('open', () => {
+            let exPaperScope = new paper.PaperScope(); // Create a new PaperScope
+            exPaperScope.setup('example-canvas'); // Set up Paper.js with the specified canvas ID
+
+            // Create the AnnotationToolkit instance for the example viewer
+            let exAnnotationToolkit = new AnnotationToolkit(exampleviewer);
+            exAnnotationToolkit.addAnnotationUI({tools:["select"], addButton:false, addFileButton:false});
+
+            fetch('./tissue-annotation.json').then(r=>r.json()).then(x => exAnnotationToolkit.addFeatureCollections(x));
         });
     </script>
  </head>
@@ -80,4 +111,6 @@
              </div>
          </div>
      </div>
+     <canvas id="example-canvas" style="display:none;"></canvas>
+     <canvas id="brush-canvas" style="display:none;"></canvas>
  </body>
