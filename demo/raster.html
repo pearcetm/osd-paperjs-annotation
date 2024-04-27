@@ -6,7 +6,6 @@
     <link rel="stylesheet" href="./demo.css">
 
     <script type="module">
-        import { AnnotationToolbar } from '../src/js/annotationtoolbar.mjs';
         import{ AnnotationToolkit } from '../src/js/annotationtoolkit.mjs';
         // Basic viewer setup
         let viewer = OpenSeadragon({
@@ -47,7 +46,7 @@
                 // annotationToolkit.addFeatureCollections(x, true, viewer.world.getItemAt(1));
             });
         });
-        
+
         // let exampleviewer = OpenSeadragon({
         //     element: 'example-viewer',
         //     prefixUrl: "https://openseadragon.github.io/openseadragon/images/",
@@ -65,11 +64,11 @@
         // exampleviewer.addHandler('open', () => {
         //     let exPaperScope = new paper.PaperScope(); // Create a new PaperScope
         //     exPaperScope.setup('example-canvas'); // Set up Paper.js with the specified canvas ID
-        
+
         //     // Create the AnnotationToolkit instance for the example viewer
         //     let exAnnotationToolkit = new AnnotationToolkit(exampleviewer);
         //     exAnnotationToolkit.addAnnotationUI({tools:["transform", "raster"], addButton:false, addFileButton:false});
-        
+
         //     $.get('./tissue-annotation.json').then(x => exAnnotationToolkit.addFeatureCollections(x));
         // });
     </script>
