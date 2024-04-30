@@ -1,6 +1,6 @@
 /**
  * OpenSeadragon paperjs overlay plugin based on paper.js
- * @version 0.3.0
+ * @version 0.3.2
  * 
  * Includes additional open source libraries which are subject to copyright notices
  * as indicated accompanying those segments of code.
@@ -45,6 +45,19 @@ paper.View.prototype.getZoom = function() {
     // Use average since it can be non-uniform.
     return (Math.abs(scaling.x) + Math.abs(scaling.y)) / 2;
 }
+
+// monkey patch to fix non-rounded canvas sizes
+paper.CanvasView.prototype._setElementSize.base = function(width, height) {
+    var element = this._element;
+    width = Math.round(width);
+    height = Math.round(height);
+    if (element) {
+        if (element.width !== width)
+            element.width = width;
+        if (element.height !== height)
+            element.height = height;
+    }
+},
 
 /**
  * Sets the rotation of the view.
