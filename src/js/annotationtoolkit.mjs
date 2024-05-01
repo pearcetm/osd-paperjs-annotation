@@ -1,6 +1,6 @@
 /**
  * OpenSeadragon annotation plugin based on paper.js
- * @version 0.3.2
+ * @version 0.4.0
  * 
  * Includes additional open source libraries which are subject to copyright notices
  * as indicated accompanying those segments of code.
@@ -360,7 +360,7 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
                 features: grp.descendants.filter(d=>d.annotationItem).map(d=>d.annotationItem.toGeoJSONFeature()),
                 properties:{
                     defaultStyle: grp.defaultStyle.toJSON(),
-                    userdata: grp.userdata,
+                    userdata: grp.data.userdata,
                 },
                 label:grp.displayName,
             }
@@ -398,7 +398,7 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
             if(obj.type=='FeatureCollection'){
                 let group = this._createFeatureCollectionGroup({label: obj.label, parent: parentLayer});
                 let props = (obj.properties || {});
-                group.userdata = Object.assign({},props.userdata);
+                group.data.userdata = Object.assign({},props.userdata);
                 group.defaultStyle.set(props.defaultStyle);
                 obj.features.forEach(feature=>{
                     let item = paper.Item.fromGeoJSON(feature);

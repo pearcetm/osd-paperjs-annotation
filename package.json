@@ -1,7 +1,7 @@
 {
   "name": "osd-paperjs-annotation",
   "description": "Annotation tools for OpenSeadragon using PaperJS",
-  "version": "0.3.2",
+  "version": "0.4.0",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "generate-docs": "jsdoc -c ./jsdoc-config.json",

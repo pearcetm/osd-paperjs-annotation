@@ -1,6 +1,6 @@
 /**
  * OpenSeadragon paperjs overlay plugin based on paper.js
- * @version 0.3.2
+ * @version 0.4.0
  * 
  * Includes additional open source libraries which are subject to copyright notices
  * as indicated accompanying those segments of code.
@@ -52,7 +52,6 @@ class AnnotationItem{
      * @throws {string} Throws an error if the GeoJSON geometry type is invalid.
      * @property {paper.Item|null} _paperItem - The associated paper item of the annotation.
      * @property {Object} _props - The properties of the annotation.
-     * @property {Object} userdata - The userdata field of the annotation properties.
      * @description This constructor initializes a new annotation item based on the provided GeoJSON feature. It validates the GeoJSON geometry type and sets up the associated paper item and properties.
      */
     constructor(feature){
@@ -61,7 +60,6 @@ class AnnotationItem{
         }
         this._paperItem = null;
         this._props = feature.properties || {};
-        this.userdata = Object.assign({}, this._props.userdata);//ensure userdata field exists
     }
     
     /**
@@ -200,7 +198,7 @@ class AnnotationItem{
                 label:this.paperItem.displayName,
                 selected:this.paperItem.selected,
                 ...this.getStyleProperties(),
-                userdata:this.userdata,
+                userdata:this.paperItem.data.userdata,
             }
         }
 

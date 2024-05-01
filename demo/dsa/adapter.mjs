@@ -29,13 +29,6 @@ export class DSAAdapter{
     featureCollectionsToElements(fcArray){
         
         let elements = fcArray.map(geojson=>{
-            // let obj = {};
-            // let userdata = (geojson.properties && geojson.properties.userdata) || {};
-            // let dsainfo = userdata.dsa || {};
-            // obj.name = geojson.label;
-            // obj.description = "description" in dsainfo ? dsainfo.description : 'Created by AnnotationToolkit DSA Adapter v1';
-            // obj.attributes = {}
-            
             return geojson.features.map(featureToElement).flat().map(element=>{
                 element.group = ''+geojson.label;
                 return element;
