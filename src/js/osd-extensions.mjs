@@ -50,7 +50,7 @@ Object.defineProperty(OpenSeadragon.Viewer.prototype, 'paperItems', paperItemsDe
 Object.defineProperty(OpenSeadragon.TiledImage.prototype, 'paperItems', paperItemsDef());
 Object.defineProperty(OpenSeadragon.Viewport.prototype, 'paperItems', paperItemsDef());
 OpenSeadragon.Viewer.prototype._setupPaper = _setupPaper;
-OpenSeadragon.Viewport.prototype._setupPaper = _setupPaper;
+OpenSeadragon.Viewport.prototype._setupPaper = _setupPaperForViewport;
 OpenSeadragon.TiledImage.prototype._setupPaper = _setupPaperForTiledImage;
 OpenSeadragon.Viewer.prototype.addPaperItem = addPaperItem;
 OpenSeadragon.Viewport.prototype.addPaperItem = addPaperItem;
@@ -129,6 +129,15 @@ function paperLayerMapDef(){
         }
     }
 }
+
+/**
+ * @private
+ * @returns {paper.Layer}
+ */
+function _setupPaper(overlay){
+    return _createPaperLayer(this, overlay.paperScope);
+}
+
 /**
  * @private
  * 
@@ -164,10 +173,18 @@ function _setupPaperForTiledImage(overlay){
 
 /**
  * @private
- * @returns {paper.Layer}
+ * 
  */
-function _setupPaper(overlay){
-    return _createPaperLayer(this, overlay.paperScope);
+function _setupPaperForViewport(overlay){
+    let layer = _setupPaper.call(this, overlay);
+    layer.viewport = this;
+    
+    layer.matrix.scale(overlay.scaleFactor);
+    
+    this.viewer.addHandler('resize',ev=>{
+        layer.matrix.reset();
+        layer.matrix.scale(overlay.scaleFactor);
+    });
 }
 
 
