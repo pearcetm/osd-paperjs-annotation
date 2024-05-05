@@ -1,6 +1,6 @@
 /**
  * OpenSeadragon paperjs overlay plugin based on paper.js
- * @version 0.4.0
+ * @version 0.4.1
  * 
  * Includes additional open source libraries which are subject to copyright notices
  * as indicated accompanying those segments of code.
@@ -144,7 +144,7 @@ class TransformTool extends AnnotationUITool{
                 let delta=ev.delta.rotate(-rotation);
                 let refPos = this.parent.corners[this.opposite].position;
 
-                if(ev.modifiers.command || ev.modifiers.control){
+                if(self._alwaysRescaleUniformly || ev.modifiers.command || ev.modifiers.control){
                     delta = delta.project(this.position.subtract(refPos));
                 }
                 
