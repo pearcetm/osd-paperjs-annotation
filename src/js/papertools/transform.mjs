@@ -1,6 +1,6 @@
 /**
  * OpenSeadragon paperjs overlay plugin based on paper.js
- * @version 0.4.1
+ * @version 0.4.2
  * 
  * Includes additional open source libraries which are subject to copyright notices
  * as indicated accompanying those segments of code.
@@ -83,6 +83,13 @@ class TransformTool extends AnnotationUITool{
     }
     onSelectionChanged(){
         this.enableTransformToolObject();
+    }
+
+    /**
+     * @param {boolean} alwaysRescaleUniformly Whether the tool should enforce uniform scaling to maintain width:height ratio
+     */
+    setUniformScaling(alwaysRescaleUniformly){
+        this._alwaysRescaleUniformly = alwaysRescaleUniformly;
     }
 
     /**
