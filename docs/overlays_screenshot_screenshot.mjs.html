@@ -1,4 +1,32 @@
-/**
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: overlays/screenshot/screenshot.mjs</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: overlays/screenshot/screenshot.mjs</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
  * OpenSeadragon paperjs overlay plugin based on paper.js
  * @version 0.4.3
  * 
@@ -101,61 +129,61 @@ class ScreenshotOverlay{
     }
 
     _makeDialog(options){
-        let html = `<div class="screenshot-dialog hidden">
-            <div class="size">
-                <h3>Aspect Ratio</h3>
-                <label>Lock</label><input class="lock-aspect-ratio" type="checkbox"/>
-                <input type="number" min="0" value="1" class="aspect-width"/> x <input type="number" min="0" value="1" class="aspect-height"/>
-                <button class="apply-aspect-ratio">Apply</button>
-            </div>
-            <hr>
-            <div>
-                <h3>Selected Region</h3>
-                <div class="size">
-                    <div><input class="region-width region-dim" type="number" min="0"/> x <input class="region-height region-dim" type="number" min="0"/> px 
-                    (<span class="region-width-mm"></span> x <span class="region-height-mm"></span> mm)</div>
-                </div>
-                <div class="scalebar">
-                    <label>Include scale bar:</label> <input class="include-scalebar"type="checkbox">
-                    <div class="scalebar-opts">
-                    <p>Enter desired scale bar width in millimeters and height in pixels.<br>Width will be rounded to the nearest pixel.</p>
-                    <label>Width (mm):</label><input class="scalebar-width" type="number" min="0.001" step="0.01">
-                    <label>Height (px):</label><input class="scalebar-height" type="number" min="1" step="1">
-                    </div>
-                </div> 
-            <div>
-            <hr>
-            <div class="screenshot-results">
-                <div class="instructions">
-                    <h3>Create your screenshot</h3>
-                    <div>
-                        <label>Select size:</label>
-                        <select class="select-size"></select>
-                        <button class="create-screenshot">Create</button>
-                    </div>
+        let html = `&lt;div class="screenshot-dialog hidden">
+            &lt;div class="size">
+                &lt;h3>Aspect Ratio&lt;/h3>
+                &lt;label>Lock&lt;/label>&lt;input class="lock-aspect-ratio" type="checkbox"/>
+                &lt;input type="number" min="0" value="1" class="aspect-width"/> x &lt;input type="number" min="0" value="1" class="aspect-height"/>
+                &lt;button class="apply-aspect-ratio">Apply&lt;/button>
+            &lt;/div>
+            &lt;hr>
+            &lt;div>
+                &lt;h3>Selected Region&lt;/h3>
+                &lt;div class="size">
+                    &lt;div>&lt;input class="region-width region-dim" type="number" min="0"/> x &lt;input class="region-height region-dim" type="number" min="0"/> px 
+                    (&lt;span class="region-width-mm">&lt;/span> x &lt;span class="region-height-mm">&lt;/span> mm)&lt;/div>
+                &lt;/div>
+                &lt;div class="scalebar">
+                    &lt;label>Include scale bar:&lt;/label> &lt;input class="include-scalebar"type="checkbox">
+                    &lt;div class="scalebar-opts">
+                    &lt;p>Enter desired scale bar width in millimeters and height in pixels.&lt;br>Width will be rounded to the nearest pixel.&lt;/p>
+                    &lt;label>Width (mm):&lt;/label>&lt;input class="scalebar-width" type="number" min="0.001" step="0.01">
+                    &lt;label>Height (px):&lt;/label>&lt;input class="scalebar-height" type="number" min="1" step="1">
+                    &lt;/div>
+                &lt;/div> 
+            &lt;div>
+            &lt;hr>
+            &lt;div class="screenshot-results">
+                &lt;div class="instructions">
+                    &lt;h3>Create your screenshot&lt;/h3>
+                    &lt;div>
+                        &lt;label>Select size:&lt;/label>
+                        &lt;select class="select-size">&lt;/select>
+                        &lt;button class="create-screenshot">Create&lt;/button>
+                    &lt;/div>
                     
-                </div>
-                <div class="download">
-                    <h3>View/Download</h3>
-                    <div class="download-message">${options?.downloadMessage || ''}</div>
-                    <div><a class="open-screenshot screenshot-link" target="_blank"><button>Open in new tab</button></a> | 
-                    <a class="download-screenshot screenshot-link" download="screenshot.png"><button>Download</button></a></div>
-                    <div><button class="cancel-screenshot">Change size</button></div>
-                </div>
-                <div class="pending-message"><h3>View/Download</h3>
+                &lt;/div>
+                &lt;div class="download">
+                    &lt;h3>View/Download&lt;/h3>
+                    &lt;div class="download-message">${options?.downloadMessage || ''}&lt;/div>
+                    &lt;div>&lt;a class="open-screenshot screenshot-link" target="_blank">&lt;button>Open in new tab&lt;/button>&lt;/a> | 
+                    &lt;a class="download-screenshot screenshot-link" download="screenshot.png">&lt;button>Download&lt;/button>&lt;/a>&lt;/div>
+                    &lt;div>&lt;button class="cancel-screenshot">Change size&lt;/button>&lt;/div>
+                &lt;/div>
+                &lt;div class="pending-message">&lt;h3>View/Download&lt;/h3>
                 Creating your screenshot...
-                <div class="screenshot-progress">
-                    <progress></progress>
-                    <div>Loaded <span class="loaded"></span> of <span class="total"><span> tiles</div>
-                </div>
-                <div><button class="cancel-screenshot">Change size</button></div>
-                </div>
-            </div>
-            <hr>
-            <button class='rect'>Select a new area</button> | <button class='close'>Close</button>
-        </div>`;
+                &lt;div class="screenshot-progress">
+                    &lt;progress>&lt;/progress>
+                    &lt;div>Loaded &lt;span class="loaded">&lt;/span> of &lt;span class="total">&lt;span> tiles&lt;/div>
+                &lt;/div>
+                &lt;div>&lt;button class="cancel-screenshot">Change size&lt;/button>&lt;/div>
+                &lt;/div>
+            &lt;/div>
+            &lt;hr>
+            &lt;button class='rect'>Select a new area&lt;/button> | &lt;button class='close'>Close&lt;/button>
+        &lt;/div>`;
 
-        let css = `<style data-type="screenshot-tool">
+        let css = `&lt;style data-type="screenshot-tool">
             .screenshot-dialog{
                 position: absolute;
                 top: 50%;
@@ -198,7 +226,7 @@ class ScreenshotOverlay{
             .scalebar-opts.hidden{
                 visibility:hidden;
             }
-        </style>`;
+        &lt;/style>`;
         if(!document.querySelector('style[data-type="screenshot-tool"]')){
             document.querySelector('head').appendChild(domObjectFromHTML(css));
         }
@@ -280,7 +308,7 @@ class ScreenshotOverlay{
         if(currentRatio / desiredRatio > 1){
             this._currentBounds.width = Math.round(this._currentBounds.height * desiredRatio);
             this._setupScreenshotDialog(this._currentBounds);
-        } else if (currentRatio / desiredRatio < 1){
+        } else if (currentRatio / desiredRatio &lt; 1){
             this._currentBounds.height = Math.round(this._currentBounds.width / desiredRatio);
             this._setupScreenshotDialog(this._currentBounds);
         }
@@ -329,7 +357,7 @@ class ScreenshotOverlay{
         let h = imageRect.height;
         const maxDim = 23767;
         const maxArea = 268435456;
-        while(w > bounds.width && h > bounds.height){
+        while(w > bounds.width &amp;&amp; h > bounds.height){
             let data ={
                 w: Math.round(w), 
                 h: Math.round(h), 
@@ -420,7 +448,7 @@ class ScreenshotOverlay{
                     ssViewer.world.getItemAt(0).setRotation(ti.getRotation(true), true);
                     ssViewer.world.getItemAt(0).addOnceHandler('fully-loaded-change',(ev)=>{
                         // draw scalebar if requested
-                        if(this._includeScalebar && this._mpp){
+                        if(this._includeScalebar &amp;&amp; this._mpp){
                             let pixelWidth = Math.round(this._scalebarWidth * 1000 / this._mpp.x * scaleFactor);
                             let pixelHeight = Math.round(this._scalebarHeight);
                             let canvas = ssViewer.drawer.canvas;
@@ -573,9 +601,9 @@ class ScreenshotTool extends ToolBase{
             let delta = ev.point.subtract(ev.downPoint);
             
             if(Math.abs(delta.x) > Math.abs(delta.y)){
-                point.y = ev.downPoint.y + (delta.y < 0 ? -1 : 1 ) * Math.abs(delta.x) * this._aspectHeight / this._aspectWidth;
+                point.y = ev.downPoint.y + (delta.y &lt; 0 ? -1 : 1 ) * Math.abs(delta.x) * this._aspectHeight / this._aspectWidth;
             } else {
-                point.x = ev.downPoint.x + (delta.x < 0 ? -1 : 1 ) * Math.abs(delta.y) * this._aspectWidth / this._aspectHeight;
+                point.x = ev.downPoint.x + (delta.x &lt; 0 ? -1 : 1 ) * Math.abs(delta.y) * this._aspectWidth / this._aspectHeight;
             }
         }
         return point;
@@ -587,3 +615,26 @@ export {ScreenshotTool};
 export {ScreenshotOverlay};
 
 
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="OSDPaperjsAnnotation.html">OSDPaperjsAnnotation</a></li></ul><h3>Classes</h3><ul><li><a href="Dialog.html">Dialog</a></li><li><a href="DragAndDrop.html">DragAndDrop</a></li><li><a href="EditableContent.html">EditableContent</a></li><li><a href="Morph.html">Morph</a></li><li><a href="OSDPaperjsAnnotation.AnnotationItem.html">AnnotationItem</a></li><li><a href="OSDPaperjsAnnotation.AnnotationItemFactory.html">AnnotationItemFactory</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolbar.html">AnnotationToolbar</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolkit.html">AnnotationToolkit</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUI.html">AnnotationUI</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUITool.html">AnnotationUITool</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUITool.AnnotationUIToolbarBase.html">AnnotationUIToolbarBase</a></li><li><a href="OSDPaperjsAnnotation.BrushTool.html">BrushTool</a></li><li><a href="OSDPaperjsAnnotation.BrushTool.BrushToolbar.html">BrushToolbar</a></li><li><a href="OSDPaperjsAnnotation.DefaultTool.html">DefaultTool</a></li><li><a href="OSDPaperjsAnnotation.DefaultTool.DefaultToolbar.html">DefaultToolbar</a></li><li><a href="OSDPaperjsAnnotation.Ellipse.html">Ellipse</a></li><li><a href="OSDPaperjsAnnotation.EllipseTool.html">EllipseTool</a></li><li><a href="OSDPaperjsAnnotation.EllipseTool.EllipseToolbar.html">EllipseToolbar</a></li><li><a href="OSDPaperjsAnnotation.FeatureCollectionUI.html">FeatureCollectionUI</a></li><li><a href="OSDPaperjsAnnotation.FeatureUI.html">FeatureUI</a></li><li><a href="OSDPaperjsAnnotation.FileDialog.html">FileDialog</a></li><li><a href="OSDPaperjsAnnotation.LayerUI.html">LayerUI</a></li><li><a href="OSDPaperjsAnnotation.Linestring.html">Linestring</a></li><li><a href="OSDPaperjsAnnotation.LinestringTool.html">LinestringTool</a></li><li><a href="OSDPaperjsAnnotation.LinestringTool.LinestringToolbar.html">LinestringToolbar</a></li><li><a href="OSDPaperjsAnnotation.MultiLinestring.html">MultiLinestring</a></li><li><a href="OSDPaperjsAnnotation.MultiPolygon.html">MultiPolygon</a></li><li><a href="OSDPaperjsAnnotation.PaperOverlay.html">PaperOverlay</a></li><li><a href="OSDPaperjsAnnotation.Placeholder.html">Placeholder</a></li><li><a href="OSDPaperjsAnnotation.Point.html">Point</a></li><li><a href="OSDPaperjsAnnotation.PointText.html">PointText</a></li><li><a href="OSDPaperjsAnnotation.PointTextTool.html">PointTextTool</a></li><li><a href="OSDPaperjsAnnotation.PointTextTool.PointTextToolbar.html">PointTextToolbar</a></li><li><a href="OSDPaperjsAnnotation.PointTool.html">PointTool</a></li><li><a href="OSDPaperjsAnnotation.PointTool.PointToolbar.html">PointToolbar</a></li><li><a href="OSDPaperjsAnnotation.PolygonTool.html">PolygonTool</a></li><li><a href="OSDPaperjsAnnotation.PolygonTool.PolygonToolbar.html">PolygonToolbar</a></li><li><a href="OSDPaperjsAnnotation.Raster.html">Raster</a></li><li><a href="OSDPaperjsAnnotation.RasterTool.html">RasterTool</a></li><li><a href="OSDPaperjsAnnotation.RasterTool.RasterToolbar.html">RasterToolbar</a></li><li><a href="OSDPaperjsAnnotation.Rectangle.html">Rectangle</a></li><li><a href="OSDPaperjsAnnotation.RectangleTool.html">RectangleTool</a></li><li><a href="OSDPaperjsAnnotation.RectangleTool_RectToolbar.html">RectToolbar</a></li><li><a href="OSDPaperjsAnnotation.RotationControlOverlay.html">RotationControlOverlay</a></li><li><a href="OSDPaperjsAnnotation.RotationControlTool.html">RotationControlTool</a></li><li><a href="OSDPaperjsAnnotation.RotationControlWidget.html">RotationControlWidget</a></li><li><a href="OSDPaperjsAnnotation.StyleTool.html">StyleTool</a></li><li><a href="OSDPaperjsAnnotation.StyleTool.StyleToolbar.html">StyleToolbar</a></li><li><a href="OSDPaperjsAnnotation.ToolBase.html">ToolBase</a></li><li><a href="OSDPaperjsAnnotation.TransformTool.html">TransformTool</a></li><li><a href="OSDPaperjsAnnotation.TransformTool.TransformToolbar.html">TransformToolbar</a></li><li><a href="OSDPaperjsAnnotation.WandTool.html">WandTool</a></li><li><a href="OSDPaperjsAnnotation.WandTool.WandToolbar.html">WandToolbar</a></li><li><a href="ScreenshotOverlay.html">ScreenshotOverlay</a></li><li><a href="ScreenshotTool.html">ScreenshotTool</a></li><li><a href="SelectTool.html">SelectTool</a></li></ul><h3>Global</h3><ul><li><a href="global.html#_paper">_paper</a></li><li><a href="global.html#adaptiveOffsetCurve">adaptiveOffsetCurve</a></li><li><a href="global.html#connectAdjacentBezier">connectAdjacentBezier</a></li><li><a href="global.html#connectBeziers">connectBeziers</a></li><li><a href="global.html#convertFaIcons">convertFaIcons</a></li><li><a href="global.html#getPointLineIntersections">getPointLineIntersections</a></li><li><a href="global.html#iconDefs">iconDefs</a></li><li><a href="global.html#localImportsCompleted">localImportsCompleted</a></li><li><a href="global.html#makeFaIcon">makeFaIcon</a></li><li><a href="global.html#makeRoundJoin">makeRoundJoin</a></li><li><a href="global.html#normalize">normalize</a></li><li><a href="global.html#offsetSegment">offsetSegment</a></li><li><a href="global.html#osd">osd</a></li><li><a href="global.html#removeIntersection">removeIntersection</a></li><li><a href="global.html#removeOutsiders">removeOutsiders</a></li><li><a href="global.html#updateFillOpacity">updateFillOpacity</a></li><li><a href="global.html#updateStrokeOpacity">updateStrokeOpacity</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.0</a> on Tue May 07 2024 19:46:14 GMT-0400 (Eastern Daylight Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

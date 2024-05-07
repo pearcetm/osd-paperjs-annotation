@@ -28,7 +28,7 @@
         <article>
             <pre class="prettyprint source linenums"><code>/**
  * OpenSeadragon paperjs overlay plugin based on paper.js
- * @version 0.4.2
+ * @version 0.4.3
  * 
  * Includes additional open source libraries which are subject to copyright notices
  * as indicated accompanying those segments of code.
@@ -91,19 +91,7 @@ import { makeFaIcon } from './utils/faIcon.mjs';
         }
     });
     
-    /**
-     * Sets the rotation of the view.
-     * @function setRotation
-     * @memberof OSDPaperjsAnnotation.paperjsOverlay#
-     * @param {number} degrees - The number of degrees to rotate.
-     * @param {any} center - The center point of the rotation.
-     */
-    paper.View.prototype.setRotation = function(degrees, center){
-        let degreesToRotate = degrees - (this._rotation || 0)
-        this.rotate(degreesToRotate, center);
-        this._rotation = OpenSeadragon.positiveModulo(degrees, 360);
-        this.emit('rotate',{rotatedBy:degreesToRotate, currentRotation:this._rotation, center:center});
-    }
+    
 
     
 
@@ -121,7 +109,7 @@ import { makeFaIcon } from './utils/faIcon.mjs';
  * @class
  * @memberof OSDPaperjsAnnotation
  */
-class PaperOverlay{    
+class PaperOverlay extends OpenSeadragon.EventSource{    
     /**
     * Creates an instance of the PaperOverlay.
     * overlayType: 'image' to zoom/pan with the image(s), 'viewer' stay fixed.
@@ -133,6 +121,7 @@ class PaperOverlay{
     * @property {paper.Scope} paperScope - the paper.Scope object for this overlay
     */
     constructor(viewer,opts){
+        super();
         let defaultOpts = {
             overlayType: 'image',
         }
@@ -219,9 +208,11 @@ class PaperOverlay{
         this.onViewerDestroy=(self=>function(){
             self.destroy(true);
         })(this);
+        
         this.onViewportChange=(self=>function(){
             self._updatePaperView();
         })(this);
+        
         this.onViewerResetSize=(self=>function(ev){
             //need to setTimeout to wait for some value (viewport.getZoom()?) to actually be updated before doing our update
             //need to check for destroyed because this will get called as part of the viewer destroy chain, and we've set the timeout
@@ -231,36 +222,47 @@ class PaperOverlay{
                 }
                 self._resize();
                 
-                self._updatePaperView(true);
+                self._updatePaperView();
             });
         })(this);
+        
         this.onViewerResize=(self=>function(){
             self._resize();
             self.paperScope.view.emit('resize',{size:new paper.Size(self._containerWidth, self._containerHeight)})
             self._updatePaperView();
         })(this);
+        
         this.onViewerRotate=(self=>function(ev){
             //TODO: change from this to self; confirm nothing breaks
             this._pivot = ev.pivot || this._getCenter();
+        })(this);
+
+        this.onViewerFlip=(self=>function(ev){
+            self.paperScope.view.setFlipped(ev.flipped, viewer.viewport.getRotation(true));
         })(this);
 
         viewer.addHandler('resize',this.onViewerResize);
         viewer.addHandler('reset-size',this.onViewerResetSize)
         
         viewer.addHandler('viewport-change', this.onViewportChange);
-        viewer.addHandler('rotate',this.onViewerRotate);
+        viewer.addHandler('rotate', this.onViewerRotate);
+        viewer.addHandler('flip', this.onViewerFlip);
 
         viewer.addOnceHandler('destroy', this.onViewerDestroy);
         
         
     }
-    // TODO: fix this comment once the behavior is fixed.
-    // The scale factor for this overlay. Equal to the screen width (window.screen.width). Smaller values (e.g. 1) lead to undesirable coarseness
-    // of polygon vertices following certain paper operations
+    
+    /**
+     * The scale factor for the overlay. Equal to the pixel width of the viewer's drawing canvas
+     */
     get scaleFactor(){
-        // return window.screen.width;
-        // return 100;
-        return this.viewer.element.clientWidth;
+        const previousScaleFactor = this._currentScaleFactor;
+        this._currentScaleFactor = this.viewer.drawer.canvas.clientWidth;
+        if(previousScaleFactor !== this._currentScaleFactor){
+            this.raiseEvent('update-scale', {scaleFactor: this._currentScaleFactor});
+        }
+        return this._currentScaleFactor;
     }
   /**
    * Adds a button to the viewer. The button is created with the provided parameters.
@@ -330,6 +332,7 @@ class PaperOverlay{
             this.viewer.removeHandler('resize',this.onViewerResize);
             this.viewer.removeHandler('reset-size',this.onViewerResetSize);
             this.viewer.removeHandler('rotate',this.onViewerRotate);
+            this.viewer.removeHandler('flip',this.onViewerFlip);
             this.viewer.world.removeHandler('add-item', this.onAddItem);
             this.viewer.world.removeHandler('remove-item', this.onRemoveItem);
             this.setOSDMouseNavEnabled(true);
@@ -460,7 +463,7 @@ class PaperOverlay{
     //-----------
   /**
    * Rescales all items in the overlay according to the current zoom level of the viewer.
-   * This method manually rescales all Paper.js items that have the `rescale` property set to true.
+   * This method manually rescales all Paper.js items that have the `rescale` property set to a truthy value.
    * The rescaling is based on the current zoom level of the viewer, ensuring that the items maintain their relative size on the viewer.
    * @see {@link autoRescaleItems}
    */
@@ -471,7 +474,7 @@ class PaperOverlay{
     }
 
     /**
-     * Convert from paper coordinate frame on the viewport level to the pixel on the underlying canvas element
+     * Convert from paper coordinate frame to the pixel on the underlying canvas element
      */
     paperToCanvasCoordinates(x, y){
         let point = new OpenSeadragon.Point(x, y).divide(this.scaleFactor);
@@ -493,6 +496,12 @@ class PaperOverlay{
         y = y || 0;
         w = w == undefined ? this.viewer.drawer.canvas.width : w;
         h = h == undefined ? this.viewer.drawer.canvas.height : h;
+        
+        // deal with flipping the x coordinate if needed
+        if(this.ps.view.getFlipped()){
+            x = this.viewer.drawer.canvas.width - x - w;
+        }
+        
         return this.viewer.drawer.canvas.getContext('2d',{willReadFrequently:true}).getImageData(x, y, w, h);
     }
 
@@ -520,6 +529,13 @@ class PaperOverlay{
         raster.rotate(rotation);
         let scaleFactor = view.viewSize.width / view.getZoom() / this.viewer.drawer.canvas.width;
         raster.scale(scaleFactor);
+        
+        if(view.getFlipped()){
+            const angle = view.getRotation();
+            raster.rotate(-angle);
+            raster.scale(-1, 1);
+            raster.rotate(angle)
+        }
        
         return raster;
     }
@@ -583,8 +599,8 @@ class PaperOverlay{
         }
 
         let viewportZoom = this.viewer.viewport.getZoom(true);
-        let oldZoom = this.paperScope.view.zoom;
-        this.paperScope.view.zoom = this.viewer.viewport._containerInnerSize.x * viewportZoom / this.scaleFactor;
+        let oldZoom = this.paperScope.view.getZoom();
+        this.paperScope.view.setZoom(this.viewer.viewport._containerInnerSize.x * viewportZoom / this.scaleFactor);
         
         let center = this._getCenter();
         this.viewer.drawer.canvas.pixelRatio = window.devicePixelRatio;
@@ -594,14 +610,10 @@ class PaperOverlay{
         let pivot = this._getPivot();
         this.paperScope.view.setRotation(degrees, pivot);
         
-        if(Math.abs(this.paperScope.view.zoom - oldZoom)>0.0000001){
-            this.paperScope.view.emit('zoom-changed',{zoom:this.paperScope.view.zoom});
+        const newZoom = this.paperScope.view.getZoom();
+        if(Math.abs(newZoom - oldZoom)>0.0000001){
+            this.paperScope.view.emit('zoom-changed',{zoom:newZoom});
         }
-
-        // if(this.viewer.paperLayer){
-        //     let matrix = this.viewer.paperLayer.matrix;
-        //     matrix.scale(matrix.scaling.divide(this.paperScope.view.zoom) );
-        // }
 
         this.paperScope.view.update();
     }
@@ -636,13 +648,13 @@ let counter = (function () {
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="OSDPaperjsAnnotation.html">OSDPaperjsAnnotation</a></li></ul><h3>Classes</h3><ul><li><a href="Dialog.html">Dialog</a></li><li><a href="DragAndDrop.html">DragAndDrop</a></li><li><a href="EditableContent.html">EditableContent</a></li><li><a href="Morph.html">Morph</a></li><li><a href="OSDPaperjsAnnotation.AnnotationItem.html">AnnotationItem</a></li><li><a href="OSDPaperjsAnnotation.AnnotationItemFactory.html">AnnotationItemFactory</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolbar.html">AnnotationToolbar</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolkit.html">AnnotationToolkit</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUI.html">AnnotationUI</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUITool.html">AnnotationUITool</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUITool.AnnotationUIToolbarBase.html">AnnotationUIToolbarBase</a></li><li><a href="OSDPaperjsAnnotation.BrushTool.html">BrushTool</a></li><li><a href="OSDPaperjsAnnotation.BrushTool.BrushToolbar.html">BrushToolbar</a></li><li><a href="OSDPaperjsAnnotation.DefaultTool.html">DefaultTool</a></li><li><a href="OSDPaperjsAnnotation.DefaultTool.DefaultToolbar.html">DefaultToolbar</a></li><li><a href="OSDPaperjsAnnotation.Ellipse.html">Ellipse</a></li><li><a href="OSDPaperjsAnnotation.EllipseTool.html">EllipseTool</a></li><li><a href="OSDPaperjsAnnotation.EllipseTool.EllipseToolbar.html">EllipseToolbar</a></li><li><a href="OSDPaperjsAnnotation.FeatureCollectionUI.html">FeatureCollectionUI</a></li><li><a href="OSDPaperjsAnnotation.FeatureUI.html">FeatureUI</a></li><li><a href="OSDPaperjsAnnotation.FileDialog.html">FileDialog</a></li><li><a href="OSDPaperjsAnnotation.LayerUI.html">LayerUI</a></li><li><a href="OSDPaperjsAnnotation.Linestring.html">Linestring</a></li><li><a href="OSDPaperjsAnnotation.LinestringTool.html">LinestringTool</a></li><li><a href="OSDPaperjsAnnotation.LinestringTool.LinestringToolbar.html">LinestringToolbar</a></li><li><a href="OSDPaperjsAnnotation.MultiLinestring.html">MultiLinestring</a></li><li><a href="OSDPaperjsAnnotation.MultiPolygon.html">MultiPolygon</a></li><li><a href="OSDPaperjsAnnotation.PaperOverlay.html">PaperOverlay</a></li><li><a href="OSDPaperjsAnnotation.Placeholder.html">Placeholder</a></li><li><a href="OSDPaperjsAnnotation.Point.html">Point</a></li><li><a href="OSDPaperjsAnnotation.PointText.html">PointText</a></li><li><a href="OSDPaperjsAnnotation.PointTextTool.html">PointTextTool</a></li><li><a href="OSDPaperjsAnnotation.PointTextTool.PointTextToolbar.html">PointTextToolbar</a></li><li><a href="OSDPaperjsAnnotation.PointTool.html">PointTool</a></li><li><a href="OSDPaperjsAnnotation.PointTool.PointToolbar.html">PointToolbar</a></li><li><a href="OSDPaperjsAnnotation.PolygonTool.html">PolygonTool</a></li><li><a href="OSDPaperjsAnnotation.PolygonTool.PolygonToolbar.html">PolygonToolbar</a></li><li><a href="OSDPaperjsAnnotation.Raster.html">Raster</a></li><li><a href="OSDPaperjsAnnotation.RasterTool.html">RasterTool</a></li><li><a href="OSDPaperjsAnnotation.RasterTool.RasterToolbar.html">RasterToolbar</a></li><li><a href="OSDPaperjsAnnotation.Rectangle.html">Rectangle</a></li><li><a href="OSDPaperjsAnnotation.RectangleTool.html">RectangleTool</a></li><li><a href="OSDPaperjsAnnotation.RectangleTool_RectToolbar.html">RectToolbar</a></li><li><a href="OSDPaperjsAnnotation.RotationControlOverlay.html">RotationControlOverlay</a></li><li><a href="OSDPaperjsAnnotation.RotationControlTool.html">RotationControlTool</a></li><li><a href="OSDPaperjsAnnotation.RotationControlWidget.html">RotationControlWidget</a></li><li><a href="OSDPaperjsAnnotation.StyleTool.html">StyleTool</a></li><li><a href="OSDPaperjsAnnotation.StyleTool.StyleToolbar.html">StyleToolbar</a></li><li><a href="OSDPaperjsAnnotation.ToolBase.html">ToolBase</a></li><li><a href="OSDPaperjsAnnotation.TransformTool.html">TransformTool</a></li><li><a href="OSDPaperjsAnnotation.TransformTool.TransformToolbar.html">TransformToolbar</a></li><li><a href="OSDPaperjsAnnotation.WandTool.html">WandTool</a></li><li><a href="OSDPaperjsAnnotation.WandTool.WandToolbar.html">WandToolbar</a></li><li><a href="SelectTool.html">SelectTool</a></li></ul><h3>Global</h3><ul><li><a href="global.html#_paper">_paper</a></li><li><a href="global.html#adaptiveOffsetCurve">adaptiveOffsetCurve</a></li><li><a href="global.html#connectAdjacentBezier">connectAdjacentBezier</a></li><li><a href="global.html#connectBeziers">connectBeziers</a></li><li><a href="global.html#convertFaIcons">convertFaIcons</a></li><li><a href="global.html#getPointLineIntersections">getPointLineIntersections</a></li><li><a href="global.html#iconDefs">iconDefs</a></li><li><a href="global.html#localImportsCompleted">localImportsCompleted</a></li><li><a href="global.html#makeFaIcon">makeFaIcon</a></li><li><a href="global.html#makeRoundJoin">makeRoundJoin</a></li><li><a href="global.html#normalize">normalize</a></li><li><a href="global.html#offsetSegment">offsetSegment</a></li><li><a href="global.html#osd">osd</a></li><li><a href="global.html#removeIntersection">removeIntersection</a></li><li><a href="global.html#removeOutsiders">removeOutsiders</a></li><li><a href="global.html#updateFillOpacity">updateFillOpacity</a></li><li><a href="global.html#updateStrokeOpacity">updateStrokeOpacity</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="OSDPaperjsAnnotation.html">OSDPaperjsAnnotation</a></li></ul><h3>Classes</h3><ul><li><a href="Dialog.html">Dialog</a></li><li><a href="DragAndDrop.html">DragAndDrop</a></li><li><a href="EditableContent.html">EditableContent</a></li><li><a href="Morph.html">Morph</a></li><li><a href="OSDPaperjsAnnotation.AnnotationItem.html">AnnotationItem</a></li><li><a href="OSDPaperjsAnnotation.AnnotationItemFactory.html">AnnotationItemFactory</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolbar.html">AnnotationToolbar</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolkit.html">AnnotationToolkit</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUI.html">AnnotationUI</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUITool.html">AnnotationUITool</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUITool.AnnotationUIToolbarBase.html">AnnotationUIToolbarBase</a></li><li><a href="OSDPaperjsAnnotation.BrushTool.html">BrushTool</a></li><li><a href="OSDPaperjsAnnotation.BrushTool.BrushToolbar.html">BrushToolbar</a></li><li><a href="OSDPaperjsAnnotation.DefaultTool.html">DefaultTool</a></li><li><a href="OSDPaperjsAnnotation.DefaultTool.DefaultToolbar.html">DefaultToolbar</a></li><li><a href="OSDPaperjsAnnotation.Ellipse.html">Ellipse</a></li><li><a href="OSDPaperjsAnnotation.EllipseTool.html">EllipseTool</a></li><li><a href="OSDPaperjsAnnotation.EllipseTool.EllipseToolbar.html">EllipseToolbar</a></li><li><a href="OSDPaperjsAnnotation.FeatureCollectionUI.html">FeatureCollectionUI</a></li><li><a href="OSDPaperjsAnnotation.FeatureUI.html">FeatureUI</a></li><li><a href="OSDPaperjsAnnotation.FileDialog.html">FileDialog</a></li><li><a href="OSDPaperjsAnnotation.LayerUI.html">LayerUI</a></li><li><a href="OSDPaperjsAnnotation.Linestring.html">Linestring</a></li><li><a href="OSDPaperjsAnnotation.LinestringTool.html">LinestringTool</a></li><li><a href="OSDPaperjsAnnotation.LinestringTool.LinestringToolbar.html">LinestringToolbar</a></li><li><a href="OSDPaperjsAnnotation.MultiLinestring.html">MultiLinestring</a></li><li><a href="OSDPaperjsAnnotation.MultiPolygon.html">MultiPolygon</a></li><li><a href="OSDPaperjsAnnotation.PaperOverlay.html">PaperOverlay</a></li><li><a href="OSDPaperjsAnnotation.Placeholder.html">Placeholder</a></li><li><a href="OSDPaperjsAnnotation.Point.html">Point</a></li><li><a href="OSDPaperjsAnnotation.PointText.html">PointText</a></li><li><a href="OSDPaperjsAnnotation.PointTextTool.html">PointTextTool</a></li><li><a href="OSDPaperjsAnnotation.PointTextTool.PointTextToolbar.html">PointTextToolbar</a></li><li><a href="OSDPaperjsAnnotation.PointTool.html">PointTool</a></li><li><a href="OSDPaperjsAnnotation.PointTool.PointToolbar.html">PointToolbar</a></li><li><a href="OSDPaperjsAnnotation.PolygonTool.html">PolygonTool</a></li><li><a href="OSDPaperjsAnnotation.PolygonTool.PolygonToolbar.html">PolygonToolbar</a></li><li><a href="OSDPaperjsAnnotation.Raster.html">Raster</a></li><li><a href="OSDPaperjsAnnotation.RasterTool.html">RasterTool</a></li><li><a href="OSDPaperjsAnnotation.RasterTool.RasterToolbar.html">RasterToolbar</a></li><li><a href="OSDPaperjsAnnotation.Rectangle.html">Rectangle</a></li><li><a href="OSDPaperjsAnnotation.RectangleTool.html">RectangleTool</a></li><li><a href="OSDPaperjsAnnotation.RectangleTool_RectToolbar.html">RectToolbar</a></li><li><a href="OSDPaperjsAnnotation.RotationControlOverlay.html">RotationControlOverlay</a></li><li><a href="OSDPaperjsAnnotation.RotationControlTool.html">RotationControlTool</a></li><li><a href="OSDPaperjsAnnotation.RotationControlWidget.html">RotationControlWidget</a></li><li><a href="OSDPaperjsAnnotation.StyleTool.html">StyleTool</a></li><li><a href="OSDPaperjsAnnotation.StyleTool.StyleToolbar.html">StyleToolbar</a></li><li><a href="OSDPaperjsAnnotation.ToolBase.html">ToolBase</a></li><li><a href="OSDPaperjsAnnotation.TransformTool.html">TransformTool</a></li><li><a href="OSDPaperjsAnnotation.TransformTool.TransformToolbar.html">TransformToolbar</a></li><li><a href="OSDPaperjsAnnotation.WandTool.html">WandTool</a></li><li><a href="OSDPaperjsAnnotation.WandTool.WandToolbar.html">WandToolbar</a></li><li><a href="ScreenshotOverlay.html">ScreenshotOverlay</a></li><li><a href="ScreenshotTool.html">ScreenshotTool</a></li><li><a href="SelectTool.html">SelectTool</a></li></ul><h3>Global</h3><ul><li><a href="global.html#_paper">_paper</a></li><li><a href="global.html#adaptiveOffsetCurve">adaptiveOffsetCurve</a></li><li><a href="global.html#connectAdjacentBezier">connectAdjacentBezier</a></li><li><a href="global.html#connectBeziers">connectBeziers</a></li><li><a href="global.html#convertFaIcons">convertFaIcons</a></li><li><a href="global.html#getPointLineIntersections">getPointLineIntersections</a></li><li><a href="global.html#iconDefs">iconDefs</a></li><li><a href="global.html#localImportsCompleted">localImportsCompleted</a></li><li><a href="global.html#makeFaIcon">makeFaIcon</a></li><li><a href="global.html#makeRoundJoin">makeRoundJoin</a></li><li><a href="global.html#normalize">normalize</a></li><li><a href="global.html#offsetSegment">offsetSegment</a></li><li><a href="global.html#osd">osd</a></li><li><a href="global.html#removeIntersection">removeIntersection</a></li><li><a href="global.html#removeOutsiders">removeOutsiders</a></li><li><a href="global.html#updateFillOpacity">updateFillOpacity</a></li><li><a href="global.html#updateStrokeOpacity">updateStrokeOpacity</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.0</a> on Sat Mar 23 2024 06:59:47 GMT-0400 (Eastern Daylight Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.0</a> on Tue May 07 2024 19:46:14 GMT-0400 (Eastern Daylight Time)
 </footer>
 
 <script> prettyPrint(); </script>
