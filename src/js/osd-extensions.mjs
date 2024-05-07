@@ -143,32 +143,25 @@ function _setupPaper(overlay){
  * 
  */
 function _setupPaperForTiledImage(overlay){
+    let _this = this;
     let layer = _setupPaper.call(this, overlay);
     let tiledImage = this;
     layer.tiledImage = tiledImage;
     
-    let degrees = this.getRotation();
-    let bounds = this.getBounds();
-    
-    layer.matrix.rotate(degrees, (bounds.x+bounds.width/2) * overlay.scaleFactor, (bounds.y+bounds.height/2) * overlay.scaleFactor);
-    layer.matrix.translate({x: bounds.x * overlay.scaleFactor, y: bounds.y * overlay.scaleFactor});
-    layer.matrix.scale(bounds.width * overlay.scaleFactor / this.source.width );
-    
-    tiledImage.addHandler('bounds-change',ev=>{
-        // console.log('bounds-change',ev);
-        console.log('TODO implement scaling');
-        let degrees = this.getRotation();
-        let bounds = this.getBoundsNoRotate();
+    function updateMatrix(){
+        let degrees = _this.getRotation();
+        let bounds = _this.getBoundsNoRotate();
         let matrix = new paper.Matrix();
-
-        console.log(degrees, bounds);
 
         matrix.rotate(degrees, (bounds.x+bounds.width/2) * overlay.scaleFactor, (bounds.y+bounds.height/2) * overlay.scaleFactor);
         matrix.translate({x: bounds.x * overlay.scaleFactor, y: bounds.y * overlay.scaleFactor});
-        matrix.scale(bounds.width * overlay.scaleFactor / this.source.width );
+        matrix.scale(bounds.width * overlay.scaleFactor / _this.source.width );
 
         layer.matrix.set(matrix);
-    });
+    }
+    tiledImage.addHandler('bounds-change',updateMatrix);
+    overlay.addHandler('update-scale',updateMatrix);
+    updateMatrix();
 }
 
 /**
@@ -180,11 +173,14 @@ function _setupPaperForViewport(overlay){
     layer.viewport = this;
     
     layer.matrix.scale(overlay.scaleFactor);
-    
-    this.viewer.addHandler('resize',ev=>{
+
+    function updateMatrix(){
         layer.matrix.reset();
         layer.matrix.scale(overlay.scaleFactor);
-    });
+    }
+    
+    this.viewer.addHandler('resize',updateMatrix);
+    overlay.addHandler('update-scale',updateMatrix);
 }
 
 

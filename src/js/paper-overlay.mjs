@@ -81,7 +81,7 @@ import { makeFaIcon } from './utils/faIcon.mjs';
  * @class
  * @memberof OSDPaperjsAnnotation
  */
-class PaperOverlay{    
+class PaperOverlay extends OpenSeadragon.EventSource{    
     /**
     * Creates an instance of the PaperOverlay.
     * overlayType: 'image' to zoom/pan with the image(s), 'viewer' stay fixed.
@@ -93,6 +93,7 @@ class PaperOverlay{
     * @property {paper.Scope} paperScope - the paper.Scope object for this overlay
     */
     constructor(viewer,opts){
+        super();
         let defaultOpts = {
             overlayType: 'image',
         }
@@ -193,7 +194,7 @@ class PaperOverlay{
                 }
                 self._resize();
                 
-                self._updatePaperView(true);
+                self._updatePaperView();
             });
         })(this);
         
@@ -223,13 +224,17 @@ class PaperOverlay{
         
         
     }
-    // TODO: fix this comment once the behavior is fixed.
-    // The scale factor for this overlay. Equal to the screen width (window.screen.width). Smaller values (e.g. 1) lead to undesirable coarseness
-    // of polygon vertices following certain paper operations
+    
+    /**
+     * The scale factor for the overlay. Equal to the pixel width of the viewer's drawing canvas
+     */
     get scaleFactor(){
-        // return window.screen.width;
-        // return 100;
-        return this.viewer.element.clientWidth;
+        const previousScaleFactor = this._currentScaleFactor;
+        this._currentScaleFactor = this.viewer.drawer.canvas.clientWidth;
+        if(previousScaleFactor !== this._currentScaleFactor){
+            this.raiseEvent('update-scale', {scaleFactor: this._currentScaleFactor});
+        }
+        return this._currentScaleFactor;
     }
   /**
    * Adds a button to the viewer. The button is created with the provided parameters.
