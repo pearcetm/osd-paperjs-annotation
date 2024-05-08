@@ -179,7 +179,6 @@ function _setupPaperForViewport(overlay){
         layer.matrix.scale(overlay.scaleFactor);
     }
     
-    this.viewer.addHandler('resize',updateMatrix);
     overlay.addHandler('update-scale',updateMatrix);
 }
 

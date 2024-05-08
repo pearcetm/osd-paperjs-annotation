@@ -229,11 +229,7 @@ class PaperOverlay extends OpenSeadragon.EventSource{
      * The scale factor for the overlay. Equal to the pixel width of the viewer's drawing canvas
      */
     get scaleFactor(){
-        const previousScaleFactor = this._currentScaleFactor;
-        this._currentScaleFactor = this.viewer.drawer.canvas.clientWidth;
-        if(previousScaleFactor !== this._currentScaleFactor){
-            this.raiseEvent('update-scale', {scaleFactor: this._currentScaleFactor});
-        }
+        this._currentScaleFactor = this._currentScaleFactor || this.viewer.drawer.canvas.clientWidth;
         return this._currentScaleFactor;
     }
   /**
@@ -555,6 +551,11 @@ class PaperOverlay extends OpenSeadragon.EventSource{
             update=true;
         }
         if(update){
+            const previousScaleFactor = this._currentScaleFactor;
+            this._currentScaleFactor = this.viewer.drawer.canvas.clientWidth;
+            if(previousScaleFactor !== this._currentScaleFactor){
+                this.raiseEvent('update-scale', {scaleFactor: this._currentScaleFactor});
+            }
             this.paperScope.view.viewSize = new paper.Size(this._containerWidth, this._containerHeight);
             this.paperScope.view.update();
         }
