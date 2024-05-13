@@ -38,7 +38,6 @@
 
 import {AnnotationUITool, AnnotationUIToolbarBase} from './annotationUITool.mjs';
 import { PointText } from '../paperitems/pointtext.mjs';
-import { paper } from '../paperjs.mjs';
 import { makeFaIcon } from '../utils/faIcon.mjs';
 
 /**
@@ -79,7 +78,7 @@ class PointTextTool extends AnnotationUITool{
             }
         });
         
-        let cursor = this.cursor = pointText.paperItem; cursor.xxy = true;
+        let cursor = this.cursor = pointText.paperItem;
         cursor.isGeoJSONFeature = false;
         cursor.fillColor='grey';
         cursor.strokeColor='black';
@@ -143,7 +142,6 @@ class PointTextTool extends AnnotationUITool{
         if(this.itemToCreate){
             this.itemToCreate.initializeGeoJSONFeature('Point','PointText');
             this.refreshItems();
-            this.item.xxx = true;
             this.item.children[1].content = this.toolbarControl.getValue();
             this.item.position=ev.point;
             this.cursor.visible=false;
