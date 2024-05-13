@@ -273,6 +273,13 @@ class WandTool extends AnnotationUITool{
             toUnite.translate(-this.preview.width/2, -this.preview.height/2);
             toUnite.matrix = this.preview.matrix;
             toUnite.transform(this.item.layer.matrix.inverted());
+
+            let boundingItems = this.itemLayer ? this.itemLayer.getItems({match:i=>i.isBoundingElement}) : [];
+            // intersect toUnite with each of the bounding items
+            if(boundingItems.length > 0){
+                toUnite.children = boundingItems.map(boundingItem => boundingItem.intersect(toUnite));
+            }
+
             let united = this.item.unite(toUnite, false).toCompoundPath();
             toUnite.remove();
             this.item.children = united.children;
@@ -303,6 +310,7 @@ class WandTool extends AnnotationUITool{
         viewportPath.fillColor = boundingItems.length==0 ? self.colors.pixelAllowed : self.colors.pixelNotAllowed;
         boundingItems.forEach(item=>{
             let clone = item.clone({insert:false});
+            clone.transform(self.item.layer.matrix);
             clone.fillColor = self.colors.pixelAllowed;
             clone.strokeWidth=0;
             viewportGroup.addChild(clone);
