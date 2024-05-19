@@ -308,6 +308,7 @@ class AnnotationItemFactory{
         let ctor = AnnotationItemFactory.getConstructor(geoJSON);
         if(ctor){
             let annotationItem = new ctor(geoJSON);
+            annotationItem.paperItem.data.userdata = geoJSON.properties?.userdata;
             return annotationItem.paperItem;
         }
     }
