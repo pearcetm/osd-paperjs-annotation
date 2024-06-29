@@ -1,6 +1,6 @@
 /**
  * OpenSeadragon paperjs overlay plugin based on paper.js
- * @version 0.4.6
+ * @version 0.4.7
  * 
  * Includes additional open source libraries which are subject to copyright notices
  * as indicated accompanying those segments of code.
@@ -243,50 +243,93 @@ class WandTool extends AnnotationUITool{
      */
     applyChanges(){
         if(this.itemToCreate){
-            this.itemToCreate.initializeGeoJSONFeature('MultiPolygon');
-            this.refreshItems();
+        this.itemToCreate.initializeGeoJSONFeature('MultiPolygon');
+        this.refreshItems();
+    }
+    let wandOutput = {
+        width:this.imageData.width,
+        height:this.imageData.height,
+        data:this.imageData.wandMask,
+        bounds:{
+            minX:0,
+            minY:0,
+            maxX:this.preview.width,
+            maxY:this.preview.height,
         }
-        let wandOutput = {
-            width:this.imageData.width,
-            height:this.imageData.height,
-            data:this.imageData.wandMask,
-            bounds:{
-                minX:0,
-                minY:0,
-                maxX:this.preview.width,
-                maxY:this.preview.height,
+    };
+    
+    if(this.reduceMode){
+        let toSubtract = maskToPath(this.MagicWand, wandOutput);
+        toSubtract.translate(-1, -1); // adjust path to account for pixel offset of maskToPath algorithm. Value of 1 is empirical.
+        toSubtract.translate(-this.preview.width/2, -this.preview.height/2);
+        toSubtract.matrix = this.preview.matrix;
+        toSubtract.transform(this.item.layer.matrix.inverted());
+        if(toSubtract.area < 0){
+            toSubtract.reverse();
+        }
+        if(toSubtract.area > 0){
+            let intersection = this.item.intersect(toSubtract, false);
+            if(intersection.area < 0){
+                intersection.reverse();
             }
-        };
-        
-        if(this.reduceMode){
-            let toSubtract = maskToPath(this.MagicWand, wandOutput);
-            toSubtract.translate(-1, -1); // adjust path to account for pixel offset of maskToPath algorithm. Value of 1 is empirical.
-            toSubtract.translate(-this.preview.width/2, -this.preview.height/2);
-            toSubtract.matrix = this.preview.matrix;
-            toSubtract.transform(this.item.layer.matrix.inverted());
             let subtracted = this.item.subtract(toSubtract, false).toCompoundPath();
-            toSubtract.remove();
-            this.item.children = subtracted.children;
-        } else {
-            let toUnite = maskToPath(this.MagicWand, wandOutput);
-            toUnite.translate(-1, -1); // adjust path to account for pixel offset of maskToPath algorithm. Value of 1 is empirical.
-            toUnite.translate(-this.preview.width/2, -this.preview.height/2);
-            toUnite.matrix = this.preview.matrix;
-            toUnite.transform(this.item.layer.matrix.inverted());
-
-            let boundingItems = this.itemLayer ? this.itemLayer.getItems({match:i=>i.isBoundingElement}) : [];
-            // intersect toUnite with each of the bounding items
-            if(boundingItems.length > 0){
-                toUnite.children = boundingItems.map(boundingItem => boundingItem.intersect(toUnite));
+            if(subtracted.area < 0){
+                subtracted.reverse();
             }
+            toSubtract.remove();
+            const diff = subtracted.area - (this.item.area - intersection.area);
+            if(diff < 1){
+                this.item.children = subtracted.children;
+            } else {
+                window.alert('There was a problem: paths could not be subtracted correctly. Please edit and try again.');
+            }
+            
+        }
+        
+    } else {
+        let toUnite = maskToPath(this.MagicWand, wandOutput);
+        toUnite.translate(-1, -1); // adjust path to account for pixel offset of maskToPath algorithm. Value of 1 is empirical.
+        toUnite.translate(-this.preview.width/2, -this.preview.height/2);
+        toUnite.matrix = this.preview.matrix;
+        toUnite.transform(this.item.layer.matrix.inverted());
 
+        let boundingItems = this.itemLayer ? this.itemLayer.getItems({match:i=>i.isBoundingElement}) : [];
+        // intersect toUnite with each of the bounding items
+        if(boundingItems.length > 0){
+            toUnite.children = boundingItems.map(boundingItem => boundingItem.intersect(toUnite));
+        }
+        if(toUnite.area < 0){
+            toUnite.reverse();
+        }
+        // if toUnite has positive area, do the union operation
+        if(toUnite.area > 0){
+            let intersection = this.item.intersect(toUnite, false);
+            if(intersection.area < 0){
+                intersection.reverse();
+            }
             let united = this.item.unite(toUnite, false).toCompoundPath();
+            if(united.area < 0){
+                united.reverse();
+            }
             toUnite.remove();
-            this.item.children = united.children;
+            // console.log('Negative area paths',united.children.map(c => c.area < 0).filter(c=>c).length);
+    
+            const diff = united.area - (this.item.area + toUnite.area - intersection.area);
+            if(Math.abs(diff) < 1){
+                this.item.children = united.children;
+            } else {
+                window.alert('There was a problem: paths could not be united correctly. Please edit and try again.')
+            }
+    
+            intersection.remove();
+            united.remove();
         }
         
         
-        this.getImageData();
+    }
+    
+    
+    this.getImageData();
         
     };
     /**
