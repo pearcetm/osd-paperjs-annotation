@@ -1,6 +1,6 @@
 /**
  * OpenSeadragon annotation plugin based on paper.js
- * @version 0.4.7
+ * @version 0.4.8
  * 
  * Includes additional open source libraries which are subject to copyright notices
  * as indicated accompanying those segments of code.
