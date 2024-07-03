@@ -39,6 +39,74 @@
 import { paper } from './paperjs.mjs';
 import { OpenSeadragon } from './osd-loader.mjs';
 
+// Monkey patch the paper.js boolean operations to account for issues with floating point math
+// when large coordinate values are used (>= 16384 causes errors with truncating the epsilon that is added)
+const funcs = ['unite', 'intersect', 'subtract', 'exclude', 'divide'];
+for(const func of funcs){
+    const original = paper.PathItem.prototype[func];
+    paper.PathItem.prototype[func] = function(){
+        const path = arguments[0],
+                numericThreshold = 16383,
+                b1 = this.getBounds(),
+                b2 = path.getBounds(),
+                l = Math.min(b1.x, b2.x),
+                r = Math.max(b1.x + b1.width, b2.x + b2.width),
+                t = Math.min(b1.y, b2.y),
+                b = Math.max(b1.y + b1.height, b2.y + b2.height);
+
+        if(l > -numericThreshold &&
+            r < numericThreshold &&
+            t > -numericThreshold &&
+            b < numericThreshold ){
+            // Our bounds are within the limit: no need to translate or scale, just call the original function
+            return original.apply(this, arguments);
+        }
+        // One or more of our bounds is out of range
+        // Calculate whether we need to scale or just translate
+        const w = r - l,
+                h = b - t,
+                scaleX = Math.pow(2, Math.ceil(Math.log2(w/(2*numericThreshold)))),
+                scaleY = Math.pow(2, Math.ceil(Math.log2(h/(2*numericThreshold)))),
+                scale = Math.max(scaleX, scaleY),
+                center = new paper.Point((l + r)/2, (t + b)/2),
+                offset = new paper.Point(-Math.round(center.x), -Math.round(center.y));            
+        
+        if(scale > 1){
+            // we need to scale the path(s) to make them fit within our numeric bounds
+            this.scale(1/scale, center);
+            if(path !== this){
+                path.scale(1/scale, center);
+            }
+        }
+
+        // translate the path(s) by the offset
+        this.translate(offset);
+        if(path !== this){
+            path.translate(offset);
+        }
+
+        const result = original.apply(this, arguments);
+
+        // restore the path(s)
+        this.translate(offset.multiply(-1));
+        result.translate(offset.multiply(-1));
+        if(path !== this){
+            path.translate(offset.multiply(-1));
+        }
+
+        if(scale > 1){
+            // reset the scale back to the original values
+            this.scale(scale, center);
+            result.scale(scale, center);
+            if(path !== this){
+                path.scale(scale, center);
+            }
+        }
+        
+        return result;
+    }
+}
+
 // monkey patch to fix view.zoom when negative scaling is applied
 paper.View.prototype.getZoom = function() {
     var scaling = this._decompose().scaling;
