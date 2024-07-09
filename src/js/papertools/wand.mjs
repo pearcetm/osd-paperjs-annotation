@@ -318,7 +318,7 @@ class WandTool extends AnnotationUITool{
             if(Math.abs(diff) < 1){
                 this.item.children = united.children;
             } else {
-                window.alert('There was a problem: paths could not be united correctly. Please edit and try again.')
+                console.log('There was a problem: paths could not be united correctly. Please edit and try again.')
             }
     
             intersection.remove();

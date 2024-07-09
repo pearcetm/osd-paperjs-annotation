@@ -40,13 +40,13 @@ import { paper } from './paperjs.mjs';
 import { OpenSeadragon } from './osd-loader.mjs';
 
 // Monkey patch the paper.js boolean operations to account for issues with floating point math
-// when large coordinate values are used (>= 16384 causes errors with truncating the epsilon that is added)
+// when large coordinate values are used (1000 is an empiric value that seems to work reliably)
 const funcs = ['unite', 'intersect', 'subtract', 'exclude', 'divide'];
 for(const func of funcs){
     const original = paper.PathItem.prototype[func];
     paper.PathItem.prototype[func] = function(){
         const path = arguments[0],
-                numericThreshold = 16383,
+                numericThreshold = 1000, // empiric
                 b1 = this.getBounds(),
                 b2 = path.getBounds(),
                 l = Math.min(b1.x, b2.x),
