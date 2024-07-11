@@ -41,6 +41,7 @@ import { OpenSeadragon } from './osd-loader.mjs';
 
 // Monkey patch the paper.js boolean operations to account for issues with floating point math
 // when large coordinate values are used (1000 is an empiric value that seems to work reliably)
+// See https://github.com/paperjs/paper.js/issues/2082 for discussion
 const funcs = ['unite', 'intersect', 'subtract', 'exclude', 'divide'];
 for(const func of funcs){
     const original = paper.PathItem.prototype[func];
@@ -105,6 +106,38 @@ for(const func of funcs){
         
         return result;
     }
+}
+
+// Monkey patch paper.Curve.getTimeOf to reduce values very close to end points
+// See https://github.com/paperjs/paper.js/issues/2082 for discussion
+paper.Curve.getTimeOf = function(v, point){
+
+    // Before solving cubics, compare the beginning and end of the curve
+    // with zero epsilon:
+    var p0 = new paper.Point(v[0], v[1]),
+        p3 = new paper.Point(v[6], v[7]),
+        geomEpsilon = 1e-7,
+        t = point.isClose(p0, geomEpsilon) ? 0
+            : point.isClose(p3, geomEpsilon) ? 1
+            : null;
+    if (t === null) {
+        // Solve the cubic for both x- and y-coordinates and consider all
+        // solutions, testing with the larger / looser geometric epsilon.
+        var coords = [point.x, point.y],
+            roots = [];
+        for (var c = 0; c < 2; c++) {
+            var count = paper.Curve.solveCubic(v, c, coords[c], roots, 0, 1);
+            for (var i = 0; i < count; i++) {
+                var u = roots[i];
+                if (point.isClose(paper.Curve.getPoint(v, u), geomEpsilon))
+                    return u;
+            }
+        }
+    }
+    
+    
+    return t;
+    
 }
 
 // monkey patch to fix view.zoom when negative scaling is applied
