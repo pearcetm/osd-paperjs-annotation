@@ -71,6 +71,8 @@ import { makeFaIcon } from '../utils/faIcon.mjs';
         this.drawColor.alpha=0.5;
         this.eraseColor.alpha=0.5;
 
+        this.autoSimplify = false;
+
         this.radius = 0;
         this.cursor = new paper.Shape.Circle(new paper.Point(0,0), this.radius);
         this.cursor.set({
@@ -189,6 +191,16 @@ import { makeFaIcon } from '../utils/faIcon.mjs';
         this.cursor.radius=r/this.project.getZoom();
     }
 
+
+    /**
+     * Set the brush tool to automatically simplify shapes after applying the new brush stroke.
+     * @param {number} r - The new radius value for the brush.
+     * @description This method sets the radius of the brush tool, affecting the size of the brush strokes.
+     */
+    setAutoSimplify(shouldSimplify){
+        this.autoSimplify = !!shouldSimplify;
+    }
+
     /**
          * Set the erase mode of the brush tool.
          * @param {boolean} erase - A flag indicating whether the tool should be in Erase Mode or Draw Mode.
@@ -228,6 +240,7 @@ import { makeFaIcon } from '../utils/faIcon.mjs';
             shape = new paper.Path.RegularPolygon({center: path.firstSegment.point, radius: radius, sides: 360 });
         }
 
+        
         shape.strokeWidth = 1/this.project.getZoom();
         shape.strokeColor = 'black'
         shape.fillColor='yellow'
@@ -240,6 +253,10 @@ import { makeFaIcon } from '../utils/faIcon.mjs';
 
         path.visible=false;
         let result;
+        if(this.autoSimplify){
+            shape = shape.toCompoundPath();
+            this.doSimplify(shape);
+        }   
         if(this.eraseMode){
             result = this.item.subtract(shape,{insert:false});
         }
@@ -261,7 +278,7 @@ import { makeFaIcon } from '../utils/faIcon.mjs';
             this.item.removeChildren();
             this.item.addChildren(childrenToAdd);
             
-            result.remove();     
+            result.remove();
         }
         shape.remove();
     }  

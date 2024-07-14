@@ -38,6 +38,7 @@
 
 import {ToolBase} from './base.mjs';
 import { OpenSeadragon } from '../osd-loader.mjs';
+import { SimplifyJS } from '../utils/simplify.mjs';
 
 /**
  * Base class for annotation tools, extending the ToolBase class.
@@ -64,6 +65,8 @@ class AnnotationUITool extends ToolBase{
         this._active=false;
         this._items=[];
         this._item=null;
+
+        this.simplifier = new SimplifyJS();
 
         this.tool.onMouseDown = ev => {
             this.onMouseDown(this._transformEvent(ev));
@@ -217,6 +220,65 @@ class AnnotationUITool extends ToolBase{
 
     get targetMatrix(){
         return this.targetLayer ? this.targetLayer.matrix : this._identityMatrix;
+    }
+
+    /**
+     * Simplifies the polygon by reducing the number of points while preserving shape fidelity.
+     */
+    doSimplify(items){
+        if(items && !Array.isArray(items)){
+            items = [items];
+        }
+        if(!items){
+            items = this.items;
+        }
+
+        for(const item of items){
+            let lengthThreshold = 10/this.project.getZoom();
+            let tol = 2.5/this.project.getZoom();
+            const simplifying = item.clone();
+            
+            let pathsToRemove=[];
+            const paths = simplifying.children || [simplifying];
+            paths.forEach(path=>{
+                let pts = path.segments.map(s=>{
+                    if(s.point.subtract(s.previous.point).length < lengthThreshold && s.point.subtract(s.next.point).length < lengthThreshold){
+                        s.point.x = (s.point.x+s.previous.point.x+s.next.point.x)/3;
+                        s.point.y = (s.point.y+s.previous.point.y+s.next.point.y)/3;
+                    }
+                    return s.point;
+                })
+                pts.push(pts[0]);//
+                let newpts = this.simplifier.simplify(pts,tol,true);
+                path.segments=newpts;
+                if(path.segments.length < 3 || Math.abs(path.area) < tol*tol) pathsToRemove.push(path);
+                
+            })
+            pathsToRemove.forEach(p=>p.remove());
+            let united = simplifying.unite(simplifying,{insert:false}).reduce().toCompoundPath();
+            if(simplifying._children){
+                simplifying.removeChildren();
+                simplifying.addChildren(united.children);
+            } else {
+                simplifying.setSegments(united.children[0].segments);
+            }
+            if(!item.isBoundingElement){
+                let boundingItems = item.parent.children.filter(i=>i.isBoundingElement);
+                simplifying.applyBounds(boundingItems);
+            }
+            united.remove();
+            if(item._children){
+                item.removeChildren();
+                item.addChildren(simplifying.children);
+            } else {
+                item.setSegments(simplifying.segments);
+            }
+            
+            simplifying.remove();
+            
+        }
+        
+        
     }
 
     // private
