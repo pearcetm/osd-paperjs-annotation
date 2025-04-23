@@ -151,11 +151,17 @@ function _setupPaperForTiledImage(overlay){
     function updateMatrix(){
         let degrees = _this.getRotation();
         let bounds = _this.getBoundsNoRotate();
+        let flipped = _this.getFlip();
+        let center = new paper.Point((bounds.x+bounds.width/2) * overlay.scaleFactor, (bounds.y+bounds.height/2) * overlay.scaleFactor);
         let matrix = new paper.Matrix();
 
-        matrix.rotate(degrees, (bounds.x+bounds.width/2) * overlay.scaleFactor, (bounds.y+bounds.height/2) * overlay.scaleFactor);
+        if(flipped){
+            matrix.scale(-1, 1, center)
+        }
+        matrix.rotate(degrees, center);
         matrix.translate({x: bounds.x * overlay.scaleFactor, y: bounds.y * overlay.scaleFactor});
         matrix.scale(bounds.width * overlay.scaleFactor / _this.source.width );
+        // matrix.scale() // TODO how to flip the coordinates when the tiled image is flipped?
 
         layer.matrix.set(matrix);
     }

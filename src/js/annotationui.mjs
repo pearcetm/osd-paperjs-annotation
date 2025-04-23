@@ -90,7 +90,9 @@ class AnnotationUI {
      * _toolbar: AnnotationToolbar UI for interactive tools
      * @private
      */
-    this._toolbar = new AnnotationToolbar(annotationToolkit.overlay.paperScope, opts.tools);
+    if(opts.addToolbar){
+      this._toolbar = new AnnotationToolbar(annotationToolkit.overlay.paperScope, opts.tools);
+    }
 
     /**
      * _fileDialog: FileDialog UI for loading/saving data
@@ -113,17 +115,19 @@ class AnnotationUI {
      * _layerUI: LayerUI: graphical user interface for this annotation layer
      * @private
      */
-    this._layerUI = new LayerUI(annotationToolkit, opts.addFileButton);
+    
     if (opts.addLayerUI) {
-      this._addToViewer();
+      this._layerUI = new LayerUI(annotationToolkit, opts.addFileButton);
     }
 
+    this._addToViewer();
+
     if(opts.autoOpen){
-      this._layerUI.show();
-      this._toolbar.show();
+      this._layerUI?.show();
+      this._toolbar?.show();
     } else {
-      this._layerUI.hide();
-      this._toolbar.hide();
+      this._layerUI?.hide();
+      this._toolbar?.hide();
     }
 
 

@@ -147,7 +147,9 @@ class TransformTool extends AnnotationUITool{
              ctrl.onMouseDrag = function(ev){
                 // first handle the bounding box
                 let layerAngle = self.targetLayer.getRotation();
-                let rotation=this.parent.rotation;
+                let layerFlipped = self.targetLayer.tiledImage.getFlip();
+                let rotation=this.parent.rotation; // * (layerFlipped ? -1 : 1);
+                // console.log('layer flipped?', layerFlipped)
                 let delta=ev.delta.rotate(-rotation);
                 let refPos = this.parent.corners[this.opposite].position;
 
@@ -166,9 +168,21 @@ class TransformTool extends AnnotationUITool{
 
                 refPosZ = self.targetMatrix.inverseTransform(refPosZ);
 
-                this.parent.transforming.forEach( item=>{
-                    let matrix = new paper.Matrix().rotate(-layerAngle, refPosZ).scale(scaleFactor.width,scaleFactor.height,refPosZ).rotate(layerAngle, refPosZ); 
+                let parentMatrix=this.parent.matrix;
+                let center=parentMatrix.transform(this.parent.boundingRect.position);
+                let itemCenter = self.targetMatrix.inverseTransform(center); 
 
+                this.parent.transforming.forEach( item=>{
+                    // let matrix = new paper.Matrix().rotate(-layerAngle, refPosZ).scale(scaleFactor.width,scaleFactor.height,refPosZ).rotate(layerAngle, refPosZ);
+                    
+                    let matrix = new paper.Matrix();
+                    // if(layerFlipped){
+                    //     matrix.scale(-1, 1, itemCenter)
+                    // }
+                    matrix.rotate(-layerAngle, refPosZ).scale(scaleFactor.width,scaleFactor.height,refPosZ).rotate(layerAngle, refPosZ);
+                    // if(layerFlipped){
+                    //     matrix.scale(-1, -1, itemCenter)
+                    // }
                     item.matrix.append(matrix);
                     item.onTransform && item.onTransform('scale', refPosX, rotation, matrix);
                 });
@@ -197,6 +211,7 @@ class TransformTool extends AnnotationUITool{
             this.parent.rotate(angle,center);
             this.parent.transforming.forEach(item=>{
                 let itemCenter = self.targetMatrix.inverseTransform(center);
+                if(item.layer.tiledImage.getFlip()) angle = -angle;
                 item.rotate(angle, itemCenter);
                 item.onTransform && item.onTransform('rotate', angle, itemCenter);
             })
