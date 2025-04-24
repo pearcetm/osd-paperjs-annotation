@@ -62,10 +62,6 @@ import { makeFaIcon } from './utils/faIcon.mjs';
             return this._PaperOverlays || (this._PaperOverlays = []);
         }
     });
-    
-    
-
-    
 
 })(OpenSeadragon);
 

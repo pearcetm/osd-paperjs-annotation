@@ -36,9 +36,9 @@
  * 
  */
 
-import { PaperOverlay } from "./paper-overlay.mjs";
+import { PaperOverlayReact } from "./paper-overlay-react.mjs";
 import { OpenSeadragon } from "./osd-loader.mjs";
-import { paper } from './paperjs.mjs';
+import { paper } from 'paper';
 
 Object.defineProperty(OpenSeadragon.Viewer.prototype, 'paperLayer', paperLayerDef());
 Object.defineProperty(OpenSeadragon.TiledImage.prototype, 'paperLayer', paperLayerDef());
@@ -61,7 +61,7 @@ OpenSeadragon.TiledImage.prototype.addPaperItem = addPaperItem;
  * @returns {PaperOverlay} The overlay that was created
  */
 OpenSeadragon.Viewer.prototype.createPaperOverlay = function(){ 
-    let overlay = new PaperOverlay(this, ...arguments);
+    let overlay = new PaperOverlayReact(this, ...arguments);
     return overlay;
 };
 
