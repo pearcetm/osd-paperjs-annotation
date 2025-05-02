@@ -30,11 +30,6 @@ v1.addOnceHandler('open',()=>{
     tk.addAnnotationUI({autoOpen:true});
     window.tk = tk;
 
-    window.tiledImage = v1.world.getItemAt(0)
-    window.tiledImage.setFlip(true)
-    window.f = ()=>window.tiledImage.setFlip(!window.tiledImage.getFlip())
-    window.r = ()=>window.refpts?.forEach(i=>i.remove())
-
     fetch('./demo-annotation.json').then(x=>x.json()).then(x=>{
         tk.addFeatureCollections(x, true, v1.world.getItemAt(0));
     });
