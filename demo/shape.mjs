@@ -25,8 +25,8 @@ let v1 =window.v1 = OpenSeadragon({
     drawer:'webgl',
 });
 v1.addOnceHandler('open',()=>{
-    // new RotationControlOverlay(v1);
-    // new ScreenshotOverlay(v1);
+    
+    // set up the annotation toolkit
     let tk = new AnnotationToolkit(v1, {cacheAnnotations:true});
     tk.addAnnotationUI({autoOpen:true});
     window.tk = tk;
@@ -36,12 +36,22 @@ v1.addOnceHandler('open',()=>{
     const pixelInput = document.getElementById('pixels');
     const button = document.getElementById('rect');
     button.onclick = ()=> makeRect(pixelInput.value,tiledImage,featureCollection)
+
+    // add event listeners to the openseadragon canvas
+    let x = 0, y = 0;
+    v1.canvas.addEventListener('mousemove', ev => {x = ev.offsetX; y = ev.offsetY; })
+    v1.canvas.addEventListener('keydown', ev => {
+        if(ev.key === 'b'){
+            const pt = tiledImage.viewerElementToImageCoordinates(new OpenSeadragon.Point(x, y))
+            makeRect(pixelInput.value, tiledImage, featureCollection, pt.x, pt.y)
+        }
+    })
 });
 
-function makeRect(pixels, tiledImage, fc){
+function makeRect(pixels, tiledImage, fc, x, y){
     const bounds = tiledImage.viewportToImageRectangle(tiledImage.viewport.getBounds())
-    const centerX = bounds.x + bounds.width/2;
-    const centerY = bounds.y + bounds.height/2;
+    const centerX = x || bounds.x + bounds.width/2;
+    const centerY = y || bounds.y + bounds.height/2;
     const w = pixels;
     const h = pixels;
 
