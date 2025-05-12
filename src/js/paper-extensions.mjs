@@ -36,7 +36,7 @@
  * 
  */
 
-import { paper } from './paperjs.mjs';
+import { paper } from 'paper';
 import { OpenSeadragon } from './osd-loader.mjs';
 
 
