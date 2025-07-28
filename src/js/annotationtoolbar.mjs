@@ -200,6 +200,9 @@ class AnnotationToolbar{
         this.setModeTimeout && clearTimeout(this.setModeTimeout);
         this.setModeTimeout = setTimeout(() => {
             this.setModeTimeout = null;
+            if (!this.paperScope.project) {
+                return;
+            }
             let selection = this.paperScope.findSelectedItems();
             let activeTool = this.paperScope.getActiveTool();
             if (selection.length === 0) {
