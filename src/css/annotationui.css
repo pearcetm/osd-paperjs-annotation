@@ -302,6 +302,9 @@
     background-color:inherit;
     min-width:100%;
 }
+.dropdowns:has(.dropdown.active .ruler-toolbar) { min-width: 280px; }
+.dropdowns:has(.dropdown.active .linestring-toolbar) { min-width: 280px; }
+.dropdowns:has(.dropdown.active .brush-toolbar) { min-width: 280px; }
 .dropdown{
     width:100%;
     display:grid;
@@ -311,7 +314,7 @@
 }
 /* brush-toolbar styles */
 .dropdown.brush-toolbar{
-    grid-template-columns: auto 1fr auto auto;    
+    grid-template-columns: auto minmax(8em, 1fr) auto auto;    
 }
 /* end brush-toolbar styles */
 
@@ -326,9 +329,43 @@
 
 /* linestring-toolbar styles */
 .dropdown.linestring-toolbar{
-    grid-template-columns: auto 1fr auto auto;
+    grid-template-columns: auto minmax(8em, 1fr) auto auto;
 }
 /* end linestring-toolbar styles */
+
+/* ruler-toolbar styles: 2-col 4-row grid; line width, instructions, measurement */
+.dropdown.ruler-toolbar{
+    grid-template-columns: auto minmax(6em, 1fr);
+    grid-template-rows: auto auto auto auto;
+    row-gap: 0.35em;
+    align-items: center;
+    padding-bottom: 0.5em;
+}
+.dropdown.ruler-toolbar > label{
+    grid-row: 1;
+    grid-column: 1;
+}
+.dropdown.ruler-toolbar .ruler-width-input{
+    grid-row: 1;
+    grid-column: 2;
+    align-self: center;
+}
+.dropdown.ruler-toolbar .ruler-instructions{
+    grid-row: 2;
+    grid-column: 1 / -1;
+    min-width: 0;
+}
+.dropdown.ruler-toolbar .ruler-measurement-label{
+    grid-row: 3;
+    grid-column: 1 / -1;
+}
+.dropdown.ruler-toolbar .ruler-measurement{
+    grid-row: 4;
+    grid-column: 1 / -1;
+    font-size: 0.9em;
+    margin-top: 0;
+}
+/* end ruler-toolbar styles */
 canvas.selectable-layer{
     cursor:pointer;
 }

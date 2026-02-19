@@ -52,6 +52,7 @@ import { BrushTool } from './papertools/brush.mjs';
 import { DefaultTool } from './papertools/default.mjs';
 import { EllipseTool } from './papertools/ellipse.mjs';
 import { LinestringTool } from './papertools/linestring.mjs';
+import { RulerTool } from './papertools/ruler.mjs';
 import { PointTool } from './papertools/point.mjs';
 import { PointTextTool } from './papertools/pointtext.mjs';
 import { PolygonTool } from './papertools/polygon.mjs';
@@ -86,6 +87,7 @@ export const OSDPaperjsAnnotation = {
     DefaultTool:DefaultTool,
     EllipseTool:EllipseTool,
     LinestringTool:LinestringTool,
+    RulerTool:RulerTool,
     PointTool:PointTool,
     PointTextTool:PointTextTool,
     PolygonTool:PolygonTool,
@@ -117,6 +119,7 @@ export {
     DefaultTool,
     EllipseTool,
     LinestringTool,
+    RulerTool,
     PointTool,
     PointTextTool,
     PolygonTool,

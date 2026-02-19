@@ -48,6 +48,7 @@ import {RectangleTool} from './papertools/rectangle.mjs';
 import {EllipseTool} from './papertools/ellipse.mjs';
 import {StyleTool} from './papertools/style.mjs';
 import {LinestringTool} from './papertools/linestring.mjs';
+import {RulerTool} from './papertools/ruler.mjs';
 import {PolygonTool} from './papertools/polygon.mjs';
 import {SelectTool} from './papertools/select.mjs';
 import {TransformTool} from './papertools/transform.mjs';
@@ -108,6 +109,7 @@ class AnnotationToolbar{
          * @property {BrushTool} brush - The brush tool constructor.
          * @property {WandTool} wand - The wand tool constructor.
          * @property {LinestringTool} linestring - The linestring tool constructor.
+         * @property {RulerTool} ruler - The ruler tool constructor.
          * @property {RasterTool} raster - The raster tool constructor.
          */
         this.toolConstructors = {
@@ -123,6 +125,7 @@ class AnnotationToolbar{
             brush: BrushTool,
             wand: WandTool,
             linestring : LinestringTool,
+            ruler: RulerTool,
             raster: RasterTool,
         }   
         this.tools = {};

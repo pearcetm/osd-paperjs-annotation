@@ -67,7 +67,7 @@ class MultiLinestring extends AnnotationItem{
             });
             let path = new paper.Path(pts);
             path.strokeWidth = geoJSON.geometry.properties.strokeWidths[index];
-            return new paper.Path(pts);
+            return path;
         });
     
         let grp = new paper.Group({
@@ -103,13 +103,27 @@ class MultiLinestring extends AnnotationItem{
 
 
     /**
+     * Resolve the path from a segment child (group with path at [0], or legacy path).
+     * @param {paper.Item} child - segment group (Group with path at children[0]) or legacy Path
+     * @returns {paper.Path}
+     */
+    _getPathFromChild(child) {
+        if (child instanceof paper.Path) return child;
+        if (child instanceof paper.Group && child.children.length > 0) return child.children[0];
+        return child;
+    }
+
+    /**
      * Retrieves the coordinates of the multi-linestring.
      * @returns {Array} An array containing arrays of x and y coordinates for each point.
      * @description This method returns an array of arrays representing the coordinates of each point in the multi-linestring.
      */
     getCoordinates(){
         let item = this.paperItem;
-        return item.children.map(function (c) { return c.segments.map(function (s) { return [s.point.x, s.point.y]; }); });
+        return item.children.map((c) => {
+            const path = this._getPathFromChild(c);
+            return path.segments.map((s) => [s.point.x, s.point.y]);
+        });
     }
     /**
      * Retrieves the properties of the multi-linestring.
@@ -118,10 +132,11 @@ class MultiLinestring extends AnnotationItem{
      */
     getProperties(){
         let item = this.paperItem;
+        const firstPath = item.children.length > 0 ? this._getPathFromChild(item.children[0]) : null;
         return {
-            strokeColor: item.children.length>0 ? item.children[0].strokeColor : undefined,
-            strokeWidths: item.children.map(c => c.strokeWidth),
-        }
+            strokeColor: firstPath ? firstPath.strokeColor : undefined,
+            strokeWidths: item.children.map((c) => this._getPathFromChild(c).strokeWidth),
+        };
     }
     /**
      * Retrieves the style properties of the multi-linestring.
@@ -129,7 +144,10 @@ class MultiLinestring extends AnnotationItem{
      * @description This method returns the style properties of the multi-linestring in JSON format.
      */
     getStyleProperties(){
-        return this.paperItem.children[0].style.toJSON();
+        const item = this.paperItem;
+        if (!item.children.length) return {};
+        const firstPath = this._getPathFromChild(item.children[0]);
+        return firstPath.style.toJSON();
     }
     /**
      * Apply style properties to the multi-linestring annotation item.
