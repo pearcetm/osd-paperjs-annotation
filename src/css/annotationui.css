@@ -333,37 +333,34 @@
 }
 /* end linestring-toolbar styles */
 
-/* ruler-toolbar styles: 2-col 4-row grid; line width, instructions, measurement */
+/* ruler-toolbar styles: single length row + collapsible details panel (column layout) */
 .dropdown.ruler-toolbar{
-    grid-template-columns: auto minmax(6em, 1fr);
-    grid-template-rows: auto auto auto auto;
-    row-gap: 0.35em;
-    align-items: center;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
     padding-bottom: 0.5em;
 }
-.dropdown.ruler-toolbar > label{
-    grid-row: 1;
-    grid-column: 1;
+.dropdown.ruler-toolbar .ruler-length-row{
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
 }
-.dropdown.ruler-toolbar .ruler-width-input{
-    grid-row: 1;
-    grid-column: 2;
-    align-self: center;
+.dropdown.ruler-toolbar .ruler-details-toggle{
+    display: flex;
+    margin-left: auto;
 }
-.dropdown.ruler-toolbar .ruler-instructions{
-    grid-row: 2;
-    grid-column: 1 / -1;
+.dropdown.ruler-toolbar .ruler-details-panel[hidden]{
+    display: none !important;
+}
+.dropdown.ruler-toolbar .ruler-details-content{
     min-width: 0;
 }
-.dropdown.ruler-toolbar .ruler-measurement-label{
-    grid-row: 3;
-    grid-column: 1 / -1;
+.dropdown.ruler-toolbar .ruler-instructions{
+    display: block;
+    min-width: 0;
 }
-.dropdown.ruler-toolbar .ruler-measurement{
-    grid-row: 4;
-    grid-column: 1 / -1;
-    font-size: 0.9em;
-    margin-top: 0;
+.dropdown.ruler-toolbar .ruler-details-panel .ruler-width-input{
+    align-self: center;
 }
 /* end ruler-toolbar styles */
 canvas.selectable-layer{

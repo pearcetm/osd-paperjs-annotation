@@ -70,6 +70,8 @@ class RulerTool extends AnnotationUITool {
 
         // Config and placement state
         this.strokeWidthPixels = 2;
+        this.haloExtraPixels = 2;
+        this.labelFontSize = 12;
         this._firstPoint = null;
         this._previewSegmentGroup = null;
         this._didDrag = false;
@@ -235,14 +237,14 @@ class RulerTool extends AnnotationUITool {
         fillLabel.strokeColor = null;
         fillLabel.content = formatted;
         fillLabel.rescale = fillLabel.rescale || {};
-        fillLabel.rescale.fontSize = (z) => RULER_LABEL_FONT_SIZE / z;
+        fillLabel.rescale.fontSize = (z) => this.labelFontSize / z;
         delete fillLabel.rescale.strokeWidth;
         strokeLabel.justification = 'center';
         strokeLabel.strokeColor = 'white';
         strokeLabel.fillColor = null;
         strokeLabel.content = formatted;
         strokeLabel.rescale = strokeLabel.rescale || {};
-        strokeLabel.rescale.fontSize = (z) => RULER_LABEL_FONT_SIZE / z;
+        strokeLabel.rescale.fontSize = (z) => this.labelFontSize / z;
         strokeLabel.rescale.strokeWidth = (z) => RULER_LABEL_STROKE_PX / z;
         if (fillLabel.applyRescale) fillLabel.applyRescale();
         if (strokeLabel.applyRescale) strokeLabel.applyRescale();
@@ -380,6 +382,47 @@ class RulerTool extends AnnotationUITool {
 
     setStrokeWidthPixels(n) {
         this.strokeWidthPixels = Math.max(1, parseInt(n, 10) || 1);
+        this._refreshItemSegments();
+    }
+
+    setHaloExtraPixels(n) {
+        this.haloExtraPixels = Math.max(0, parseInt(n, 10) || 0);
+        this._refreshItemSegments();
+    }
+
+    setLabelFontSize(n) {
+        const v = parseInt(n, 10);
+        this.labelFontSize = (v >= 6 && v <= 72) ? v : 12;
+        this._refreshItemSegments();
+    }
+
+    /**
+     * Re-apply halo style, path style, and labels for all segments in this.item.
+     * @private
+     */
+    _refreshItemSegments() {
+        if (!this.item || !this.item.children.length) return;
+        this.item.children.forEach((child) => {
+            if (child instanceof paper.Group && child.children.length === 4) {
+                const haloPath = child.children[SEGMENT_HALO];
+                const path = child.children[SEGMENT_PATH];
+                if (haloPath instanceof paper.Path) this.applyHaloPathStyle(haloPath);
+                if (path instanceof paper.Path) this.applyPreviewOrPathStyle(path, false);
+                this._ensurePathLabel(child);
+            }
+        });
+    }
+
+    /**
+     * Refresh on-canvas label content/position for all segments (e.g. when units or unitsPerPixel change).
+     */
+    refreshSegmentLabels() {
+        if (!this.item || !this.item.children.length) return;
+        this.item.children.forEach((child) => {
+            if (child instanceof paper.Group && child.children.length === 4) {
+                this._ensurePathLabel(child);
+            }
+        });
     }
 
     /**
@@ -433,7 +476,7 @@ class RulerTool extends AnnotationUITool {
      */
     applyHaloPathStyle(haloPath) {
         const z = this.getZoomFactor();
-        const haloWidthPixels = this.strokeWidthPixels + RULER_HALO_EXTRA_PX;
+        const haloWidthPixels = this.strokeWidthPixels + this.haloExtraPixels;
         haloPath.strokeWidth = haloWidthPixels / z;
         haloPath.rescale = { strokeWidth: haloWidthPixels };
         haloPath.strokeColor = 'white';
@@ -465,23 +508,23 @@ class RulerTool extends AnnotationUITool {
         const strokeLabel = new paper.PointText({
             point: midpoint.clone(),
             content: formatted,
-            fontSize: RULER_LABEL_FONT_SIZE,
+            fontSize: this.labelFontSize,
             fillColor: null,
             strokeColor: 'white',
             justification: 'center',
         });
         strokeLabel.rescale = {
-            fontSize: (z) => RULER_LABEL_FONT_SIZE / z,
+            fontSize: (z) => this.labelFontSize / z,
             strokeWidth: (z) => RULER_LABEL_STROKE_PX / z,
         };
         const fillLabel = new paper.PointText({
             point: midpoint.clone(),
             content: formatted,
-            fontSize: RULER_LABEL_FONT_SIZE,
+            fontSize: this.labelFontSize,
             fillColor,
             justification: 'center',
         });
-        fillLabel.rescale = { fontSize: (z) => RULER_LABEL_FONT_SIZE / z };
+        fillLabel.rescale = { fontSize: (z) => this.labelFontSize / z };
         const group = new paper.Group();
         group.addChild(haloPath);
         group.addChild(path);
@@ -654,6 +697,7 @@ class RulerToolbar extends AnnotationUIToolbarBase {
         super(rulerTool);
         this.rulerTool = rulerTool;
         this.labelUnit = 'px';
+        this.unitsPerPixel = 1;
 
         const i = makeFaIcon('fa-ruler');
         this.button.configure(i, 'Ruler Tool');
@@ -663,34 +707,128 @@ class RulerToolbar extends AnnotationUIToolbarBase {
         fdd.setAttribute('data-tool', 'ruler');
         this.dropdown.appendChild(fdd);
 
-        const label = document.createElement('label');
-        label.textContent = 'Line width (px):';
-        fdd.appendChild(label);
+        // Default row: "Length: _____" + expand/collapse button (single line when collapsed)
+        const lengthRow = document.createElement('div');
+        lengthRow.classList.add('ruler-length-row');
+        fdd.appendChild(lengthRow);
+
+        const lengthLabel = document.createElement('span');
+        lengthLabel.textContent = 'Length: ';
+        lengthRow.appendChild(lengthLabel);
+        this.lengthEl = document.createElement('span');
+        this.lengthEl.className = 'ruler-length-value';
+        lengthRow.appendChild(this.lengthEl);
+
+        const toggleBtn = document.createElement('button');
+        toggleBtn.type = 'button';
+        toggleBtn.classList.add('ruler-details-toggle');
+        toggleBtn.setAttribute('aria-label', 'Toggle details');
+        this._detailsExpanded = false;
+        this._chevronDown = makeFaIcon('fa-caret-down');
+        this._chevronUp = makeFaIcon('fa-caret-up');
+        toggleBtn.appendChild(this._chevronDown);
+        lengthRow.appendChild(toggleBtn);
+
+        toggleBtn.addEventListener('click', () => {
+            this._detailsExpanded = !this._detailsExpanded;
+            this.detailsPanel.hidden = !this._detailsExpanded;
+            toggleBtn.replaceChildren(this._detailsExpanded ? this._chevronUp : this._chevronDown);
+        });
+
+        // Details panel (collapsible); instructions live here so collapsed = one line only
+        this.detailsPanel = document.createElement('div');
+        this.detailsPanel.classList.add('ruler-details-panel');
+        this.detailsPanel.hidden = true;
+        fdd.appendChild(this.detailsPanel);
+
+        const detailsContent = document.createElement('div');
+        detailsContent.classList.add('ruler-details-content');
+        this.detailsPanel.appendChild(detailsContent);
+
+        this.instructions = document.createElement('span');
+        this.instructions.className = 'ruler-instructions';
+        detailsContent.appendChild(this.instructions);
+
+        this.p1El = document.createElement('div');
+        this.p1El.className = 'ruler-detail-p1';
+        this.p1El.textContent = 'P1: —';
+        detailsContent.appendChild(this.p1El);
+        this.p2El = document.createElement('div');
+        this.p2El.className = 'ruler-detail-p2';
+        this.p2El.textContent = 'P2: —';
+        detailsContent.appendChild(this.p2El);
+
+        const addRow = (labelText, inputEl, inputId) => {
+            const row = document.createElement('div');
+            row.classList.add('ruler-detail-row');
+            const lab = document.createElement('label');
+            lab.htmlFor = inputId;
+            lab.textContent = labelText;
+            row.appendChild(lab);
+            inputEl.id = inputId;
+            row.appendChild(inputEl);
+            detailsContent.appendChild(row);
+        };
 
         this.widthInput = document.createElement('input');
         this.widthInput.type = 'number';
         this.widthInput.min = 1;
         this.widthInput.value = 2;
         this.widthInput.classList.add('ruler-width-input');
-        fdd.appendChild(this.widthInput);
         this.widthInput.addEventListener('change', () => {
             rulerTool.setStrokeWidthPixels(this.widthInput.value);
         });
+        addRow('Line width (px):', this.widthInput, 'ruler-line-width');
 
-        this.instructions = document.createElement('span');
-        this.instructions.className = 'ruler-instructions';
-        fdd.appendChild(this.instructions);
+        this.haloInput = document.createElement('input');
+        this.haloInput.type = 'number';
+        this.haloInput.min = 0;
+        this.haloInput.value = 2;
+        this.haloInput.classList.add('ruler-halo-input');
+        this.haloInput.addEventListener('change', () => {
+            rulerTool.setHaloExtraPixels(this.haloInput.value);
+        });
+        addRow('Padding / Halo (px):', this.haloInput, 'ruler-halo');
 
-        const measureLabel = document.createElement('div');
-        measureLabel.className = 'ruler-measurement-label';
-        measureLabel.textContent = 'Measurement:';
-        fdd.appendChild(measureLabel);
+        this.fontSizeInput = document.createElement('input');
+        this.fontSizeInput.type = 'number';
+        this.fontSizeInput.min = 6;
+        this.fontSizeInput.max = 72;
+        this.fontSizeInput.value = 12;
+        this.fontSizeInput.classList.add('ruler-font-size-input');
+        this.fontSizeInput.addEventListener('change', () => {
+            rulerTool.setLabelFontSize(this.fontSizeInput.value);
+        });
+        addRow('Font size:', this.fontSizeInput, 'ruler-font-size');
 
-        this.measurementBlock = document.createElement('div');
-        this.measurementBlock.className = 'ruler-measurement';
-        fdd.appendChild(this.measurementBlock);
+        this.unitsInput = document.createElement('input');
+        this.unitsInput.type = 'text';
+        this.unitsInput.value = 'px';
+        this.unitsInput.classList.add('ruler-units-input');
+        this.unitsInput.addEventListener('change', () => {
+            this.labelUnit = (this.unitsInput.value || 'px').trim();
+            this.updateMeasurement(rulerTool._lastMeasurement?.p1 ?? null, rulerTool._lastMeasurement?.p2 ?? null, rulerTool._lastMeasurement?.distance ?? null);
+            rulerTool.refreshSegmentLabels();
+        });
+        addRow('Units:', this.unitsInput, 'ruler-units');
+
+        this.unitsPerPixelInput = document.createElement('input');
+        this.unitsPerPixelInput.type = 'number';
+        this.unitsPerPixelInput.min = 0.0001;
+        this.unitsPerPixelInput.step = 'any';
+        this.unitsPerPixelInput.value = 1;
+        this.unitsPerPixelInput.classList.add('ruler-units-per-pixel-input');
+        this.unitsPerPixelInput.addEventListener('change', () => {
+            const v = parseFloat(this.unitsPerPixelInput.value);
+            this.unitsPerPixel = (v > 0 && Number.isFinite(v)) ? v : 1;
+            this.updateMeasurement(rulerTool._lastMeasurement?.p1 ?? null, rulerTool._lastMeasurement?.p2 ?? null, rulerTool._lastMeasurement?.distance ?? null);
+            rulerTool.refreshSegmentLabels();
+        });
+        addRow('Units per pixel:', this.unitsPerPixelInput, 'ruler-units-per-pixel');
 
         rulerTool.setStrokeWidthPixels(2);
+        rulerTool.setHaloExtraPixels(2);
+        rulerTool.setLabelFontSize(12);
         this.updateMeasurement(null, null, null);
         this.updateInstructions(null);
     }
@@ -707,21 +845,17 @@ class RulerToolbar extends AnnotationUIToolbarBase {
         return n.toFixed(2);
     }
 
-    formatDistance(distance) {
-        if (distance == null || typeof distance !== 'number') return '—';
-        return this.formatNum(distance) + ' ' + this.labelUnit;
+    formatDistance(distancePaper) {
+        if (distancePaper == null || typeof distancePaper !== 'number') return '—';
+        const value = distancePaper * this.unitsPerPixel;
+        return this.formatNum(value) + ' ' + this.labelUnit;
     }
 
     updateMeasurement(p1, p2, distance) {
+        this.lengthEl.textContent = distance != null ? this.formatDistance(distance) : '—';
         const fmt = (p) => (p ? `(${this.formatNum(p.x)}, ${this.formatNum(p.y)})` : '—');
-        const p1Str = p1 != null ? fmt(p1) : '—';
-        const p2Str = p2 != null ? fmt(p2) : '—';
-        const distStr = distance != null ? this.formatDistance(distance) : '—';
-        this.measurementBlock.innerHTML = [
-            `P1: ${p1Str}`,
-            `P2: ${p2Str}`,
-            `Distance: ${distStr}`,
-        ].join('<br>');
+        this.p1El.textContent = 'P1: ' + (p1 != null ? fmt(p1) : '—');
+        this.p2El.textContent = 'P2: ' + (p2 != null ? fmt(p2) : '—');
     }
 
     isEnabledForMode(mode) {
