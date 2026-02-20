@@ -187,7 +187,7 @@ class RulerTool extends AnnotationUITool {
      */
     _ensureItemForDrawing() {
         if (this.itemToCreate) {
-            this.itemToCreate.initializeGeoJSONFeature('MultiLineString');
+            this.itemToCreate.initializeGeoJSONFeature('MultiLineString', 'Measurement');
             this.refreshItems();
             this._setTargetLayer();
             if (this.isActive()) {
@@ -380,20 +380,41 @@ class RulerTool extends AnnotationUITool {
         return this.targetLayer.scaling.x * this.project.getZoom();
     }
 
+    /**
+     * Write current tool and toolbar settings to this.item.data.ruler when item is a Measurement (for save/load).
+     * @private
+     */
+    _writeRulerDataToItem() {
+        if (!this.item || !this.item.annotationItem) return;
+        const typeInfo = this.item.annotationItem.getGeoJSONType?.();
+        if (typeInfo?.subtype !== 'Measurement') return;
+        const tc = this.toolbarControl;
+        this.item.data.ruler = {
+            units: tc && tc.labelUnit != null ? tc.labelUnit : 'px',
+            unitsPerPixel: tc && tc.unitsPerPixel != null ? tc.unitsPerPixel : 1,
+            strokeWidthPixels: this.strokeWidthPixels,
+            haloExtraPixels: this.haloExtraPixels,
+            labelFontSize: this.labelFontSize,
+        };
+    }
+
     setStrokeWidthPixels(n) {
         this.strokeWidthPixels = Math.max(1, parseInt(n, 10) || 1);
         this._refreshItemSegments();
+        this._writeRulerDataToItem();
     }
 
     setHaloExtraPixels(n) {
         this.haloExtraPixels = Math.max(0, parseInt(n, 10) || 0);
         this._refreshItemSegments();
+        this._writeRulerDataToItem();
     }
 
     setLabelFontSize(n) {
         const v = parseInt(n, 10);
         this.labelFontSize = (v >= 6 && v <= 72) ? v : 12;
         this._refreshItemSegments();
+        this._writeRulerDataToItem();
     }
 
     /**
@@ -418,6 +439,7 @@ class RulerTool extends AnnotationUITool {
      */
     refreshSegmentLabels() {
         if (!this.item || !this.item.children.length) return;
+        this._writeRulerDataToItem();
         this.item.children.forEach((child) => {
             if (child instanceof paper.Group && child.children.length === 4) {
                 this._ensurePathLabel(child);
@@ -545,6 +567,7 @@ class RulerTool extends AnnotationUITool {
         const segmentGroup = this.buildSegmentGroup(p1, p2, { preview: false });
         this.item.addChild(segmentGroup);
         this._ensurePathLabel(segmentGroup);
+        this._writeRulerDataToItem();
 
         this._clearPlacementState();
         const distance = p1.getDistance(p2);
@@ -859,6 +882,6 @@ class RulerToolbar extends AnnotationUIToolbarBase {
     }
 
     isEnabledForMode(mode) {
-        return ['new', 'LineString', 'MultiLineString'].includes(mode);
+        return ['new', 'LineString', 'MultiLineString', 'MultiLineString:Measurement'].includes(mode);
     }
 }
