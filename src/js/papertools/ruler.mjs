@@ -47,17 +47,21 @@ const RULER_LABEL_GAP_PX = 4; // Gap between line and label in screen pixels (zo
 const RULER_HALO_EXTRA_PX = 2; // Extra stroke width for white halo (in screen pixels, zoom-independent)
 const RULER_LABEL_STROKE_PX = 3; // Heavy white stroke for stroke-only label (background, in screen pixels, zoom-independent)
 
-// Segment group layout: exactly 4 children
+// Segment group layout: exactly 3 children (halo, path, labelGroup with [strokeLabel, fillLabel])
 const SEGMENT_HALO = 0;
 const SEGMENT_PATH = 1;
-const SEGMENT_STROKE_LABEL = 2;
-const SEGMENT_FILL_LABEL = 3;
+const SEGMENT_LABEL_GROUP = 2;
 
 /**
  * Ruler tool: two-point measurement. Extends AnnotationUITool only.
  * Creates segments with exactly two points (click-move-click or click-drag).
  * Line width is in screen pixels (zoom-independent via rescale).
  * Displays P1, P2, and distance in toolbar.
+ *
+ * Emits on project when a measurement's geometry or display changes (for list/UI sync):
+ * - `ruler-measurement-updated` with payload `{ item, label?, distance? }` (item = measurement Group;
+ *   label = display string; distance = length in project units). Fired after segment commit,
+ *   after endpoint/line drag edit, and when display settings (units etc.) change.
  *
  * @extends AnnotationUITool
  * @class
@@ -200,36 +204,35 @@ class RulerTool extends AnnotationUITool {
     /**
      * Resolve the main path from a segment child (group with path, or legacy path).
      * @private
-     * @param {paper.Item} child - segment group (Group with [haloPath, path, strokeLabel, fillLabel] or [path, strokeLabel, fillLabel] or [path, label]) or legacy Path
+     * @param {paper.Item} child - segment group (Group with [halo, path, labelGroup] or legacy 4-child) or legacy Path
      * @returns {paper.Path|null}
-     * @description For groups: 4 children (with halo) -> path at 1; 3 or 2 children -> path at 0.
+     * @description For groups: 3 or 4 children -> path at index 1.
      */
     _getPathFromSegmentChild(child) {
         if (!child) return null;
         if (child instanceof paper.Path) return child;
-        if (child instanceof paper.Group && child.children.length === 4) return child.children[SEGMENT_PATH];
+        if (child instanceof paper.Group && (child.children.length === 3 || child.children.length === 4)) return child.children[SEGMENT_PATH];
         return null;
     }
 
     /**
-     * Update label content and position for a segment group (assumes 4 children).
+     * Update label content and position for a segment group (assumes 3 children: halo, path, labelGroup).
      * @private
-     * @param {paper.Group} segmentGroup - group with [halo, path, strokeLabel, fillLabel]
+     * @param {paper.Group} segmentGroup - group with [halo, path, labelGroup] where labelGroup has [strokeLabel, fillLabel]
      */
     _ensurePathLabel(segmentGroup) {
-        if (segmentGroup.children.length !== 4) return;
+        if (segmentGroup.children.length !== 3) return;
         const path = segmentGroup.children[SEGMENT_PATH];
-        const strokeLabel = segmentGroup.children[SEGMENT_STROKE_LABEL];
-        const fillLabel = segmentGroup.children[SEGMENT_FILL_LABEL];
+        const labelGroup = segmentGroup.children[SEGMENT_LABEL_GROUP];
         const haloPath = segmentGroup.children[SEGMENT_HALO];
-        if (!path || path.segments.length < 2) return;
+        if (!path || path.segments.length < 2 || !labelGroup || labelGroup.children.length < 2) return;
+        const strokeLabel = labelGroup.children[0];
+        const fillLabel = labelGroup.children[1];
         const p1 = path.segments[0].point;
         const p2 = path.segments[1].point;
         const distance = p1.getDistance(p2);
         const midpoint = p1.add(p2).divide(2);
-        const formatted = this.toolbarControl && typeof this.toolbarControl.formatDistance === 'function'
-            ? this.toolbarControl.formatDistance(distance)
-            : (distance == null || typeof distance !== 'number' ? '—' : distance.toFixed(2) + ' px');
+        const formatted = this.toolbarControl.formatDistance(distance);
         const fillColor = path.strokeColor || new paper.Color('black');
 
         fillLabel.justification = 'center';
@@ -248,9 +251,37 @@ class RulerTool extends AnnotationUITool {
         strokeLabel.rescale.strokeWidth = (z) => RULER_LABEL_STROKE_PX / z;
         if (fillLabel.applyRescale) fillLabel.applyRescale();
         if (strokeLabel.applyRescale) strokeLabel.applyRescale();
+        // Label anchor (point) so visual center is at (0, height/2) in group space (PointText: baseline at point, center at point.y - height/2)
+        const labelHeight = (fillLabel.getInternalBounds && fillLabel.getInternalBounds()) ? fillLabel.getInternalBounds().height : (fillLabel.bounds ? fillLabel.bounds.height : 0);
+        if (labelHeight > 0) {
+            fillLabel.point = new paper.Point(0, labelHeight / 2);
+            strokeLabel.point = new paper.Point(0, labelHeight / 2);
+            labelGroup.pivot = new paper.Point(0, labelHeight / 2);
+        }
         const placementCenter = this._computeLabelPlacementCenter(fillLabel, p1, p2, midpoint);
-        this._centerLabelOnPoint(fillLabel, placementCenter);
-        this._centerLabelOnPoint(strokeLabel, placementCenter);
+        labelGroup.position = placementCenter.clone();
+        // Attach view rotate/flip once so labels stay upright (same pattern as PointText)
+        if (!labelGroup._uprightAttached && labelGroup.view) {
+            labelGroup._uprightAttached = true;
+            function handleFlip() {
+                const angle = labelGroup.view.getFlipped() ? labelGroup.view.getRotation() : 180 - labelGroup.view.getRotation();
+                labelGroup.rotate(-angle);
+                labelGroup.scale(-1, 1);
+                labelGroup.rotate(angle);
+            }
+            if (labelGroup.view.getFlipped()) {
+                handleFlip();
+            }
+            const offsetAngle = labelGroup.view.getFlipped() ? 180 - labelGroup.view.getRotation() : -labelGroup.view.getRotation();
+            labelGroup.rotate(offsetAngle);
+            labelGroup.view.on('rotate', (ev) => {
+                const angle = -ev.rotatedBy;
+                labelGroup.rotate(angle);
+            });
+            labelGroup.view.on('flip', () => {
+                handleFlip();
+            });
+        }
         // Sync halo geometry to path
         if (haloPath instanceof paper.Path && haloPath.segments.length === path.segments.length) {
             path.segments.forEach((seg, i) => {
@@ -281,8 +312,10 @@ class RulerTool extends AnnotationUITool {
         const zoomFactor = label.view.scaling.x * label.layer.scaling.x;
         const gapPaper = RULER_LABEL_GAP_PX / zoomFactor;
 
-        // Offset: half label height (already zoom-aware via rescale) + gap (constant pixels)
-        const offset = label.bounds.height / 2 + gapPaper;
+        // Offset: half label height (use getInternalBounds like PointText when available) + gap (constant pixels)
+        const labelBounds = (label.getInternalBounds && label.getInternalBounds()) ? label.getInternalBounds() : label.bounds;
+        const labelHeight = labelBounds ? labelBounds.height : 0;
+        const offset = labelHeight / 2 + gapPaper;
         return midpoint.add(normal.multiply(offset));
     }
 
@@ -299,7 +332,7 @@ class RulerTool extends AnnotationUITool {
     }
 
     /**
-     * Ensure every segment is a 4-child group. Replace bare Paths with a new 4-child group; refresh labels on Groups.
+     * Ensure every segment is a 3-child group (halo, path, labelGroup). Replace bare Paths with a new segment group; refresh labels on Groups.
      * @private
      */
     _ensureItemLabels() {
@@ -315,7 +348,7 @@ class RulerTool extends AnnotationUITool {
                 this.item.removeChild(path);
                 this.item.insertChild(index, group);
                 this._ensurePathLabel(group);
-            } else if (child instanceof paper.Group && child.children.length === 4) {
+            } else if (child instanceof paper.Group && child.children.length === 3) {
                 this._ensurePathLabel(child);
             }
         });
@@ -424,7 +457,7 @@ class RulerTool extends AnnotationUITool {
     _refreshItemSegments() {
         if (!this.item || !this.item.children.length) return;
         this.item.children.forEach((child) => {
-            if (child instanceof paper.Group && child.children.length === 4) {
+            if (child instanceof paper.Group && child.children.length === 3) {
                 const haloPath = child.children[SEGMENT_HALO];
                 const path = child.children[SEGMENT_PATH];
                 if (haloPath instanceof paper.Path) this.applyHaloPathStyle(haloPath);
@@ -435,16 +468,34 @@ class RulerTool extends AnnotationUITool {
     }
 
     /**
+     * Emit ruler-measurement-updated on the project so listeners (e.g. measurements list) can update in real time.
+     * @private
+     * @param {paper.Item} [item=this.item] - The measurement Group to report.
+     */
+    _emitMeasurementUpdated(item) {
+        item = item || this.item;
+        if (!item || !item.project) return;
+        const path = item.children?.length ? this._getPathFromSegmentChild(item.children[0]) : null;
+        const distance = this._lastMeasurement?.distance ?? (path && path.segments?.length >= 2 ? path.segments[0].point.getDistance(path.segments[1].point) : undefined);
+        item.project.emit('ruler-measurement-updated', {
+            item,
+            label: item.displayName || 'Measurement',
+            distance,
+        });
+    }
+
+    /**
      * Refresh on-canvas label content/position for all segments (e.g. when units or unitsPerPixel change).
      */
     refreshSegmentLabels() {
         if (!this.item || !this.item.children.length) return;
         this._writeRulerDataToItem();
         this.item.children.forEach((child) => {
-            if (child instanceof paper.Group && child.children.length === 4) {
+            if (child instanceof paper.Group && child.children.length === 3) {
                 this._ensurePathLabel(child);
             }
         });
+        this._emitMeasurementUpdated();
     }
 
     /**
@@ -507,8 +558,9 @@ class RulerTool extends AnnotationUITool {
     }
 
     /**
-     * Build a segment group with exactly 4 children: halo, path, strokeLabel, fillLabel.
-     * Caller must add the group to the project (e.g. this.item) before calling _ensurePathLabel for correct label placement.
+     * Build a segment group with exactly 3 children: halo, path, labelGroup ([strokeLabel, fillLabel]).
+     * Labels are in a group that counter-rotates with view (upright like PointText).
+     * Caller must add the group to the project before calling _ensurePathLabel for correct label placement.
      * @private
      * @param {paper.Point} p1 - segment start
      * @param {paper.Point} p2 - segment end
@@ -522,13 +574,12 @@ class RulerTool extends AnnotationUITool {
         const path = new paper.Path([p1.clone(), p2.clone()]);
         this.applyPreviewOrPathStyle(path, isPreview);
         const distance = p1.getDistance(p2);
-        const formatted = this.toolbarControl && typeof this.toolbarControl.formatDistance === 'function'
-            ? this.toolbarControl.formatDistance(distance)
-            : (distance == null || typeof distance !== 'number' ? '—' : distance.toFixed(2) + ' px');
+        const formatted = this.toolbarControl.formatDistance(distance);
         const fillColor = path.strokeColor || new paper.Color('black');
         const midpoint = p1.add(p2).divide(2);
+
         const strokeLabel = new paper.PointText({
-            point: midpoint.clone(),
+            point: new paper.Point(0, 0),
             content: formatted,
             fontSize: this.labelFontSize,
             fillColor: null,
@@ -540,18 +591,25 @@ class RulerTool extends AnnotationUITool {
             strokeWidth: (z) => RULER_LABEL_STROKE_PX / z,
         };
         const fillLabel = new paper.PointText({
-            point: midpoint.clone(),
+            point: new paper.Point(0, 0),
             content: formatted,
             fontSize: this.labelFontSize,
             fillColor,
             justification: 'center',
         });
         fillLabel.rescale = { fontSize: (z) => this.labelFontSize / z };
+
+        const labelGroup = new paper.Group();
+        labelGroup.pivot = new paper.Point(0, 0);
+        labelGroup.applyMatrix = true;
+        labelGroup.position = midpoint.clone();
+        labelGroup.addChild(strokeLabel);
+        labelGroup.addChild(fillLabel);
+
         const group = new paper.Group();
         group.addChild(haloPath);
         group.addChild(path);
-        group.addChild(strokeLabel);
-        group.addChild(fillLabel);
+        group.addChild(labelGroup);
         return group;
     }
 
@@ -569,6 +627,11 @@ class RulerTool extends AnnotationUITool {
         this._ensurePathLabel(segmentGroup);
         this._writeRulerDataToItem();
 
+        // Only the ruler line (path) gets selection style; not the segment group or labels
+        const parentSelected = this.item.selected;
+        const segPath = segmentGroup.children.length > SEGMENT_PATH ? segmentGroup.children[SEGMENT_PATH] : null;
+        if (segPath) segPath.selected = parentSelected;
+
         this._clearPlacementState();
         const distance = p1.getDistance(p2);
         this._lastMeasurement = { p1, p2, distance };
@@ -578,6 +641,7 @@ class RulerTool extends AnnotationUITool {
         if (this.toolbarControl.updateInstructions) {
             this.toolbarControl.updateInstructions('modifying');
         }
+        this._emitMeasurementUpdated();
     }
 
     onMouseDown(ev) {
@@ -606,6 +670,8 @@ class RulerTool extends AnnotationUITool {
             this._previewSegmentGroup = this.buildSegmentGroup(this._firstPoint.clone(), this._firstPoint.clone(), { preview: true });
             this.drawingGroup.removeChildren();
             this.drawingGroup.addChild(this._previewSegmentGroup);
+            const previewPath = this._previewSegmentGroup.children.length > SEGMENT_PATH ? this._previewSegmentGroup.children[SEGMENT_PATH] : null;
+            if (previewPath) previewPath.selected = true;
             this._didDrag = false;
             this._drawingItem = this.item;
             this.toolbarControl.updateMeasurement(this._firstPoint, this._firstPoint, 0);
@@ -659,7 +725,7 @@ class RulerTool extends AnnotationUITool {
     onMouseDrag(ev) {
         if (this.mode === 'endpoint-drag' && this._editPath) {
             this._editPath.segments[this._editSegmentIndex].point = ev.point.clone();
-            if (this._editPath.parent instanceof paper.Group && this._editPath.parent.children.length === 4) {
+            if (this._editPath.parent instanceof paper.Group && (this._editPath.parent.children.length === 3 || this._editPath.parent.children.length === 4)) {
                 const haloPath = this._editPath.parent.children[SEGMENT_HALO];
                 if (haloPath instanceof paper.Path && haloPath.segments.length === this._editPath.segments.length) {
                     haloPath.segments[this._editSegmentIndex].point = ev.point.clone();
@@ -697,6 +763,7 @@ class RulerTool extends AnnotationUITool {
             this.mode = 'modifying';
             this._editPath = null;
             this._editSegmentIndex = null;
+            this._emitMeasurementUpdated();
             return;
         }
         if (this._firstPoint !== null && this._didDrag) {

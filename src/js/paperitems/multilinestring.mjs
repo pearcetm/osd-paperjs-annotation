@@ -104,12 +104,12 @@ class MultiLinestring extends AnnotationItem{
 
     /**
      * Resolve the main path from a segment child (group with path, or legacy path).
-     * @param {paper.Item} child - segment group (Group with [haloPath, path, strokeLabel, fillLabel] or [path, strokeLabel, fillLabel] or [path, label]) or legacy Path
+     * @param {paper.Item} child - segment group (Group with [halo, path, labelGroup] or legacy [halo, path, strokeLabel, fillLabel]) or legacy Path
      * @returns {paper.Path}
-     * @description For groups: 4 children -> path at index 1; 3 or 2 children -> path at index 0.
+     * @description For groups: 3 or 4 children -> path at index 1.
      */
     _getPathFromChild(child) {
-        if (child instanceof paper.Group && child.children.length === 4) return child.children[1];
+        if (child instanceof paper.Group && (child.children.length === 3 || child.children.length === 4)) return child.children[1];
         return child;
     }
 

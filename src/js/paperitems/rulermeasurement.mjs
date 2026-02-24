@@ -9,11 +9,10 @@
 import { MultiLinestring } from './multilinestring.mjs';
 import { paper } from '../paperjs.mjs';
 
-// Segment group layout: exactly 4 children (must match ruler.mjs)
+// Segment group layout: exactly 3 children (must match ruler.mjs): halo, path, labelGroup ([strokeLabel, fillLabel])
 const SEGMENT_HALO = 0;
 const SEGMENT_PATH = 1;
-const SEGMENT_STROKE_LABEL = 2;
-const SEGMENT_FILL_LABEL = 3;
+const SEGMENT_LABEL_GROUP = 2;
 
 const RULER_LABEL_STROKE_PX = 3;
 const DEFAULT_STROKE_WIDTH_PX = 2;
@@ -21,14 +20,15 @@ const DEFAULT_HALO_EXTRA_PX = 2;
 const DEFAULT_LABEL_FONT_SIZE = 12;
 
 /**
- * Build one 4-child segment group from a path and saved measurement properties.
- * Used when loading from GeoJSON; does not depend on ruler tool.
+ * Build one 3-child segment group from a path and saved measurement properties.
+ * Label group counter-rotates with view (upright like PointText). Used when loading from GeoJSON.
  * @param {paper.Path} path - existing path (two segments)
+ * @param {paper.Group} parentGroup - parent that will receive the segment (must be in project so labelGroup.view exists)
  * @param {Object} props - geometry.properties (lengths, units, strokeWidthPixels, haloExtraPixels, labelFontSize, etc.)
  * @param {number} index - segment index
  * @returns {paper.Group}
  */
-function buildSegmentGroupFromPath(path, props, index) {
+function buildSegmentGroupFromPath(path, parentGroup, props, index) {
     const strokeWidthPixels = props.strokeWidthPixels != null ? props.strokeWidthPixels : DEFAULT_STROKE_WIDTH_PX;
     const haloExtraPixels = props.haloExtraPixels != null ? props.haloExtraPixels : DEFAULT_HALO_EXTRA_PX;
     const labelFontSize = props.labelFontSize != null ? props.labelFontSize : DEFAULT_LABEL_FONT_SIZE;
@@ -56,7 +56,7 @@ function buildSegmentGroupFromPath(path, props, index) {
     path.rescale.strokeWidth = strokeWidthPixels;
 
     const strokeLabel = new paper.PointText({
-        point: midpoint.clone(),
+        point: new paper.Point(0, 0),
         content: lengthDisplay,
         fontSize: labelFontSize,
         fillColor: null,
@@ -69,7 +69,7 @@ function buildSegmentGroupFromPath(path, props, index) {
     };
 
     const fillLabel = new paper.PointText({
-        point: midpoint.clone(),
+        point: new paper.Point(0, 0),
         content: lengthDisplay,
         fontSize: labelFontSize,
         fillColor,
@@ -77,11 +77,47 @@ function buildSegmentGroupFromPath(path, props, index) {
     });
     fillLabel.rescale = { fontSize: (z) => labelFontSize / z };
 
+    const labelGroup = new paper.Group();
+    labelGroup.pivot = new paper.Point(0, 0);
+    labelGroup.applyMatrix = true;
+    labelGroup.position = midpoint.clone();
+    labelGroup.addChild(strokeLabel);
+    labelGroup.addChild(fillLabel);
+
     const group = new paper.Group();
     group.addChild(haloPath);
     group.addChild(path);
-    group.addChild(strokeLabel);
-    group.addChild(fillLabel);
+    group.addChild(labelGroup);
+
+    parentGroup.addChild(group);
+    if (fillLabel.applyRescale) fillLabel.applyRescale();
+    if (strokeLabel.applyRescale) strokeLabel.applyRescale();
+    const labelHeight = (fillLabel.getInternalBounds && fillLabel.getInternalBounds()) ? fillLabel.getInternalBounds().height : (fillLabel.bounds ? fillLabel.bounds.height : 0);
+    if (labelHeight > 0) {
+        fillLabel.point = new paper.Point(0, labelHeight / 2);
+        strokeLabel.point = new paper.Point(0, labelHeight / 2);
+        labelGroup.pivot = new paper.Point(0, labelHeight / 2);
+    }
+    if (labelGroup.view) {
+        function handleFlip() {
+            const angle = labelGroup.view.getFlipped() ? labelGroup.view.getRotation() : 180 - labelGroup.view.getRotation();
+            labelGroup.rotate(-angle);
+            labelGroup.scale(-1, 1);
+            labelGroup.rotate(angle);
+        }
+        if (labelGroup.view.getFlipped()) {
+            handleFlip();
+        }
+        const offsetAngle = labelGroup.view.getFlipped() ? 180 - labelGroup.view.getRotation() : -labelGroup.view.getRotation();
+        labelGroup.rotate(offsetAngle);
+        labelGroup.view.on('rotate', (ev) => {
+            const angle = -ev.rotatedBy;
+            labelGroup.rotate(angle);
+        });
+        labelGroup.view.on('flip', () => {
+            handleFlip();
+        });
+    }
     return group;
 }
 
@@ -117,8 +153,7 @@ class RulerMeasurement extends MultiLinestring {
         grp.removeChildren();
         for (let i = 0; i < children.length; i++) {
             const path = children[i];
-            const segGroup = buildSegmentGroupFromPath(path, props, i);
-            grp.addChild(segGroup);
+            buildSegmentGroupFromPath(path, grp, props, i);
         }
 
         grp.data.ruler = {

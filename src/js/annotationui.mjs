@@ -39,8 +39,7 @@
 //styles in annotationui.css
 
 import { addCSS } from './utils/addcss.mjs';
-import { AnnotationToolbar } from './annotationtoolbar.mjs';
-import { LayerUI } from './layerui.mjs';
+import { AnnotationLayout } from './annotationlayout.mjs';
 import { FileDialog } from './filedialog.mjs';
 
 addCSS('annotationui.css', 'annotationui');
@@ -49,7 +48,8 @@ addCSS('editablecontent.css', 'editablecontent');
 /**
  * @memberof OSDPaperjsAnnotation
  * @class
- * A class for creating and managing the annotation UI
+ * A class for creating and managing the annotation UI. Intended to be constructed only via AnnotationToolkit.addAnnotationUI().
+ * Toolbar and layer UI are owned by the toolkit; this class uses them via getToolbar()/getLayerUI() and places them via AnnotationLayout.
  */
 class AnnotationUI {
 
@@ -57,18 +57,19 @@ class AnnotationUI {
    * Creates an instance of AnnotationUI.
    *
    * @param {Object} annotationToolkit - The annotation toolkit object.
+   * @param {AnnotationToolset} toolset - The toolset (owned by the toolkit).
    * @param {Object} opts - The options for the AnnotationUI.
    * @param {boolean} [opts.autoOpen=true] - Determines if the AnnotationUI should be automatically opened.
    * @param {Array} [opts.featureCollections=[]] - An array of feature collections to load.
    * @param {boolean} [opts.addButton=true] - Determines if the AnnotationUI button should be added.
-   * @param {boolean} [opts.addToolbar=true] - Determines if the AnnotationToolbar should be added.
-   * @param {string[]} [opts.tools=null] - An array of tool names to use in the AnnotationToolbar. If not provided, all available tools will be used.
-   * @param {boolean} [opts.addLayerUI=true] - Determines if the LayerUI dialog should be added.
+   * @param {boolean} [opts.addToolbar=true] - Whether toolbar is requested (toolkit already created it via getToolbar if true).
+   * @param {string[]} [opts.tools=null] - An array of tool names to use in the AnnotationToolbar.
+   * @param {boolean} [opts.addLayerUI=true] - Whether layer UI is requested (toolkit already created it via getLayerUI if true).
    * @param {boolean} [opts.addFileButton=true] - Determines if the file button should be added for saving/loading annotations.
    * @param {boolean} [opts.buttonTogglesToolbar=true] - Determines if the AnnotationToolbar visibility is toggled by the AnnotationUI button.
    * @param {boolean} [opts.buttonTogglesLayerUI=true] - Determines if the LayerUI visibility is toggled by the AnnotationUI button.
    */
-  constructor(annotationToolkit, opts) {
+  constructor(annotationToolkit, toolset, opts) {
     let defaultOpts = {
       autoOpen: true,
       featureCollections: [],
@@ -82,74 +83,39 @@ class AnnotationUI {
     };
 
     opts = this.options = Object.assign(defaultOpts, opts);
-    let _viewer = this._viewer = annotationToolkit.viewer; // shorter alias
-    this._isOpen = !!opts.autoOpen;
+    this._annotationToolkit = annotationToolkit;
+    this._viewer = annotationToolkit.viewer;
 
-  
-    /**
-     * _toolbar: AnnotationToolbar UI for interactive tools
-     * @private
-     */
-    if(opts.addToolbar){
-      this._toolbar = new AnnotationToolbar(annotationToolkit.overlay.paperScope, opts.tools);
+    const toolbar = annotationToolkit.getToolbar?.() ?? null;
+    const layerUI = annotationToolkit.getLayerUI?.() ?? null;
+    const toolbarRef = toolbar ? { element: toolbar.element, show: () => toolbar.show(), hide: () => toolbar.hide() } : null;
+    const layerUIRef = layerUI ? { element: layerUI.element, show: () => layerUI.show(), hide: () => layerUI.hide() } : null;
+
+    this._layout = new AnnotationLayout(this._viewer, {
+      toolbar: toolbarRef,
+      layerUI: layerUIRef,
+      addButton: opts.addButton !== false,
+      addViewerButton: (config) => annotationToolkit.overlay.addViewerButton(config),
+      buttonTogglesToolbar: opts.buttonTogglesToolbar !== false,
+      buttonTogglesLayerUI: opts.buttonTogglesLayerUI !== false,
+      initialOpen: opts.autoOpen !== false,
+    });
+
+    if (opts.autoOpen !== false) {
+      toolbar?.show();
+      layerUI?.show();
+    } else {
+      toolbar?.hide();
+      layerUI?.hide();
     }
 
-    /**
-     * _fileDialog: FileDialog UI for loading/saving data
-     * @private
-     */
-    this._fileDialog = new FileDialog(annotationToolkit, { appendTo: _viewer.element });
+    this._fileDialog = new FileDialog(annotationToolkit, { appendTo: this._viewer.element });
     this._filebutton = null;
     if (opts.addFileButton) {
-      //Handles the click event of the file button.
       this._filebutton = annotationToolkit.overlay.addViewerButton({
-        onClick: () => {
-          this._fileDialog.toggle();
-        },
+        onClick: () => this._fileDialog.toggle(),
         faIconClass: 'fa-save',
         tooltip: 'Save/Load Annotations',
-      });
-    }
-
-    /**
-     * _layerUI: LayerUI: graphical user interface for this annotation layer
-     * @private
-     */
-    
-    if (opts.addLayerUI) {
-      this._layerUI = new LayerUI(annotationToolkit, opts.addFileButton);
-    }
-
-    this._addToViewer();
-
-    if(opts.autoOpen){
-      this._layerUI?.show();
-      this._toolbar?.show();
-    } else {
-      this._layerUI?.hide();
-      this._toolbar?.hide();
-    }
-
-
-    /**
-     * _button: Button for toggling LayerUI and/or AnnotationToolbar
-     * @private
-     */
-    this._button = null;
-    if (opts.addButton) {
-      this._button = annotationToolkit.overlay.addViewerButton({
-        onClick: () => {
-          this._isOpen = !this._isOpen;
-          if (this._isOpen) {
-            this.options.buttonTogglesToolbar && this._toolbar.show();
-            this.options.buttonTogglesLayerUI && this._layerUI.show();
-          } else {
-            this.options.buttonTogglesToolbar && this._toolbar.hide();
-            this.options.buttonTogglesLayerUI && this._layerUI.hide();
-          }
-        },
-        faIconClass: 'fa-pencil',
-        tooltip: 'Annotation Interface',
       });
     }
 
@@ -159,136 +125,57 @@ class AnnotationUI {
   }
 
   /**
-   * Destroys the AnnotationUI and cleans up its resources.
+   * Destroys the AnnotationUI and cleans up its resources. Does not destroy the toolkit's toolbar or layer UI.
    */
   destroy() {
-    this._layerUI.destroy();
-    this._toolbar.destroy();
-    if (this._button) {
-      let idx = this._viewer.buttonGroup.buttons.indexOf(this._button);
-      if (idx > -1) {
-        this._viewer.buttonGroup.buttons.splice(idx, 1);
-      }
-      this._button.element.remove();
-    }
+    this._layout?.destroy();
+    this._layout = null;
     if (this._filebutton) {
-      let idx = this._viewer.buttonGroup.buttons.indexOf(this._filebutton);
-      if (idx > -1) {
-        this._viewer.buttonGroup.buttons.splice(idx, 1);
-      }
+      const idx = this._viewer.buttonGroup.buttons.indexOf(this._filebutton);
+      if (idx > -1) this._viewer.buttonGroup.buttons.splice(idx, 1);
       this._filebutton.element.remove();
+      this._filebutton = null;
     }
   }
 
   /**
    * Show the LayerUI interface
    */
-  showUI(){
-    this.ui.show();
+  showUI() {
+    this.ui?.show();
   }
 
   /**
    * Hide the LayerUI interface
    */
-  hideUI(){
-    this.ui.hide();
+  hideUI() {
+    this.ui?.hide();
   }
 
   /**
    * Show the toolbar
    */
-  showToolbar(){
-    this.toolbar.show();
+  showToolbar() {
+    this.toolbar?.show();
   }
 
   /**
    * Hide the toolbar
    */
-  hideToolbar(){
-    this.toolbar.hide();
+  hideToolbar() {
+    this.toolbar?.hide();
   }
 
-  get ui(){
-    return this._layerUI;
+  get ui() {
+    return this._annotationToolkit.getLayerUI?.() ?? null;
   }
 
   get toolbar() {
-    return this._toolbar;
+    return this._annotationToolkit.getToolbar?.() ?? null;
   }
 
-  get element(){
-    return this._layerUI.element;
-  }
-
-  /**
-   * Set up the grid that adds the UI to the viewer
-   */
-  _addToViewer(){
-    
-    const container = document.createElement('div');
-    
-    this._viewer.element.appendChild(container);
-    
-    const top = document.createElement('div');
-    const bottom = document.createElement('div');
-    const center = document.createElement('div');
-    const left = document.createElement('div');
-    const right = document.createElement('div');
-    const resizeRight = document.createElement('div');
-    const classes={
-      'annotation-ui-grid':container,
-      'top':top,
-      'bottom':bottom,
-      'center':center,
-      'left':left,
-      'right':right,
-      'resize-right':resizeRight
-    }
-
-    Object.entries(classes).forEach(([name, node])=>node.classList.add(name));
-    [center, right, left, top, bottom].forEach(div => container.appendChild(div));
-
-    center.appendChild(this._viewer.container);
-    right.appendChild(resizeRight);
-    right.appendChild(this.element);
-    top.appendChild(this._toolbar.element);
-
-    // keep a reference to the UI element
-    const element = this.element;
-
-    // add event handlers to do the resizing.
-    const body = document.querySelector('body');
-    let offset;
-
-    resizeRight.addEventListener('mousedown',function(ev){
-      this.classList.add('resizing');
-      body.classList.add('.annotation-ui-noselect');
-
-      document.addEventListener('mousemove', moveHandler);
-      document.addEventListener('mouseleave', finishResize);
-      document.addEventListener('mouseup', finishResize);
-
-      offset = element.getBoundingClientRect().left - ev.x;
-
-    });
-
-    function moveHandler(ev){
-      if(resizeRight.classList.contains('resizing')){
-        if(ev.movementX){
-          const bounds = element.getBoundingClientRect();
-          element.style.width = bounds.right - ev.x - offset + 'px';
-        }
-        ev.preventDefault();
-      }
-    }
-    function finishResize(ev){
-      document.removeEventListener('mousemove', moveHandler);
-      document.removeEventListener('mouseleave', finishResize);
-      document.removeEventListener('mouseup', finishResize);
-      body.classList.remove('.annotation-ui-noselect');
-      resizeRight.classList.remove('resizing');
-    }
-    
+  get element() {
+    return this.ui?.element ?? null;
   }
 
 }

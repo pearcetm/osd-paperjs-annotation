@@ -224,6 +224,17 @@ class AnnotationItem{
         return geom;
     }
 
+    /**
+     * Assign the enhanced replaceWith behavior to a paper item (preserves selection and emits item-replaced).
+     * For internal use by convertPaperItemToAnnotation only. Subclasses should not call this; assign to
+     * this.paperItem and the setter will run convertPaperItemToAnnotation, which applies this enhancement.
+     * @static
+     * @param {paper.Item} paperItem - The paper item to enhance.
+     */
+    static enhanceReplaceWith(paperItem) {
+        paperItem.replaceWith = enhancedReplaceWith;
+    }
+
 }
 export{AnnotationItem};
 
@@ -364,8 +375,7 @@ function convertPaperItemToAnnotation(annotationItem){
 
     item.annotationItem = annotationItem;
     
-    //enhance replaceWith functionatily
-    item.replaceWith = enhancedReplaceWith;
+    AnnotationItem.enhanceReplaceWith(item);
 
     //selected or not
     if('selected' in properties){
@@ -385,6 +395,7 @@ function enhancedReplaceWith(newItem){
     if(!newItem.isGeoJSONFeature){
         console.warn('An item with isGeoJSONFeature==false was used to replace an item.');
     }
+    const selectedBeforeReplace = this.selected;
     newItem._callbacks = this._callbacks;
     let rescale = OpenSeadragon.extend(true,this.rescale,newItem.rescale);
     newItem.style = this.style; //to do: make this work with rescale properties, so that rescale.strokeWidth doesn't overwrite other props
@@ -393,7 +404,7 @@ function enhancedReplaceWith(newItem){
     this.emit('item-replaced',{item:newItem});
     newItem.project.emit('item-replaced',{item:newItem});
     paper.Item.prototype.replaceWith.call(this, newItem);
-    newItem.selected = this.selected;
+    newItem.selected = selectedBeforeReplace;
     newItem.updateFillOpacity();
     newItem.applyRescale();
     newItem.project.view.update();

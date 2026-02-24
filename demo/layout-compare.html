@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Toolkit configuration demo</title>
+    <script type="text/javascript" src="./openseadragon/openseadragon.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/paper.js/0.12.17/paper-full.js"></script>
+    <script type="module" src="./layout-compare.mjs"></script>
+    <link rel="stylesheet" href="./demo.css">
+    <link rel="stylesheet" href="../src/css/annotationui.css">
+    <link rel="stylesheet" href="../src/css/editablecontent.css">
+</head>
+<body>
+    <div class="content">
+        <div class="demo">
+            <h3>Toolkit configuration demo</h3>
+            <p>Select a configuration to see how the toolkit can be set up. Code snippets below show the application code for each configuration.</p>
+            <div class="demo-section">
+                <label for="config-select">Configuration:</label>
+                <select id="config-select" class="config-select"></select>
+            </div>
+            <div id="layout-main" class="demo-section layout-main">
+                <div id="headless-controls" class="headless-controls" style="display: none;" aria-label="Headless tool controls">
+                    <div class="headless-tool-buttons btn-group btn-group-sm"></div>
+                    <div id="headless-tool-outlet" class="headless-tool-outlet"></div>
+                </div>
+                <div class="viewer-row">
+                    <div id="viewer-container" class="viewer"></div>
+                    <div id="layerui-container" class="layerui-panel"></div>
+                </div>
+                <div id="toolbar-container" class="toolbar-strip"></div>
+            </div>
+            <div class="demo-section code-snippet">
+                <h4>Application code</h4>
+                <pre><code id="config-code"></code></pre>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

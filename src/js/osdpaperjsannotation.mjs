@@ -37,6 +37,8 @@
  */
 
 import { AnnotationToolkit } from './annotationtoolkit.mjs';
+import { AnnotationToolset } from './annotationtoolset.mjs';
+import { AnnotationLayout } from './annotationlayout.mjs';
 import { AnnotationToolbar } from './annotationtoolbar.mjs';
 import { FeatureCollectionUI } from './featurecollectionui.mjs';
 import { FeatureUI } from './featureui.mjs';
@@ -72,6 +74,8 @@ import { WandTool } from './papertools/wand.mjs';
 
 export const OSDPaperjsAnnotation = {
     AnnotationToolkit: AnnotationToolkit,
+    AnnotationToolset: AnnotationToolset,
+    AnnotationLayout: AnnotationLayout,
     AnnotationToolbar: AnnotationToolbar,
     FeatureCollectionUI :FeatureCollectionUI,
     FeatureUI:FeatureUI,
@@ -104,6 +108,7 @@ export const OSDPaperjsAnnotation = {
 // export various classes and functions so they can be imported by name
 export {
     AnnotationToolkit,
+    AnnotationLayout,
     AnnotationToolbar,
     FeatureCollectionUI,
     FeatureUI,

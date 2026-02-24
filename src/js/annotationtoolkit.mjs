@@ -40,13 +40,17 @@
 import { OpenSeadragon } from './osd-loader.mjs';
 import { paper } from './paperjs.mjs';
 import { AnnotationUI } from './annotationui.mjs';
+import { AnnotationToolset } from './annotationtoolset.mjs';
+import { AnnotationToolbar } from './annotationtoolbar.mjs';
+import { LayerUI } from './layerui.mjs';
+import { AnnotationLayout } from './annotationlayout.mjs';
 import { PaperOverlay } from './paper-overlay.mjs';
 import { AnnotationItemFactory } from './paperitems/annotationitem.mjs';
 import { MultiPolygon } from './paperitems/multipolygon.mjs';
 import { Placeholder } from './paperitems/placeholder.mjs';
 import { Linestring } from './paperitems/linestring.mjs';
 import { MultiLinestring } from './paperitems/multilinestring.mjs';
-import { RulerMeasurement } from './paperitems/rulermeasurement.mjs';
+import { RulerMeasurement } from './paperitems/rulerMeasurement.mjs';
 import { Raster } from './paperitems/raster.mjs';
 import { Point } from './paperitems/point.mjs';
 import { PointText } from './paperitems/pointtext.mjs';
@@ -102,7 +106,10 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
      * @constructor
      * @param {OpenSeadragon.Viewer} openSeadragonViewer - The OpenSeadragon viewer object.
      * @param {object} [opts]
-     * @param {object} [opts.addUI] a configuration object for the UI, if desired
+     * @param {object|boolean} [opts.addUI] - Deprecated. If set, annotation UI is created via addAnnotationUI. Prefer toolbar/layerUI/layout for new code.
+     * @param {object|boolean} [opts.toolbar] - If set, toolbar is created at construction (same as getToolbar after). Value: true or { tools?: string[] }.
+     * @param {object|boolean} [opts.layerUI] - If set, layer UI is created at construction (same as getLayerUI after). Value: true or { addFileButton?: boolean }.
+     * @param {object|boolean} [opts.layout] - If set, AnnotationLayout (grid + optional toggle) is created at construction (same as addAnnotationLayout after). Value: true or { addButton?, initialOpen?, buttonTogglesToolbar?, buttonTogglesLayerUI? }.
      * @param {object} [opts.overlay] a PaperOverlay object to use
      * @param {object} [opts.destroyOnViewerClose] whether to destroy the toolkit and its overlay when the viewer closes
      * @param {object} [opts.cacheAnnotations] whether to keep annotations in memory for images which aren't currently open
@@ -117,6 +124,9 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
 
         this._defaultOptions = {
             addUI: false,
+            toolbar: false,
+            layerUI: false,
+            layout: false,
             overlay: null,
             destroyOnViewerClose: false,
             cacheAnnotations: false,
@@ -187,12 +197,22 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
 
         this._cached = {};
 
-        if(this.options.addUI){
-            let uiOpts = {}
-            if(typeof opts.addUI === 'object'){
+        if (this.options.addUI) {
+            let uiOpts = {};
+            if (typeof this.options.addUI === 'object') {
                 uiOpts = this.options.addUI;
             }
-            this.addAnnotationUI(uiOpts)
+            this.addAnnotationUI(uiOpts);
+        } else {
+            if (this.options.toolbar) {
+                this.getToolbar(this.options.toolbar === true ? {} : this.options.toolbar);
+            }
+            if (this.options.layerUI) {
+                this.getLayerUI(this.options.layerUI === true ? {} : this.options.layerUI);
+            }
+            if (this.options.layout) {
+                this.addAnnotationLayout(this.options.layout === true ? {} : this.options.layout);
+            }
         }
 
     }
@@ -266,8 +286,114 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
      * @returns {AnnotationUI} The annotation UI object.
      */
     addAnnotationUI(opts = {}){
-        if (!this._annotationUI) this._annotationUI = new AnnotationUI(this, opts);
+        if (!this._annotationUI) {
+            console.warn('[osd-paperjs-annotation] addAnnotationUI is deprecated. Use getToolbar(), getLayerUI(), and addAnnotationLayout() (or place the returned .element nodes in your own layout). See the layout configuration demo.');
+            this._toolset = this._toolset || new AnnotationToolset(this.paperScope, opts.tools);
+            if (opts.addToolbar !== false) this.getToolbar({ tools: opts.tools });
+            if (opts.addLayerUI !== false) this.getLayerUI({ addFileButton: opts.addFileButton });
+            this._annotationUI = new AnnotationUI(this, this._toolset, opts);
+        }
         return this._annotationUI;
+    }
+
+    /**
+     * Get the toolkit's toolbar, creating it on first call with the given opts. Use .element to get the root DOM node (official API; do not look up by CSS class or id).
+     * @param {Object} [opts] - Used only when creating: opts.tools - optional array of tool names.
+     * @returns {AnnotationToolbar|null} The toolbar instance, or null if addAnnotationUI exists but did not create a toolbar.
+     */
+    getToolbar(opts = {}) {
+        if (this._toolbar) return this._toolbar;
+        if (this._annotationUI) return this._toolbar ?? null;
+        this._toolset = this._toolset || new AnnotationToolset(this.paperScope, opts.tools ?? null);
+        this._toolbar = new AnnotationToolbar(this._toolset);
+        return this._toolbar;
+    }
+
+    /**
+     * Get the toolkit's layer UI, creating it on first call with the given opts. Use .element to get the root DOM node (official API; do not look up by CSS class or id).
+     * @param {Object} [opts] - Used only when creating: opts.addFileButton - optional boolean.
+     * @returns {LayerUI|null} The layer UI instance, or null if addAnnotationUI exists but did not create a layer UI.
+     */
+    getLayerUI(opts = {}) {
+        if (this._layerUI) return this._layerUI;
+        if (this._annotationUI) return this._layerUI ?? null;
+        this._layerUI = new LayerUI(this, opts.addFileButton);
+        return this._layerUI;
+    }
+
+    /**
+     * Get the root DOM element for the toolbar (official API). Returns null if no toolbar exists.
+     * @param {Object} [opts] - Passed to getToolbar(opts) when lazy-creating.
+     * @returns {HTMLElement|null}
+     */
+    getToolbarElement(opts = {}) {
+        return this.getToolbar(opts)?.element ?? null;
+    }
+
+    /**
+     * Get the root DOM element for the layer UI (official API). Returns null if no layer UI exists.
+     * @param {Object} [opts] - Passed to getLayerUI(opts) when lazy-creating.
+     * @returns {HTMLElement|null}
+     */
+    getLayerUIElement(opts = {}) {
+        return this.getLayerUI(opts)?.element ?? null;
+    }
+
+    /**
+     * Build the annotation layout (grid, resize, toggle button) using AnnotationLayout.
+     * Uses getToolbar() and getLayerUI() (lazy-creating with default opts if needed). Mutually exclusive with addAnnotationUI.
+     * @param {Object} [opts] - addButton, buttonTogglesToolbar, buttonTogglesLayerUI, initialOpen (all optional).
+     * @returns {AnnotationLayout|null} The layout, or null if addAnnotationUI already exists.
+     */
+    addAnnotationLayout(opts = {}) {
+        if (this._annotationUI) return null;
+        if (this._annotationLayout) return this._annotationLayout;
+        const toolbar = this.getToolbar();
+        const layerUI = this.getLayerUI();
+        const toolbarRef = toolbar ? {
+            element: toolbar.element,
+            show: () => toolbar.show(),
+            hide: () => toolbar.hide(),
+        } : null;
+        const layerUIRef = layerUI ? {
+            element: layerUI.element,
+            show: () => layerUI.show(),
+            hide: () => layerUI.hide(),
+        } : null;
+        this._annotationLayout = new AnnotationLayout(this.viewer, {
+            toolbar: toolbarRef,
+            layerUI: layerUIRef,
+            addButton: opts.addButton !== false,
+            addViewerButton: (config) => this.overlay.addViewerButton(config),
+            buttonTogglesToolbar: opts.buttonTogglesToolbar !== false,
+            buttonTogglesLayerUI: opts.buttonTogglesLayerUI !== false,
+            initialOpen: opts.initialOpen !== false,
+        });
+        if (opts.initialOpen !== false) {
+            toolbar && toolbar.show();
+            layerUI && layerUI.show();
+        } else {
+            toolbar && toolbar.hide();
+            layerUI && layerUI.hide();
+        }
+        return this._annotationLayout;
+    }
+
+    /**
+     * Add a set of tools without the full UI (toolbar). Use when addUI is false.
+     * Creates a toolset (tool layer + tool instances) so getTool(name) and activation work.
+     * @param {string[]} [toolNames] - Array of tool names (e.g. ['default', 'ruler']). Default tool is always included.
+     */
+    addTools(toolNames) {
+        if (!this._toolset) this._toolset = new AnnotationToolset(this.paperScope, toolNames);
+    }
+    /**
+     * Get a tool instance by name (e.g. 'ruler', 'default'). Works with full UI or headless addTools().
+     * @param {string} name - Tool name.
+     * @returns {import('./papertools/base.mjs').ToolBase|null}
+     */
+    getTool(name) {
+        return this._toolset ? this._toolset.getTool(name) : null;
     }
     /**
      * Destroy the toolkit and its components.
@@ -278,7 +404,22 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
         if(tool) tool.deactivate(true);
 
         this.viewer.annotationToolkit = null;
+        if (this._annotationLayout) {
+            this._annotationLayout.destroy();
+            this._annotationLayout = null;
+        }
         this._annotationUI && this._annotationUI.destroy();
+        this._annotationUI = null;
+        if (this._toolbar) {
+            this._toolbar.destroy();
+            this._toolbar = null;
+        }
+        if (this._layerUI) {
+            this._layerUI.destroy();
+            this._layerUI = null;
+        }
+        if (this._toolset) this._toolset.destroy();
+        this._toolset = null;
         this.overlay.destroy();
         this.raiseEvent('destroy');
     }
@@ -470,6 +611,21 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
         if(fcGroup.children){
             fcGroup.insertChildren(0, fcGroup.children);
         }
+    }
+
+    /**
+     * Ensure there is a selected placeholder in a feature collection so a tool can draw into it (e.g. when activating with createNewItem and no layer UI).
+     * @private
+     * @param {Object} [style] - Optional style for the placeholder (e.g. strokeColor). If omitted, project default is used.
+     */
+    _ensureNewItemForTool(style) {
+        const groups = this.getFeatureCollectionGroups();
+        const fcGroup = groups.length > 0 ? groups[0] : this._createFeatureCollectionGroup();
+        if (!fcGroup) return;
+        const placeholder = this.makePlaceholderItem(style);
+        fcGroup.addChild(placeholder.paperItem);
+        AnnotationToolkit.registerFeature(placeholder.paperItem);
+        placeholder.paperItem.select();
     }
 
     /**

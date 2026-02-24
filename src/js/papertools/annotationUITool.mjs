@@ -90,11 +90,16 @@ class AnnotationUITool extends ToolBase{
     /**
      * Activate the annotation tool, making it ready for interaction.
      * If another tool was active, it's deactivated before activating this tool.
+     * @param {Object} [options] - Optional. createNewItem: if true and there is no selected "new item" to draw into, the toolkit will create one (e.g. for headless use). style: optional style for that new item.
      */
-    activate(){
+    activate(options = {}){
         if(this._active) return;//breaks possible infinite loops of tools activating/deactivating each other
         this._active=true;
         this.getSelectedItems();
+        if (options.createNewItem && !this._itemToCreate && this.project.paperScope.annotationToolkit) {
+            this.project.paperScope.annotationToolkit._ensureNewItemForTool(options.style);
+            this.getSelectedItems();
+        }
         this._setTargetLayer();
         let previousTool=this.project.paperScope.getActiveTool();
         this.tool.activate();

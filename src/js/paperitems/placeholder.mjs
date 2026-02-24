@@ -129,8 +129,6 @@ function initialize(geoJSONGeometryType, geometrySubtype) {
     };
     
     let newItem = paper.Item.fromGeoJSON(geoJSON);
-    // newItem.selected=item.selected;
     item.replaceWith(newItem);
-        
     return newItem;
 }
