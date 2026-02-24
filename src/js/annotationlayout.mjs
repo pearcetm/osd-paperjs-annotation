@@ -1,6 +1,6 @@
 /**
  * OpenSeadragon paperjs overlay plugin based on paper.js
- * @version 0.4.13
+ * @version 0.4.15
  *
  * Lightweight layout for annotation UI: grid, resize handle, and optional toggle button.
  * Does not depend on AnnotationToolkit or AnnotationUI. Caller provides optional
