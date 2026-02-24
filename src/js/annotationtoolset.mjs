@@ -2,7 +2,7 @@
  * OpenSeadragon paperjs overlay plugin based on paper.js
  * @version 0.4.15
  *
- * Copyright (c) 2022-2024, Thomas Pearce
+ * Copyright (c) 2022-2026, Thomas Pearce
  * All rights reserved.
  */
 
