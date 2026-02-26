@@ -207,11 +207,12 @@ class PointText extends AnnotationItem{
         };
     }
     /**
-     * Get the style properties of the point.
+     * Get the style properties of the point (group's style, including rescale).
      * @returns {Object} The style properties of the point.
+     * @description Returns the group's style so export includes rescale and matches setStyle; enables rescale (e.g. rescale.size) to round-trip in GeoJSON.
      */
     getStyleProperties(){
-        return this.paperItem.children[0].style.toJSON();
+        return this.paperItem.style.toJSON();
     }
     /**
      * Handle transformation operations on the point.

@@ -144,12 +144,12 @@ class Point extends AnnotationItem{
         return [circle.bounds.center.x, circle.bounds.center.y];
     }
     /**
-     * Retrieves the style properties of the point.
+     * Retrieves the style properties of the point (group's style, including rescale).
      * @returns {Object} The style properties in JSON format.
-     * @description This method returns the style properties of the point in JSON format.
+     * @description Returns the group's style so export includes rescale and matches setStyle; enables stroke width and rescale to round-trip in GeoJSON.
      */
     getStyleProperties(){
-        return this.paperItem.children[0].style.toJSON();
+        return this.paperItem.style.toJSON();
     }
     /**
      * Perform actions during a transformation on the point.
