@@ -144,12 +144,19 @@ class Point extends AnnotationItem{
         return [circle.bounds.center.x, circle.bounds.center.y];
     }
     /**
-     * Retrieves the style properties of the point (group's style, including rescale).
+     * Retrieves the style properties of the point for GeoJSON export.
      * @returns {Object} The style properties in JSON format.
-     * @description Returns the group's style so export includes rescale and matches setStyle; enables stroke width and rescale to round-trip in GeoJSON.
+     * @description Returns drawing style from the circle (strokeColor, fillColor, etc.) merged with
+     * serializable rescale from the group (e.g. strokeWidth) so both colors and logical stroke width round-trip.
      */
     getStyleProperties(){
-        return this.paperItem.style.toJSON();
+        const circleStyle = this.paperItem.children[0].style.toJSON();
+        const rescale = this.paperItem.rescale;
+        const rescaleExport = {};
+        if (rescale && typeof rescale.strokeWidth === 'number') {
+            rescaleExport.strokeWidth = rescale.strokeWidth;
+        }
+        return Object.keys(rescaleExport).length ? { ...circleStyle, rescale: rescaleExport } : circleStyle;
     }
     /**
      * Perform actions during a transformation on the point.
