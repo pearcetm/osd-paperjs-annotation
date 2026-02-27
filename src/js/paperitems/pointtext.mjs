@@ -63,7 +63,7 @@ class PointText extends AnnotationItem{
         let radius = 4.0;
         let coords = geoJSON.geometry.coordinates.slice(0, 2);
         
-        let point = this.paperItem = new paper.Group();
+        let point = new paper.Group();
 
         point.pivot = new paper.Point(0,0);
         point.applyMatrix = true;
@@ -92,7 +92,6 @@ class PointText extends AnnotationItem{
         //     }
         // });
 
-        this.refreshTextOffset();
         textitem.on('content-changed',()=>{
             this.refreshTextOffset();
         })
@@ -133,8 +132,8 @@ class PointText extends AnnotationItem{
         });
         point.applyRescale();
         
-
-
+        this.paperItem = point;
+        this.refreshTextOffset();
     }
     /**
      * Set the style properties of the point with text.
