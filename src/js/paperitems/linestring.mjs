@@ -90,11 +90,11 @@ class Linestring extends AnnotationItem{
 
     /**
      * Get the type of this object.
-     * @returns { Object } with fields `type === 'Linestring'`
+     * @returns { Object } with fields `type === 'LineString'`
      */
     getGeoJSONType(){
         return {
-            type: 'Linestring',
+            type: 'LineString',
         }
     }
         /**
