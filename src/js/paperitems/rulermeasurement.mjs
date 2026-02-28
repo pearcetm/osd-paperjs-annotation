@@ -15,9 +15,35 @@ const SEGMENT_PATH = 1;
 const SEGMENT_LABEL_GROUP = 2;
 
 const RULER_LABEL_STROKE_PX = 3;
+const RULER_LABEL_GAP_PX = 4; // Gap between line and label in screen pixels (must match ruler.mjs)
 const DEFAULT_STROKE_WIDTH_PX = 2;
 const DEFAULT_HALO_EXTRA_PX = 2;
 const DEFAULT_LABEL_FONT_SIZE = 12;
+
+/**
+ * Compute placement center for label offset above segment (constant pixel gap, zoom-aware).
+ * Same math as ruler tool's _computeLabelPlacementCenter; used only by the item.
+ * @param {paper.PointText} label - label with bounds set (after applyRescale)
+ * @param {paper.Point} p1 - segment start point
+ * @param {paper.Point} p2 - segment end point
+ * @param {paper.Point} midpoint - segment midpoint
+ * @param {number} gapPixels - gap in screen pixels (e.g. RULER_LABEL_GAP_PX)
+ * @returns {paper.Point} placement center (midpoint if segment too short, otherwise offset above)
+ */
+function computeLabelPlacementCenter(label, p1, p2, midpoint, gapPixels) {
+    const segmentDir = p2.subtract(p1);
+    const segmentLength = segmentDir.length;
+    if (segmentLength < 1e-6) return midpoint;
+
+    const normalizedDir = segmentDir.normalize();
+    const normal = new paper.Point(normalizedDir.y, -normalizedDir.x);
+    const zoomFactor = label.view.scaling.x * label.layer.scaling.x;
+    const gapPaper = gapPixels / zoomFactor;
+    const labelBounds = (label.getInternalBounds && label.getInternalBounds()) ? label.getInternalBounds() : label.bounds;
+    const labelHeight = labelBounds ? labelBounds.height : 0;
+    const offset = labelHeight / 2 + gapPaper;
+    return midpoint.add(normal.multiply(offset));
+}
 
 /**
  * Build one 3-child segment group from a path and saved measurement properties.
@@ -80,7 +106,6 @@ function buildSegmentGroupFromPath(path, parentGroup, props, index) {
     const labelGroup = new paper.Group();
     labelGroup.pivot = new paper.Point(0, 0);
     labelGroup.applyMatrix = true;
-    labelGroup.position = midpoint.clone();
     labelGroup.addChild(strokeLabel);
     labelGroup.addChild(fillLabel);
 
@@ -98,7 +123,9 @@ function buildSegmentGroupFromPath(path, parentGroup, props, index) {
         strokeLabel.point = new paper.Point(0, labelHeight / 2);
         labelGroup.pivot = new paper.Point(0, labelHeight / 2);
     }
+    // Position and upright: same pass as PointText (group is in project after addChild)
     if (labelGroup.view) {
+        labelGroup.position = computeLabelPlacementCenter(fillLabel, p1, p2, midpoint, RULER_LABEL_GAP_PX).clone();
         function handleFlip() {
             const angle = labelGroup.view.getFlipped() ? labelGroup.view.getRotation() : 180 - labelGroup.view.getRotation();
             labelGroup.rotate(-angle);
@@ -175,6 +202,69 @@ class RulerMeasurement extends MultiLinestring {
             type: 'MultiLineString',
             subtype: 'Measurement',
         };
+    }
+
+    /**
+     * Update label content and position for one segment group (content from path length + item.data.ruler).
+     * Used by the ruler tool when refreshing a single segment (e.g. after drag) or all segments.
+     * @param {paper.Group} segmentGroup - group with [halo, path, labelGroup] where labelGroup has [strokeLabel, fillLabel]
+     */
+    refreshSegmentLabel(segmentGroup) {
+        if (!segmentGroup || segmentGroup.children.length !== 3) return;
+        const path = segmentGroup.children[SEGMENT_PATH];
+        const labelGroup = segmentGroup.children[SEGMENT_LABEL_GROUP];
+        if (!path || path.segments.length < 2 || !labelGroup || labelGroup.children.length < 2) return;
+        const strokeLabel = labelGroup.children[0];
+        const fillLabel = labelGroup.children[1];
+        const p1 = path.segments[0].point;
+        const p2 = path.segments[1].point;
+        const distance = p1.getDistance(p2);
+        const midpoint = p1.add(p2).divide(2);
+        const ruler = this.paperItem.data.ruler || {};
+        const unitsPerPixel = ruler.unitsPerPixel != null ? ruler.unitsPerPixel : 1;
+        const units = ruler.units != null ? ruler.units : 'px';
+        const labelFontSize = ruler.labelFontSize != null ? ruler.labelFontSize : DEFAULT_LABEL_FONT_SIZE;
+        const lengthDisplay = (distance * unitsPerPixel).toFixed(2) + ' ' + units;
+
+        fillLabel.justification = 'center';
+        fillLabel.fillColor = path.strokeColor || new paper.Color('black');
+        fillLabel.strokeColor = null;
+        fillLabel.content = lengthDisplay;
+        fillLabel.rescale = fillLabel.rescale || {};
+        fillLabel.rescale.fontSize = (z) => labelFontSize / z;
+        delete fillLabel.rescale.strokeWidth;
+        strokeLabel.justification = 'center';
+        strokeLabel.strokeColor = 'white';
+        strokeLabel.fillColor = null;
+        strokeLabel.content = lengthDisplay;
+        strokeLabel.rescale = strokeLabel.rescale || {};
+        strokeLabel.rescale.fontSize = (z) => labelFontSize / z;
+        strokeLabel.rescale.strokeWidth = (z) => RULER_LABEL_STROKE_PX / z;
+        if (fillLabel.applyRescale) fillLabel.applyRescale();
+        if (strokeLabel.applyRescale) strokeLabel.applyRescale();
+
+        const labelHeight = (fillLabel.getInternalBounds && fillLabel.getInternalBounds()) ? fillLabel.getInternalBounds().height : (fillLabel.bounds ? fillLabel.bounds.height : 0);
+        if (labelHeight > 0) {
+            fillLabel.point = new paper.Point(0, labelHeight / 2);
+            strokeLabel.point = new paper.Point(0, labelHeight / 2);
+            labelGroup.pivot = new paper.Point(0, labelHeight / 2);
+        }
+        if (fillLabel.view) {
+            labelGroup.position = computeLabelPlacementCenter(fillLabel, p1, p2, midpoint, RULER_LABEL_GAP_PX).clone();
+        }
+    }
+
+    /**
+     * Update label content and position for all segment groups. Used by the ruler tool when units/settings change.
+     */
+    refreshSegmentLabels() {
+        const item = this.paperItem;
+        if (!item || !item.children.length) return;
+        item.children.forEach((child) => {
+            if (child instanceof paper.Group && child.children.length === 3) {
+                this.refreshSegmentLabel(child);
+            }
+        });
     }
 
     /**

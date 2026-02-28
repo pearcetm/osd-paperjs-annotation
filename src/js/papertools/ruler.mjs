@@ -226,63 +226,48 @@ class RulerTool extends AnnotationUITool {
         const labelGroup = segmentGroup.children[SEGMENT_LABEL_GROUP];
         const haloPath = segmentGroup.children[SEGMENT_HALO];
         if (!path || path.segments.length < 2 || !labelGroup || labelGroup.children.length < 2) return;
-        const strokeLabel = labelGroup.children[0];
-        const fillLabel = labelGroup.children[1];
-        const p1 = path.segments[0].point;
-        const p2 = path.segments[1].point;
-        const distance = p1.getDistance(p2);
-        const midpoint = p1.add(p2).divide(2);
-        const formatted = this.toolbarControl.formatDistance(distance);
-        const fillColor = path.strokeColor || new paper.Color('black');
 
-        fillLabel.justification = 'center';
-        fillLabel.fillColor = fillColor;
-        fillLabel.strokeColor = null;
-        fillLabel.content = formatted;
-        fillLabel.rescale = fillLabel.rescale || {};
-        fillLabel.rescale.fontSize = (z) => this.labelFontSize / z;
-        delete fillLabel.rescale.strokeWidth;
-        strokeLabel.justification = 'center';
-        strokeLabel.strokeColor = 'white';
-        strokeLabel.fillColor = null;
-        strokeLabel.content = formatted;
-        strokeLabel.rescale = strokeLabel.rescale || {};
-        strokeLabel.rescale.fontSize = (z) => this.labelFontSize / z;
-        strokeLabel.rescale.strokeWidth = (z) => RULER_LABEL_STROKE_PX / z;
-        if (fillLabel.applyRescale) fillLabel.applyRescale();
-        if (strokeLabel.applyRescale) strokeLabel.applyRescale();
-        // Label anchor (point) so visual center is at (0, height/2) in group space (PointText: baseline at point, center at point.y - height/2)
-        const labelHeight = (fillLabel.getInternalBounds && fillLabel.getInternalBounds()) ? fillLabel.getInternalBounds().height : (fillLabel.bounds ? fillLabel.bounds.height : 0);
-        if (labelHeight > 0) {
-            fillLabel.point = new paper.Point(0, labelHeight / 2);
-            strokeLabel.point = new paper.Point(0, labelHeight / 2);
-            labelGroup.pivot = new paper.Point(0, labelHeight / 2);
-        }
-        const placementCenter = this._computeLabelPlacementCenter(fillLabel, p1, p2, midpoint);
-        labelGroup.position = placementCenter.clone();
-        // Attach view rotate/flip once so labels stay upright (same pattern as PointText)
-        if (!labelGroup._uprightAttached && labelGroup.view) {
-            labelGroup._uprightAttached = true;
-            function handleFlip() {
-                const angle = labelGroup.view.getFlipped() ? labelGroup.view.getRotation() : 180 - labelGroup.view.getRotation();
-                labelGroup.rotate(-angle);
-                labelGroup.scale(-1, 1);
-                labelGroup.rotate(angle);
+        // Segment in item: delegate content and position to the item (no view listeners here)
+        if (this.item && segmentGroup.parent === this.item && this.item.annotationItem && typeof this.item.annotationItem.refreshSegmentLabel === 'function') {
+            this.item.annotationItem.refreshSegmentLabel(segmentGroup);
+        } else {
+            // Preview or non-Measurement: tool updates content and position (no listeners)
+            const strokeLabel = labelGroup.children[0];
+            const fillLabel = labelGroup.children[1];
+            const p1 = path.segments[0].point;
+            const p2 = path.segments[1].point;
+            const distance = p1.getDistance(p2);
+            const midpoint = p1.add(p2).divide(2);
+            const formatted = this.toolbarControl.formatDistance(distance);
+            const fillColor = path.strokeColor || new paper.Color('black');
+
+            fillLabel.justification = 'center';
+            fillLabel.fillColor = fillColor;
+            fillLabel.strokeColor = null;
+            fillLabel.content = formatted;
+            fillLabel.rescale = fillLabel.rescale || {};
+            fillLabel.rescale.fontSize = (z) => this.labelFontSize / z;
+            delete fillLabel.rescale.strokeWidth;
+            strokeLabel.justification = 'center';
+            strokeLabel.strokeColor = 'white';
+            strokeLabel.fillColor = null;
+            strokeLabel.content = formatted;
+            strokeLabel.rescale = strokeLabel.rescale || {};
+            strokeLabel.rescale.fontSize = (z) => this.labelFontSize / z;
+            strokeLabel.rescale.strokeWidth = (z) => RULER_LABEL_STROKE_PX / z;
+            if (fillLabel.applyRescale) fillLabel.applyRescale();
+            if (strokeLabel.applyRescale) strokeLabel.applyRescale();
+            const labelHeight = (fillLabel.getInternalBounds && fillLabel.getInternalBounds()) ? fillLabel.getInternalBounds().height : (fillLabel.bounds ? fillLabel.bounds.height : 0);
+            if (labelHeight > 0) {
+                fillLabel.point = new paper.Point(0, labelHeight / 2);
+                strokeLabel.point = new paper.Point(0, labelHeight / 2);
+                labelGroup.pivot = new paper.Point(0, labelHeight / 2);
             }
-            if (labelGroup.view.getFlipped()) {
-                handleFlip();
-            }
-            const offsetAngle = labelGroup.view.getFlipped() ? 180 - labelGroup.view.getRotation() : -labelGroup.view.getRotation();
-            labelGroup.rotate(offsetAngle);
-            labelGroup.view.on('rotate', (ev) => {
-                const angle = -ev.rotatedBy;
-                labelGroup.rotate(angle);
-            });
-            labelGroup.view.on('flip', () => {
-                handleFlip();
-            });
+            const placementCenter = this._computeLabelPlacementCenter(fillLabel, p1, p2, midpoint);
+            labelGroup.position = placementCenter.clone();
         }
-        // Sync halo geometry to path
+
+        // Sync halo geometry to path (tool responsibility whenever it touches segment groups)
         if (haloPath instanceof paper.Path && haloPath.segments.length === path.segments.length) {
             path.segments.forEach((seg, i) => {
                 haloPath.segments[i].point = seg.point.clone();
