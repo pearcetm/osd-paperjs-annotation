@@ -79,20 +79,20 @@ class LinestringTool extends PolygonTool{
 
         this.clickAction = 'startPath';
 
-        this.extensions.onActivate= ()=>{
-            this.cursor.radius = this.radius/this.project.getZoom();
-            this.cursor.strokeWidth=1/this.project.getZoom();
+        const parentOnActivate = this.extensions.onActivate;
+        const parentOnDeactivate = this.extensions.onDeactivate;
+        this.extensions.onActivate = () => {
+            parentOnActivate();
+            this.cursor.radius = this.radius / this.project.getZoom();
+            this.cursor.strokeWidth = 1 / this.project.getZoom();
             this.refreshCursorVisibility();
-            tool.minDistance=4/self.project.getZoom();
-            tool.maxDistance=10/self.project.getZoom();
-        }
-
-        this.extensions.onDeactivate = finished => {
-            this.cursor.visible=false;
-            if(finished){
-                this.finish();
-            } 
-        }
+            tool.minDistance = 4 / self.project.getZoom();
+            tool.maxDistance = 10 / self.project.getZoom();
+        };
+        this.extensions.onDeactivate = (finished) => {
+            this.cursor.visible = false;
+            parentOnDeactivate(finished);
+        };
         
         tool.onMouseWheel = ev => {
             ev.preventDefault();
@@ -123,12 +123,13 @@ class LinestringTool extends PolygonTool{
         if(this.itemToCreate){
             this.itemToCreate.initializeGeoJSONFeature('MultiLineString');
             this.refreshItems();
-            
+            this._cacheCurrentItem();
+            if (this.item) this.saveHistory();
             this.startNewPath(ev);
             return;
         }
         
-        let hitResult = this.item?.hitTest(ev.point,{fill:false,stroke:false,segments:true,tolerance:this.getTolerance(5)})
+        let hitResult = this.item?.hitTest(ev.point,{fill:false,stroke:true,segments:true,tolerance:this.getTolerance(5)})
         if(hitResult){
             //if erasing and hitResult is a segment, hitResult.segment.remove()
             if(hitResult.type=='segment' && this.eraseMode){
@@ -156,7 +157,7 @@ class LinestringTool extends PolygonTool{
     onMouseMove(ev){
         this.cursor.position=ev.original.point;
 
-        let hitResult = this.item?.hitTest(ev.point,{fill:false,stroke:false,segments:true,tolerance:this.getTolerance(5)})
+        let hitResult = this.item?.hitTest(ev.point,{fill:false,stroke:true,segments:true,tolerance:this.getTolerance(5)})
         if(hitResult){
             let action = hitResult.type + (this.eraseMode ? '-erase' : '');
             this.project.overlay.addClass('tool-action').setAttribute('data-tool-action',action);
@@ -180,6 +181,14 @@ class LinestringTool extends PolygonTool{
     
     onMouseUp(ev){
         this.finishCurrentPath();
+        if (this.draggingSegment) {
+            this.draggingSegment = null;
+            if (!this.item.isBoundingElement) {
+                const boundingItems = this.item.parent.children.filter(i => i.isBoundingElement);
+                this.item.applyBounds(boundingItems);
+            }
+        }
+        if (this.item) this.saveHistory();
     }
 
     /**
@@ -198,9 +207,10 @@ class LinestringTool extends PolygonTool{
         this.drawingGroup.selected=true;
         this.drawingGroup.selectedColor= this.eraseMode ? 'red' : null;
         let path = this.drawing().path;
+        const styleItem = this.item || this.itemToCreate;
         path.set({
-            strokeWidth:this.radius  * 2 / this.targetLayer.scaling.x / this.project.getZoom(),
-            strokeColor:this.item.strokeColor,
+            strokeWidth: this.radius * 2 / this.targetLayer.scaling.x / this.project.getZoom(),
+            strokeColor: styleItem?.strokeColor ?? this.cursor.fillColor,
             strokeJoin: 'round',
             strokeCap: 'round',
         });
