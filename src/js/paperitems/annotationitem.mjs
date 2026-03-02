@@ -367,11 +367,11 @@ function convertPaperItemToAnnotation(annotationItem){
     //style
     annotationItem.setStyle(properties);
 
-    //set fillOpacity property based on initial fillColor alpha value
-    item.fillOpacity = item.fillColor ? item.fillColor.alpha : 1;
+    // set fillOpacity and strokeOpacity properties based on the properties object
+    // If explicit opacity was provided, keep it; otherwise derive from the color alpha (back-compat).
+    item.fillOpacity = (properties && properties.fillOpacity != null) ? Number(properties.fillOpacity) : (item.fillColor ? item.fillColor.alpha : 1);
 
-    //set strokeOpacity so updateStrokeOpacity() runs and stroke is visible on load (e.g. ruler)
-    item.strokeOpacity = item.strokeColor ? item.strokeColor.alpha : 1;
+    item.strokeOpacity = (properties && properties.strokeOpacity != null) ? Number(properties.strokeOpacity) : (item.strokeColor ? item.strokeColor.alpha : 1);
 
     //displayName
     item.displayName = properties.label || annotationItem.getLabel();

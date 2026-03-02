@@ -116,6 +116,9 @@ class Raster extends AnnotationItem{
                 grp.children[0].fillColor = null;
             }
         }
+        let strokeColor;
+        let strokeWidth;
+        let rescale;
         if(inputClip.length > 0){
             let clipGroup = new paper.Group();
             grp.insertChild(0, clipGroup);
@@ -125,9 +128,12 @@ class Raster extends AnnotationItem{
                 delete item.isGeoJSONFeature; //so it doesn't trigger event handlers about new features being added/moved/removed
                 item._annotationItem = item.annotationItem; //rename to private property
                 delete item.annotationItem; //so it isn't found by descendants query
-                setTimeout(()=>item.strokeColor = (i.properties||i).strokeColor);
-                item.strokeWidth = (i.properties||i).strokeWidth;
-                item.rescale = (i.properties||i).rescale;
+                // setTimeout(()=>item.strokeColor = (i.properties||i).strokeColor);
+                // item.strokeWidth = (i.properties||i).strokeWidth;
+                // item.rescale = (i.properties||i).rescale;
+                strokeColor = (i.properties||i).strokeColor;
+                strokeWidth = (i.properties||i).strokeWidth;
+                rescale = (i.properties||i).rescale;
                 clipGroup.addChild(item);
             });
             
@@ -140,7 +146,9 @@ class Raster extends AnnotationItem{
         grp.on('selected',()=>{
             grp.clipped && (grp.children[0].selected = false);
         })
-        
+        grp.strokeColor = strokeColor;
+        grp.strokeWidth = strokeWidth;
+        grp.rescale = rescale;
         this.paperItem = grp;
     }
 
