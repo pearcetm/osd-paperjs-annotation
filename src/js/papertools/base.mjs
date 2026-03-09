@@ -154,12 +154,29 @@ class ToolBase{
     }
     /**
      * Add an event listener for a specific event type.
+     * Remove the listener when no longer needed (e.g. when a UI component unmounts) via removeEventListener
+     * to avoid stale callbacks and listener buildup.
      * @param {string} eventType - The type of event to listen for.
      * @param {Function} callback - The callback function to be executed when the event occurs.
-     */    
+     */
     addEventListener(eventType,callback){
         this.listeners[eventType] = this.listeners[eventType]||[];
         this.listeners[eventType].push(callback);
+    }
+    /**
+     * Remove an event listener. Removes the first registered listener for eventType that is === callback.
+     * Use the same function reference that was passed to addEventListener. No-op if the callback was never added or was already removed.
+     * @param {string} eventType - The type of event.
+     * @param {Function} callback - The callback to remove (must be the same reference used in addEventListener).
+     */
+    removeEventListener(eventType,callback){
+        const list = this.listeners[eventType];
+        if (!list || !list.length) return;
+        const i = list.indexOf(callback);
+        if (i !== -1) {
+            list.splice(i, 1);
+            if (list.length === 0) delete this.listeners[eventType];
+        }
     }
     /**
      * Broadcast an event to all registered event listeners for the specified event type.

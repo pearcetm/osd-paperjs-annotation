@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tool event listener API</title>
+    <script type="text/javascript" src="./openseadragon/openseadragon.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/paper.js/0.12.17/paper-full.js"></script>
+    <script type="module" src="./listener-api.mjs"></script>
+    <link rel="stylesheet" href="./demo.css">
+</head>
+<body>
+    <div class="content">
+        <div class="demo">
+            <h3>Tool event listener API</h3>
+            <p>Tools extend ToolBase and support <code>addEventListener(eventType, callback)</code> and <code>removeEventListener(eventType, callback)</code>. Use the same function reference to remove a listener. Remove listeners when no longer needed (e.g. when a UI component unmounts) to avoid stale callbacks and listener buildup.</p>
+            <p><strong>Tool vs project events:</strong> Tool events (<code>activated</code>, <code>deactivated</code>) are broadcast by the tool instance; subscribe with <code>tool.addEventListener(type, fn)</code> and remove with <code>tool.removeEventListener(type, fn)</code>. Project-level events (e.g. <code>ruler-measurement-updated</code>) are emitted on <code>paperScope.project</code>; subscribe with <code>project.on(type, fn)</code> and remove with <code>project.off(type, fn)</code>. This demo subscribes to both so the status updates when you switch tools and when you add or edit a measurement.</p>
+            <div class="demo-section" id="listener-api-controls" aria-label="Listener API controls"></div>
+            <div id="listener-api-tool-outlet" class="headless-toolbar-outlet" aria-label="Active tool toolbar"></div>
+            <div id="listener-api-viewer" class="viewer"></div>
+        </div>
+    </div>
+</body>
+</html>
