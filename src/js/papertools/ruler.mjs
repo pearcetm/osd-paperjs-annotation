@@ -609,8 +609,8 @@ class RulerTool extends AnnotationUITool {
 
         const segmentGroup = this.buildSegmentGroup(p1, p2, { preview: false });
         this.item.addChild(segmentGroup);
-        this._ensurePathLabel(segmentGroup);
         this._writeRulerDataToItem();
+        this._ensurePathLabel(segmentGroup);
 
         // Only the ruler line (path) gets selection style; not the segment group or labels
         const parentSelected = this.item.selected;

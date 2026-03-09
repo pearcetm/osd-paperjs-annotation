@@ -57,7 +57,13 @@ function setupRulerHeadlessButtonsAndOutlet(toolkit) {
 
     function formatMeasurementLabel(payload) {
         if (payload.label && payload.label !== 'Measurement') return payload.label;
-        if (payload.distance != null) return `Length: ${Number(payload.distance).toFixed(2)} px`;
+        if (payload.distance != null) {
+            const ruler = payload.item?.data?.ruler;
+            const units = ruler?.units ?? 'px';
+            const unitsPerPixel = ruler?.unitsPerPixel != null ? Number(ruler.unitsPerPixel) : 1;
+            const value = payload.distance * unitsPerPixel;
+            return `Length: ${Number(value).toFixed(2)} ${units}`;
+        }
         return payload.label || 'Measurement';
     }
 
