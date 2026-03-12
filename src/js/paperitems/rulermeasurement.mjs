@@ -173,23 +173,30 @@ class RulerMeasurement extends MultiLinestring {
                 haloExtraPixels: props.haloExtraPixels != null ? props.haloExtraPixels : DEFAULT_HALO_EXTRA_PX,
                 labelFontSize: props.labelFontSize != null ? props.labelFontSize : DEFAULT_LABEL_FONT_SIZE,
             };
-            return;
+        } else {
+            const children = grp.children.slice();
+            grp.removeChildren();
+            for (let i = 0; i < children.length; i++) {
+                const path = children[i];
+                buildSegmentGroupFromPath(path, grp, props, i);
+            }
+
+            grp.data.ruler = {
+                units: props.units != null ? props.units : 'px',
+                unitsPerPixel: props.unitsPerPixel != null ? props.unitsPerPixel : 1,
+                strokeWidthPixels: props.strokeWidthPixels != null ? props.strokeWidthPixels : DEFAULT_STROKE_WIDTH_PX,
+                haloExtraPixels: props.haloExtraPixels != null ? props.haloExtraPixels : DEFAULT_HALO_EXTRA_PX,
+                labelFontSize: props.labelFontSize != null ? props.labelFontSize : DEFAULT_LABEL_FONT_SIZE,
+            };
         }
 
-        const children = grp.children.slice();
-        grp.removeChildren();
-        for (let i = 0; i < children.length; i++) {
-            const path = children[i];
-            buildSegmentGroupFromPath(path, grp, props, i);
+        // Reposition labels when zoom changes so the screen-pixel gap stays constant.
+        const view = this.paperItem.project && this.paperItem.project.view;
+        if (view) {
+            this._zoomChangedHandler = () => this.refreshSegmentLabels();
+            view.on('zoom-changed', this._zoomChangedHandler);
+            this.paperItem.on('removed', () => view.off('zoom-changed', this._zoomChangedHandler));
         }
-
-        grp.data.ruler = {
-            units: props.units != null ? props.units : 'px',
-            unitsPerPixel: props.unitsPerPixel != null ? props.unitsPerPixel : 1,
-            strokeWidthPixels: props.strokeWidthPixels != null ? props.strokeWidthPixels : DEFAULT_STROKE_WIDTH_PX,
-            haloExtraPixels: props.haloExtraPixels != null ? props.haloExtraPixels : DEFAULT_HALO_EXTRA_PX,
-            labelFontSize: props.labelFontSize != null ? props.labelFontSize : DEFAULT_LABEL_FONT_SIZE,
-        };
     }
 
     static supportsGeoJSONType(type, subtype = null) {
@@ -259,7 +266,7 @@ class RulerMeasurement extends MultiLinestring {
      */
     refreshSegmentLabels() {
         const item = this.paperItem;
-        if (!item || !item.children.length) return;
+        if (!item || !item.layer || !item.children.length) return;
         item.children.forEach((child) => {
             if (child instanceof paper.Group && child.children.length === 3) {
                 this.refreshSegmentLabel(child);

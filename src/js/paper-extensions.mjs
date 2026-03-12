@@ -362,6 +362,7 @@ function descendantsDefCompoundPath(){
 
 function applyRescale(){
     let item = this;
+    if (!item.view || !item.layer) return;
     let rescale = item.rescale;
     if(rescale){
         // // this accounts for view level zoom as well as the scale of the tiled image itself
