@@ -229,6 +229,7 @@ class PolygonTool extends AnnotationUITool{
                 let boundingItems = this.item.parent.children.filter(i=>i.isBoundingElement);
                 this.item.applyBounds(boundingItems);
             }
+            if (this.item) this.emitItemEvent('item-updated', { item: this.item, tool: this });
         }
         this.saveHistory()
     }
@@ -290,6 +291,8 @@ class PolygonTool extends AnnotationUITool{
     finishCurrentPath(){
         let dr = this.drawing();
         if(!dr || !this.item || !this.item.parent) return;
+        const hadRingsBefore = this.item.children.length > 0;
+        const pathAdded = dr.path;
         dr.path.closed=true;
             
         let result = this.eraseMode ? this.item.subtract(dr.path,{insert:false}) : this.item.unite(dr.path,{insert:false});
@@ -303,6 +306,8 @@ class PolygonTool extends AnnotationUITool{
             this.item.addChildren(result.children);
             this.item.children.forEach(child=>child.selected=false);//only have the parent set selected status
             result.remove();
+            if (!hadRingsBefore) this.emitItemEvent('item-created', { item: this.item, tool: this });
+            else this.emitItemEvent('item-updated', { item: this.item, tool: this, subpathAdded: true, subpath: pathAdded });
         }
         this.drawingGroup.removeChildren();
         

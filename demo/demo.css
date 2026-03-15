@@ -202,3 +202,20 @@ body{
 .headless-tool-outlet .dropdown.active {
     display: block;
 }
+
+.event-log {
+    font-family: monospace;
+    font-size: 12px;
+    max-height: 200px;
+    overflow: auto;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    background: #f9f9f9;
+}
+.event-log:empty::before {
+    content: 'Log is empty. Turn on event log and use the tools.';
+    color: #888;
+}
+.btn-group { display: flex; gap: 0.25rem; flex-wrap: wrap; }
+.btn, .btn-sm { padding: 0.25rem 0.5rem; cursor: pointer; }

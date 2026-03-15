@@ -267,6 +267,7 @@ class TransformTool extends AnnotationUITool{
             this.transforming.forEach(item=>{
                 item.matrix.apply(true,true);
                 item.onTransform && item.onTransform('complete');
+                if (self.emitItemEvent && item) self.emitItemEvent('item-updated', { item, tool: self });
             })
 
             //set up new objects for transforming, and reset matrices of the tool

@@ -243,10 +243,14 @@ class RectangleTool extends AnnotationUITool{
     }
     
     onMouseUp(){
+        const wasCreating = this.mode === 'creating';
+        const wasEditing = this.mode === 'corner-drag' || this.mode === 'fill-drag';
         this.mode='modifying';
         this.crosshairTool.visible=false;
         this.creating=null;
         this.toolbarControl.updateInstructions('Point:Rectangle');
+        if (wasCreating && this.item) this.emitItemEvent('item-created', { item: this.item, tool: this });
+        if (wasEditing && this.item) this.emitItemEvent('item-updated', { item: this.item, tool: this });
     }
     
 }

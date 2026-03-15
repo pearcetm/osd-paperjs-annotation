@@ -607,6 +607,7 @@ class RulerTool extends AnnotationUITool {
         if (p1.getDistance(p2) < ZERO_LENGTH_EPSILON) return;
         if (!this._ensureItemForDrawing()) return;
 
+        const hadSegmentsBefore = this.item.children.length > 0;
         const segmentGroup = this.buildSegmentGroup(p1, p2, { preview: false });
         this.item.addChild(segmentGroup);
         this._writeRulerDataToItem();
@@ -627,6 +628,8 @@ class RulerTool extends AnnotationUITool {
             this.toolbarControl.updateInstructions('modifying');
         }
         this._emitMeasurementUpdated();
+        if (!hadSegmentsBefore) this.emitItemEvent('item-created', { item: this.item, tool: this });
+        else this.emitItemEvent('item-updated', { item: this.item, tool: this, subpathAdded: true, subpath: segmentGroup });
     }
 
     onMouseDown(ev) {
@@ -749,6 +752,7 @@ class RulerTool extends AnnotationUITool {
             this._editPath = null;
             this._editSegmentIndex = null;
             this._emitMeasurementUpdated();
+            if (this.item) this.emitItemEvent('item-updated', { item: this.item, tool: this });
             return;
         }
         if (this._firstPoint !== null && this._didDrag) {

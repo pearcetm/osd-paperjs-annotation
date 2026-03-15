@@ -36,6 +36,8 @@ myPaperItem.rescale = {strokeWidth: 2}
 
 See the [JSDoc documentation pages](https://pearcetm.github.io/osd-paperjs-annotation/docs/OSDPaperjsAnnotation.html) for information about how to use the library.
 
+**Tool and project events:** Tools emit `item-created`, `item-updated`, and `item-converted` (and the project re-emits them). Subscribe on a tool or on the project to react to annotation creation and edits. See [docs/tool-and-project-events.md](docs/tool-and-project-events.md).
+
 ## Demo pages:
 
 See the [Demo pages](https://pearcetm.github.io/osd-paperjs-annotation/demo/) to try out the functionality.

@@ -187,6 +187,21 @@ class ToolBase{
         let listeners = this.listeners[eventType];
         listeners && listeners.forEach(l=>l(...data));
     }
+
+    /**
+     * Emit an item lifecycle event from both this tool and the project, so listeners can subscribe
+     * either to the tool (tool-specific) or to the project (any tool). Use for item-created, item-updated, item-converted.
+     * @param {string} eventType - One of 'item-created', 'item-updated', 'item-converted'.
+     * @param {Object} payload - Must include { item, tool }. When a new part was added, set subpathAdded: true
+     *   and include subpath: the Paper item that was added (e.g. Path or Group), so consumers can use it without guessing.
+     */
+    emitItemEvent(eventType, payload) {
+        if (!payload || !payload.item) return;
+        if (!payload.tool) payload = { ...payload, tool: this };
+        this.broadcast(eventType, payload);
+        const project = this.project?.paperScope?.project;
+        if (project) project.emit(eventType, payload);
+    }
     
     /**
      * Capture user input to enable or disable OpenSeadragon mouse navigation.

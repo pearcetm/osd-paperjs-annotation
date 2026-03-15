@@ -114,8 +114,10 @@ class RasterTool extends AnnotationUITool{
                     properties:{}
                 }
 
-                item.replaceWith(paper.Item.fromGeoJSON(geoJSON));
+                let newItem = paper.Item.fromGeoJSON(geoJSON);
+                item.replaceWith(newItem);
                 self.refreshItems();
+                if (newItem) self.emitItemEvent('item-converted', { item: newItem, tool: self });
 
                 this.remove();
             }

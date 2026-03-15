@@ -187,6 +187,7 @@ class LinestringTool extends PolygonTool{
                 const boundingItems = this.item.parent.children.filter(i => i.isBoundingElement);
                 this.item.applyBounds(boundingItems);
             }
+            if (this.item) this.emitItemEvent('item-updated', { item: this.item, tool: this });
         }
         if (this.item) this.saveHistory();
     }
@@ -227,7 +228,10 @@ class LinestringTool extends PolygonTool{
         
         let newPath = this.drawing().path;
         if(newPath.segments.length>1){
+            const hadPathsBefore = this.item.children.length > 0;
             this.item.addChild(this.drawing().path);
+            if (!hadPathsBefore) this.emitItemEvent('item-created', { item: this.item, tool: this });
+            else this.emitItemEvent('item-updated', { item: this.item, tool: this, subpathAdded: true, subpath: newPath });
         }
         this.drawingGroup.removeChildren();
     }

@@ -146,6 +146,7 @@ class PointTextTool extends AnnotationUITool{
             this.item.position=ev.point;
             this.cursor.visible=false;
             this.toolbarControl.updateInstructions('Point:PointText');
+            if (this.item) this.emitItemEvent('item-created', { item: this.item, tool: this });
         }
         else{
             if(this.item && this.item.hitTest(ev.point)){ // for some reason hit-testing needs to be done in transformed coordinates not original
@@ -160,8 +161,10 @@ class PointTextTool extends AnnotationUITool{
         }
     }
     onMouseUp(){
+        const wasDragging = this.dragging;
         this.dragging=false;
         this.project.overlay.removeClass('point-tool-grabbing');
+        if (wasDragging && this.item) this.emitItemEvent('item-updated', { item: this.item, tool: this });
     }
     
 

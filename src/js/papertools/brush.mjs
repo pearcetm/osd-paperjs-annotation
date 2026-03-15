@@ -223,6 +223,8 @@ import { makeFaIcon } from '../utils/faIcon.mjs';
    * @private
    */ 
     modifyArea(){
+        if (!this.item) return;
+        const hadGeometryBefore = this.item.children.length > 0;
         let path = this.pathGroup.lastChild;
         let shape;
 
@@ -279,6 +281,8 @@ import { makeFaIcon } from '../utils/faIcon.mjs';
             this.item.addChildren(childrenToAdd);
             
             result.remove();
+            if (!hadGeometryBefore) this.emitItemEvent('item-created', { item: this.item, tool: this });
+            else this.emitItemEvent('item-updated', { item: this.item, tool: this, subpathAdded: true });
         }
         shape.remove();
     }  

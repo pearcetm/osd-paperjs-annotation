@@ -12,7 +12,6 @@ const commonViewerOpts = {
     }, "https://openseadragon.github.io/example-images/highsmith/highsmith.dzi"],
     sequenceMode: true,
     minZoomImageRatio: 0.01,
-    visibilityRatio: 0,
     crossOriginPolicy: 'Anonymous',
     ajaxWithCredentials: false,
     drawer: 'webgl',

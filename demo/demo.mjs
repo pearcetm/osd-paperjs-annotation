@@ -34,7 +34,74 @@ v1.addOnceHandler('open',()=>{
         tk.addFeatureCollections(x, true, v1.world.getItemAt(0));
     });
 
+    setupEventLog(tk);
 });
+
+function setupEventLog(tk) {
+    const logEl = document.getElementById('demo-event-log');
+    const toggleBtn = document.getElementById('demo-event-log-toggle');
+    const clearBtn = document.getElementById('demo-event-log-clear');
+    if (!logEl || !toggleBtn || !clearBtn) return;
+
+    const project = tk.paperScope?.project;
+    const toolset = tk._toolset;
+    if (!project || !toolset || !toolset.tools) return;
+
+    const toolNames = new Map();
+    Object.entries(toolset.tools).forEach(([name, tool]) => toolNames.set(tool, name));
+
+    function log(text) {
+        const line = document.createElement('div');
+        line.textContent = `[${new Date().toLocaleTimeString()}] ${text}`;
+        logEl.appendChild(line);
+        logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    const onItemCreated = (p) => {
+        const sub = p.subpath ? `, subpath: ${p.subpath.type || 'Item'}` : '';
+        log(`item-created (tool: ${toolNames.get(p.tool) || '?'}${sub})`);
+    };
+    const onItemUpdated = (p) => {
+        const sub = p.subpathAdded ? `, subpathAdded${p.subpath ? `, subpath: ${p.subpath.type || 'Item'}` : ''}` : '';
+        log(`item-updated (tool: ${toolNames.get(p.tool) || '?'}${sub})`);
+    };
+    const onItemConverted = (p) => log(`item-converted (tool: ${toolNames.get(p.tool) || '?'})`);
+    const onActivated = (p) => log(`activated: ${toolNames.get(p.target) || '?'}`);
+    const onDeactivated = (p) => log(`deactivated: ${toolNames.get(p.target) || '?'}`);
+
+    let listening = false;
+
+    function attach() {
+        if (listening) return;
+        project.on('item-created', onItemCreated);
+        project.on('item-updated', onItemUpdated);
+        project.on('item-converted', onItemConverted);
+        Object.values(toolset.tools).forEach((tool) => {
+            tool.addEventListener('activated', onActivated);
+            tool.addEventListener('deactivated', onDeactivated);
+        });
+        listening = true;
+        toggleBtn.textContent = 'Stop event log';
+        log('Event log started.');
+    }
+
+    function detach() {
+        if (!listening) return;
+        project.off('item-created', onItemCreated);
+        project.off('item-updated', onItemUpdated);
+        project.off('item-converted', onItemConverted);
+        Object.values(toolset.tools).forEach((tool) => {
+            tool.removeEventListener('activated', onActivated);
+            tool.removeEventListener('deactivated', onDeactivated);
+        });
+        listening = false;
+        toggleBtn.textContent = 'Start event log';
+        log('Event log stopped.');
+    }
+
+    toggleBtn.addEventListener('click', () => (listening ? detach() : attach()));
+    clearBtn.addEventListener('click', () => { logEl.replaceChildren(); });
+}
 
 // if(document.getElementById('local-viewer')){
 //     let v2 = window.v2 = OpenSeadragon({

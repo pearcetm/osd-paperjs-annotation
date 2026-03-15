@@ -237,7 +237,8 @@ import { convertFaIcons, makeFaIcon } from '../utils/faIcon.mjs';
                 item.applyRescale();
             }
             
-        })
+        });
+        this._emitStyleApplied();
     }
 
      /**
@@ -254,6 +255,7 @@ import { convertFaIcons, makeFaIcon } from '../utils/faIcon.mjs';
                 item.updateStrokeOpacity();
             }
         });
+        this._emitStyleApplied();
     }
 
     /**
@@ -282,8 +284,8 @@ import { convertFaIcons, makeFaIcon } from '../utils/faIcon.mjs';
             if(item.isGeoJSONFeature){
                 item.updateFillOpacity();
             }
-        })
-        
+        });
+        this._emitStyleApplied();
     }
     /**
      * Apply the given stroke color value to the target items.
@@ -300,8 +302,15 @@ import { convertFaIcons, makeFaIcon } from '../utils/faIcon.mjs';
                 // item.config.properties.strokeColor = item.strokeColor;
                 item.updateStrokeOpacity();
             }
-        })
-        
+        });
+        this._emitStyleApplied();
+    }
+
+    _emitStyleApplied(){
+        this.targetItems.forEach(it=>{
+            const item = it.isGeoJSONFeature ? it : (it.parent && it.parent.isGeoJSONFeature ? it.parent : it);
+            if (item && this.emitItemEvent) this.emitItemEvent('item-updated', { item, tool: this });
+        });
     }
 
 }

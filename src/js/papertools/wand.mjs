@@ -242,6 +242,7 @@ class WandTool extends AnnotationUITool{
      * Applies changes based on the magic wand selection.
      */
     applyChanges(){
+        const wasCreating = !!this.itemToCreate;
         if(this.itemToCreate){
             this.itemToCreate.initializeGeoJSONFeature('MultiPolygon');
             this.refreshItems();
@@ -287,7 +288,10 @@ class WandTool extends AnnotationUITool{
         
         
         this.getImageData();
-        
+        if (this.item) {
+            if (wasCreating) this.emitItemEvent('item-created', { item: this.item, tool: this });
+            else this.emitItemEvent('item-updated', { item: this.item, tool: this });
+        }
     };
     
     /**
