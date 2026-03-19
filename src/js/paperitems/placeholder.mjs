@@ -117,6 +117,9 @@ export{Placeholder};
 function initialize(geoJSONGeometryType, geometrySubtype) {
     let item = this;
     // let geoJSON = item.instructions;
+    // Paper.js Style objects are not plain JSON; normalize to a plain object so downstream
+    // AnnotationItem.setStyle(properties) receives a serializable style map.
+    const styleProps = (item.style && item.style.toJSON) ? item.style.toJSON() : item.style;
     let geoJSON = {
         geometry:{
             type: geoJSONGeometryType,
@@ -125,7 +128,7 @@ function initialize(geoJSONGeometryType, geometrySubtype) {
                 subtype:geometrySubtype,
             },
         },
-        properties: item.style,
+        properties: styleProps,
     };
     
     let newItem = paper.Item.fromGeoJSON(geoJSON);

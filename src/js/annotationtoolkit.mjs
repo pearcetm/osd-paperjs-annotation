@@ -622,7 +622,12 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
         const groups = this.getFeatureCollectionGroups();
         const fcGroup = groups.length > 0 ? groups[0] : this._createFeatureCollectionGroup();
         if (!fcGroup) return;
-        const placeholder = this.makePlaceholderItem(style);
+        // Ensure a visible default style for headless use when no explicit style is provided.
+        // Use the feature collection's defaultStyle if available; otherwise fall back to toolkit defaultStyle.
+        const effectiveStyle = (style != null)
+            ? style
+            : (fcGroup.defaultStyle?.toJSON ? fcGroup.defaultStyle.toJSON() : this.defaultStyle);
+        const placeholder = this.makePlaceholderItem(effectiveStyle);
         fcGroup.addChild(placeholder.paperItem);
         AnnotationToolkit.registerFeature(placeholder.paperItem);
         placeholder.paperItem.select();

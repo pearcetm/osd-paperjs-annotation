@@ -140,6 +140,11 @@ class AnnotationToolset {
                 this.tools.default.activate();
             }
             if (this.onModeChanged) this.onModeChanged(this.currentMode);
+            // In headless usage there may be no AnnotationToolbar to call selectionChanged().
+            // Ensure the active tool refreshes its cached selection (items + itemToCreate)
+            // whenever the selection/mode changes.
+            const updatedActiveTool = this.paperScope.getActiveTool();
+            if (updatedActiveTool) updatedActiveTool.selectionChanged();
         }, 0);
     }
 

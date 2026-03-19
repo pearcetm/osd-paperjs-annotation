@@ -75,6 +75,7 @@ class PolygonTool extends AnnotationUITool{
         this.simplifying=null;
         // this.simplifier = new SimplifyJS();
         this.setToolbarControl(new PolygonToolbar(this));  
+        this.registerOverlayCursorOwnedClasses('tool-action');
         
         /**
          * Event handler when the tool is activated.
@@ -164,6 +165,9 @@ class PolygonTool extends AnnotationUITool{
     }
     onMouseDown(ev){
         this.draggingSegment=null;
+        // Tool action cursor is derived from hover-hit-testing; clear it when the interaction
+        // state changes so it can't get stuck without a follow-up mousemove.
+        this.project.overlay.removeClass('tool-action').setAttribute('data-tool-action','');
         let now = Date.now();
         let interval=now-this._lastClickTime;
         let dblClick = interval < 300;
@@ -284,6 +288,7 @@ class PolygonTool extends AnnotationUITool{
         this.item && (this.item.selectedColor = erase ? 'red' : null);
         this.drawingGroup.selectedColor= erase ? 'red' : null;
         this.toolbarControl.setEraseMode(erase);
+        this.project.overlay.removeClass('tool-action').setAttribute('data-tool-action','');
     }
     /**
      * Completes the current polygon path and updates the annotation accordingly.
@@ -310,6 +315,7 @@ class PolygonTool extends AnnotationUITool{
             else this.emitItemEvent('item-updated', { item: this.item, tool: this, subpathAdded: true, subpath: pathAdded });
         }
         this.drawingGroup.removeChildren();
+        this.project.overlay.removeClass('tool-action').setAttribute('data-tool-action','');
         
     }
     /**

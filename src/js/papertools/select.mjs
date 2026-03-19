@@ -63,6 +63,7 @@ class SelectTool extends AnnotationUITool{
         let self=this;
         this.ps = this.project.paperScope;
         this.setToolbarControl(new SelectToolbar(this));
+        this.registerOverlayCursorOwnedClasses('selectable-layer');
 
         let selectionRectangle = new paper.Path.Rectangle({strokeWidth:1,rescale:{strokeWidth:1},strokeColor:'black'});
         let sr2 = new paper.Path.Rectangle({strokeWidth:1,dashArray:[10,10],rescale:{strokeWidth:1,dashArray:[10,10]},strokeColor:'white'});
@@ -75,9 +76,10 @@ class SelectTool extends AnnotationUITool{
         
         this.extensions.onActivate=function(){ 
             self.tool.onMouseMove = (ev)=>self.onMouseMove(ev);
+            self.clearOverlayCursorOwnedClasses();
         }    
         this.extensions.onDeactivate=function(shouldFinish){
-            self.project.overlay.removeClass('selectable-layer');
+            self.clearOverlayCursorOwnedClasses();
             self.tool.onMouseMove = null;
         }
         this.tool.extensions.onKeyUp=function(ev){

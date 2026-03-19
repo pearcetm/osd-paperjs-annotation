@@ -119,6 +119,7 @@ class LinestringTool extends PolygonTool{
 
     onMouseDown(ev){
         this.draggingSegment=null;
+        this.project.overlay.removeClass('tool-action').setAttribute('data-tool-action','');
 
         if(this.itemToCreate){
             this.itemToCreate.initializeGeoJSONFeature('MultiLineString');
@@ -207,6 +208,7 @@ class LinestringTool extends PolygonTool{
         this.drawingGroup.visible=true;
         this.drawingGroup.selected=true;
         this.drawingGroup.selectedColor= this.eraseMode ? 'red' : null;
+        this.project.overlay.removeClass('tool-action').setAttribute('data-tool-action','');
         let path = this.drawing().path;
         const styleItem = this.item || this.itemToCreate;
         path.set({
@@ -234,6 +236,7 @@ class LinestringTool extends PolygonTool{
             else this.emitItemEvent('item-updated', { item: this.item, tool: this, subpathAdded: true, subpath: newPath });
         }
         this.drawingGroup.removeChildren();
+        this.project.overlay.removeClass('tool-action').setAttribute('data-tool-action','');
     }
 
     refreshCursorVisibility(){

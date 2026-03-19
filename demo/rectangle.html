@@ -5,86 +5,216 @@
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/paper.js/0.12.17/paper-full.js"></script>
     <link rel="stylesheet" href="./demo.css">
     <script type="module">
-        import{ AnnotationToolkit } from '../src/js/annotationtoolkit.mjs';
-        // Basic viewer setup
-        let viewer = OpenSeadragon({
-            element: 'brush-viewer',
+        import { AnnotationToolkit } from '../src/js/annotationtoolkit.mjs';
+
+        const tileSources = [{
+            tileSource: {
+                type: 'image',
+                url: 'https://openseadragon.github.io/example-images/grand-canyon-landscape-overlooking.jpg',
+                buildPyramid: false,
+            },
+            x: 0,
+        }];
+        const viewerOpts = {
             prefixUrl: "https://openseadragon.github.io/openseadragon/images/",
-            tileSources: [
-                {
-                    tileSource:{
-                            type: 'image',
-                            url:  'https://openseadragon.github.io/example-images/grand-canyon-landscape-overlooking.jpg',
-                            buildPyramid: false,
-                        },
-                    x:0,
-                },
-                // {
-                //     tileSource:{
-                //             type: 'image',
-                //             url:  'https://openseadragon.github.io/example-images/grand-canyon-landscape-overlooking.jpg',
-                //             buildPyramid: false,
-                //         },
-                //     x:1,
-                // },
-            ],
+            tileSources,
             minZoomImageRatio: 0.01,
             visibilityRatio: 0,
             crossOriginPolicy: 'Anonymous',
-            ajaxWithCredentials: false
+            ajaxWithCredentials: false,
+        };
+
+        // --- Viewer 1: Full UI (toolbar + layer UI) ---
+        const viewerUI = OpenSeadragon({
+            ...viewerOpts,
+            element: 'rect-viewer-ui',
         });
-
-        viewer.addHandler('open', () => {
-            // Create the AnnotationToolkit instance with annotationUI selecting a tool and add feature collections
-            let annotationToolkit = new AnnotationToolkit(viewer);
-            window.tk = annotationToolkit;
-            window.project = annotationToolkit.paperScope.project;
-            annotationToolkit.addAnnotationUI({tools:["transform", "rectangle"], addButton:false, addFileButton:false});
-
-            fetch('./demo-annotation.json').then(r=>r.json()).then(x => {
-                // annotationToolkit.addFeatureCollections(x)
-                annotationToolkit.addFeatureCollections(x, true, viewer.world.getItemAt(0));
-                // annotationToolkit.addFeatureCollections(x, true, viewer.world.getItemAt(1));
+        viewerUI.addHandler('open', () => {
+            const tk = new AnnotationToolkit(viewerUI);
+            window.tkUI = tk;
+            tk.addAnnotationUI({ tools: ["transform", "rectangle"], addButton: false, addFileButton: false });
+            fetch('./demo-annotation.json').then(r => r.json()).then(x => {
+                tk.addFeatureCollections(x, true, viewerUI.world.getItemAt(0));
             });
         });
 
+        // --- Viewer 2: Headless with continual box-drawing toggle ---
+        const viewerHeadless = OpenSeadragon({
+            ...viewerOpts,
+            element: 'rect-viewer-headless',
+        });
+        viewerHeadless.addHandler('open', () => {
+            const tk = new AnnotationToolkit(viewerHeadless, { addUI: false });
+            tk.addTools(['default', 'rectangle']);
+            window.tkHeadless = tk;
 
+            const toggleBtn = document.getElementById('rect-headless-toggle-btn');
+            const statusEl = document.getElementById('rect-headless-status');
+            const countEl = document.getElementById('rect-headless-count');
+
+            const rectangleTool = tk.getTool('rectangle');
+            const defaultTool = tk.getTool('default');
+            let createdCount = 0;
+            let continualEnabled = false;
+
+            // Demo style: blue stroke, red fill with 20% opacity, and a thicker rescaled stroke width.
+            const headlessBoxStyle = {
+                strokeColor: 'blue',
+                fillColor: 'red',
+                fillOpacity: 0.2,
+                rescale: { strokeWidth: 2 },
+            };
+
+            function setContinualButtonState(enabled) {
+                continualEnabled = !!enabled;
+                if (!toggleBtn) return;
+                toggleBtn.setAttribute('aria-pressed', continualEnabled ? 'true' : 'false');
+                toggleBtn.classList.toggle('is-active', continualEnabled);
+                toggleBtn.textContent = continualEnabled ? 'Continual box-drawing: ON' : 'Continual box-drawing: OFF';
+            }
+
+            function onRectangleItemCreated(payload) {
+                if (!continualEnabled) return;
+                createdCount += 1;
+                if (statusEl) statusEl.textContent = `Continual drawing on (created #${createdCount}).`;
+                if (countEl) countEl.textContent = `Count: ${createdCount}`;
+                try {
+                    const createdStyle = payload?.item?.defaultStyle || payload?.item?.style;
+                    const styleOpts = createdStyle?.toJSON ? createdStyle.toJSON() : createdStyle;
+                    tk._ensureNewItemForTool(styleOpts || headlessBoxStyle);
+                } catch (e) {
+                    console.warn('Failed to auto-recreate placeholder:', e);
+                }
+            }
+
+            function attachContinualDrawing() {
+                if (!rectangleTool?.addEventListener) return;
+                rectangleTool.removeEventListener('item-created', onRectangleItemCreated);
+                rectangleTool.addEventListener('item-created', onRectangleItemCreated);
+                rectangleTool.activate({ createNewItem: true, style: headlessBoxStyle });
+            }
+
+            function detachContinualDrawing() {
+                if (!rectangleTool?.removeEventListener) return;
+                rectangleTool.removeEventListener('item-created', onRectangleItemCreated);
+                defaultTool.activate();
+            }
+
+            if (toggleBtn) {
+                toggleBtn.addEventListener('click', () => {
+                    const next = !continualEnabled;
+                    setContinualButtonState(next);
+                    if (next) {
+                        attachContinualDrawing();
+                        if (statusEl) statusEl.textContent = 'Continual drawing on. Draw a box; when you finish, the next box is ready immediately.';
+                    } else {
+                        detachContinualDrawing();
+                        if (statusEl) statusEl.textContent = 'Continual drawing off.';
+                    }
+                    if (countEl) countEl.textContent = `Count: ${createdCount}`;
+                });
+            }
+
+            // Initial UI state
+            setContinualButtonState(false);
+        });
     </script>
 </head>
 <body>
     <div class="content">
         <div class="demo">
             <h3>Rectangle Tool Demo</h3>
-            <div id="brush-viewer" class="viewer"></div>
+
+            <h4>1. With toolbar and layer UI</h4>
+            <p>Use the toolbar to activate the Rectangle tool; create and edit rectangles as usual.</p>
+            <div id="rect-viewer-ui" class="viewer"></div>
             <div>
-                <h4>How to use:</h4>
-                <p>The Rectangle Tool in the Annotation Toolkit allows users to create and modify rectangles on the canvas.
-                    It provides options to draw new rectangles, resize existing rectangles, and move them around.</p>
-                <ol>
-                    <li><strong>Activate the Rectangle Tool:</strong> Select the Rectangle Tool from the list of available
-                        tools in the Annotation Toolkit.</li>
-                    <li><strong>Create a New Rectangle:</strong>
-                        <ul>
-                            <li>Click on the canvas to set the starting point of the rectangle.</li>
-                            <li>While holding down the mouse button, drag the mouse to define the dimensions of the
-                                rectangle.</li>
-                            <li>Release the mouse button to create the rectangle.</li>
-                        </ul>
-                    </li>
-                    <li><strong>Modify Existing Rectangles:</strong>
-                        <ul>
-                            <li>To resize an existing rectangle, hover the mouse over one of its corners until it changes
-                                appearance.</li>
-                            <li>Click and drag the corner to resize the rectangle.</li>
-                            <li>You can also resize the rectangle proportionally by holding down the Command (or Control)
-                                key while dragging.</li>
-                            <li>To move an existing rectangle, click and drag it to the desired location on the canvas.</li>
-                        </ul>
-                    </li>
-                    <li><strong>Finish Modifying:</strong> Once you are done creating or modifying the rectangle,
-                        release the mouse button.</li>
-                </ol>
-             </div>
+                <h4>How to use</h4>
+                <ul>
+                    <li>Activate the Rectangle Tool from the toolbar.</li>
+                    <li>Click and drag to create a rectangle; drag corners to resize, drag fill to move.</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="demo" style="margin-top: 2em;">
+            <h4>2. Headless: continual bounding boxes (no built-in UI)</h4>
+            <p>This viewer intentionally has <strong>no toolbar</strong> and <strong>no layer UI</strong>, so you can see how to build your own user-friendly “bounding box” experience on top of the library. A common UX is continual box drawing: after the user completes one box, the next one is immediately ready so they can label many regions quickly.</p>
+            <div style="margin-bottom: 0.75em;">
+                <button id="rect-headless-toggle-btn" type="button" class="btn btn-sm" aria-pressed="false">
+                    Continual box-drawing: OFF
+                </button>
+                <div id="rect-headless-status" style="margin-top: 0.5em; font-size: 0.9em; color: #666;">Continual drawing off.</div>
+                <div id="rect-headless-count" style="font-size: 0.9em; color: #666;">Count: 0</div>
+            </div>
+            <div id="rect-viewer-headless" class="viewer"></div>
+
+            <style>
+                /* Demo-local styling for the toggle button state */
+                #rect-headless-toggle-btn {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 0.5em;
+                    border: 1px solid #999;
+                    border-radius: 6px;
+                    background: #f5f5f5;
+                    color: #111;
+                    padding: 0.45rem 0.75rem;
+                    font-weight: 600;
+                    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06);
+                    user-select: none;
+                }
+                #rect-headless-toggle-btn:hover {
+                    background: #eee;
+                    border-color: #666;
+                }
+                #rect-headless-toggle-btn:focus-visible {
+                    outline: 3px solid rgba(31, 111, 235, 0.35);
+                    outline-offset: 2px;
+                }
+                #rect-headless-toggle-btn.is-active {
+                    background: #1f6feb;
+                    border-color: #1f6feb;
+                    color: #fff;
+                }
+                #rect-headless-toggle-btn.is-active:hover {
+                    background: #1b61d1;
+                    border-color: #1b61d1;
+                }
+            </style>
+
+            <div style="margin-top: 1em;">
+                <h4 style="margin-bottom: 0.5em;">Code: headless rectangle tool + continual drawing</h4>
+                <pre style="background: #f5f5f5; padding: 1em; overflow: auto; font-size: 0.85em;"><code>// Create toolkit without UI; add default and rectangle tools.
+const tk = new AnnotationToolkit(viewer, { addUI: false });
+tk.addTools(['default', 'rectangle']);
+
+const rectangleTool = tk.getTool('rectangle');
+const defaultTool = tk.getTool('default');
+
+// Style for new rectangles.
+const boxStyle = {
+  strokeColor: 'blue',
+  fillColor: 'red',
+  fillOpacity: 0.2,
+  rescale: { strokeWidth: 2 },
+};
+
+// When enabling continual drawing: activate rectangle tool with a new placeholder,
+// and on each item-created, create the next placeholder so the tool re-enters create mode.
+function onRectangleItemCreated(payload) {
+  const createdStyle = payload?.item?.defaultStyle || payload?.item?.style;
+  const styleOpts = createdStyle?.toJSON ? createdStyle.toJSON() : createdStyle;
+  tk._ensureNewItemForTool(styleOpts || boxStyle);
+}
+
+rectangleTool.addEventListener('item-created', onRectangleItemCreated);
+rectangleTool.activate({ createNewItem: true, style: boxStyle }); // no toolbar: must activate programmatically
+
+// To turn off: remove listener and switch back to default tool.
+rectangleTool.removeEventListener('item-created', onRectangleItemCreated);
+defaultTool.activate();</code></pre>
+            </div>
         </div>
     </div>
 </body>

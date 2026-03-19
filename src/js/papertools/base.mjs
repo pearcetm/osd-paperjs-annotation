@@ -113,6 +113,9 @@ class ToolBase{
             this.onMouseUp(ev);
         }
         this.listeners = {}
+        // Tracks which overlay CSS classes this tool "owns", so they can be cleared
+        // centrally even if the tool changes internal modes without full deactivation.
+        this._overlayCursorOwnedClasses = new Set();
     }
     getTolerance(pixels, item = null){
         if(!item){
@@ -201,6 +204,29 @@ class ToolBase{
         this.broadcast(eventType, payload);
         const project = this.project?.paperScope?.project;
         if (project) project.emit(eventType, payload);
+    }
+
+    /**
+     * Register overlay cursor CSS classes that this tool may add during interaction.
+     * These are considered owned by this tool and can be cleared on deactivate.
+     * @param  {...string|string[]} classes
+     */
+    registerOverlayCursorOwnedClasses(...classes) {
+        if (!classes || classes.length === 0) return;
+        if (classes.length === 1 && Array.isArray(classes[0])) classes = classes[0];
+        const flat = classes.flat ? classes.flat() : classes.reduce((acc, c) => acc.concat(c), []);
+        flat.forEach((c) => {
+            if (typeof c === 'string' && c) this._overlayCursorOwnedClasses.add(c);
+        });
+    }
+
+    /**
+     * Remove any overlay cursor CSS classes owned by this tool.
+     */
+    clearOverlayCursorOwnedClasses() {
+        if (!this._overlayCursorOwnedClasses || this._overlayCursorOwnedClasses.size === 0) return;
+        const classes = Array.from(this._overlayCursorOwnedClasses);
+        this.project.overlay.removeClass(...classes);
     }
     
     /**

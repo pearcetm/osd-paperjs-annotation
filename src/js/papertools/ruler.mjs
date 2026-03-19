@@ -71,6 +71,7 @@ class RulerTool extends AnnotationUITool {
     constructor(paperScope) {
         super(paperScope);
         this.setToolbarControl(new RulerToolbar(this));
+        this.registerOverlayCursorOwnedClasses('rectangle-tool-resize', 'rectangle-tool-move');
 
         // Config and placement state
         this.strokeWidthPixels = 2;
@@ -118,7 +119,7 @@ class RulerTool extends AnnotationUITool {
             this.mode = null;
             this._editPath = null;
             this._editSegmentIndex = null;
-            this.project.overlay.removeClass('rectangle-tool-resize', 'rectangle-tool-move');
+            this.clearOverlayCursorOwnedClasses();
             if (finished) {
                 this._clearPlacementState();
                 this.drawingGroup.removeChildren();
@@ -348,6 +349,7 @@ class RulerTool extends AnnotationUITool {
             this._firstPoint !== null ||
             (this.item && this.item.children.length === 0);
         this.mode = creating ? 'creating' : (this.item && this.item.children.length > 0 ? 'modifying' : null);
+        if (this.mode !== 'modifying') this.clearOverlayCursorOwnedClasses();
         this._crosshair.visible = this.mode === 'creating';
         if (this.mode === 'modifying' && this.item && this.item.children.length > 0) {
             const path = this._getPathFromSegmentChild(this.item.children[0]);

@@ -72,6 +72,7 @@ class PointTool extends AnnotationUITool{
         this.project.toolLayer.addChild(cursor);
         
         this.setToolbarControl(new PointToolbar(this));
+        this.registerOverlayCursorOwnedClasses('point-tool-grab', 'point-tool-grabbing');
         
         
         this.extensions.onActivate = ()=>{
@@ -89,6 +90,7 @@ class PointTool extends AnnotationUITool{
         
         this.onSelectionChanged = ()=>{
             this.setCursorProps();
+            if(this.itemToCreate) this.clearOverlayCursorOwnedClasses();
         }
         
     }

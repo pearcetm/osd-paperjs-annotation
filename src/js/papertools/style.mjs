@@ -62,6 +62,7 @@ import { convertFaIcons, makeFaIcon } from '../utils/faIcon.mjs';
         this._targetItems = [];
         
         this.setToolbarControl(new StyleToolbar(this));
+        this.registerOverlayCursorOwnedClasses('tool-action');
 
         let cursorGridSize=9;//this must be an odd number so the grid is symmetric around a center cell
         let cursorCellSize=12;

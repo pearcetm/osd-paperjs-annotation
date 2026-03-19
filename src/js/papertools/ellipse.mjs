@@ -74,17 +74,20 @@ class EllipseTool extends AnnotationUITool{
         this.creating = null;
         
         this.setToolbarControl(new EllipseToolbar(this));
+        this.registerOverlayCursorOwnedClasses('rectangle-tool-resize', 'rectangle-tool-move');
         
         
         this.extensions.onActivate = this.onSelectionChanged = function(){
             if(self.itemToCreate){
                 self.mode='creating';
+                self.clearOverlayCursorOwnedClasses();
                 self.crosshairTool.visible = true;
                 self.creating = null;//reset reference to actively creating item
                 self.toolbarControl.updateInstructions('new');
             }
             else if(self.creating && self.creating.parent==self.item){
                 self.mode='creating';
+                self.clearOverlayCursorOwnedClasses();
                 self.crosshairTool.visible = true;
                 self.toolbarControl.updateInstructions('new');
             }
@@ -105,7 +108,7 @@ class EllipseTool extends AnnotationUITool{
             if(finished) self.creating = null;
             self.crosshairTool.visible=false;
             self.mode=null;
-            self.project.overlay.removeClass('rectangle-tool-resize');
+            self.clearOverlayCursorOwnedClasses();
         }
         
     }

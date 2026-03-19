@@ -96,6 +96,7 @@ class PointTextTool extends AnnotationUITool{
          * @param {PointTextToolbar} toolbarControl - The toolbar control instance to be set.
          */
         this.setToolbarControl(new PointTextToolbar(this));
+        this.registerOverlayCursorOwnedClasses('point-tool-grab', 'point-tool-grabbing');
         /**
          * Activate event handler for the PointTextTool.
          * This function is called when the tool is activated, and it handles the setup of cursor visibility and interaction behavior.
@@ -128,6 +129,7 @@ class PointTextTool extends AnnotationUITool{
     onSelectionChanged(){
         this.cursor.visible = !!this.itemToCreate;
         this._updateTextInput();
+        if(this.itemToCreate) this.clearOverlayCursorOwnedClasses();
     }
     onMouseMove(ev){
         this.cursor.position = ev.original.point;

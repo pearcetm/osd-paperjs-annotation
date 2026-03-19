@@ -122,6 +122,10 @@ class AnnotationUITool extends ToolBase{
 
         this.resetCanvasZIndex();
         
+        // Cursor affordances are tool-owned state; clear them centrally to prevent
+        // stale CSS cursor classes when internal tool state changes without full deactivation.
+        this.clearOverlayCursorOwnedClasses?.();
+
         this.onDeactivate(finishToolAction);
         this.broadcast('deactivated',{target:this}); 
     }
@@ -188,6 +192,7 @@ class AnnotationUITool extends ToolBase{
         this.getSelectedItems();
         this._setTargetLayer();
         this.onSelectionChanged();
+        this.syncOverlayCursor?.();
     }
     /**
      * Callback function triggered when the selection changes.

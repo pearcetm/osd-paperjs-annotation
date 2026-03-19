@@ -87,16 +87,19 @@ class RectangleTool extends AnnotationUITool{
         this.creating = null;
         
         this.setToolbarControl(new RectToolbar(this));
+        this.registerOverlayCursorOwnedClasses('rectangle-tool-resize', 'rectangle-tool-move');
 
         this.extensions.onActivate = this.onSelectionChanged = function(){
             if(self.itemToCreate){
                 self.mode='creating';
+                self.clearOverlayCursorOwnedClasses();
                 crosshairTool.visible = true;
                 self.creating = null;//reset reference to actively creating item
                 self.toolbarControl.updateInstructions('new');
             }
             else if(self.creating && self.creating.parent==self.item){
                 self.mode='creating';
+                self.clearOverlayCursorOwnedClasses();
                 crosshairTool.visible = true;
                 self.toolbarControl.updateInstructions('new');
             }

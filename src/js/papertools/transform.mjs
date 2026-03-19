@@ -67,6 +67,7 @@ class TransformTool extends AnnotationUITool{
         this._moving = [];
         this._active = false;
         this.setToolbarControl(new TransformToolbar(this));
+        this.registerOverlayCursorOwnedClasses('transform-tool-resize', 'transform-tool-rotate', 'transform-tool-move');
         this._makeTransformToolObject(self.project.getZoom());
         
         this.extensions.onActivate=function(){ 
@@ -75,7 +76,7 @@ class TransformTool extends AnnotationUITool{
         }    
         this.extensions.onDeactivate=function(shouldFinish){
             self._active = false;
-            self.project.overlay.removeClass('transform-tool-resize', 'transform-tool-rotate', 'transform-tool-move');
+            self.clearOverlayCursorOwnedClasses();
             if(shouldFinish){
                 self.disableTransformToolObject();
             }
@@ -286,6 +287,7 @@ class TransformTool extends AnnotationUITool{
      */
     enableTransformToolObject(){
         if(this.items.length > 0){
+            this.clearOverlayCursorOwnedClasses();
             this.project.toolLayer.bringToFront();
             this._transformTool.visible=true;
             this._transformTool.transformItems(this.items);
@@ -299,6 +301,7 @@ class TransformTool extends AnnotationUITool{
         this.project.toolLayer.sendToBack();
         this._transformTool.transformItems([]);
         this._transformTool.visible=false;
+        this.clearOverlayCursorOwnedClasses();
     }
     /**
      * A function that performs a hit test on the canvas to find the item under the specified coordinates.
