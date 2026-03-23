@@ -50,7 +50,7 @@ import { MultiPolygon } from './paperitems/multipolygon.mjs';
 import { Placeholder } from './paperitems/placeholder.mjs';
 import { Linestring } from './paperitems/linestring.mjs';
 import { MultiLinestring } from './paperitems/multilinestring.mjs';
-import { RulerMeasurement } from './paperitems/rulerMeasurement.mjs';
+import { RulerMeasurement } from './paperitems/rulermeasurement.mjs';
 import { Raster } from './paperitems/raster.mjs';
 import { Point } from './paperitems/point.mjs';
 import { PointText } from './paperitems/pointtext.mjs';
