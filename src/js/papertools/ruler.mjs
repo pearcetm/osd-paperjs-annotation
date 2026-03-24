@@ -39,6 +39,7 @@
 import { AnnotationUITool, AnnotationUIToolbarBase } from './annotationUITool.mjs';
 import { paper } from '../paperjs.mjs';
 import { makeFaIcon } from '../utils/faIcon.mjs';
+import { clampDecimals, normalizeRoundingMode, formatDecimal } from '../utils/measurementFormat.mjs';
 
 const ZERO_LENGTH_EPSILON = 1e-6;
 const CROSSHAIR_SIZE_PX = 8;
@@ -46,6 +47,8 @@ const RULER_LABEL_FONT_SIZE = 12;
 const RULER_LABEL_GAP_PX = 4; // Gap between line and label in screen pixels (zoom-independent)
 const RULER_HALO_EXTRA_PX = 2; // Extra stroke width for white halo (in screen pixels, zoom-independent)
 const RULER_LABEL_STROKE_PX = 3; // Heavy white stroke for stroke-only label (background, in screen pixels, zoom-independent)
+const DEFAULT_DECIMALS = 2;
+const DEFAULT_ROUNDING_MODE = 'round';
 
 // Segment group layout: exactly 3 children (halo, path, labelGroup with [strokeLabel, fillLabel])
 const SEGMENT_HALO = 0;
@@ -412,6 +415,8 @@ class RulerTool extends AnnotationUITool {
         this.item.data.ruler = {
             units: tc && tc.labelUnit != null ? tc.labelUnit : 'px',
             unitsPerPixel: tc && tc.unitsPerPixel != null ? tc.unitsPerPixel : 1,
+            decimals: tc && tc.decimals != null ? tc.decimals : DEFAULT_DECIMALS,
+            roundingMode: tc && tc.roundingMode != null ? tc.roundingMode : DEFAULT_ROUNDING_MODE,
             strokeWidthPixels: this.strokeWidthPixels,
             haloExtraPixels: this.haloExtraPixels,
             labelFontSize: this.labelFontSize,
@@ -434,6 +439,24 @@ class RulerTool extends AnnotationUITool {
         const v = parseInt(n, 10);
         this.labelFontSize = (v >= 6 && v <= 72) ? v : 12;
         this._refreshItemSegments();
+        this._writeRulerDataToItem();
+    }
+
+    setDecimals(n) {
+        const v = clampDecimals(parseInt(n, 10), DEFAULT_DECIMALS);
+        this.toolbarControl.decimals = v;
+        this.toolbarControl.decimalsInput.value = String(v);
+        this.toolbarControl.updateMeasurement(this._lastMeasurement?.p1 ?? null, this._lastMeasurement?.p2 ?? null, this._lastMeasurement?.distance ?? null);
+        this.refreshSegmentLabels();
+        this._writeRulerDataToItem();
+    }
+
+    setRoundingMode(mode) {
+        const m = normalizeRoundingMode(mode, DEFAULT_ROUNDING_MODE);
+        this.toolbarControl.roundingMode = m;
+        this.toolbarControl.roundingModeInput.value = m;
+        this.toolbarControl.updateMeasurement(this._lastMeasurement?.p1 ?? null, this._lastMeasurement?.p2 ?? null, this._lastMeasurement?.distance ?? null);
+        this.refreshSegmentLabels();
         this._writeRulerDataToItem();
     }
 
@@ -779,6 +802,8 @@ class RulerToolbar extends AnnotationUIToolbarBase {
         this.rulerTool = rulerTool;
         this.labelUnit = 'px';
         this.unitsPerPixel = 1;
+        this.decimals = DEFAULT_DECIMALS;
+        this.roundingMode = DEFAULT_ROUNDING_MODE;
 
         const i = makeFaIcon('fa-ruler');
         this.button.configure(i, 'Ruler Tool');
@@ -907,6 +932,32 @@ class RulerToolbar extends AnnotationUIToolbarBase {
         });
         addRow('Units per pixel:', this.unitsPerPixelInput, 'ruler-units-per-pixel');
 
+        this.decimalsInput = document.createElement('input');
+        this.decimalsInput.type = 'number';
+        this.decimalsInput.min = 0;
+        this.decimalsInput.step = 1;
+        this.decimalsInput.value = DEFAULT_DECIMALS;
+        this.decimalsInput.classList.add('ruler-decimals-input');
+        this.decimalsInput.addEventListener('change', () => {
+            rulerTool.setDecimals(this.decimalsInput.value);
+        });
+        addRow('Decimals:', this.decimalsInput, 'ruler-decimals');
+
+        this.roundingModeInput = document.createElement('select');
+        this.roundingModeInput.classList.add('ruler-rounding-mode-input');
+        const roundOption = document.createElement('option');
+        roundOption.value = 'round';
+        roundOption.textContent = 'round';
+        const truncateOption = document.createElement('option');
+        truncateOption.value = 'truncate';
+        truncateOption.textContent = 'truncate';
+        this.roundingModeInput.append(roundOption, truncateOption);
+        this.roundingModeInput.value = DEFAULT_ROUNDING_MODE;
+        this.roundingModeInput.addEventListener('change', () => {
+            rulerTool.setRoundingMode(this.roundingModeInput.value);
+        });
+        addRow('Rounding mode:', this.roundingModeInput, 'ruler-rounding-mode');
+
         rulerTool.setStrokeWidthPixels(2);
         rulerTool.setHaloExtraPixels(2);
         rulerTool.setLabelFontSize(12);
@@ -923,7 +974,7 @@ class RulerToolbar extends AnnotationUIToolbarBase {
 
     formatNum(n) {
         if (n == null || typeof n !== 'number') return '—';
-        return n.toFixed(2);
+        return formatDecimal(n, this.decimals, this.roundingMode);
     }
 
     formatDistance(distancePaper) {

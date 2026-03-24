@@ -8,6 +8,7 @@
 
 import { MultiLinestring } from './multilinestring.mjs';
 import { paper } from '../paperjs.mjs';
+import { clampDecimals, normalizeRoundingMode, formatDecimal } from '../utils/measurementFormat.mjs';
 
 // Segment group layout: exactly 3 children (must match ruler.mjs): halo, path, labelGroup ([strokeLabel, fillLabel])
 const SEGMENT_HALO = 0;
@@ -19,6 +20,8 @@ const RULER_LABEL_GAP_PX = 4; // Gap between line and label in screen pixels (mu
 const DEFAULT_STROKE_WIDTH_PX = 2;
 const DEFAULT_HALO_EXTRA_PX = 2;
 const DEFAULT_LABEL_FONT_SIZE = 12;
+const DEFAULT_DECIMALS = 2;
+const DEFAULT_ROUNDING_MODE = 'round';
 
 /**
  * Compute placement center for label offset above segment (constant pixel gap, zoom-aware).
@@ -59,9 +62,11 @@ function buildSegmentGroupFromPath(path, parentGroup, props, index) {
     const haloExtraPixels = props.haloExtraPixels != null ? props.haloExtraPixels : DEFAULT_HALO_EXTRA_PX;
     const labelFontSize = props.labelFontSize != null ? props.labelFontSize : DEFAULT_LABEL_FONT_SIZE;
     const units = props.units != null ? props.units : 'px';
+    const decimals = clampDecimals(props.decimals, DEFAULT_DECIMALS);
+    const roundingMode = normalizeRoundingMode(props.roundingMode, DEFAULT_ROUNDING_MODE);
     const lengths = props.lengths || [];
     const lengthDisplay = lengths[index] != null
-        ? (typeof lengths[index] === 'number' ? lengths[index].toFixed(2) : String(lengths[index])) + ' ' + units
+        ? (typeof lengths[index] === 'number' ? formatDecimal(lengths[index], decimals, roundingMode) : String(lengths[index])) + ' ' + units
         : '—';
 
     const p1 = path.segments[0].point.clone();
@@ -169,6 +174,8 @@ class RulerMeasurement extends MultiLinestring {
             grp.data.ruler = {
                 units: props.units != null ? props.units : 'px',
                 unitsPerPixel: props.unitsPerPixel != null ? props.unitsPerPixel : 1,
+                decimals: clampDecimals(props.decimals, DEFAULT_DECIMALS),
+                roundingMode: normalizeRoundingMode(props.roundingMode, DEFAULT_ROUNDING_MODE),
                 strokeWidthPixels: props.strokeWidthPixels != null ? props.strokeWidthPixels : DEFAULT_STROKE_WIDTH_PX,
                 haloExtraPixels: props.haloExtraPixels != null ? props.haloExtraPixels : DEFAULT_HALO_EXTRA_PX,
                 labelFontSize: props.labelFontSize != null ? props.labelFontSize : DEFAULT_LABEL_FONT_SIZE,
@@ -184,6 +191,8 @@ class RulerMeasurement extends MultiLinestring {
             grp.data.ruler = {
                 units: props.units != null ? props.units : 'px',
                 unitsPerPixel: props.unitsPerPixel != null ? props.unitsPerPixel : 1,
+                decimals: clampDecimals(props.decimals, DEFAULT_DECIMALS),
+                roundingMode: normalizeRoundingMode(props.roundingMode, DEFAULT_ROUNDING_MODE),
                 strokeWidthPixels: props.strokeWidthPixels != null ? props.strokeWidthPixels : DEFAULT_STROKE_WIDTH_PX,
                 haloExtraPixels: props.haloExtraPixels != null ? props.haloExtraPixels : DEFAULT_HALO_EXTRA_PX,
                 labelFontSize: props.labelFontSize != null ? props.labelFontSize : DEFAULT_LABEL_FONT_SIZE,
@@ -230,8 +239,10 @@ class RulerMeasurement extends MultiLinestring {
         const ruler = this.paperItem.data.ruler || {};
         const unitsPerPixel = ruler.unitsPerPixel != null ? ruler.unitsPerPixel : 1;
         const units = ruler.units != null ? ruler.units : 'px';
+        const decimals = clampDecimals(ruler.decimals, DEFAULT_DECIMALS);
+        const roundingMode = normalizeRoundingMode(ruler.roundingMode, DEFAULT_ROUNDING_MODE);
         const labelFontSize = ruler.labelFontSize != null ? ruler.labelFontSize : DEFAULT_LABEL_FONT_SIZE;
-        const lengthDisplay = (distance * unitsPerPixel).toFixed(2) + ' ' + units;
+        const lengthDisplay = formatDecimal(distance * unitsPerPixel, decimals, roundingMode) + ' ' + units;
 
         fillLabel.justification = 'center';
         fillLabel.fillColor = path.strokeColor || new paper.Color('black');
@@ -283,6 +294,8 @@ class RulerMeasurement extends MultiLinestring {
         const ruler = item.data.ruler || {};
         const unitsPerPixel = ruler.unitsPerPixel != null ? ruler.unitsPerPixel : 1;
         const units = ruler.units != null ? ruler.units : 'px';
+        const decimals = clampDecimals(ruler.decimals, DEFAULT_DECIMALS);
+        const roundingMode = normalizeRoundingMode(ruler.roundingMode, DEFAULT_ROUNDING_MODE);
 
         const lengths = [];
         let total = 0;
@@ -304,6 +317,8 @@ class RulerMeasurement extends MultiLinestring {
             length: total,
             units,
             unitsPerPixel,
+            decimals,
+            roundingMode,
             strokeWidthPixels: ruler.strokeWidthPixels != null ? ruler.strokeWidthPixels : DEFAULT_STROKE_WIDTH_PX,
             haloExtraPixels: ruler.haloExtraPixels != null ? ruler.haloExtraPixels : DEFAULT_HALO_EXTRA_PX,
             labelFontSize: ruler.labelFontSize != null ? ruler.labelFontSize : DEFAULT_LABEL_FONT_SIZE,
