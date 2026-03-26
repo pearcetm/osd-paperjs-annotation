@@ -839,6 +839,8 @@ class RulerToolbar extends AnnotationUIToolbarBase {
             this._detailsExpanded = !this._detailsExpanded;
             this.detailsPanel.hidden = !this._detailsExpanded;
             toggleBtn.replaceChildren(this._detailsExpanded ? this._chevronUp : this._chevronDown);
+            const tk = rulerTool?.project?.paperScope?.annotationToolkit;
+            if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('ruler-details-open-changed', { open: this._detailsExpanded }, { tool: rulerTool });
         });
 
         // Details panel (collapsible); instructions live here so collapsed = one line only
@@ -883,6 +885,8 @@ class RulerToolbar extends AnnotationUIToolbarBase {
         this.widthInput.classList.add('ruler-width-input');
         this.widthInput.addEventListener('change', () => {
             rulerTool.setStrokeWidthPixels(this.widthInput.value);
+            const tk = rulerTool?.project?.paperScope?.annotationToolkit;
+            if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('ruler-setting-changed', { key: 'widthPixels', value: Number(this.widthInput.value) }, { tool: rulerTool });
         });
         addRow('Line width (px):', this.widthInput, 'ruler-line-width');
 
@@ -893,6 +897,8 @@ class RulerToolbar extends AnnotationUIToolbarBase {
         this.haloInput.classList.add('ruler-halo-input');
         this.haloInput.addEventListener('change', () => {
             rulerTool.setHaloExtraPixels(this.haloInput.value);
+            const tk = rulerTool?.project?.paperScope?.annotationToolkit;
+            if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('ruler-setting-changed', { key: 'haloPixels', value: Number(this.haloInput.value) }, { tool: rulerTool });
         });
         addRow('Padding / Halo (px):', this.haloInput, 'ruler-halo');
 
@@ -904,6 +910,8 @@ class RulerToolbar extends AnnotationUIToolbarBase {
         this.fontSizeInput.classList.add('ruler-font-size-input');
         this.fontSizeInput.addEventListener('change', () => {
             rulerTool.setLabelFontSize(this.fontSizeInput.value);
+            const tk = rulerTool?.project?.paperScope?.annotationToolkit;
+            if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('ruler-setting-changed', { key: 'fontSize', value: Number(this.fontSizeInput.value) }, { tool: rulerTool });
         });
         addRow('Font size:', this.fontSizeInput, 'ruler-font-size');
 
@@ -915,6 +923,8 @@ class RulerToolbar extends AnnotationUIToolbarBase {
             this.labelUnit = (this.unitsInput.value || 'px').trim();
             this.updateMeasurement(rulerTool._lastMeasurement?.p1 ?? null, rulerTool._lastMeasurement?.p2 ?? null, rulerTool._lastMeasurement?.distance ?? null);
             rulerTool.refreshSegmentLabels();
+            const tk = rulerTool?.project?.paperScope?.annotationToolkit;
+            if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('ruler-setting-changed', { key: 'units', value: this.labelUnit }, { tool: rulerTool });
         });
         addRow('Units:', this.unitsInput, 'ruler-units');
 
@@ -929,6 +939,8 @@ class RulerToolbar extends AnnotationUIToolbarBase {
             this.unitsPerPixel = (v > 0 && Number.isFinite(v)) ? v : 1;
             this.updateMeasurement(rulerTool._lastMeasurement?.p1 ?? null, rulerTool._lastMeasurement?.p2 ?? null, rulerTool._lastMeasurement?.distance ?? null);
             rulerTool.refreshSegmentLabels();
+            const tk = rulerTool?.project?.paperScope?.annotationToolkit;
+            if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('ruler-setting-changed', { key: 'unitsPerPixel', value: this.unitsPerPixel }, { tool: rulerTool });
         });
         addRow('Units per pixel:', this.unitsPerPixelInput, 'ruler-units-per-pixel');
 
@@ -940,6 +952,8 @@ class RulerToolbar extends AnnotationUIToolbarBase {
         this.decimalsInput.classList.add('ruler-decimals-input');
         this.decimalsInput.addEventListener('change', () => {
             rulerTool.setDecimals(this.decimalsInput.value);
+            const tk = rulerTool?.project?.paperScope?.annotationToolkit;
+            if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('ruler-setting-changed', { key: 'decimals', value: Number(this.decimalsInput.value) }, { tool: rulerTool });
         });
         addRow('Decimals:', this.decimalsInput, 'ruler-decimals');
 
@@ -955,6 +969,8 @@ class RulerToolbar extends AnnotationUIToolbarBase {
         this.roundingModeInput.value = DEFAULT_ROUNDING_MODE;
         this.roundingModeInput.addEventListener('change', () => {
             rulerTool.setRoundingMode(this.roundingModeInput.value);
+            const tk = rulerTool?.project?.paperScope?.annotationToolkit;
+            if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('ruler-setting-changed', { key: 'roundingMode', value: this.roundingModeInput.value }, { tool: rulerTool });
         });
         addRow('Rounding mode:', this.roundingModeInput, 'ruler-rounding-mode');
 

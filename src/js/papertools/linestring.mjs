@@ -285,6 +285,8 @@ class LinestringToolbar extends AnnotationUIToolbarBase{
         Object.assign(this.rangeInput, {type:'range', min:0.2, max:12, step:0.1, value:defaultRadius});
         this.rangeInput.addEventListener('change', function(){
             linestringTool.setRadius(this.value);
+            const tk = linestringTool?.project?.paperScope?.annotationToolkit;
+            if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('linestring-width-changed', { width: Number(this.value) }, { tool: linestringTool });
         });
 
         this.eraseButton = document.createElement('button');
@@ -294,6 +296,8 @@ class LinestringToolbar extends AnnotationUIToolbarBase{
         this.eraseButton.addEventListener('click',function(){
             let erasing = this.classList.toggle('active');
             linestringTool.setEraseMode(erasing);
+            const tk = linestringTool?.project?.paperScope?.annotationToolkit;
+            if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('linestring-erase-mode-changed', { erasing }, { tool: linestringTool });
         });
         
         setTimeout(()=>linestringTool.setRadius(defaultRadius));

@@ -91,7 +91,9 @@ class AnnotationToolset {
             }
             const ToolConstructor = typeof t === 'string' ? toolConstructors[t] : t;
             const toolObj = new ToolConstructor(this.paperScope);
-            this.tools[typeof t === 'string' ? t : ToolConstructor.name] = toolObj;
+            const toolKey = typeof t === 'string' ? t : ToolConstructor.name;
+            toolObj.toolName = toolKey;
+            this.tools[toolKey] = toolObj;
             toolObj.addEventListener('deactivated', (ev) => {
                 if (ev.target === this.paperScope.getActiveTool()) {
                     this.tools.default.activate();
@@ -124,6 +126,7 @@ class AnnotationToolset {
             this.setModeTimeout = null;
             const selection = this.paperScope.findSelectedItems();
             const activeTool = this.paperScope.getActiveTool();
+            const prevMode = this.currentMode;
             if (selection.length === 0) {
                 this.currentMode = 'select';
             } else if (selection.length === 1) {
@@ -140,6 +143,16 @@ class AnnotationToolset {
                 this.tools.default.activate();
             }
             if (this.onModeChanged) this.onModeChanged(this.currentMode);
+            const tk = this.paperScope?.annotationToolkit;
+            if (tk && tk._emitIntegrationEvent && prevMode !== this.currentMode) {
+                const updated = this.paperScope.getActiveTool();
+                tk._emitIntegrationEvent('mode-changed', {
+                    from: prevMode ?? null,
+                    to: this.currentMode,
+                    selectionCount: selection.length,
+                    activeTool: { name: updated?.toolName ?? null, tool: updated ?? null },
+                }, { tool: updated ?? undefined });
+            }
             // In headless usage there may be no AnnotationToolbar to call selectionChanged().
             // Ensure the active tool refreshes its cached selection (items + itemToCreate)
             // whenever the selection/mode changes.

@@ -346,6 +346,7 @@ class StyleToolbar extends AnnotationUIToolbarBase{
                 let type = this.getAttribute('data-type');
                 let colorinput = self.dropdown.querySelector(`input[type="color"][data-type="${type}"]`);
                 self.dropdown.querySelectorAll('[data-action="pick-color"]').forEach(e=> e.classList.remove('active'));
+                const wasOpen = isVisible(colorinput);
                 if(isVisible(colorinput)){
                     self.dropdown.querySelectorAll('.colorpicker-row').forEach(e=>e.classList.add('hidden'));
                 }
@@ -354,6 +355,8 @@ class StyleToolbar extends AnnotationUIToolbarBase{
                     colorinput.closest('.colorpicker-row').classList.remove('hidden');
                     this.classList.add('active');
                 }
+                const tk = self.tool?.project?.paperScope?.annotationToolkit;
+                if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('style-colorpicker-open-changed', { open: !wasOpen, type }, { tool: self.tool });
             })
         });
 
@@ -362,10 +365,14 @@ class StyleToolbar extends AnnotationUIToolbarBase{
             self.tool.applyColor(this.value,type);
             type=='fill' && self.setFillButtonColor(new paper.Color(this.value))
             type=='stroke' && self.setStrokeButtonColor(new paper.Color(this.value))
+            const tk = self.tool?.project?.paperScope?.annotationToolkit;
+            if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('style-color-changed', { type, value: this.value }, { tool: self.tool });
         }));
 
         this.dropdown.querySelectorAll('input[type="number"]').forEach(e=>e.addEventListener('input',function(){
             self.tool.applyStrokeWidth(this.value);
+            const tk = self.tool?.project?.paperScope?.annotationToolkit;
+            if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('style-stroke-width-changed', { strokeWidth: Number(this.value) }, { tool: self.tool });
         }));
 
         this.dropdown.querySelectorAll('input[data-action="opacity"]').forEach(e=>e.addEventListener('input',function(){
@@ -374,9 +381,13 @@ class StyleToolbar extends AnnotationUIToolbarBase{
             self.tool.applyOpacity(this.value,prop);
             type=='fill' && self.setFillButtonOpacity(this.value);
             type=='stroke' && self.setStrokeButtonOpacity(this.value);
+            const tk = self.tool?.project?.paperScope?.annotationToolkit;
+            if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('style-opacity-changed', { type, property: prop, value: Number(this.value) }, { tool: self.tool });
         }));
 
         this.dropdown.querySelectorAll('[data-action="from-image"]').forEach(e=>e.addEventListener('click',function(){
+            const tk = self.tool?.project?.paperScope?.annotationToolkit;
+            if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('style-pick-from-image-clicked', {}, { tool: self.tool });
             self.tool.pickColor().then((color)=>{
                 this.parentElement.querySelectorAll('input[type="color"]').forEach(e=>{
                     e.value = color.toCSS(true);
@@ -387,6 +398,8 @@ class StyleToolbar extends AnnotationUIToolbarBase{
 
         this.dropdown.querySelectorAll('[data-action="from-average"]').forEach(e=>e.addEventListener('click',function(){
             let type = this.getAttribute('data-type');
+            const tk = self.tool?.project?.paperScope?.annotationToolkit;
+            if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('style-pick-from-average-clicked', { type }, { tool: self.tool });
             self.fromAverage(type);
         }));
 
@@ -400,6 +413,8 @@ class StyleToolbar extends AnnotationUIToolbarBase{
                 selectableItems.forEach(item=>allSelected ? item.deselect() : item.select());//select all if not all selected, else unselect all
             }
             self.updateTargetDescription();
+            const tk = self.tool?.project?.paperScope?.annotationToolkit;
+            if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('style-target-selection-toggled', {}, { tool: self.tool });
         }));
 
         this.dropdown.querySelectorAll('.hierarchy-up').forEach(e=>e.addEventListener('click',function(){
@@ -435,6 +450,8 @@ class StyleToolbar extends AnnotationUIToolbarBase{
             let hierarchyRef = self._hierarchy;
             self.tool.activateForItem(self._hierarchy[self._hierarchy.index]);
             self._hierarchy = hierarchyRef;//on activation this variable is cleared; reset here
+            const tk = self.tool?.project?.paperScope?.annotationToolkit;
+            if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('style-hierarchy-cycled', {}, { tool: self.tool });
         }));
     }
     

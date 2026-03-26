@@ -154,7 +154,11 @@ class RasterToolbar extends AnnotationUIToolbarBase{
         span.innerHTML = 'Warning: this cannot be undone!';
         d.appendChild(span);
 
-        button.addEventListener('click',()=>tool.rasterize())
+        button.addEventListener('click',()=>{
+            const tk = tool?.project?.paperScope?.annotationToolkit;
+            if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('rasterize-clicked', {}, { tool });
+            tool.rasterize();
+        })
     }
     /**
    * Checks if the RasterTool is enabled for the given mode.

@@ -110,6 +110,14 @@ class AnnotationUITool extends ToolBase{
 
         this.onActivate();
         this.broadcast('activated',{target:this});
+        const tk = this.project?.paperScope?.annotationToolkit;
+        if (tk && tk._emitIntegrationEvent) {
+            tk._emitIntegrationEvent('tool-activated', { name: this.toolName ?? null }, { tool: this });
+            tk._emitIntegrationEvent('active-tool-changed', {
+                from: { name: previousTool?.toolName ?? null, tool: previousTool ?? null },
+                to: { name: this.toolName ?? null, tool: this },
+            }, { tool: this });
+        }
     }
     /**
      * Deactivate the annotation tool, stopping its interaction.
@@ -128,6 +136,10 @@ class AnnotationUITool extends ToolBase{
 
         this.onDeactivate(finishToolAction);
         this.broadcast('deactivated',{target:this}); 
+        const tk = this.project?.paperScope?.annotationToolkit;
+        if (tk && tk._emitIntegrationEvent) {
+            tk._emitIntegrationEvent('tool-deactivated', { name: this.toolName ?? null }, { tool: this });
+        }
     }
 
     /**

@@ -130,8 +130,16 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
             overlay: null,
             destroyOnViewerClose: false,
             cacheAnnotations: false,
+            events: {
+                project: true,
+                toolkit: false,
+            },
         }
         this.options = Object.assign({}, this._defaultOptions, opts);
+        // normalize nested options (Object.assign is shallow)
+        if (opts && typeof opts.events === 'object') {
+            this.options.events = Object.assign({}, this._defaultOptions.events, opts.events);
+        }
         
         this._defaultStyle = {
             fillColor: new paper.Color('white'),
@@ -215,6 +223,55 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
             }
         }
 
+    }
+
+    /**
+     * Emit an integration hook event to the configured targets.
+     * This is the single entrypoint for toolkit-owned "public hook" events so we can
+     * keep payloads consistent and optionally avoid extra calls.
+     * @param {string} name - event name (kebab-case)
+     * @param {Object} payload - event payload (will be shallow-cloned and enriched)
+     * @param {Object} [ctx]
+     * @param {import('./papertools/base.mjs').ToolBase} [ctx.tool] - tool instance associated with the event
+     */
+    _emitIntegrationEvent(name, payload = {}, ctx = {}) {
+        const tool = ctx && ctx.tool ? ctx.tool : null;
+        const enriched = Object.assign({}, payload, {
+            tool: payload.tool ?? tool ?? undefined,
+            toolName: payload.toolName ?? tool?.toolName ?? undefined,
+        });
+
+        const ev = this.options?.events || this._defaultOptions.events;
+        if (ev?.project !== false) {
+            this.paperScope?.project?.emit?.(name, enriched);
+        }
+        if (ev?.toolkit) {
+            this.raiseEvent(name, enriched);
+        }
+    }
+
+    /**
+     * Subscribe to Paper.js project events without reaching into paperScope internals.
+     * Equivalent to: `tk.paperScope.project.on(name, fn)`.
+     * @param {string} name
+     * @param {Function} fn
+     * @returns {this}
+     */
+    on(name, fn) {
+        this.paperScope?.project?.on?.(name, fn);
+        return this;
+    }
+
+    /**
+     * Unsubscribe from Paper.js project events.
+     * Equivalent to: `tk.paperScope.project.off(name, fn)`.
+     * @param {string} name
+     * @param {Function} fn
+     * @returns {this}
+     */
+    off(name, fn) {
+        this.paperScope?.project?.off?.(name, fn);
+        return this;
     }
 
     /**
@@ -704,6 +761,14 @@ function paperItemSelect(keepOtherSelectedItems) {
     this.selected = true;
     this.emit('selected');
     this.project.emit('item-selected', { item: this });
+    const tk = this.project?._scope?.annotationToolkit;
+    if (tk && tk._emitIntegrationEvent) {
+        const selected = this.project?._scope?.findSelectedItems?.() ?? [];
+        tk._emitIntegrationEvent('selection-changed', {
+            selectedCount: selected.length,
+            primary: selected.length ? selected[0] : null,
+        });
+    }
 }
 /**
  * Deselect a paper item and emit events.
@@ -718,6 +783,14 @@ function paperItemDeselect(keepOtherSelectedItems) {
     this.selected = false;
     this.emit('deselected');
     this.project.emit('item-deselected', { item: this });
+    const tk = this.project?._scope?.annotationToolkit;
+    if (tk && tk._emitIntegrationEvent) {
+        const selected = this.project?._scope?.findSelectedItems?.() ?? [];
+        tk._emitIntegrationEvent('selection-changed', {
+            selectedCount: selected.length,
+            primary: selected.length ? selected[0] : null,
+        });
+    }
 }
 /**
  * Toggle the selection of a paper item and emit events.

@@ -218,4 +218,91 @@ body{
     color: #888;
 }
 .btn-group { display: flex; gap: 0.25rem; flex-wrap: wrap; }
+
+/* Listener API demo layout */
+.listener-layout {
+    display: flex;
+    gap: 1rem;
+    align-items: stretch;
+}
+.listener-main {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.listener-panel {
+    flex: 0 0 22rem;
+    width: 22rem;
+    max-width: 22rem;
+    box-sizing: border-box;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    background: #fafafa;
+    padding: 0.75rem;
+    overflow: auto;
+    max-height: 80vh;
+    position: sticky;
+    top: 0.75rem;
+}
+.listener-panel h4 {
+    margin: 0 0 0.5rem 0;
+}
+.listener-panel .listener-row {
+    margin-bottom: 0.5rem;
+}
+.listener-panel .listener-search {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.4rem 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+}
+.listener-panel .listener-event-list {
+    margin: 0.5rem 0;
+}
+.listener-panel details {
+    border: 1px solid #e0e0e0;
+    border-radius: 3px;
+    background: #fff;
+    padding: 0.35rem 0.5rem;
+    margin-bottom: 0.5rem;
+}
+.listener-panel summary {
+    cursor: pointer;
+    font-weight: 600;
+}
+.listener-panel .listener-check {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.2rem 0;
+    font-family: monospace;
+    font-size: 12px;
+}
+.listener-panel .listener-check input[type="checkbox"] {
+    flex: 0 0 auto;
+}
+.listener-panel .listener-last {
+    font-family: monospace;
+    font-size: 12px;
+    white-space: pre-wrap;
+    background: #f7f7f7;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    padding: 0.5rem;
+    margin: 0.5rem 0 0 0;
+    max-height: 14rem;
+    overflow: auto;
+}
+
+@media (max-width: 980px) {
+    .listener-layout {
+        flex-direction: column;
+    }
+    .listener-panel {
+        width: 100%;
+        max-width: none;
+        position: static;
+        max-height: none;
+    }
+}
 .btn, .btn-sm { padding: 0.25rem 0.5rem; cursor: pointer; }

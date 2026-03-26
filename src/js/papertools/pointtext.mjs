@@ -215,6 +215,8 @@ class PointTextToolbar extends AnnotationUIToolbarBase{
                 self.tool.item.children[1].content = value;
             }
             self.tool.cursor.children[1].content = value;
+            const tk = self.tool?.project?.paperScope?.annotationToolkit;
+            if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('text-value-changed', { value }, { tool: self.tool });
         })
         
         this.input.dispatchEvent(new Event('input'));

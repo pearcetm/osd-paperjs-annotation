@@ -323,6 +323,8 @@ class BrushToolbar extends AnnotationUIToolbarBase{
         Object.assign(this.rangeInput, {type:'range', min:1, max: 100, step: 1, value:defaultRadius});
         this.rangeInput.addEventListener('change', function(){
             brushTool.setRadius(this.value);
+            const tk = brushTool?.project?.paperScope?.annotationToolkit;
+            if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('brush-radius-changed', { radius: Number(this.value) }, { tool: brushTool });
         });
 
         this.eraseButton = document.createElement('button');
@@ -332,6 +334,8 @@ class BrushToolbar extends AnnotationUIToolbarBase{
         this.eraseButton.addEventListener('click',function(){
             let erasing = this.classList.toggle('active');
             brushTool.setEraseMode(erasing);
+            const tk = brushTool?.project?.paperScope?.annotationToolkit;
+            if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('brush-erase-mode-changed', { erasing }, { tool: brushTool });
         });
 
         setTimeout(()=>brushTool.setRadius(defaultRadius), 0);

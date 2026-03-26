@@ -397,6 +397,8 @@ class PolygonToolbar extends AnnotationUIToolbarBase{
         this.simplifyButton.addEventListener('click',function(){
             polyTool.doSimplify();
             polyTool.saveHistory();
+            const tk = polyTool?.project?.paperScope?.annotationToolkit;
+            if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('polygon-simplify-clicked', {}, { tool: polyTool });
         });
 
 
@@ -407,6 +409,8 @@ class PolygonToolbar extends AnnotationUIToolbarBase{
         this.eraseButton.addEventListener('click',function(){
             let erasing = this.classList.toggle('active');
             polyTool.setEraseMode(erasing);
+            const tk = polyTool?.project?.paperScope?.annotationToolkit;
+            if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('polygon-erase-mode-changed', { erasing }, { tool: polyTool });
         });
 
         
@@ -420,6 +424,8 @@ class PolygonToolbar extends AnnotationUIToolbarBase{
         this.undoButton.innerHTML = '<';
         this.undoButton.addEventListener('click',function(){
             polyTool.undo();
+            const tk = polyTool?.project?.paperScope?.annotationToolkit;
+            if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('polygon-history-changed', { action: 'undo' }, { tool: polyTool });
         });
 
         this.redoButton = document.createElement('button');
@@ -429,6 +435,8 @@ class PolygonToolbar extends AnnotationUIToolbarBase{
         this.redoButton.innerHTML = '>';
         this.redoButton.addEventListener('click',function(){
             polyTool.redo();
+            const tk = polyTool?.project?.paperScope?.annotationToolkit;
+            if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('polygon-history-changed', { action: 'redo' }, { tool: polyTool });
         });
     }
     /**

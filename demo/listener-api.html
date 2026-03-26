@@ -6,16 +6,34 @@
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/paper.js/0.12.17/paper-full.js"></script>
     <script type="module" src="./listener-api.mjs"></script>
     <link rel="stylesheet" href="./demo.css">
+    <link rel="stylesheet" href="./listener-api.css">
 </head>
-<body>
+<body class="listener-api-page">
     <div class="content">
         <div class="demo">
             <h3>Tool event listener API</h3>
-            <p>Tools extend ToolBase and support <code>addEventListener(eventType, callback)</code> and <code>removeEventListener(eventType, callback)</code>. Use the same function reference to remove a listener. Remove listeners when no longer needed (e.g. when a UI component unmounts) to avoid stale callbacks and listener buildup.</p>
-            <p><strong>Tool vs project events:</strong> Tool events (<code>activated</code>, <code>deactivated</code>) are broadcast by the tool instance; subscribe with <code>tool.addEventListener(type, fn)</code> and remove with <code>tool.removeEventListener(type, fn)</code>. Project-level events (e.g. <code>ruler-measurement-updated</code>) are emitted on <code>paperScope.project</code>; subscribe with <code>project.on(type, fn)</code> and remove with <code>project.off(type, fn)</code>. This demo subscribes to both so the status updates when you switch tools and when you add or edit a measurement.</p>
-            <div class="demo-section" id="listener-api-controls" aria-label="Listener API controls"></div>
-            <div id="listener-api-tool-outlet" class="headless-toolbar-outlet" aria-label="Active tool toolbar"></div>
-            <div id="listener-api-viewer" class="viewer"></div>
+            <p>This page demonstrates best-practice event subscriptions for integrating the toolkit into larger apps (e.g. custom topbars, side panels, and state stores).</p>
+            <p><strong>Two event surfaces:</strong></p>
+            <ul>
+                <li><strong>Project hooks (recommended):</strong> subscribe with <code>tk.on(name, fn)</code> / <code>tk.off(name, fn)</code>. This is equivalent to <code>tk.paperScope.project.on/off</code>, but avoids exposing Paper.js internals in your app code.</li>
+                <li><strong>Toolkit hooks (optional):</strong> subscribe with <code>tk.addHandler(name, fn)</code> / <code>tk.removeHandler(name, fn)</code>. Enable emission via <code>new AnnotationToolkit(viewer, { events: { toolkit: true } })</code>.</li>
+            </ul>
+            <p><strong>Tip:</strong> always unsubscribe on teardown/unmount to prevent listener buildup.</p>
+            <div class="listener-topbar" aria-label="Listener API top bar">
+                <button type="button" id="listener-api-panel-toggle" class="btn btn-sm">Hide events</button>
+            </div>
+            <div class="listener-layout" aria-label="Listener API layout">
+                <div class="listener-main">
+                    <div id="listener-api-viewer" class="viewer"></div>
+                    <div id="listener-api-log-section" class="demo-section listener-log-section" aria-label="Event log">
+                        <div class="btn-group btn-group-sm" style="margin-top: 0.75rem; margin-bottom: 0.5rem;">
+                            <button type="button" id="listener-api-log-clear" class="btn btn-sm">Clear log</button>
+                        </div>
+                        <div id="listener-api-log" class="event-log" aria-live="polite"></div>
+                    </div>
+                </div>
+                <aside id="listener-api-panel" class="listener-panel" aria-label="Listener API event picker"></aside>
+            </div>
         </div>
     </div>
 </body>

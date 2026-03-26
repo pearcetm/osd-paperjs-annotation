@@ -215,6 +215,8 @@ class WandTool extends AnnotationUITool{
      */
     setThreshold(t){
         this.threshold=parseInt(t);
+        const tk = this.project?.paperScope?.annotationToolkit;
+        if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('wand-threshold-changed', { threshold: this.threshold }, { tool: this });
     }
     /**
      * Sets whether the reduce mode is enabled.
@@ -223,6 +225,8 @@ class WandTool extends AnnotationUITool{
     setReduceMode(erase){
         this.reduceMode=erase;
         this.getImageData(); //reset the masks
+        const tk = this.project?.paperScope?.annotationToolkit;
+        if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('wand-mode-changed', { reduceMode: this.reduceMode, replaceMode: this.replaceMode, floodMode: this.floodMode }, { tool: this });
     }
     /**
      * Sets whether the flood mode is enabled.
@@ -230,6 +234,8 @@ class WandTool extends AnnotationUITool{
      */
     setFloodMode(flood){
         this.floodMode=flood;
+        const tk = this.project?.paperScope?.annotationToolkit;
+        if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('wand-mode-changed', { reduceMode: this.reduceMode, replaceMode: this.replaceMode, floodMode: this.floodMode }, { tool: this });
     }
     /**
      * Sets whether the replace mode is enabled.
@@ -237,6 +243,8 @@ class WandTool extends AnnotationUITool{
      */
     setReplaceMode(replace){
         this.replaceMode=replace;
+        const tk = this.project?.paperScope?.annotationToolkit;
+        if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('wand-mode-changed', { reduceMode: this.reduceMode, replaceMode: this.replaceMode, floodMode: this.floodMode }, { tool: this });
     }
     /**
      * Applies changes based on the magic wand selection.
@@ -447,6 +455,8 @@ class WandTool extends AnnotationUITool{
         this.preview && this.preview.remove();
 
         this.preview = this.project.paperScope.overlay.getViewportRaster(false);
+        const tk = this.project?.paperScope?.annotationToolkit;
+        if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('wand-preview-changed', { hasPreview: true }, { tool: this });
 
         window.preview = this.preview;
 
