@@ -396,7 +396,10 @@ function convertPaperItemToAnnotation(annotationItem){
  */
 function enhancedReplaceWith(newItem){
     if(!newItem.isGeoJSONFeature){
-        console.warn('An item with isGeoJSONFeature==false was used to replace an item.');
+        // console.warn('An item with isGeoJSONFeature==false was used to replace an item.');
+        if(this.annotationItem){
+            this.annotationItem.paperItem = newItem; // this will run convertPaperItemToAnnotation and set newItem to have a reference back to that annotationItem. 
+        }
     }
     const selectedBeforeReplace = this.selected;
     const dataBeforeReplace = this.data || {};
