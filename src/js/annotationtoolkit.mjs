@@ -116,6 +116,9 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
      * @param {boolean} [opts.strictGeometry=false] when true, `convertPaperItemToAnnotation` throws if `toGeoJSONGeometry()`
      *   has coordinates whose array nesting does not match RFC 7946 for the declared `geometry.type` (e.g. Polygon vs MultiPolygon).
      *   When false (default), the same mismatch only logs a console warning. Does not replace a full GeoJSON schema validator.
+     * @param {boolean} [opts.strictPaperItemContract=false] when true, `convertPaperItemToAnnotation` throws if `paperItem`
+     *   violates `AnnotationItem.constructor.paperItemShapeContract` (e.g. MultiPolygon requires `paper.CompoundPath`).
+     *   When false (default), a violation only logs a console warning.
      */
     constructor(openSeadragonViewer, opts = {}) {
         super();
@@ -134,6 +137,7 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
             destroyOnViewerClose: false,
             cacheAnnotations: false,
             strictGeometry: false,
+            strictPaperItemContract: false,
             events: {
                 project: true,
                 toolkit: false,

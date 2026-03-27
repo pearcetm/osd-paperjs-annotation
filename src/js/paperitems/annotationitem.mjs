@@ -40,6 +40,7 @@ import { OpenSeadragon } from '../osd-loader.mjs';
 import { paper } from '../paperjs.mjs';
 import { AnnotationToolkit } from '../annotationtoolkit.mjs';
 import { validateGeoJSONGeometry } from '../utils/geojsonGeometryShape.mjs';
+import { validatePaperItemShapeContract } from '../utils/paperItemShapeContract.mjs';
 
 /**
  * Checklist for new AnnotationItem subclasses (see `convertPaperItemToAnnotation` + `toGeoJSONGeometry`):
@@ -47,6 +48,8 @@ import { validateGeoJSONGeometry } from '../utils/geojsonGeometryShape.mjs';
  *   paper graph until the user draws. `getCoordinates()`, `getProperties()`, and any `toGeoJSONGeometry()` override
  *   must not throw in that state—return empty arrays or zeroed metrics as appropriate.
  * - Avoid unguarded `paperItem.children[n]`, `.segments`, or `project` access when those may not exist yet.
+ * - If `static paperItemShapeContract` returns `'compoundPath'`, polygon tools and history expect `paper.CompoundPath`;
+ *   a plain `Path` (e.g. boolean result) triggers a bind-time warning unless the client wraps before assign.
  * - Export shape remains validated via `toGeoJSONGeometry()` + RFC 7946 nesting (`geojsonGeometryShape.mjs`).
  *
  * Represents an annotation item that can be used in a map.
@@ -78,6 +81,15 @@ class AnnotationItem{
      */
     static supportsGeoJSONType(type, subtype){
         return false; // base class returns false
+    }
+
+    /**
+     * Optional editor contract for `paperItem` graph shape. Subclasses return `'compoundPath'` so bind can warn when
+     * the item is not a `paper.CompoundPath` (e.g. boolean ops returning a plain `Path`).
+     * @returns {'compoundPath'|null}
+     */
+    static get paperItemShapeContract() {
+        return null;
     }
 
     /**
@@ -391,6 +403,17 @@ function convertPaperItemToAnnotation(annotationItem){
     //selected or not
     if('selected' in properties){
         item.selected = properties.selected;
+    }
+
+    const shapeCheck = validatePaperItemShapeContract(annotationItem, item);
+    if (!shapeCheck.ok) {
+        const tkShape = item.project?.paperScope?.annotationToolkit;
+        const strictShape = tkShape?.options?.strictPaperItemContract === true;
+        const shapeMsg = `[AnnotationItem] ${shapeCheck.message}`;
+        if (strictShape) {
+            throw new Error(shapeMsg);
+        }
+        console.warn(shapeMsg, { annotationItemClass: annotationItem.constructor.name });
     }
 
     // After paperItem ↔ annotationItem wiring, validate export geometry (single pipeline: toGeoJSONGeometry only).

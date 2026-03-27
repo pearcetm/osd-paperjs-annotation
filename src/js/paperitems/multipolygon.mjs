@@ -44,7 +44,8 @@ import { paper } from '../paperjs.mjs';
  * @class
  * @memberof OSDPaperjsAnnotation
  * @extends AnnotationItem
- * @description The `MultiPolygon` class represents a multi-polygon annotation item. It inherits from the `AnnotationItem` class and provides methods to work with multi-polygon annotations.
+ * @description The `MultiPolygon` class represents a multi-polygon annotation item. Editor contract: `paperItem` should
+ * be `paper.CompoundPath` (rings as `children`); boolean ops may return a plain `Path`—wrap before assigning `paperItem`.
  */
 class MultiPolygon extends AnnotationItem{
     /**
@@ -101,12 +102,30 @@ class MultiPolygon extends AnnotationItem{
         return ['polygon','multipolygon'].includes(type.toLowerCase()) && subtype === null;
     }
 
+    static get paperItemShapeContract() {
+        return 'compoundPath';
+    }
+
+    /**
+     * Subpaths to treat as polygon rings: CompoundPath uses `children`; a plain Path (e.g. boolean subtract result) has geometry on itself and no `children` array (Paper.js uses `_children || [path]` internally).
+     * @returns {paper.Path[]}
+     * @private
+     */
+    _pathsForPolygonExport(){
+        const item = this.paperItem;
+        if (!item) return [];
+        const ch = item.children;
+        if (Array.isArray(ch) && ch.length > 0) return ch;
+        if (item.segments && item.segments.length > 0) return [item];
+        return [];
+    }
+
     /**
      * Get the type of this object.
      * @returns { Object } with fields `type in ['MultiPolygon', 'Polygon']`
      */
     getGeoJSONType(){
-        let polygons = this.paperItem.children.filter(c=>c.area > 0 && c.segments.length>2);
+        let polygons = this._pathsForPolygonExport().filter(c=>c.area > 0 && c.segments.length>2);
         const type = polygons.length > 1 ? 'MultiPolygon' : 'Polygon';
             
         return {
@@ -121,9 +140,10 @@ class MultiPolygon extends AnnotationItem{
      * @description This method returns an array of arrays representing the coordinates of the polygons and their holes in the multi-polygon.
      */
     getCoordinates(){
+        const paths = this._pathsForPolygonExport();
         //filter out invalid children with less than 3 points
-        let polygons = this.paperItem.children.filter(c=>c.area > 0 && c.segments.length>2);
-        let holes = this.paperItem.children.filter(c=>c.area <= 0 && c.segments.length>2);
+        let polygons = paths.filter(c=>c.area > 0 && c.segments.length>2);
+        let holes = paths.filter(c=>c.area <= 0 && c.segments.length>2);
         let out = polygons.map(p => 
             [p.segments.map(s => [s.point.x, s.point.y]), ].concat(
                 holes.filter(h=>p.contains(h.segments[0].point)).map(h=> h.segments.map(s=>[s.point.x, s.point.y])) )

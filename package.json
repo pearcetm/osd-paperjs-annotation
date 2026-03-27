@@ -3,7 +3,7 @@
   "description": "Annotation tools for OpenSeadragon using PaperJS",
   "version": "0.4.15",
   "scripts": {
-    "test": "node test/geojsonGeometryShape.test.mjs && node test/emptyGeometryExport.test.mjs",
+    "test": "node test/geojsonGeometryShape.test.mjs && node test/emptyGeometryExport.test.mjs && node test/paperItemShapeContractCore.test.mjs",
     "generate-docs": "jsdoc -c ./jsdoc-config.json",
     "build": "webpack"
   },
