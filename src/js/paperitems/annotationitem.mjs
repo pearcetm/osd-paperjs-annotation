@@ -399,6 +399,7 @@ function enhancedReplaceWith(newItem){
         console.warn('An item with isGeoJSONFeature==false was used to replace an item.');
     }
     const selectedBeforeReplace = this.selected;
+    const dataBeforeReplace = this.data || {};
     newItem._callbacks = this._callbacks;
     let rescale = OpenSeadragon.extend(true,this.rescale,newItem.rescale);
     newItem.style = this.style; //to do: make this work with rescale properties, so that rescale.strokeWidth doesn't overwrite other props
@@ -407,6 +408,12 @@ function enhancedReplaceWith(newItem){
     this.emit('item-replaced',{item:newItem});
     newItem.project.emit('item-replaced',{item:newItem});
     paper.Item.prototype.replaceWith.call(this, newItem);
+
+    // Preserve Paper.js item.data for runtime continuity (shallow copy).
+    // Old keys win if there is overlap.
+    newItem.data = newItem.data || {};
+    Object.assign(newItem.data, dataBeforeReplace);
+
     newItem.selected = selectedBeforeReplace;
     newItem.updateFillOpacity();
     newItem.applyRescale();
