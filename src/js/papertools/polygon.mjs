@@ -284,11 +284,17 @@ class PolygonTool extends AnnotationUITool{
      * @param {boolean} erase - True to enable erase mode, false to disable.
      */
     setEraseMode(erase){
-        this.eraseMode=erase;
-        this.item && (this.item.selectedColor = erase ? 'red' : null);
-        this.drawingGroup.selectedColor= erase ? 'red' : null;
-        this.toolbarControl.setEraseMode(erase);
+        const erasing = !!erase;
+        const changed = this.eraseMode !== erasing;
+        this.eraseMode = erasing;
+        this.item && (this.item.selectedColor = erasing ? 'red' : null);
+        this.drawingGroup.selectedColor = erasing ? 'red' : null;
+        this.toolbarControl.setEraseMode(erasing);
         this.project.overlay.removeClass('tool-action').setAttribute('data-tool-action','');
+        if (changed) {
+            const tk = this.project?.paperScope?.annotationToolkit;
+            if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('polygon-erase-mode-changed', { erasing }, { tool: this });
+        }
     }
     /**
      * Completes the current polygon path and updates the annotation accordingly.
@@ -343,6 +349,8 @@ class PolygonTool extends AnnotationUITool{
             this.item.children = history[idx].children.map(x=>x.clone({insert:true,deep:true}));
             this.drawingGroup.children = history[idx].drawingGroup.map(x=>x.clone({insert:true,deep:true}));
             history.position=idx;
+            const tk = this.project?.paperScope?.annotationToolkit;
+            if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('polygon-history-changed', { action: 'undo' }, { tool: this });
         }
     }
     /**
@@ -358,7 +366,16 @@ class PolygonTool extends AnnotationUITool{
             this.item.children = history[idx].children.map(x=>x.clone({insert:true,deep:true}));
             this.drawingGroup.children = history[idx].drawingGroup.map(x=>x.clone({insert:true,deep:true}));
             history.position=idx;
+            const tk = this.project?.paperScope?.annotationToolkit;
+            if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('polygon-history-changed', { action: 'redo' }, { tool: this });
         }
+    }
+
+    simplify(){
+        this.doSimplify();
+        this.saveHistory();
+        const tk = this.project?.paperScope?.annotationToolkit;
+        if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('polygon-simplified', {}, { tool: this });
     }
 }
 export {PolygonTool};
@@ -395,10 +412,7 @@ class PolygonToolbar extends AnnotationUIToolbarBase{
         this.simplifyButton.innerHTML = 'Simplify';
         simplifyDiv.append(this.simplifyButton);
         this.simplifyButton.addEventListener('click',function(){
-            polyTool.doSimplify();
-            polyTool.saveHistory();
-            const tk = polyTool?.project?.paperScope?.annotationToolkit;
-            if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('polygon-simplify-clicked', {}, { tool: polyTool });
+            polyTool.simplify();
         });
 
 
@@ -409,8 +423,6 @@ class PolygonToolbar extends AnnotationUIToolbarBase{
         this.eraseButton.addEventListener('click',function(){
             let erasing = this.classList.toggle('active');
             polyTool.setEraseMode(erasing);
-            const tk = polyTool?.project?.paperScope?.annotationToolkit;
-            if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('polygon-erase-mode-changed', { erasing }, { tool: polyTool });
         });
 
         
@@ -424,8 +436,6 @@ class PolygonToolbar extends AnnotationUIToolbarBase{
         this.undoButton.innerHTML = '<';
         this.undoButton.addEventListener('click',function(){
             polyTool.undo();
-            const tk = polyTool?.project?.paperScope?.annotationToolkit;
-            if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('polygon-history-changed', { action: 'undo' }, { tool: polyTool });
         });
 
         this.redoButton = document.createElement('button');
@@ -435,8 +445,6 @@ class PolygonToolbar extends AnnotationUIToolbarBase{
         this.redoButton.innerHTML = '>';
         this.redoButton.addEventListener('click',function(){
             polyTool.redo();
-            const tk = polyTool?.project?.paperScope?.annotationToolkit;
-            if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('polygon-history-changed', { action: 'redo' }, { tool: polyTool });
         });
     }
     /**

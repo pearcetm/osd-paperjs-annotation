@@ -111,9 +111,25 @@ class LinestringTool extends PolygonTool{
      * 
      */        
     setRadius(r){
-        this.radius = r;
-        this.cursor.radius= r / this.project.getZoom();
+        const width = Number(r);
+        const changed = this.radius !== width;
+        this.radius = width;
+        this.cursor.radius = width / this.project.getZoom();
+        if (changed) {
+            const tk = this.project?.paperScope?.annotationToolkit;
+            if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('linestring-width-changed', { width }, { tool: this });
+        }
 
+    }
+
+    setEraseMode(erase){
+        const prev = !!this.eraseMode;
+        super.setEraseMode(erase);
+        const erasing = !!this.eraseMode;
+        if (prev !== erasing) {
+            const tk = this.project?.paperScope?.annotationToolkit;
+            if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('linestring-erase-mode-changed', { erasing }, { tool: this });
+        }
     }
 
 
@@ -285,8 +301,6 @@ class LinestringToolbar extends AnnotationUIToolbarBase{
         Object.assign(this.rangeInput, {type:'range', min:0.2, max:12, step:0.1, value:defaultRadius});
         this.rangeInput.addEventListener('change', function(){
             linestringTool.setRadius(this.value);
-            const tk = linestringTool?.project?.paperScope?.annotationToolkit;
-            if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('linestring-width-changed', { width: Number(this.value) }, { tool: linestringTool });
         });
 
         this.eraseButton = document.createElement('button');
@@ -296,8 +310,6 @@ class LinestringToolbar extends AnnotationUIToolbarBase{
         this.eraseButton.addEventListener('click',function(){
             let erasing = this.classList.toggle('active');
             linestringTool.setEraseMode(erasing);
-            const tk = linestringTool?.project?.paperScope?.annotationToolkit;
-            if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('linestring-erase-mode-changed', { erasing }, { tool: linestringTool });
         });
         
         setTimeout(()=>linestringTool.setRadius(defaultRadius));

@@ -187,8 +187,14 @@ import { makeFaIcon } from '../utils/faIcon.mjs';
      * @description This method sets the radius of the brush tool, affecting the size of the brush strokes.
      */
     setRadius(r){
-        this.radius = r;
-        this.cursor.radius=r/this.project.getZoom();
+        const radius = Number(r);
+        const changed = this.radius !== radius;
+        this.radius = radius;
+        this.cursor.radius = radius / this.project.getZoom();
+        if (changed) {
+            const tk = this.project?.paperScope?.annotationToolkit;
+            if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('brush-radius-changed', { radius }, { tool: this });
+        }
     }
 
 
@@ -207,9 +213,15 @@ import { makeFaIcon } from '../utils/faIcon.mjs';
          * @description This method toggles the erase mode of the brush tool, changing whether it adds or subtracts strokes.
          */
     setEraseMode(erase){
-        this.eraseMode=erase;
-        this.cursor.fillColor= erase ? this.eraseColor : this.drawColor;
+        const erasing = !!erase;
+        const changed = this.eraseMode !== erasing;
+        this.eraseMode = erasing;
+        this.cursor.fillColor= erasing ? this.eraseColor : this.drawColor;
         this.toolbarControl.setEraseMode(this.eraseMode);
+        if (changed) {
+            const tk = this.project?.paperScope?.annotationToolkit;
+            if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('brush-erase-mode-changed', { erasing }, { tool: this });
+        }
     }  
 
     finish(){
@@ -323,8 +335,6 @@ class BrushToolbar extends AnnotationUIToolbarBase{
         Object.assign(this.rangeInput, {type:'range', min:1, max: 100, step: 1, value:defaultRadius});
         this.rangeInput.addEventListener('change', function(){
             brushTool.setRadius(this.value);
-            const tk = brushTool?.project?.paperScope?.annotationToolkit;
-            if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('brush-radius-changed', { radius: Number(this.value) }, { tool: brushTool });
         });
 
         this.eraseButton = document.createElement('button');
@@ -334,8 +344,6 @@ class BrushToolbar extends AnnotationUIToolbarBase{
         this.eraseButton.addEventListener('click',function(){
             let erasing = this.classList.toggle('active');
             brushTool.setEraseMode(erasing);
-            const tk = brushTool?.project?.paperScope?.annotationToolkit;
-            if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('brush-erase-mode-changed', { erasing }, { tool: brushTool });
         });
 
         setTimeout(()=>brushTool.setRadius(defaultRadius), 0);

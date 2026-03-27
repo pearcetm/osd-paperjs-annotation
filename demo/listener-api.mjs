@@ -253,7 +253,7 @@ function setupListenerApiPanel(toolkit) {
                 'wand-preview-changed',
                 // Polygon
                 'polygon-erase-mode-changed',
-                'polygon-simplify-clicked',
+                'polygon-simplified',
                 'polygon-history-changed',
                 // Style
                 'style-colorpicker-open-changed',
@@ -267,7 +267,7 @@ function setupListenerApiPanel(toolkit) {
                 // Text
                 'text-value-changed',
                 // Raster
-                'rasterize-clicked',
+                'rasterized',
             ],
         },
     ];

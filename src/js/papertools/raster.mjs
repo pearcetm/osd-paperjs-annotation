@@ -118,6 +118,8 @@ class RasterTool extends AnnotationUITool{
                 item.replaceWith(newItem);
                 self.refreshItems();
                 if (newItem) self.emitItemEvent('item-converted', { item: newItem, tool: self });
+                const tk = self.project?.paperScope?.annotationToolkit;
+                if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('rasterized', { item: newItem ?? null }, { tool: self });
 
                 this.remove();
             }
@@ -155,8 +157,6 @@ class RasterToolbar extends AnnotationUIToolbarBase{
         d.appendChild(span);
 
         button.addEventListener('click',()=>{
-            const tk = tool?.project?.paperScope?.annotationToolkit;
-            if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('rasterize-clicked', {}, { tool });
             tool.rasterize();
         })
     }
