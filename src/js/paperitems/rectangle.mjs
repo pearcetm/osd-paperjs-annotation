@@ -132,6 +132,10 @@ class Rectangle extends AnnotationItem{
     getProperties(){
         let item = this.paperItem;
         let path = item.children[0];
+        // Empty CompoundPath before first drag (e.g. Placeholder initializes with coordinates: []).
+        if (!path || !path.segments || path.segments.length < 4) {
+            return { width: 0, height: 0, angle: 0 };
+        }
         let points = path.segments.map(s=>s.point);
         let top = points[1].subtract(points[0]);
         let left = points[0].subtract(points[3]);

@@ -131,6 +131,11 @@ class Ellipse extends AnnotationItem{
     getProperties(){
         let item = this.paperItem;
         let path = item.children[0];
+        // Empty CompoundPath before first drag (e.g. Placeholder initializes with coordinates: []).
+        // Path.Ellipse uses four segments for axis math below.
+        if (!path || !path.segments || path.segments.length < 4) {
+            return { majorRadius: 0, minorRadius: 0, angle: 0 };
+        }
         let points = path.segments.map(s=>s.point);
         let ax1 = points[2].subtract(points[0]);
         let ax2 = points[3].subtract(points[1]);

@@ -39,8 +39,16 @@
 import { OpenSeadragon } from '../osd-loader.mjs';
 import { paper } from '../paperjs.mjs';
 import { AnnotationToolkit } from '../annotationtoolkit.mjs';
+import { validateGeoJSONGeometry } from '../utils/geojsonGeometryShape.mjs';
 
 /**
+ * Checklist for new AnnotationItem subclasses (see `convertPaperItemToAnnotation` + `toGeoJSONGeometry`):
+ * - If the tool uses `initializeGeoJSONFeature` with empty `coordinates`, the constructor may leave an incomplete
+ *   paper graph until the user draws. `getCoordinates()`, `getProperties()`, and any `toGeoJSONGeometry()` override
+ *   must not throw in that state—return empty arrays or zeroed metrics as appropriate.
+ * - Avoid unguarded `paperItem.children[n]`, `.segments`, or `project` access when those may not exist yet.
+ * - Export shape remains validated via `toGeoJSONGeometry()` + RFC 7946 nesting (`geojsonGeometryShape.mjs`).
+ *
  * Represents an annotation item that can be used in a map.
  * @class
  * @memberof OSDPaperjsAnnotation
@@ -383,6 +391,32 @@ function convertPaperItemToAnnotation(annotationItem){
     //selected or not
     if('selected' in properties){
         item.selected = properties.selected;
+    }
+
+    // After paperItem ↔ annotationItem wiring, validate export geometry (single pipeline: toGeoJSONGeometry only).
+    // Does not validate ring orientation, bbox, or CRS; only RFC 7946 coordinate nesting vs geometry.type.
+    let geom;
+    try {
+        geom = annotationItem.toGeoJSONGeometry();
+    } catch (err) {
+        if (err instanceof Error && err.message.startsWith('[AnnotationItem]')) {
+            throw err;
+        }
+        console.warn(
+            'AnnotationItem: toGeoJSONGeometry() threw during bind (incomplete geometry or bug; RFC nesting check was not run).',
+            err,
+        );
+        return;
+    }
+    const check = validateGeoJSONGeometry(geom);
+    if (!check.ok) {
+        const tk = annotationItem.paperItem?.project?.paperScope?.annotationToolkit;
+        const strict = tk?.options?.strictGeometry === true;
+        const msg = `[AnnotationItem] ${check.message || 'GeoJSON coordinates do not match declared geometry type.'}`;
+        if (strict) {
+            throw new Error(msg);
+        }
+        console.warn(msg, { geometryType: geom?.type });
     }
 }
 

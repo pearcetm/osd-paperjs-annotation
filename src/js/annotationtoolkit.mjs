@@ -113,6 +113,9 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
      * @param {object} [opts.overlay] a PaperOverlay object to use
      * @param {object} [opts.destroyOnViewerClose] whether to destroy the toolkit and its overlay when the viewer closes
      * @param {object} [opts.cacheAnnotations] whether to keep annotations in memory for images which aren't currently open
+     * @param {boolean} [opts.strictGeometry=false] when true, `convertPaperItemToAnnotation` throws if `toGeoJSONGeometry()`
+     *   has coordinates whose array nesting does not match RFC 7946 for the declared `geometry.type` (e.g. Polygon vs MultiPolygon).
+     *   When false (default), the same mismatch only logs a console warning. Does not replace a full GeoJSON schema validator.
      */
     constructor(openSeadragonViewer, opts = {}) {
         super();
@@ -130,6 +133,7 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
             overlay: null,
             destroyOnViewerClose: false,
             cacheAnnotations: false,
+            strictGeometry: false,
             events: {
                 project: true,
                 toolkit: false,
