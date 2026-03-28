@@ -73,6 +73,7 @@ class PolygonTool extends AnnotationUITool{
         this.draggingSegment = null;
         this.eraseMode=false;
         this.simplifying=null;
+        this._geometryMutatedThisPress = false;
         // this.simplifier = new SimplifyJS();
         this.setToolbarControl(new PolygonToolbar(this));  
         this.registerOverlayCursorOwnedClasses('tool-action');
@@ -152,6 +153,24 @@ class PolygonTool extends AnnotationUITool{
     _restoreCachedItem(){
         this._currentItem && (this._currentItem.selectedColor = this._currentItemSelectedColor);
     }
+    /**
+     * Set {@link PolygonTool#_geometryMutatedThisPress} when a hit-test mutation applies to the selected annotation item
+     * (not a draft path in the drawing group).
+     * @param {paper.HitResult} hitResult
+     * @private
+     */
+    _markIfHitMutatesSelectedItem(hitResult) {
+        if (!hitResult?.item || !this.item) return;
+        let p = hitResult.item;
+        while (p) {
+            if (p === this.item) {
+                this._geometryMutatedThisPress = true;
+                return;
+            }
+            p = p.parent;
+        }
+    }
+
     onSelectionChanged(){
         if(this.item !== this._currentItem){
             this._restoreCachedItem();
@@ -165,6 +184,7 @@ class PolygonTool extends AnnotationUITool{
     }
     onMouseDown(ev){
         this.draggingSegment=null;
+        this._geometryMutatedThisPress = false;
         // Tool action cursor is derived from hover-hit-testing; clear it when the interaction
         // state changes so it can't get stuck without a follow-up mousemove.
         this.project.overlay.removeClass('tool-action').setAttribute('data-tool-action','');
@@ -194,6 +214,7 @@ class PolygonTool extends AnnotationUITool{
             //if erasing and hitResult is a segment, hitResult.segment.remove()
             if(hitResult.type=='segment' && this.eraseMode){
                 hitResult.segment.remove();
+                this._markIfHitMutatesSelectedItem(hitResult);
             }
             //if hitResult is a segment and NOT erasing, save reference to hitResult.segment for dragging it
             else if(hitResult.type=='segment'){
@@ -203,6 +224,7 @@ class PolygonTool extends AnnotationUITool{
             else if(hitResult.type=='stroke'){
                 let insertIndex = hitResult.location.index +1;
                 let ns = hitResult.item.insert(insertIndex, ev.point);
+                this._markIfHitMutatesSelectedItem(hitResult);
             }
         }
         else if(dr){ //already drawing, add point to the current path object
@@ -220,14 +242,16 @@ class PolygonTool extends AnnotationUITool{
         
     }
     onMouseUp(ev){
+        let closedPathThisUp = false;
         let dr = this.drawing();
         if(dr && dr.path.segments.length>1){
             let hitResult = dr.path.hitTest(ev.point,{fill:false,stroke:false,segments:true,tolerance:this.getTolerance(5)})
             if(hitResult && hitResult.segment == dr.path.firstSegment){
                 this.finishCurrentPath();
+                closedPathThisUp = true;
             }
         }
-        else if(this.draggingSegment){
+        if(this.draggingSegment){
             this.draggingSegment=null;
             if(!this.item.isBoundingElement){
                 let boundingItems = this.item.parent.children.filter(i=>i.isBoundingElement);
@@ -235,6 +259,10 @@ class PolygonTool extends AnnotationUITool{
             }
             if (this.item) this.emitItemEvent('item-updated', { item: this.item, tool: this });
         }
+        else if(!closedPathThisUp && this._geometryMutatedThisPress && this.item){
+            this.emitItemEvent('item-updated', { item: this.item, tool: this, reason: 'geometry-edit' });
+        }
+        this._geometryMutatedThisPress = false;
         this.saveHistory()
     }
     onMouseMove(ev){
@@ -349,6 +377,7 @@ class PolygonTool extends AnnotationUITool{
             this.item.children = history[idx].children.map(x=>x.clone({insert:true,deep:true}));
             this.drawingGroup.children = history[idx].drawingGroup.map(x=>x.clone({insert:true,deep:true}));
             history.position=idx;
+            if (this.item) this.emitItemEvent('item-updated', { item: this.item, tool: this, reason: 'undo' });
             const tk = this.project?.paperScope?.annotationToolkit;
             if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('polygon-history-changed', { action: 'undo' }, { tool: this });
         }
@@ -366,6 +395,7 @@ class PolygonTool extends AnnotationUITool{
             this.item.children = history[idx].children.map(x=>x.clone({insert:true,deep:true}));
             this.drawingGroup.children = history[idx].drawingGroup.map(x=>x.clone({insert:true,deep:true}));
             history.position=idx;
+            if (this.item) this.emitItemEvent('item-updated', { item: this.item, tool: this, reason: 'redo' });
             const tk = this.project?.paperScope?.annotationToolkit;
             if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('polygon-history-changed', { action: 'redo' }, { tool: this });
         }
@@ -374,6 +404,9 @@ class PolygonTool extends AnnotationUITool{
     simplify(){
         this.doSimplify();
         this.saveHistory();
+        for (const it of this.items) {
+            this.emitItemEvent('item-updated', { item: it, tool: this, reason: 'simplify' });
+        }
         const tk = this.project?.paperScope?.annotationToolkit;
         if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('polygon-simplified', {}, { tool: this });
     }

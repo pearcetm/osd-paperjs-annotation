@@ -427,12 +427,14 @@ class RulerTool extends AnnotationUITool {
         this.strokeWidthPixels = Math.max(1, parseInt(n, 10) || 1);
         this._refreshItemSegments();
         this._writeRulerDataToItem();
+        if (this.item) this.emitItemEvent('item-updated', { item: this.item, tool: this, reason: 'ruler-settings' });
     }
 
     setHaloExtraPixels(n) {
         this.haloExtraPixels = Math.max(0, parseInt(n, 10) || 0);
         this._refreshItemSegments();
         this._writeRulerDataToItem();
+        if (this.item) this.emitItemEvent('item-updated', { item: this.item, tool: this, reason: 'ruler-settings' });
     }
 
     setLabelFontSize(n) {
@@ -440,6 +442,7 @@ class RulerTool extends AnnotationUITool {
         this.labelFontSize = (v >= 6 && v <= 72) ? v : 12;
         this._refreshItemSegments();
         this._writeRulerDataToItem();
+        if (this.item) this.emitItemEvent('item-updated', { item: this.item, tool: this, reason: 'ruler-settings' });
     }
 
     setDecimals(n) {
@@ -506,6 +509,7 @@ class RulerTool extends AnnotationUITool {
             }
         });
         this._emitMeasurementUpdated();
+        if (this.item) this.emitItemEvent('item-updated', { item: this.item, tool: this, reason: 'ruler-settings' });
     }
 
     /**

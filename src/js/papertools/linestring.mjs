@@ -135,6 +135,7 @@ class LinestringTool extends PolygonTool{
 
     onMouseDown(ev){
         this.draggingSegment=null;
+        this._geometryMutatedThisPress = false;
         this.project.overlay.removeClass('tool-action').setAttribute('data-tool-action','');
 
         if(this.itemToCreate){
@@ -151,6 +152,7 @@ class LinestringTool extends PolygonTool{
             //if erasing and hitResult is a segment, hitResult.segment.remove()
             if(hitResult.type=='segment' && this.eraseMode){
                 hitResult.segment.remove();
+                this._geometryMutatedThisPress = true;
             }
             
             //if hitResult is a segment and NOT erasing, save reference to hitResult.segment for dragging it
@@ -162,6 +164,7 @@ class LinestringTool extends PolygonTool{
             else if(hitResult.type=='stroke' && !this.eraseMode){
                 let insertIndex = hitResult.location.index +1;
                 hitResult.item.insert(insertIndex, ev.point);
+                this._geometryMutatedThisPress = true;
             }
         }
         else{ //not drawing yet, but start now!
@@ -197,6 +200,8 @@ class LinestringTool extends PolygonTool{
     }
     
     onMouseUp(ev){
+        const drBefore = this.drawing();
+        const hadFinishableDraft = !!(drBefore && drBefore.path.segments.length > 1);
         this.finishCurrentPath();
         if (this.draggingSegment) {
             this.draggingSegment = null;
@@ -206,6 +211,10 @@ class LinestringTool extends PolygonTool{
             }
             if (this.item) this.emitItemEvent('item-updated', { item: this.item, tool: this });
         }
+        else if (this._geometryMutatedThisPress && this.item && !(hadFinishableDraft && !this.drawing())) {
+            this.emitItemEvent('item-updated', { item: this.item, tool: this, reason: 'geometry-edit' });
+        }
+        this._geometryMutatedThisPress = false;
         if (this.item) this.saveHistory();
     }
 

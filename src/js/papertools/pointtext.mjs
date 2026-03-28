@@ -213,6 +213,7 @@ class PointTextToolbar extends AnnotationUIToolbarBase{
             let value = self.getValue();
             if(self.tool.item && self.tool.item.annotationItem.subtype=='PointText'){
                 self.tool.item.children[1].content = value;
+                self.tool.emitItemEvent('item-updated', { item: self.tool.item, tool: self.tool, reason: 'text' });
             }
             self.tool.cursor.children[1].content = value;
             const tk = self.tool?.project?.paperScope?.annotationToolkit;

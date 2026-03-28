@@ -194,6 +194,9 @@ class ToolBase{
     /**
      * Emit an item lifecycle event from both this tool and the project, so listeners can subscribe
      * either to the tool (tool-specific) or to the project (any tool). Use for item-created, item-updated, item-converted.
+     * Emit item-updated when geometry or persisted feature state (e.g. GeoJSON-backed properties, ruler data, text) changes
+     * so hosts can save or sync. Use toolkit-only integration events (annotationToolkit._emitIntegrationEvent) for UI or
+     * non-persisted affordances (e.g. erase-mode toggled, live preview) where the saved feature is unchanged.
      * @param {string} eventType - One of 'item-created', 'item-updated', 'item-converted'.
      * @param {Object} payload - Must include { item, tool }. When a new part was added, set subpathAdded: true
      *   and include subpath: the Paper item that was added (e.g. Path or Group), so consumers can use it without guessing.
