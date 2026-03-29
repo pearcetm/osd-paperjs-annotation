@@ -126,7 +126,7 @@ class WandTool extends AnnotationUITool{
         this.MagicWand = makeMagicWand();
 
         this.setToolbarControl(new WandToolbar(this));
-        this.toolbarControl.setThreshold(this.threshold);
+        this.toolbarControl.syncThresholdInput(this.threshold);
 
         let callback=function(){
             self.getImageData();
@@ -181,12 +181,12 @@ class WandTool extends AnnotationUITool{
         let delta = ev.original.point.subtract(ev.original.downPoint).multiply(this.project.getZoom());
         if(this.reduceMode) delta = delta.multiply(-1); //invert effect of dragging when in reduce mode for more intuitive user experience
         let s=Math.round((delta.x+delta.y*-1)/2);
-        this.threshold=Math.min(Math.max(this.startThreshold+s, this.minThreshold), this.maxThreshold);
-        if(Number.isNaN(this.threshold)){
-            // console.log('wft nan??');
-            console.warn('NaN value for threshold')
+        const next = Math.min(Math.max(this.startThreshold+s, this.minThreshold), this.maxThreshold);
+        if(Number.isNaN(next)){
+            console.warn('NaN value for threshold');
+            return;
         }
-        this.toolbarControl.setThreshold(this.threshold);
+        this.setThreshold(next);
         this.applyMagicWand(ev.original.downPoint);
     }
     onMouseMove(ev){
@@ -210,11 +210,18 @@ class WandTool extends AnnotationUITool{
         this.deactivate();    
     }
     /**
-     * Sets the threshold value for the magic wand operation.
-     * @param {number} t - The threshold value.
+     * Sets the threshold value for the magic wand operation, syncs the toolbar range input, and emits
+     * `wand-threshold-changed` when the clamped value actually changes. Programmatic updates to the input
+     * use {@link WandToolbar#syncThresholdInput} only (assigns `.value` — does not fire DOM events).
+     * @param {number|string} t - The threshold value (from UI or code).
      */
     setThreshold(t){
-        this.threshold=parseInt(t);
+        const parsed = parseInt(t, 10);
+        if (Number.isNaN(parsed)) return;
+        const v = Math.min(Math.max(parsed, this.minThreshold), this.maxThreshold);
+        if (v === this.threshold) return;
+        this.threshold = v;
+        this.toolbarControl.syncThresholdInput(this.threshold);
         const tk = this.project?.paperScope?.annotationToolkit;
         if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('wand-threshold-changed', { threshold: this.threshold }, { tool: this });
     }
@@ -529,8 +536,9 @@ class WandToolbar extends AnnotationUIToolbarBase{
 
         this.thresholdInput = document.createElement('input');
         thr.appendChild(this.thresholdInput);
-        Object.assign(this.thresholdInput, {type:'range',min:-1,max:100,value:20} );
-        this.thresholdInput.onchange = function(){ wandTool.setThreshold(this.value) }
+        Object.assign(this.thresholdInput, {type:'range',min:-1,max:100,value:wandTool.threshold} );
+        this.thresholdInput.addEventListener('change', function(){ wandTool.setThreshold(this.value); });
+        this.thresholdInput.addEventListener('input', function(){ wandTool.setThreshold(this.value); });
         
         let toggles = document.createElement('div');
         toggles.classList.add('toggles');
@@ -640,12 +648,12 @@ class WandToolbar extends AnnotationUIToolbarBase{
         return ['new','Polygon','MultiPolygon'].includes(mode);
     }
     /**
-     * Set the threshold value in the threshold input element.
+     * Mirror the tool threshold into the range input only. Does not dispatch DOM events (safe with `input`/`change` listeners).
      *
-     * @param {number} thr - The threshold value to set.
+     * @param {number} thr - The threshold value to display.
      */
-    setThreshold(thr){
-        this.thresholdInput.value = thr;
+    syncThresholdInput(thr){
+        this.thresholdInput.value = String(thr);
     }
 
     /**
