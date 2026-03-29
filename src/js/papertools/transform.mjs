@@ -36,7 +36,7 @@
  * 
  */
 
-import {AnnotationUITool, AnnotationUIToolbarBase} from './annotationUITool.mjs';
+import {AnnotationUITool, AnnotationUIToolbarBase, annotationToolPrimaryButtonActiveDrag, annotationToolPrimaryButtonDownOrUp} from './annotationUITool.mjs';
 import { paper } from '../paperjs.mjs';
 import { makeFaIcon } from '../utils/faIcon.mjs';
 /**
@@ -142,10 +142,14 @@ class TransformTool extends AnnotationUITool{
             
              ctrl.anchor=c[0];
              ctrl.opposite=c[1];
-             ctrl.onMouseDown = function(ev){ev.stopPropagation();}
+             ctrl.onMouseDown = function(ev){
+                if (!annotationToolPrimaryButtonDownOrUp(ev)) return;
+                ev.stopPropagation();
+             }
 
              // scaling operations
              ctrl.onMouseDrag = function(ev){
+                if (!annotationToolPrimaryButtonActiveDrag(ev)) return;
                 // first handle the bounding box
                 let layerAngle = self.targetLayer.getRotation();
                 let rotation=this.parent.rotation; 
@@ -185,9 +189,12 @@ class TransformTool extends AnnotationUITool{
         this._transformTool.rotationHandle=new paper.Shape.Circle(new paper.Point(0,0),cSize/currentZoom);
         this._transformTool.rotationHandle.set({fillColor:'red',strokeColor:'black',rescale:{radius:cSize}});
         this._transformTool.addChild(this._transformTool.rotationHandle);
-        this._transformTool.rotationHandle.onMouseDown = function(ev){ev.stopPropagation();}
+        this._transformTool.rotationHandle.onMouseDown = function(ev){
+            if (!annotationToolPrimaryButtonDownOrUp(ev)) return;
+            ev.stopPropagation();
+        }
         this._transformTool.rotationHandle.onMouseDrag = function(ev){
-            
+            if (!annotationToolPrimaryButtonActiveDrag(ev)) return;
             let parentMatrix=this.parent.matrix;
             let center=parentMatrix.transform(this.parent.boundingRect.position);
             

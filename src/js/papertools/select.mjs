@@ -36,7 +36,7 @@
  * 
  */
 
-import {AnnotationUITool, AnnotationUIToolbarBase} from './annotationUITool.mjs';
+import {AnnotationUITool, AnnotationUIToolbarBase, annotationToolPrimaryButtonActiveDrag, annotationToolPrimaryButtonDownOrUp} from './annotationUITool.mjs';
 import { paper } from '../paperjs.mjs';
 import { makeFaIcon } from '../utils/faIcon.mjs';
 
@@ -102,6 +102,7 @@ class SelectTool extends AnnotationUITool{
         this.tool.onMouseUp=function(ev){
             selectionRectangle.visible=false;
             sr2.visible=false;
+            if (!annotationToolPrimaryButtonDownOrUp(ev)) return;
             if(ev.downPoint.subtract(ev.point).length==0){
                 //not a click-and-drag, do element selection
                 let hitResult = self.hitTestPoint(ev);
@@ -127,6 +128,7 @@ class SelectTool extends AnnotationUITool{
          * @property {Rectangle} r - The bounding rectangle of the selection area.
          */
         this.tool.onMouseDrag = function(ev){
+            if (!annotationToolPrimaryButtonActiveDrag(ev)) return;
             selectionRectangle.visible=true;
             sr2.visible=true;
             let r=new paper.Rectangle(ev.downPoint,ev.point);
