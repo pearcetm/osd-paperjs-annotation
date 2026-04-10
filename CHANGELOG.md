@@ -1,9 +1,5 @@
 # Changelog
 
-All notable changes to this project are documented in this file.
-
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
-
 ## [0.5.0] - 2026-04-10
 
 ### Added
@@ -24,7 +20,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Fixed
 
 - GeoJSON import/export for point and point text items, including stroke and fill opacity and point text behavior.
-- Line string tool and import fixes, including correct LineString GeoJSON type spelling.
+- Line string tool and import fixes
 - Export merges group rescaling with shape styling for point-based items.
 - Ruler tool with non-pixel CSS units; measurement label text offset.
 - `enhancedReplaceWith` and paper item replacement: annotation item references stay in sync and item data survives replacement.
