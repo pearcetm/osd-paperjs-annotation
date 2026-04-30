@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Screenshot Overlay Demo</title>
+    <script type="text/javascript" src="./openseadragon/openseadragon.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/paper.js/0.12.17/paper-full.js"></script>
+    <script type="module" src="./screenshot.mjs"></script>
+    <link rel="stylesheet" href="./demo.css">
+</head>
+<body>
+    <div class="content">
+        <div class="demo">
+            <h3>Screenshot overlay demo</h3>
+
+            <div class="demo-section">
+                <h4>How to use</h4>
+                <ul>
+                    <li>Click the camera button to open the modal first.</li>
+                    <li><b>Free select</b>: set aspect lock + tolerance (try 0% vs 10%), then Start and drag a region.</li>
+                    <li><b>Defined size</b>: set base size + downsample, then Start and click to place (auto-capture).</li>
+                </ul>
+            </div>
+
+            <div class="demo-section">
+                <h4>Debug controls</h4>
+                <div class="btn-group btn-group-sm" style="margin-bottom: 0.5em;">
+                    <button type="button" id="ss-reset-settings" class="btn btn-sm">Reset screenshot settings</button>
+                    <button type="button" id="ss-refresh-settings" class="btn btn-sm">Refresh settings JSON</button>
+                    <button type="button" id="ss-reload-viewer" class="btn btn-sm">Reload viewer</button>
+                </div>
+                <div class="code-snippet">
+                    <pre><code id="ss-settings-json"></code></pre>
+                </div>
+            </div>
+
+            <div id="screenshot-viewer" class="viewer"></div>
+        </div>
+    </div>
+</body>
+</html>
+
