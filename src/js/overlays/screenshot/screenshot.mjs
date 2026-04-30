@@ -68,6 +68,7 @@ class ScreenshotOverlay{
         this._currentImageBounds = null; // OpenSeadragon image-space rect (base pixels)
         this._baseScreenshot = null; // { blob, url, pixelRatio, signature }
         this._lastScreenshotRequest = null; // { data, signature }
+        this._scalebarShowLabel = false;
 
         const button = overlay.addViewerButton({
             faIconClass:'fa-camera',
@@ -334,6 +335,42 @@ class ScreenshotOverlay{
         return best?.mm ?? null;
     }
 
+    _formatMmLabel(mm){
+        const n = Number(mm);
+        if(!Number.isFinite(n)) return '';
+        // Trim trailing zeros (e.g. 0.10 -> 0.1) while avoiding scientific notation for small numbers.
+        const s = n.toFixed(4).replace(/\.?0+$/,'');
+        return s;
+    }
+
+    _scalebarLabelText(){
+        return `${this._formatMmLabel(this._scalebarWidth)} mm`;
+    }
+
+    _scalebarLabelFit({ scaleFactor }){
+        const enabled = Boolean(this._includeScalebar && this._mpp && this._scalebarShowLabel);
+        if(!enabled) return { enabled:false, fits:true, label:'' };
+        const label = this._scalebarLabelText();
+        // Bar pixel size in output space.
+        const pxLen = Math.max(1, Math.round(this._scalebarWidth * 1000 / this._mpp.x * scaleFactor));
+        const pxH = Math.max(1, Math.round(this._scalebarHeight));
+
+        // Measure text with the same font we’ll draw with.
+        let ctx = null;
+        try{
+            const c = document.createElement('canvas');
+            ctx = c.getContext('2d');
+        }catch{ /* ignore */ }
+        if(!ctx){
+            return { enabled:true, fits:true, label, pxLen, pxH, textWidth:0, fontPx:12 };
+        }
+        const fontPx = 12;
+        ctx.font = `${fontPx}px system-ui, -apple-system, Segoe UI, Roboto, sans-serif`;
+        const textWidth = ctx.measureText(label).width;
+        const fits = textWidth <= (pxLen - 6) && fontPx <= (pxH - 2);
+        return { enabled:true, fits, label, pxLen, pxH, textWidth, fontPx };
+    }
+
     _maybeApplySmartScalebarDefaults(){
         // Don’t override user-edited values.
         if(this._scalebarWasTouched) return;
@@ -424,6 +461,8 @@ class ScreenshotOverlay{
         const lenInput = this.dialog.querySelector('.scalebar-width');
         const hInput = this.dialog.querySelector('.scalebar-height');
         const hint = this.dialog.querySelector('.scalebar-px-hint');
+        const showLabel = this.dialog.querySelector('.scalebar-show-label');
+        const labelHint = this.dialog.querySelector('.scalebar-label-hint');
         const errRow = this.dialog.querySelector('.scalebar-error-row');
         const err = this.dialog.querySelector('.scalebar-error');
 
@@ -449,6 +488,7 @@ class ScreenshotOverlay{
         this._setIfNotFocused(lenInput, String(this._scalebarWidth));
         this._setIfNotFocused(hInput, String(this._scalebarHeight));
         if(include) include.checked = Boolean(this._includeScalebar);
+        if(showLabel) showLabel.checked = Boolean(this._scalebarShowLabel);
 
         if(opts){
             if(hasMpp && this._includeScalebar) opts.classList.remove('hidden');
@@ -482,10 +522,25 @@ class ScreenshotOverlay{
                 const scaleFactor = outW / baseW;
                 const pxLen = Math.max(1, Math.round(v.lengthMm * 1000 / this._mpp.x * scaleFactor));
                 hint.textContent = `≈ ${pxLen} px at output`;
+
+                if(labelHint){
+                    const fit = this._scalebarLabelFit({ scaleFactor });
+                    if(fit.enabled && !fit.fits){
+                        labelHint.textContent = 'Increase length/height to fit label';
+                        labelHint.classList.remove('hidden');
+                    }else{
+                        labelHint.textContent = '';
+                        labelHint.classList.add('hidden');
+                    }
+                }
                 }
             }else{
                 hint.style.visibility = 'hidden';
                 hint.textContent = '';
+                if(labelHint){
+                    labelHint.textContent = '';
+                    labelHint.classList.add('hidden');
+                }
             }
         }
         this._renderScalebarValidation({ mode: 'soft' });
@@ -683,7 +738,7 @@ class ScreenshotOverlay{
                         <div class="instructions">
                             <div class="ss-row ss-space-between">
                                 <div class="output-context ss-muted ss-mono"></div>
-                                <button class="edit-region" type="button">Edit region…</button>
+                                <button class="edit-region" type="button">Edit</button>
                             </div>
                             <div class="ss-row">
                                 <span class="ss-muted">Output:</span>
@@ -714,6 +769,10 @@ class ScreenshotOverlay{
                                         <span class="ss-muted">Height</span>
                                         <input class="scalebar-height" type="number" value="4" step="1" inputmode="numeric">
                                         <span class="ss-muted ss-unit">px</span>
+                                    </div>
+                                    <div class="ss-row scalebar-label-row">
+                                        <label class="ss-check"><input class="scalebar-show-label" type="checkbox"> Label</label>
+                                        <span class="scalebar-label-hint ss-muted hidden"></span>
                                     </div>
                                     <div class="ss-row scalebar-error-row hidden">
                                         <span class="scalebar-error ss-muted"></span>
@@ -757,7 +816,7 @@ class ScreenshotOverlay{
 
             <div class="screenshot-edit hidden">
                 <div class="ss-section">
-                    <div class="ss-label">Edit region</div>
+                    <div class="ss-label">Edit</div>
                     <div class="ss-row">
                         <span class="ss-muted">Size:</span>
                         <input class="region-width region-dim" type="number" min="1" step="1"/> ×
@@ -821,12 +880,14 @@ class ScreenshotOverlay{
             }
             .ss-close:hover{ color: rgba(0,0,0,0.9); }
 
-            .screenshot-setup, .screenshot-after{ padding: 10px 12px; }
-            .ss-section{ padding: 8px 0; }
+            .screenshot-setup{ padding: 10px 12px; }
+            .screenshot-after{ padding: 0 12px; }
+            .ss-section{ padding: 4px 0; }
             .ss-footer{
                 display:flex;
                 gap: 8px;
-                padding-top: 8px;
+                padding-top: 4px;
+                padding-bottom: 4px;
                 border-top: 1px solid rgba(0,0,0,0.08);
             }
 
@@ -843,7 +904,7 @@ class ScreenshotOverlay{
                 gap: 8px;
                 align-items:center;
                 flex-wrap: wrap;
-                margin: 6px 0;
+                margin: 1px 0;
             }
             .ss-space-between{ justify-content:space-between; }
             .ss-inline{ display:flex; gap:6px; align-items:center; }
@@ -876,24 +937,42 @@ class ScreenshotOverlay{
                 border-radius: 8px;
                 font: inherit;
             }
-            .scalebar-main input[type=number]{ width: 5.0em; }
+            .scalebar-main input[type=number]{ width: 4.8em; }
             .scalebar-grid{
                 display: grid;
                 grid-template-columns: 1fr;
-                gap: 6px;
-                margin: 6px 0;
+                gap: 4px;
+                margin: 4px 0;
             }
             .scalebar-toggle{ margin: 0; }
             .scalebar-opts{
                 display: grid;
                 grid-template-columns: max-content max-content max-content 1fr;
                 align-items: center;
-                gap: 6px 8px;
+                gap: 4px 8px;
             }
             .scalebar-row{ display: contents; }
+            .scalebar-opts .ss-row{ margin: 0; }
+            .scalebar-label-row{
+                grid-column: 1 / -1;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                min-width: 0;
+                margin: 0;
+            }
+            .scalebar-label-hint{
+                margin-left: auto;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                min-width: 0;
+            }
             .scalebar-error-row{
                 grid-column: 1 / -1;
                 margin-top: 2px;
+                margin-left: 0;
+                margin-right: 0;
             }
             .scalebar-px-hint{ white-space: nowrap; }
             .ss-unit{ white-space: nowrap; }
@@ -1135,6 +1214,19 @@ class ScreenshotOverlay{
                 if(this._includeScalebar){
                     this._maybeApplySmartScalebarDefaults();
                 }
+                this._syncScalebarUI();
+                const isCreated = this.dialog?.querySelector('.screenshot-results')?.classList.contains('created');
+                const v = this._renderScalebarValidation({ mode: 'soft' });
+                if(isCreated && this._baseScreenshot && v?.ok){
+                    this._recomposeFromCachedBaseIfPossible().catch(()=>this._resetScreenshotResults());
+                }else{
+                    this._resetScreenshotResults();
+                }
+            });
+        });
+        el.querySelectorAll('.scalebar-show-label').forEach(e=>{
+            e.addEventListener('change',ev=>{
+                this._scalebarShowLabel = Boolean(ev.target.checked);
                 this._syncScalebarUI();
                 const isCreated = this.dialog?.querySelector('.screenshot-results')?.classList.contains('created');
                 const v = this._renderScalebarValidation({ mode: 'soft' });
@@ -1620,6 +1712,7 @@ class ScreenshotOverlay{
         if(!Number.isFinite(this._scalebarWidth)) this._scalebarWidth = 0.5; // mm
         if(!Number.isFinite(this._scalebarHeight)) this._scalebarHeight = 4; // px
         if(this._scalebarWasTouched == null) this._scalebarWasTouched = false;
+        if(this._scalebarShowLabel == null) this._scalebarShowLabel = false;
 
         if(this.viewer.world.getItemCount() === 1){
             const mpp = this.viewer.world.getItemAt(0).source.mpp;
@@ -1881,6 +1974,19 @@ class ScreenshotOverlay{
             const y1 = Math.max(padding, y2 - pxH);
             ctx.fillStyle = '#000';
             ctx.fillRect(x1, y1, x2 - x1, y2 - y1);
+
+            if(this._scalebarShowLabel){
+                const fit = this._scalebarLabelFit({ scaleFactor });
+                if(fit.enabled && fit.fits && fit.label){
+                    ctx.save();
+                    ctx.font = `${fit.fontPx || 12}px system-ui, -apple-system, Segoe UI, Roboto, sans-serif`;
+                    ctx.fillStyle = '#fff';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(fit.label, (x1 + x2) / 2, (y1 + y2) / 2);
+                    ctx.restore();
+                }
+            }
         }
 
         let blob = await new Promise((resolve)=>canvas.toBlob(resolve));
