@@ -48,6 +48,7 @@ import { PaperOffset } from './paper-offset.mjs';
 import { PaperOverlay } from './paper-overlay.mjs';
 import { RotationControlOverlay } from './rotationcontrol.mjs';
 import { ScreenshotOverlay } from './overlays/screenshot/screenshot.mjs';
+import { FieldOfViewOverlay } from './overlays/fieldofview/fieldofview.mjs';
 import { AnnotationUITool } from './papertools/annotationUITool.mjs';
 import { ToolBase } from './papertools/base.mjs';
 import { BrushTool } from './papertools/brush.mjs';
@@ -85,6 +86,7 @@ export const OSDPaperjsAnnotation = {
     PaperOverlay: PaperOverlay,
     RotationControlOverlay: RotationControlOverlay,
     ScreenshotOverlay: ScreenshotOverlay,
+    FieldOfViewOverlay: FieldOfViewOverlay,
     AnnotationUITool: AnnotationUITool,
     ToolBase:ToolBase,
     BrushTool: BrushTool,
@@ -118,6 +120,7 @@ export {
     PaperOverlay,
     RotationControlOverlay,
     ScreenshotOverlay,
+    FieldOfViewOverlay,
     AnnotationUITool,
     ToolBase,
     BrushTool,

@@ -366,6 +366,12 @@
 canvas.selectable-layer{
     cursor:pointer;
 }
+canvas.fov-edit-hover{
+    cursor: move;
+}
+canvas.fov-edit-grabbing{
+    cursor: grabbing;
+}
 canvas.point-tool-grab{
     cursor:grab;
 }

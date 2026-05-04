@@ -339,7 +339,7 @@ class AnnotationUITool extends ToolBase{
             if(layerSet.size === 1){
                 this._targetLayer = layerSet.values().next().value;
             } else {
-                this._targetLayer = this.project.overlay.viewer.viewport.paperLayer;
+                this._targetLayer = this.project.overlay.getPaperLayer(this.project.overlay.viewer.viewport)
             }
         } else {
             this._targetLayer = this.project.paperScope.project.activeLayer;

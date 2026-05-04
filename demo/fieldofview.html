@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Field of view Overlay Demo</title>
+    <script type="text/javascript" src="./openseadragon/openseadragon.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/paper.js/0.12.17/paper-full.js"></script>
+    <script type="module" src="./fieldofview.mjs"></script>
+    <link rel="stylesheet" href="./demo.css">
+</head>
+<body>
+    <div class="content">
+        <div class="demo">
+            <h3>Field of view overlay demo</h3>
+
+            <div class="demo-section">
+                <h4>How to use</h4>
+                <ul>
+                    <li>Click the circle icon to open the dialog.</li>
+                    <li>Set a diameter (mm/µm), then click <b>Place field of view</b>.</li>
+                    <li>Move the mouse to preview; click to drop circles (repeat as needed).</li>
+                    <li>This page runs a separate <b>annotation toolkit</b> overlay (default + ruler) on the same slide. Use <b>Ruler</b> to draw a measurement and compare visually to a dropped FOV ring (two Paper layers; they do not share geometry).</li>
+                    <li>If clicks do not reach the ruler, press <b>Ruler</b> or <b>Default</b> again—the toolkit overlay is brought forward. Use the circle / binoculars control for FOV; that overlay brings itself forward when activated.</li>
+                </ul>
+            </div>
+
+            <div class="demo-section">
+                <h4>Ruler (headless)</h4>
+                <p>Programmatic default + ruler tools (<code>addUI: false</code>), same pattern as the ruler demo.</p>
+                <div id="fov-ruler-headless-controls" class="headless-controls" aria-label="Headless tool controls">
+                    <div class="headless-tool-buttons btn-group btn-group-sm"></div>
+                    <div id="fov-ruler-headless-tool-outlet" class="headless-tool-outlet"></div>
+                </div>
+            </div>
+
+            <div class="demo-section">
+                <h4>Debug controls</h4>
+                <div class="btn-group btn-group-sm" style="margin-bottom: 0.5em;">
+                    <button type="button" id="fov-reset-settings" class="btn btn-sm">Reset field of view settings</button>
+                    <button type="button" id="fov-refresh-settings" class="btn btn-sm">Refresh settings JSON</button>
+                    <button type="button" id="fov-reload-viewer" class="btn btn-sm">Reload viewer</button>
+                </div>
+                <div class="code-snippet">
+                    <pre><code id="fov-settings-json"></code></pre>
+                </div>
+            </div>
+
+            <div id="fieldofview-viewer" class="viewer"></div>
+        </div>
+    </div>
+</body>
+</html>
+

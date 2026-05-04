@@ -167,7 +167,7 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
                 this.overlay = this.options.overlay;
             }
         } else {
-            this.overlay = new PaperOverlay(this.viewer, {type: 'image'});
+            this.overlay = new PaperOverlay(this.viewer, { overlayType: 'image' });
         }
         this.paperScope.project.defaultStyle = new paper.Style();
         this.paperScope.project.defaultStyle.set(this.defaultStyle);
@@ -325,7 +325,11 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
     _cacheAnnotations(tiledImage){
         try{
             const key = cyrb53(JSON.stringify(tiledImage.source));
-            const featureCollections = tiledImage.paperLayer.getItems({match: item=>item.isGeoJSONFeatureCollection});
+            const tileLayer = this.overlay.getPaperLayer(tiledImage);
+            if (!tileLayer) {
+                return;
+            }
+            const featureCollections = tileLayer.getItems({match: item=>item.isGeoJSONFeatureCollection});
             this._cached[key] = featureCollections;
         } catch(e){
             console.error('Error with caching', e);
@@ -336,8 +340,12 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
         try{
             const key = cyrb53(JSON.stringify(tiledImage.source));
             const featureCollections = this._cached[key] || [];
+            const tileLayer = this.overlay.getPaperLayer(tiledImage);
+            if (!tileLayer) {
+                return;
+            }
             for(const fcGroup of featureCollections){
-                this._addFeatureCollectionGroupToLayer(fcGroup, tiledImage.paperLayer);
+                this._addFeatureCollectionGroupToLayer(fcGroup, tileLayer);
             }
         } catch(e){
             console.error('Error with fetching from cache', e);
@@ -594,7 +602,7 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
      * @param {boolean} [pixelCoordinates]
      */
     loadGeoJSON(geoJSON, replaceCurrent, parentImage){
-        let parentLayer = parentImage ? parentImage.paperLayer : false;
+        let parentLayer = parentImage ? this.overlay.getPaperLayer(parentImage) : false;
         if(replaceCurrent){
             this.getFeatureCollectionGroups(parentImage).forEach(grp=>grp.remove());
         }
@@ -646,13 +654,13 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
         if(!parent){
             let numItems = this.viewer.world.getItemCount();
             if( numItems == 1){
-                parent = this.viewer.world.getItemAt(0).paperLayer;
+                parent = this.overlay.getPaperLayer(this.viewer.world.getItemAt(0));
             } else if (numItems == 0){
-                parent = this.viewer.viewport.paperLayer;
+                parent = this.overlay.getPaperLayer(this.viewer.viewport);
             } else {
                 //TODO: Update the UI and associated APIs to allow selecting specific tiled images for multi-image use
                 console.warn('Use of AnnotationToolkit with multi-image is not yet fully supported. All annotations will be added to the top-level tiled image.');
-                parent = this.viewer.world.getItemAt(numItems - 1).paperLayer;
+                parent = this.overlay.getPaperLayer(this.viewer.world.getItemAt(numItems - 1));
             }
         }
         if(!parent){

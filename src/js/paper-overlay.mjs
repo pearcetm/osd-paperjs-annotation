@@ -128,7 +128,9 @@ class PaperOverlay extends OpenSeadragon.EventSource{
         this._viewerButtons = [];
         
         this.paperScope = new paper.PaperScope();
-        
+
+        // mapping from osdObject to paper.Layer
+        this._paperLayerMap = new Map();
         
         this.paperScope.overlay = this;
         let ps = this.paperScope.setup(this._canvas);
@@ -221,10 +223,37 @@ class PaperOverlay extends OpenSeadragon.EventSource{
         viewer.addHandler('flip', this.onViewerFlip);
 
         viewer.addOnceHandler('destroy', this.onViewerDestroy);
-        
-        
     }
-    
+
+    /**
+     * Gets this overlay’s `paper.Layer` for the given OpenSeadragon object (`TiledImage`, `Viewport`, or `Viewer`).
+     * @param {OpenSeadragon.TiledImage|OpenSeadragon.Viewport|OpenSeadragon.Viewer} osdObject
+     * @returns {paper.Layer|undefined}
+     */
+    getPaperLayer(osdObject){
+        return this._paperLayerMap.get(osdObject);
+    }
+
+    /**
+     * Remove this overlay's layer registrations from every attached OSD object and clear `_paperLayerMap`.
+     * Must run while `paperScope.project` still exists so layers can be removed from Paper.js.
+     * @private
+     */
+    _unregisterOsdPaperLayers() {
+        for (const [osdObject] of this._paperLayerMap) {
+            const pm = osdObject._paperLayerMap;
+            if (!pm || !pm.has(this.paperScope)) {
+                continue;
+            }
+            const layer = pm.get(this.paperScope);
+            if (layer && typeof layer.remove === 'function') {
+                layer.remove();
+            }
+            pm.delete(this.paperScope);
+        }
+        this._paperLayerMap.clear();
+    }
+
     /**
      * The scale factor for the overlay. Equal to the pixel width of the viewer's drawing canvas
      */
@@ -292,17 +321,18 @@ class PaperOverlay extends OpenSeadragon.EventSource{
    */   
     destroy(viewerDestroyed){
         this.destroyed = true;
-        this._canvasdiv.remove();
-        this.paperScope.project && this.paperScope.project.remove();
-        this.ps && this.ps.remove();  
         if(!viewerDestroyed){
+            this._unregisterOsdPaperLayers();
+
             this.viewer.removeHandler('viewport-change',this.onViewportChange);
             this.viewer.removeHandler('resize',this.onViewerResize);
             this.viewer.removeHandler('reset-size',this.onViewerResetSize);
             this.viewer.removeHandler('rotate',this.onViewerRotate);
             this.viewer.removeHandler('flip',this.onViewerFlip);
-            this.viewer.world.removeHandler('add-item', this.onAddItem);
-            this.viewer.world.removeHandler('remove-item', this.onRemoveItem);
+            if (this.onAddItem) {
+                this.viewer.world.removeHandler('add-item', this.onAddItem);
+                this.viewer.world.removeHandler('remove-item', this.onRemoveItem);
+            }
             this.setOSDMouseNavEnabled(true);
 
             this._viewerButtons.forEach(button=>{
@@ -315,7 +345,10 @@ class PaperOverlay extends OpenSeadragon.EventSource{
                 this.viewer.PaperOverlays[this.viewer.PaperOverlays.length-1].paperScope.activate();
             }
         }
-         
+
+        this._canvasdiv.remove();
+        this.paperScope.project && this.paperScope.project.remove();
+        this.ps && this.ps.remove();
     }
   /**
    * Clears the overlay by removing all paper items from the overlay's Paper.js project.
@@ -524,6 +557,7 @@ class PaperOverlay extends OpenSeadragon.EventSource{
     _removeTiledImage(tiledImage){
         tiledImage._paperLayerMap?.get(this.paperScope)?.remove();
         tiledImage._paperLayerMap?.delete(this.paperScope);
+        this._paperLayerMap.delete(tiledImage);
     }
 
 

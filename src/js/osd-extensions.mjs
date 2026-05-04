@@ -84,31 +84,44 @@ function paperItemsDef(){
 /**
  * @private
  */
-function _createPaperLayer(osdObject, paperScope){
+function _createPaperLayer(osdObject, paperOverlay){
+    const paperScope = paperOverlay.paperScope;
     let layer = new paper.Layer({applyMatrix:false});
     paperScope.project.addLayer(layer);
     osdObject._paperLayerMap.set(paperScope, layer);
+    paperOverlay._paperLayerMap.set(osdObject, layer);
     return layer;
 }
 
 /**
- * Define the paperLayer property for a tiledImage.
+ * Define the `paperLayer` property on `Viewer`, `TiledImage`, and `Viewport`.
+ * When several {@link PaperOverlay} instances register on the same OSD object, the getter
+ * walks `viewer.PaperOverlays` from the top (last index) and returns the first layer whose
+ * `paperScope` is present in this object's `_paperLayerMap` (image overlays for tiles/viewport;
+ * viewer-type overlays for `Viewer` only).
+ *
  * @private
  * @returns {object} The property descriptor object.
- * @property {function} get - The getter function for paperGroup.
- *   @returns {paper.Layer} The group that serves as the parent of all paper items belonging to this TiledImage.
  */
 function paperLayerDef(){
     return {
         get: function paperLayer(){
-            let numScopes = this._paperLayerMap.size;
-            if( numScopes === 1){
-                return this._paperLayerMap.values().next().value;
-            } else if (numScopes === 0){
-                return null;
-            } else {
-                return this._paperLayerMap.get(paper) || null;
+            const map = this._paperLayerMap;
+            const numScopes = map.size;
+            if (numScopes === 1) {
+                return map.values().next().value;
             }
+            if (numScopes === 0) {
+                return null;
+            }
+            // More than one scope, so we need to find the top-most overlay and get its paper.Layer for this object
+            const viewer = this.viewer || this; // tiledImage and viewport have a viewer property
+            const overlays = viewer?.PaperOverlays;
+            if (!overlays || overlays.length === 0) {
+                return null;
+            }
+            const topOverlay = overlays[overlays.length-1];
+            return topOverlay.getPaperLayer(this);
         }
     }
 }
@@ -135,7 +148,7 @@ function paperLayerMapDef(){
  * @returns {paper.Layer}
  */
 function _setupPaper(overlay){
-    return _createPaperLayer(this, overlay.paperScope);
+    return _createPaperLayer(this, overlay);
 }
 
 /**
