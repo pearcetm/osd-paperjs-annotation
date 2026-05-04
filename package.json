@@ -1,11 +1,17 @@
 {
   "name": "osd-paperjs-annotation",
   "description": "Annotation tools for OpenSeadragon using PaperJS",
-  "version": "0.5.0",
+  "version": "0.6.0",
+  "files": [
+    "dist",
+    "src/js",
+    "src/css"
+  ],
   "scripts": {
     "test": "node test/geojsonGeometryShape.test.mjs && node test/emptyGeometryExport.test.mjs && node test/paperItemShapeContractCore.test.mjs",
     "generate-docs": "jsdoc -c ./jsdoc-config.json",
-    "build": "webpack"
+    "build": "webpack",
+    "prepublishOnly": "npm run build"
   },
   "repository": {
     "type": "git",
