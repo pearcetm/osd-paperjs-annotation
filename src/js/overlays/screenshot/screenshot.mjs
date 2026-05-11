@@ -1,6 +1,6 @@
 /**
  * OpenSeadragon paperjs overlay plugin based on paper.js
- * @version 0.5.0
+ * @version 0.6.0
  * 
  * Includes additional open source libraries which are subject to copyright notices
  * as indicated accompanying those segments of code.
@@ -634,6 +634,9 @@ class ScreenshotOverlay{
             return;
         }
 
+        // Once the fixed region is placed, stop showing the placement preview cursor.
+        this.tool.setMode('idle');
+
         // Always populate the UI from base pixels first (even in auto-create).
         this._setupScreenshotDialogFromImageBounds(imageBounds);
 
@@ -665,6 +668,9 @@ class ScreenshotOverlay{
             this._handleFixedPlacement(payload);
             return;
         }
+
+        // Once a free-select region is chosen, stop showing the crosshair cursor.
+        this.tool.setMode('idle');
 
         // Convert viewer-element rectangle to base image-space rect once,
         // and drive the UI from base pixels for consistent UX.
@@ -782,6 +788,7 @@ class ScreenshotOverlay{
                         </div>
 
                         <div class="ss-row ss-create-row">
+                            <span class="ss-create-hint">A region was selected. Next:</span>
                             <button class="create-screenshot ss-primary" type="button">Create</button>
                         </div>
 
@@ -990,7 +997,11 @@ class ScreenshotOverlay{
             .screenshot-results:not(.created):not(.pending) .instructions{ display:block; }
             .screenshot-results.created .scalebar-main{ display:block; }
             .screenshot-results:not(.created):not(.pending) .scalebar-main{ display:block; }
-            .screenshot-results:not(.pending) .ss-create-row{ display:flex; justify-content:flex-end; }
+            .screenshot-results:not(.created):not(.pending) .ss-create-row{ display:flex; justify-content:flex-end; align-items:center; gap: 10px; }
+            .ss-create-hint{
+                color: rgba(0,0,0,0.78);
+                font-weight: 500;
+            }
         </style>`;
         if(!document.querySelector('style[data-type="screenshot-tool"]')){
             document.querySelector('head').appendChild(domObjectFromHTML(css));
