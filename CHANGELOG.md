@@ -4,6 +4,22 @@ All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.7.0] - 2026-05-12
+
+### Added
+
+- Configuration overlay for discovering and toggling overlay-related options, with a demo page.
+- Shared `ViewerOverlayBase` helper for common overlay lifecycle, viewer controls, and optional registration with the configuration UI.
+
+### Changed
+
+- Field-of-view, screenshot, and rotation overlays adopt the shared overlay base and integrate with the configuration UI where applicable.
+- Screenshot overlay reorganized into focused modules under `src/js/overlays/screenshot/` for clearer structure and maintenance.
+
+### Fixed
+
+- Screenshot overlay: incorrect or inconsistent region and export sizing when the viewport was rotated.
+
 ## [0.6.0] - 2026-05-04
 
 ### Added
@@ -44,5 +60,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Detection and handling when paper items with invalid geometries are added as annotation subtypes.
 - Ignore drawing actions from non-primary mouse buttons (e.g. middle or right click).
 
+[0.7.0]: https://github.com/pearcetm/osd-paperjs-annotation/releases/tag/v0.7.0
 [0.6.0]: https://github.com/pearcetm/osd-paperjs-annotation/releases/tag/v0.6.0
 [0.5.0]: https://github.com/pearcetm/osd-paperjs-annotation/releases/tag/v0.5.0
