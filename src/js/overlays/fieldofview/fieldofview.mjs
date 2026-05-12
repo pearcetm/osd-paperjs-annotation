@@ -14,6 +14,7 @@ import {
     mppFromTiledImage,
 } from './fieldofview-geometry.mjs';
 import { FieldOfViewTool } from './fieldofview-tool.mjs';
+import { ViewerOverlayBase } from '../base.mjs';
 
 const FOV_DEBUG = true;
 /** @param {...unknown} args */
@@ -39,12 +40,17 @@ function ensureNamedToolLayer(paperScope) {
     fovOverlayLog('ensureNamedToolLayer: created toolLayer', { name: toolLayer.name });
 }
 
-class FieldOfViewOverlay {
+class FieldOfViewOverlay extends ViewerOverlayBase {
+    static get label() { return 'Field of view'; }
+    static get faIconClass() { return 'fa-binoculars'; }
+
     /**
      * @param {import('../../osd-loader.mjs').OpenSeadragon.Viewer} viewer
+     * @param {Object} [opts]
+     * @param {boolean} [opts.registerWithConfig=true] Set false to suppress auto-registration with ConfigurationWidget
      */
-    constructor(viewer) {
-        this.viewer = viewer;
+    constructor(viewer, opts = {}) {
+        super(viewer, opts);
         this.overlay = new PaperOverlay(viewer, { overlayType: 'image' });
         ensureNamedToolLayer(this.overlay.paperScope);
 
@@ -56,7 +62,6 @@ class FieldOfViewOverlay {
         this.dummyTool.activate();
 
         this._mouseNavEnabledAtActivation = true;
-        this._active = false;
         this._state = 'inactive';
         this._saveSettingsTimeout = null;
         /** @type {HTMLElement | null} */
@@ -94,14 +99,14 @@ class FieldOfViewOverlay {
         this.viewer.world.addHandler('add-item', this._onWorldItemCount);
         this.viewer.world.addHandler('remove-item', this._onWorldItemCount);
 
-        const button = this.overlay.addViewerButton({
+        this.button = this.overlay.addViewerButton({
             faIconClass: 'fa-binoculars',
             tooltip: 'Field of view',
             onClick: () => {
                 this._active ? this.deactivate() : this.activate();
             },
         });
-        button.element.querySelector('svg.icon')?.style.setProperty('width', '1em');
+        this.button.element.querySelector('svg.icon')?.style.setProperty('width', '1em');
 
         this._makeDialog();
 
@@ -120,13 +125,15 @@ class FieldOfViewOverlay {
             worldItemCount: worldCount,
             hasDropLayerHint: worldCount === 1 ? Boolean(this.getDropTargetLayer()) : null,
         });
+
+        this._autoRegister();
     }
 
     activate() {
         const reactivate = this.overlay.setOSDMouseNavEnabled(false);
         this._mouseNavEnabledAtActivation = this._mouseNavEnabledAtActivation || reactivate;
         this.overlay.bringToFront();
-        this._active = true;
+        this._setActive(true);
         fovOverlayLog('activate', {
             setOSDMouseNavDisabled: true,
             reactivateHint: reactivate,
@@ -139,7 +146,7 @@ class FieldOfViewOverlay {
 
     deactivate() {
         fovOverlayLog('deactivate');
-        this._active = false;
+        this._setActive(false);
         this._setState('inactive');
         this.tool.setMode('idle');
         this.tool.deactivate(true);

@@ -1,6 +1,6 @@
 /**
  * OpenSeadragon paperjs overlay plugin based on paper.js
- * @version 0.6.0
+ * @version 0.7.0
  * 
  * Includes additional open source libraries which are subject to copyright notices
  * as indicated accompanying those segments of code.
@@ -49,6 +49,8 @@ import { PaperOverlay } from './paper-overlay.mjs';
 import { RotationControlOverlay } from './rotationcontrol.mjs';
 import { ScreenshotOverlay } from './overlays/screenshot/screenshot.mjs';
 import { FieldOfViewOverlay } from './overlays/fieldofview/fieldofview.mjs';
+import { ConfigurationWidget } from './overlays/configuration/configuration.mjs';
+import { ViewerOverlayBase } from './overlays/base.mjs';
 import { AnnotationUITool } from './papertools/annotationUITool.mjs';
 import { ToolBase } from './papertools/base.mjs';
 import { BrushTool } from './papertools/brush.mjs';
@@ -78,6 +80,8 @@ export const OSDPaperjsAnnotation = {
     AnnotationToolset: AnnotationToolset,
     AnnotationLayout: AnnotationLayout,
     AnnotationToolbar: AnnotationToolbar,
+    ConfigurationWidget: ConfigurationWidget,
+    ViewerOverlayBase: ViewerOverlayBase,
     FeatureCollectionUI :FeatureCollectionUI,
     FeatureUI:FeatureUI,
     FileDialog:FileDialog,
@@ -112,6 +116,8 @@ export {
     AnnotationToolkit,
     AnnotationLayout,
     AnnotationToolbar,
+    ConfigurationWidget,
+    ViewerOverlayBase,
     FeatureCollectionUI,
     FeatureUI,
     FileDialog,

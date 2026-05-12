@@ -1,6 +1,6 @@
 /**
  * OpenSeadragon paperjs overlay plugin based on paper.js
- * @version 0.6.0
+ * @version 0.7.0
  * 
  * Includes additional open source libraries which are subject to copyright notices
  * as indicated accompanying those segments of code.
@@ -96,13 +96,22 @@ class PaperOverlay extends OpenSeadragon.EventSource{
         super();
         let defaultOpts = {
             overlayType: 'image',
+            renderless: false,
         }
         opts=OpenSeadragon.extend(true,defaultOpts,opts);
 
         this.viewer = viewer;
         this.overlayType = opts.overlayType;
+        this.renderless = opts.renderless;
         
         viewer.PaperOverlays.push(this);
+        this._viewerButtons = [];
+
+        if (this.renderless) {
+            this.onViewerDestroy = (self => function(){ self.destroy(true); })(this);
+            viewer.addOnceHandler('destroy', this.onViewerDestroy);
+            return;
+        }
 
         let ctr = counter();
         this._id = 'paper-overlay-canvas-' + ctr;
@@ -124,8 +133,6 @@ class PaperOverlay extends OpenSeadragon.EventSource{
         this._canvasdiv.appendChild(this._canvas);
         
         viewer.canvas.appendChild(this._canvasdiv);
-
-        this._viewerButtons = [];
         
         this.paperScope = new paper.PaperScope();
 
@@ -297,8 +304,9 @@ class PaperOverlay extends OpenSeadragon.EventSource{
     bringToFront(){
         this.viewer.PaperOverlays.splice(this.viewer.PaperOverlays.indexOf(this),1);
         this.viewer.PaperOverlays.push(this);
-        this.viewer.PaperOverlays.forEach(overlay=>this.viewer.canvas.appendChild(overlay._canvasdiv));
-        this.paperScope.activate();
+        // only append the _canvasdiv if it exists (renderless overlays don't have one)
+        this.viewer.PaperOverlays.forEach(overlay=>overlay._canvasdiv && this.viewer.canvas.appendChild(overlay._canvasdiv));
+        if (this.paperScope) this.paperScope.activate();
     }
   /**
    * Sends the overlay to the back, making it appear behind other overlays.
@@ -308,8 +316,10 @@ class PaperOverlay extends OpenSeadragon.EventSource{
     sendToBack(){
         this.viewer.PaperOverlays.splice(this.viewer.PaperOverlays.indexOf(this),1);
         this.viewer.PaperOverlays.splice(0,0,this);
-        this.viewer.PaperOverlays.forEach(overlay=>this.viewer.canvas.appendChild(overlay._canvasdiv));
-        this.viewer.PaperOverlays[this.viewer.PaperOverlays.length-1].paperScope.activate();
+        // only append the _canvasdiv if it exists (renderless overlays don't have one)
+        this.viewer.PaperOverlays.forEach(overlay=>overlay._canvasdiv && this.viewer.canvas.appendChild(overlay._canvasdiv));
+        const top = this.viewer.PaperOverlays.findLast(o => o.paperScope);
+        if (top) top.paperScope.activate();
     }
   /**
    * Destroys the overlay and removes it from the viewer.
@@ -322,18 +332,20 @@ class PaperOverlay extends OpenSeadragon.EventSource{
     destroy(viewerDestroyed){
         this.destroyed = true;
         if(!viewerDestroyed){
-            this._unregisterOsdPaperLayers();
+            if (!this.renderless) {
+                this._unregisterOsdPaperLayers();
 
-            this.viewer.removeHandler('viewport-change',this.onViewportChange);
-            this.viewer.removeHandler('resize',this.onViewerResize);
-            this.viewer.removeHandler('reset-size',this.onViewerResetSize);
-            this.viewer.removeHandler('rotate',this.onViewerRotate);
-            this.viewer.removeHandler('flip',this.onViewerFlip);
-            if (this.onAddItem) {
-                this.viewer.world.removeHandler('add-item', this.onAddItem);
-                this.viewer.world.removeHandler('remove-item', this.onRemoveItem);
+                this.viewer.removeHandler('viewport-change',this.onViewportChange);
+                this.viewer.removeHandler('resize',this.onViewerResize);
+                this.viewer.removeHandler('reset-size',this.onViewerResetSize);
+                this.viewer.removeHandler('rotate',this.onViewerRotate);
+                this.viewer.removeHandler('flip',this.onViewerFlip);
+                if (this.onAddItem) {
+                    this.viewer.world.removeHandler('add-item', this.onAddItem);
+                    this.viewer.world.removeHandler('remove-item', this.onRemoveItem);
+                }
+                this.setOSDMouseNavEnabled(true);
             }
-            this.setOSDMouseNavEnabled(true);
 
             this._viewerButtons.forEach(button=>{
                 button.element.remove();
@@ -341,14 +353,14 @@ class PaperOverlay extends OpenSeadragon.EventSource{
             this._viewerButtons = [];
 
             this.viewer.PaperOverlays.splice(this.viewer.PaperOverlays.indexOf(this),1);
-            if(this.viewer.PaperOverlays.length>0){
+            if(!this.renderless && this.viewer.PaperOverlays.length>0){
                 this.viewer.PaperOverlays[this.viewer.PaperOverlays.length-1].paperScope.activate();
             }
         }
 
-        this._canvasdiv.remove();
-        this.paperScope.project && this.paperScope.project.remove();
-        this.ps && this.ps.remove();
+        if (this._canvasdiv) this._canvasdiv.remove();
+        if (this.paperScope && this.paperScope.project) this.paperScope.project.remove();
+        if (this.ps) this.ps.remove();
     }
   /**
    * Clears the overlay by removing all paper items from the overlay's Paper.js project.

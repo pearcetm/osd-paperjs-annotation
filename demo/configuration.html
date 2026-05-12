@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Configuration Widget Demo</title>
+    <script type="text/javascript" src="./openseadragon/openseadragon.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/paper.js/0.12.17/paper-full.js"></script>
+    <script type="module" src="./configuration.mjs"></script>
+    <link rel="stylesheet" href="./demo.css">
+</head>
+<body>
+    <div class="content">
+        <div class="demo">
+            <h3>Configuration Widget Demo</h3>
+            <div class="demo-section">
+                <h4>How to use</h4>
+                <ul>
+                    <li>Click the gear icon to open the configuration dialog.</li>
+                    <li>Toggle overlay buttons on/off using the switches.</li>
+                    <li>Activate/deactivate overlays directly from the config panel.</li>
+                    <li>A custom section is injected to demonstrate the addSection API.</li>
+                </ul>
+            </div>
+            <h4>Scenario 1: All overlays + custom section</h4>
+            <div id="config-viewer" class="viewer"></div>
+
+            <h4>Scenario 2: Empty config widget (no overlays, no sections)</h4>
+            <div id="config-viewer-empty" class="viewer"></div>
+
+            <h4>Scenario 3: Custom section only (no overlays)</h4>
+            <div id="config-viewer-custom-only" class="viewer"></div>
+
+            <h4>Scenario 4: All overlays, buttons initially hidden</h4>
+            <div id="config-viewer-no-buttons" class="viewer"></div>
+        </div>
+    </div>
+</body>
+</html>

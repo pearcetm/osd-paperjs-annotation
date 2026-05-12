@@ -1,6 +1,6 @@
 /**
  * OpenSeadragon paperjs overlay plugin based on paper.js
- * @version 0.6.0
+ * @version 0.7.0
  * 
  * Includes additional open source libraries which are subject to copyright notices
  * as indicated accompanying those segments of code.
@@ -45,23 +45,27 @@ import { changeDpiBlob } from './changedpi.mjs';
 import { domObjectFromHTML } from '../../utils/domObjectFromHTML.mjs';
 import { loadScreenshotSettings, normalizeScreenshotSettings, saveScreenshotSettings } from './screenshot-settings.mjs';
 import { buildDownsampleOptions, computeOutputSize } from './screenshot-sizing.mjs';
+import { ViewerOverlayBase } from '../base.mjs';
 
-class ScreenshotOverlay{
+class ScreenshotOverlay extends ViewerOverlayBase {
+    static get label() { return 'Take Screenshot'; }
+    static get faIconClass() { return 'fa-camera'; }
+
     /**
      * Creates an instance of the ScreenshotOverlay.
      *
      * @param {OpenSeadragon.Viewer} viewer - The OpenSeadragon viewer object.
      * @param {Object} [options]
      * @param {String} [options.downloadMessage] - A message to display in the download window
+     * @param {boolean} [options.registerWithConfig=true] Set false to suppress auto-registration with ConfigurationWidget
      */
-    constructor(viewer, options){
-        this.viewer = viewer;
+    constructor(viewer, options = {}){
+        super(viewer, options);
         let overlay = this.overlay = new PaperOverlay(viewer,{overlayType:'viewer'});
         let tool = this.tool = new ScreenshotTool(this.overlay.paperScope, this);
-        this.dummyTool = new this.overlay.paperScope.Tool();//to capture things like mouseMove, keyDown etc (when actual tool is not active)
+        this.dummyTool = new this.overlay.paperScope.Tool();
         this.dummyTool.activate();
         this._mouseNavEnabledAtActivation = true;
-        this._active = false;
         this._state = 'inactive'; // inactive | config | freeSelectArmed | fixedPlaceArmed | regionChosen | regionEdit | creating | created
         this._saveSettingsTimeout = null;
         this.settings = loadScreenshotSettings();
@@ -70,7 +74,7 @@ class ScreenshotOverlay{
         this._lastScreenshotRequest = null; // { data, signature }
         this._scalebarShowLabel = false;
 
-        const button = overlay.addViewerButton({
+        this.button = overlay.addViewerButton({
             faIconClass:'fa-camera',
             tooltip:'Take Screenshot',
             onClick:()=>{
@@ -78,12 +82,13 @@ class ScreenshotOverlay{
             }
         });
 
-        button.element.querySelector('svg.icon')?.style.setProperty('width', '1em');
+        this.button.element.querySelector('svg.icon')?.style.setProperty('width', '1em');
 
         this._makeDialog(options); //creates this.dialog
 
         this.tool.addEventListener('region-selected',(payload)=>this._onRegionSelected(payload));
-     
+
+        this._autoRegister();
     }
     /**
      * Activates the overlay.
@@ -92,7 +97,7 @@ class ScreenshotOverlay{
         let reactivate = this.overlay.setOSDMouseNavEnabled(false);
         this._mouseNavEnabledAtActivation = this._mouseNavEnabledAtActivation || reactivate;
         this.overlay.bringToFront();
-        this._active = true;
+        this._setActive(true);
         this.tool.activate();
         this.tool.setMode('idle');
         this._setState('config');
@@ -101,7 +106,7 @@ class ScreenshotOverlay{
      * Deactivates the overlay.
      */
     deactivate(){
-        this._active = false;
+        this._setActive(false);
         this._setState('inactive');
         this.tool.setMode('idle');
         this.tool.deactivate(true);

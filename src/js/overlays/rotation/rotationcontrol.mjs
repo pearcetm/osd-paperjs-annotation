@@ -1,6 +1,6 @@
 /**
  * OpenSeadragon paperjs overlay plugin based on paper.js
- * @version 0.6.0
+ * @version 0.7.0
  * 
  * Includes additional open source libraries which are subject to copyright notices
  * as indicated accompanying those segments of code.
@@ -40,32 +40,40 @@ import { OpenSeadragon } from '../../osd-loader.mjs';
 import { ToolBase } from '../../papertools/base.mjs';
 import {PaperOverlay} from '../../paper-overlay.mjs';
 import { paper } from '../../paperjs.mjs';
+import { ViewerOverlayBase } from '../base.mjs';
 
 /**
  * @class
  * @memberof OSDPaperjsAnnotation
  */
-class RotationControlOverlay{
+class RotationControlOverlay extends ViewerOverlayBase {
+    static get label() { return 'Rotate viewer'; }
+    static get faIconClass() { return 'fa-rotate'; }
+
     /**
      * Creates an instance of the RotationControlOverlay.
      *
      * @param {any} viewer - The viewer object.
+     * @param {Object} [opts]
+     * @param {boolean} [opts.registerWithConfig=true] Set false to suppress auto-registration with ConfigurationWidget
      */
-    constructor(viewer){
+    constructor(viewer, opts = {}){
+        super(viewer, opts);
         let overlay=this.overlay = new PaperOverlay(viewer,{overlayType:'viewer'})
         let tool = this.tool = new RotationControlTool(this.overlay.paperScope, this);
-        this.dummyTool = new this.overlay.paperScope.Tool();//to capture things like mouseMove, keyDown etc (when actual tool is not active)
+        this.dummyTool = new this.overlay.paperScope.Tool();
         this.dummyTool.activate();
         this._mouseNavEnabledAtActivation = true;
-        const button = overlay.addViewerButton({
+        this.button = overlay.addViewerButton({
             faIconClass:'fa-rotate',
             tooltip:'Rotate viewer',
             onClick:()=>{
                 tool.active ? this.deactivate() : this.activate();
             }
         });
-        button.element.querySelector('svg.icon')?.style.setProperty('width','1em');
-     
+        this.button.element.querySelector('svg.icon')?.style.setProperty('width','1em');
+
+        this._autoRegister();
     }
     /**
      * Activates the rotation control.
@@ -74,6 +82,7 @@ class RotationControlOverlay{
         this._mouseNavEnabledAtActivation=this.overlay.viewer.isMouseNavEnabled();
         this.tool.activate();
         this.tool.active=true;
+        this._setActive(true);
         this.overlay.bringToFront();
     }
     /**
@@ -84,6 +93,7 @@ class RotationControlOverlay{
         this.dummyTool.activate();
         this.overlay.viewer.setMouseNavEnabled(this._mouseNavEnabledAtActivation);
         this.tool.active=false;
+        this._setActive(false);
         this.overlay.sendToBack();
     }
     
