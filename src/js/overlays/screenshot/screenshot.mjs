@@ -37,15 +37,15 @@
  */
 
 
-import { ToolBase } from '../../papertools/base.mjs';
 import { PaperOverlay } from '../../paper-overlay.mjs';
 import { OpenSeadragon } from '../../osd-loader.mjs';
 import { paper } from '../../paperjs.mjs';
-import { changeDpiBlob } from './changedpi.mjs';
-import { domObjectFromHTML } from '../../utils/domObjectFromHTML.mjs';
 import { loadScreenshotSettings, normalizeScreenshotSettings, saveScreenshotSettings } from './screenshot-settings.mjs';
 import { buildDownsampleOptions, computeOutputSize } from './screenshot-sizing.mjs';
 import { ViewerOverlayBase } from '../base.mjs';
+import { ScreenshotTool } from './screenshot-tool.mjs';
+import { createScreenshotDialogElement } from './screenshot-dialog.mjs';
+import { renderBaseScreenshot, composeScreenshotWithScalebar, computeRenderSignature } from './screenshot-render.mjs';
 
 class ScreenshotOverlay extends ViewerOverlayBase {
     static get label() { return 'Take Screenshot'; }
@@ -61,20 +61,41 @@ class ScreenshotOverlay extends ViewerOverlayBase {
      */
     constructor(viewer, options = {}){
         super(viewer, options);
-        let overlay = this.overlay = new PaperOverlay(viewer,{overlayType:'viewer'});
-        let tool = this.tool = new ScreenshotTool(this.overlay.paperScope, this);
+
+        // --- Core objects ---
+        this.overlay = new PaperOverlay(viewer, { overlayType: 'viewer' });
+        this.tool = new ScreenshotTool(this.overlay.paperScope, this);
         this.dummyTool = new this.overlay.paperScope.Tool();
         this.dummyTool.activate();
-        this._mouseNavEnabledAtActivation = true;
-        this._state = 'inactive'; // inactive | config | freeSelectArmed | fixedPlaceArmed | regionChosen | regionEdit | creating | created
-        this._saveSettingsTimeout = null;
+        this.dialog = null; // populated by _makeDialog
+        this.blobURL = null;
+
+        // --- Settings & state ---
         this.settings = loadScreenshotSettings();
-        this._currentImageBounds = null; // OpenSeadragon image-space rect (base pixels)
+        this._state = 'inactive'; // inactive | config | freeSelectArmed | fixedPlaceArmed | regionChosen | regionEdit | creating | created
+        this._mouseNavEnabledAtActivation = true;
+        this._saveSettingsTimeout = null;
+        this._region = null; // { viewportRect, screenWidth, screenHeight, rotation }
+        this._lastRegionKey = null;
+        this._lastBasePxForOutput = null; // { baseW, baseH }
+
+        // --- Screenshot cache ---
         this._baseScreenshot = null; // { blob, url, pixelRatio, signature }
         this._lastScreenshotRequest = null; // { data, signature }
-        this._scalebarShowLabel = false;
 
-        this.button = overlay.addViewerButton({
+        // --- Scalebar state ---
+        this._mpp = null;
+        this._includeScalebar = false;
+        this._scalebarWidth = 0.5;
+        this._scalebarHeight = 4;
+        this._scalebarShowLabel = false;
+        this._scalebarWasTouched = false;
+
+        // --- Output UI refs (populated by _wireOutputSizingControls) ---
+        this._fixedOutputUI = null;
+        this._resultOutputUI = null;
+
+        this.button = this.overlay.addViewerButton({
             faIconClass:'fa-camera',
             tooltip:'Take Screenshot',
             onClick:()=>{
@@ -119,72 +140,39 @@ class ScreenshotOverlay extends ViewerOverlayBase {
     _setState(next){
         this._state = next;
         if(!this.dialog) return;
+
+        // Visibility map: which panels are shown/hidden and result status for each state.
+        // Keys: dialog (root), setup, after, edit; values: true = visible.
+        // resultAdd/resultRemove control CSS classes on .screenshot-results.
+        const STATE_MAP = {
+            inactive:       { dialog:false, setup:true,  after:false, edit:false, resultAdd:[],          resultRemove:['pending','created'] },
+            config:         { dialog:true,  setup:true,  after:false, edit:false, resultAdd:[],          resultRemove:['pending','created'], afterEntry: () => this._syncDialogFromSettings() },
+            freeSelectArmed:{ dialog:false },
+            fixedPlaceArmed:{ dialog:false },
+            regionChosen:   { dialog:true,  setup:false, after:true,  edit:false, resultAdd:[],          resultRemove:['pending','created'] },
+            regionEdit:     { dialog:true,  setup:false, after:false, edit:true },
+            creating:       { dialog:true,  setup:false, after:true,  edit:false, resultAdd:['pending'], resultRemove:['created'] },
+            created:        { dialog:true,  setup:false, after:true,  edit:false, resultAdd:['created'], resultRemove:['pending'] },
+        };
+
+        const spec = STATE_MAP[next];
+        if(!spec) return;
+
         const el = this.dialog;
-        const setup = el.querySelector('.screenshot-setup');
-        const after = el.querySelector('.screenshot-after');
+        el.classList.toggle('hidden', !spec.dialog);
+
+        const panels = { setup: '.screenshot-setup', after: '.screenshot-after', edit: '.screenshot-edit' };
+        for(const [key, sel] of Object.entries(panels)){
+            if(key in spec) el.querySelector(sel)?.classList.toggle('hidden', !spec[key]);
+        }
+
         const results = el.querySelector('.screenshot-results');
-        const edit = el.querySelector('.screenshot-edit');
-
-        if(next === 'inactive'){
-            el.classList.add('hidden');
-            results?.classList.remove('pending','created');
-            setup?.classList.remove('hidden');
-            after?.classList.add('hidden');
-            edit?.classList.add('hidden');
-            return;
+        if(results){
+            (spec.resultRemove || []).forEach(c => results.classList.remove(c));
+            (spec.resultAdd || []).forEach(c => results.classList.add(c));
         }
 
-        if(next === 'config'){
-            el.classList.remove('hidden');
-            results?.classList.remove('pending','created');
-            setup?.classList.remove('hidden');
-            after?.classList.add('hidden');
-            edit?.classList.add('hidden');
-            this._syncDialogFromSettings();
-            return;
-        }
-
-        if(next === 'freeSelectArmed' || next === 'fixedPlaceArmed'){
-            el.classList.add('hidden');
-            return;
-        }
-
-        if(next === 'regionChosen'){
-            el.classList.remove('hidden');
-            setup?.classList.add('hidden');
-            after?.classList.remove('hidden');
-            edit?.classList.add('hidden');
-            results?.classList.remove('pending','created');
-            return;
-        }
-
-        if(next === 'regionEdit'){
-            el.classList.remove('hidden');
-            setup?.classList.add('hidden');
-            after?.classList.add('hidden');
-            edit?.classList.remove('hidden');
-            return;
-        }
-
-        if(next === 'creating'){
-            el.classList.remove('hidden');
-            setup?.classList.add('hidden');
-            after?.classList.remove('hidden');
-            edit?.classList.add('hidden');
-            results?.classList.add('pending');
-            results?.classList.remove('created');
-            return;
-        }
-
-        if(next === 'created'){
-            el.classList.remove('hidden');
-            setup?.classList.add('hidden');
-            after?.classList.remove('hidden');
-            edit?.classList.add('hidden');
-            results?.classList.remove('pending');
-            results?.classList.add('created');
-            return;
-        }
+        spec.afterEntry?.();
     }
 
     _scheduleSaveSettings(){
@@ -314,8 +302,29 @@ class ScreenshotOverlay extends ViewerOverlayBase {
         return Number.isFinite(v) && v > 0 ? v : Number(this.settings.output.presetFactor);
     }
 
+    _resolveEffectiveOutputFactor(){
+        const factor = this.settings.output.mode === 'other'
+            ? Number(this.settings.output.otherFactor)
+            : Number(this.settings.output.presetFactor);
+        return Number.isFinite(factor) && factor > 0 ? factor : 1;
+    }
+
+    _formatReadout(outW, outH, factor){
+        return `→ ${outW} × ${outH} (${this._formatDownsampleLabel(factor)})`;
+    }
+
+    _tryRecomposeOrReset(){
+        const isCreated = this.dialog?.querySelector('.screenshot-results')?.classList.contains('created');
+        const v = this._renderScalebarValidation({ mode: 'soft' });
+        if(isCreated && this._baseScreenshot && v?.ok){
+            this._recomposeFromCachedBaseIfPossible().catch(()=>this._resetScreenshotResults());
+        }else{
+            this._resetScreenshotResults();
+        }
+    }
+
     _computeSmartScalebarLengthMm(){
-        if(!this._mpp || !this._mpp.x || !this._currentImageBounds) return null;
+        if(!this._mpp || !this._mpp.x || !this._region) return null;
         const built = this._buildCurrentScreenshotRequestFromUI();
         if(!built) return null;
         const outW = Number(built.data.w);
@@ -513,17 +522,17 @@ class ScreenshotOverlay extends ViewerOverlayBase {
             if(!(hasMpp && this._includeScalebar)){
                 hint.style.visibility = 'hidden';
                 hint.textContent = '';
-            }else if(hasMpp && this._includeScalebar && this._currentImageBounds){
+            }else if(hasMpp && this._includeScalebar && this._region){
                 const v = this._validateScalebarDraft();
                 if(!v.lengthOk){
                     hint.style.visibility = 'hidden';
                     hint.textContent = '';
                 }else{
                     hint.style.visibility = 'visible';
-                const baseW = Number(this._currentImageBounds.width);
+                const baseW = this._region.screenWidth;
                 const factor = this._getCurrentOutputFactorFromUI('result');
                 const safeFactor = Number.isFinite(factor) && factor > 0 ? factor : 1;
-                const { outW } = computeOutputSize(baseW, Number(this._currentImageBounds.height), safeFactor);
+                const { outW } = computeOutputSize(baseW, this._region.screenHeight, safeFactor);
                 const scaleFactor = outW / baseW;
                 const pxLen = Math.max(1, Math.round(v.lengthMm * 1000 / this._mpp.x * scaleFactor));
                 hint.textContent = `≈ ${pxLen} px at output`;
@@ -552,10 +561,7 @@ class ScreenshotOverlay extends ViewerOverlayBase {
     }
 
     _buildCurrentScreenshotRequestFromUI(){
-        if(!this.dialog || !this._currentImageBounds || !this._lastBasePxForOutput) return null;
-        const ibEl = this.dialog.querySelector('[data-last-imagebounds-json]');
-        if(!ibEl) return null;
-        const imageBounds = JSON.parse(ibEl.getAttribute('data-last-imagebounds-json'));
+        if(!this.dialog || !this._region || !this._lastBasePxForOutput) return null;
         const base = this._lastBasePxForOutput;
         const factor = this._getCurrentOutputFactorFromUI('result');
         const safeFactor = Number.isFinite(factor) && factor > 0 ? factor : 1;
@@ -564,7 +570,7 @@ class ScreenshotOverlay extends ViewerOverlayBase {
             data: {
                 w: outW,
                 h: outH,
-                imageBounds,
+                viewportRect: this._region.viewportRect,
                 scaleFactor: outW / base.baseW,
             },
             base,
@@ -576,22 +582,28 @@ class ScreenshotOverlay extends ViewerOverlayBase {
         const built = this._buildCurrentScreenshotRequestFromUI();
         if(!built) return false;
         const { data } = built;
-        const sig = this._computeRenderSignature({ w: data.w, h: data.h, imageBounds: data.imageBounds });
+        const ctx = this._buildRenderContext({ w: data.w, h: data.h, viewportRect: data.viewportRect });
+        const sig = computeRenderSignature({ w: data.w, h: data.h, viewportRect: data.viewportRect, rotation: ctx.rotation, tileSource: ctx.tileSource });
         if(sig !== this._baseScreenshot.signature) return false;
 
-        // Update output quickly without offscreen OSD render.
         let finalUrl = null;
         if(this._includeScalebar && this._mpp){
-            const blob = await this._composeScreenshotWithScalebar({
+            const blob = await composeScreenshotWithScalebar({
                 baseBlob: this._baseScreenshot.blob,
                 pixelRatio: this._baseScreenshot.pixelRatio,
                 scaleFactor: data.scaleFactor,
+                scalebar: {
+                    include: true,
+                    widthMm: this._scalebarWidth,
+                    heightPx: this._scalebarHeight,
+                    mppX: this._mpp.x,
+                    label: this._scalebarShowLabel ? this._scalebarLabelFit({ scaleFactor: data.scaleFactor }) : null,
+                },
             });
             if(this.blobURL) this._revokeObjectURL(this.blobURL);
             this.blobURL = URL.createObjectURL(blob);
             finalUrl = this.blobURL;
         }else{
-            // Reuse cached base directly.
             if(this.blobURL && this.blobURL !== this._baseScreenshot.url){
                 this._revokeObjectURL(this.blobURL);
             }
@@ -627,31 +639,36 @@ class ScreenshotOverlay extends ViewerOverlayBase {
     }
 
     _armFixedPlace(){
+        this._syncDialogFromSettings();
         this.tool.setMode('fixedPlace');
         this._setState('fixedPlaceArmed');
     }
 
     _handleFixedPlacement(payload){
-        const imageBounds = payload?.screenshotData?.imageBounds;
-        if(!imageBounds){
+        const region = payload?.region;
+        if(!region){
             alert('Missing fixed placement region metadata.');
             this._setState('regionChosen');
             return;
         }
 
-        // Once the fixed region is placed, stop showing the placement preview cursor.
         this.tool.setMode('idle');
+        this._setRegion(region);
 
-        // Always populate the UI from base pixels first (even in auto-create).
-        this._setupScreenshotDialogFromImageBounds(imageBounds);
-
-        if(payload.autoCreate && payload.screenshotData){
+        if(payload.autoCreate){
+            const safeFactor = this._resolveEffectiveOutputFactor();
+            const { outW, outH } = computeOutputSize(region.screenWidth, region.screenHeight, safeFactor);
+            const data = {
+                w: outW, h: outH,
+                viewportRect: region.viewportRect,
+                scaleFactor: outW / region.screenWidth,
+            };
             this._setState('creating');
-            this._createScreenshot(payload.screenshotData).then(()=>{
+            this._createScreenshot(data).then(()=>{
                 this.dialog.querySelectorAll('.screenshot-link').forEach(a=>a.href = this.blobURL);
                 const cs = this.dialog.querySelector('.created-summary');
                 if(cs){
-                    cs.textContent = `Region ${Math.round(imageBounds.width)}×${Math.round(imageBounds.height)} → Output ${payload.screenshotData.w}×${payload.screenshotData.h}`;
+                    cs.textContent = `Region ${Math.round(region.screenWidth)}×${Math.round(region.screenHeight)} → Output ${outW}×${outH}`;
                 }
                 this._setState('created');
             }).catch(e=>{
@@ -674,345 +691,15 @@ class ScreenshotOverlay extends ViewerOverlayBase {
             return;
         }
 
-        // Once a free-select region is chosen, stop showing the crosshair cursor.
         this.tool.setMode('idle');
-
-        // Convert viewer-element rectangle to base image-space rect once,
-        // and drive the UI from base pixels for consistent UX.
-        const vp = this.viewer.viewport;
         this._resolveActiveTiledImageOrThrow();
-        const boundsRect = new OpenSeadragon.Rect(bounds.x, bounds.y, bounds.width, bounds.height);
-        const viewportRect = vp.viewerElementToViewportRectangle(boundsRect);
-        const imageBounds = vp.viewportToImageRectangle(viewportRect);
-        this._setupScreenshotDialogFromImageBounds(imageBounds);
+        const region = this._viewerElementRectToRegion(bounds);
+        this._setRegion(region);
         this._setState('regionChosen');
     }
 
     _makeDialog(options){
-        let html = `<div class="screenshot-dialog hidden">
-            <div class="ss-header">
-                <div class="ss-title">Screenshot</div>
-                <button class="close ss-close" type="button" aria-label="Close">×</button>
-            </div>
-
-            <div class="screenshot-setup">
-                <div class="screenshot-mode">
-                    <label class="ss-radio"><input type="radio" name="screenshot-mode" value="free" class="mode-free"> Free select</label>
-                    <label class="ss-radio"><input type="radio" name="screenshot-mode" value="fixed" class="mode-fixed"> Defined size</label>
-                </div>
-
-                <div class="setup-free">
-                    <div class="ss-row">
-                        <label class="ss-check"><input class="lock-aspect-ratio" type="checkbox"/> Use fixed aspect ratio</label>
-                        <span class="ss-inline">
-                            <span class="ss-muted">Aspect:</span>
-                            <input type="number" step="any" inputmode="decimal" value="1" class="aspect-width"/> :
-                            <input type="number" step="any" inputmode="decimal" value="1" class="aspect-height"/>
-                            <span class="aspect-error ss-muted hidden"></span>
-                        </span>
-                    </div>
-                    <div class="setup-hint">Start selection, then drag. Esc cancels.</div>
-                </div>
-
-                <div class="setup-fixed">
-                    <div class="ss-row">
-                        <span class="ss-muted">Base region:</span>
-                        <input class="fixed-base-width" type="number" min="1" step="1" value="256"/> ×
-                        <input class="fixed-base-height" type="number" min="1" step="1" value="256"/> <span class="ss-muted">px</span>
-                        <span class="fixed-base-error ss-muted hidden"></span>
-                    </div>
-                    <div class="ss-row fixed-output-controls">
-                        <span class="ss-muted">Output:</span>
-                        <select class="select-output-size-fixed"></select>
-                        <span class="fixed-output-other hidden">
-                            <span class="ss-muted" title="Downsample factor">1 /</span>
-                            <input class="fixed-output-other-factor" type="number" step="any" inputmode="decimal" value="1"/>
-                            <span class="fixed-output-readout ss-muted"></span>
-                            <span class="downsample-error ss-muted hidden"></span>
-                        </span>
-                        <span class="output-help ss-muted hidden"></span>
-                    </div>
-                    <div class="ss-row">
-                        <label class="ss-check"><input type="checkbox" class="fixed-auto-create"/> Auto-create on click</label>
-                    </div>
-                    <div class="setup-hint">Click Start, then click to place.</div>
-                </div>
-
-                <div class="ss-actions">
-                    <button class="start ss-primary" type="button">Start selection</button>
-                </div>
-            </div>
-
-            <div class="screenshot-after hidden">
-                <div class="ss-section">
-                    <div class="screenshot-results">
-                        <div class="instructions">
-                            <div class="ss-row ss-space-between">
-                                <div class="output-context ss-muted ss-mono"></div>
-                                <button class="edit-region" type="button">Edit</button>
-                            </div>
-                            <div class="ss-row">
-                                <span class="ss-muted">Output:</span>
-                                <select class="select-output-size-result"></select>
-                                <span class="result-output-other hidden">
-                                    <span class="ss-muted" title="Downsample factor">1 /</span>
-                                    <input class="result-output-other-factor" type="number" step="any" inputmode="decimal" value="1"/>
-                                    <span class="result-output-readout ss-muted"></span>
-                                    <span class="downsample-error ss-muted hidden"></span>
-                                </span>
-                            </div>
-                            <div class="output-help ss-muted hidden"></div>
-                        </div>
-
-                        <div class="scalebar-main hidden">
-                            <div class="scalebar-grid">
-                                <label class="ss-check scalebar-toggle"><input class="include-scalebar" type="checkbox"> Scale bar</label>
-                                <span class="scalebar-disabled-reason ss-muted hidden"></span>
-
-                                <div class="scalebar-opts hidden">
-                                    <div class="scalebar-row scalebar-length">
-                                        <span class="ss-muted">Length</span>
-                                        <input class="scalebar-width" type="number" step="any" inputmode="decimal">
-                                        <span class="ss-muted ss-unit">mm</span>
-                                        <span class="ss-muted scalebar-px-hint"></span>
-                                    </div>
-                                    <div class="scalebar-row scalebar-height">
-                                        <span class="ss-muted">Height</span>
-                                        <input class="scalebar-height" type="number" value="4" step="1" inputmode="numeric">
-                                        <span class="ss-muted ss-unit">px</span>
-                                    </div>
-                                    <div class="ss-row scalebar-label-row">
-                                        <label class="ss-check"><input class="scalebar-show-label" type="checkbox"> Label</label>
-                                        <span class="scalebar-label-hint ss-muted hidden"></span>
-                                    </div>
-                                    <div class="ss-row scalebar-error-row hidden">
-                                        <span class="scalebar-error ss-muted"></span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="ss-row ss-create-row">
-                            <span class="ss-create-hint">A region was selected. Next:</span>
-                            <button class="create-screenshot ss-primary" type="button">Create</button>
-                        </div>
-
-                        <div class="download">
-                            <div class="created-confirm ss-muted">Screenshot created.</div>
-                            <div class="created-summary ss-muted"></div>
-                            <div class="ss-row">
-                                <a class="open-screenshot screenshot-link" target="_blank"><button type="button">Open</button></a>
-                                <a class="download-screenshot screenshot-link" download="screenshot.png"><button type="button">Download</button></a>
-                                <button class="cancel-screenshot" type="button">Change output</button>
-                            </div>
-                        </div>
-
-                        <div class="pending-message">
-                            <div class="ss-row ss-space-between">
-                                <span class="ss-muted">Creating…</span>
-                                <button class="cancel-screenshot" type="button">Change output</button>
-                            </div>
-                            <div class="screenshot-progress">
-                                <progress></progress>
-                                <div class="ss-muted">Loaded <span class="loaded"></span> of <span class="total"><span> tiles</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="ss-footer">
-                    <button class="back-to-setup" type="button">Back</button>
-                    <button class="rect" type="button">Select new area</button>
-                </div>
-            </div>
-
-            <div class="screenshot-edit hidden">
-                <div class="ss-section">
-                    <div class="ss-label">Edit</div>
-                    <div class="ss-row">
-                        <span class="ss-muted">Size:</span>
-                        <input class="region-width region-dim" type="number" min="1" step="1"/> ×
-                        <input class="region-height region-dim" type="number" min="1" step="1"/> <span class="ss-muted">px</span>
-                    </div>
-                    <div class="region-mm ss-muted hidden"></div>
-                </div>
-                <div class="ss-footer">
-                    <button class="done-edit" type="button">Done</button>
-                    <button class="rect" type="button">Select new area</button>
-                </div>
-            </div>
-        </div>`;
-
-        let css = `<style data-type="screenshot-tool">
-            .screenshot-dialog{
-                position: absolute;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                box-sizing: border-box;
-                width: min(400px, calc(100% - 24px));
-                max-height: calc(100% - 24px);
-                overflow: auto;
-                background: #fff;
-                color: #111;
-                border: 1px solid rgba(0,0,0,0.14);
-                border-radius: 10px;
-                box-shadow: 0 14px 40px rgba(0,0,0,0.22);
-                font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif;
-                font-size: 13px;
-                line-height: 1.25;
-            }
-            .screenshot-dialog.hidden{ display:none; }
-            .hidden{ display:none !important; }
-            .screenshot-after.hidden, .screenshot-setup.hidden{ display:none; }
-
-            .ss-header{
-                display:flex;
-                align-items:center;
-                justify-content:space-between;
-                padding: 10px 12px;
-                border-bottom: 1px solid rgba(0,0,0,0.08);
-                position: sticky;
-                top: 0;
-                background: #fff;
-                z-index: 1;
-            }
-            .ss-title{
-                font-weight: 600;
-                font-size: 14px;
-            }
-            .ss-close{
-                border: none;
-                background: transparent;
-                font-size: 18px;
-                line-height: 1;
-                padding: 2px 6px;
-                cursor: pointer;
-                color: rgba(0,0,0,0.6);
-            }
-            .ss-close:hover{ color: rgba(0,0,0,0.9); }
-
-            .screenshot-setup{ padding: 10px 12px; }
-            .screenshot-after{ padding: 0 12px; }
-            .ss-section{ padding: 4px 0; }
-            .ss-footer{
-                display:flex;
-                gap: 8px;
-                padding-top: 4px;
-                padding-bottom: 4px;
-                border-top: 1px solid rgba(0,0,0,0.08);
-            }
-
-            .screenshot-mode{
-                display:flex;
-                gap: 14px;
-                align-items:center;
-                margin-bottom: 8px;
-            }
-            .ss-radio{ display:flex; gap:6px; align-items:center; }
-            .ss-check{ display:flex; gap:6px; align-items:center; }
-            .ss-row{
-                display:flex;
-                gap: 8px;
-                align-items:center;
-                flex-wrap: wrap;
-                margin: 1px 0;
-            }
-            .ss-space-between{ justify-content:space-between; }
-            .ss-inline{ display:flex; gap:6px; align-items:center; }
-            .ss-label{ font-weight: 600; margin-bottom: 2px; }
-            .ss-muted{ color: rgba(0,0,0,0.60); }
-            .ss-mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace; }
-
-            .setup-hint{ margin-top: 6px; color: rgba(0,0,0,0.60); }
-            .ss-actions{ margin-top: 10px; display:flex; justify-content:flex-end; }
-
-            button{
-                font: inherit;
-                padding: 5px 10px;
-                border: 1px solid rgba(0,0,0,0.18);
-                background: #fff;
-                border-radius: 8px;
-                cursor: pointer;
-            }
-            button:hover{ border-color: rgba(0,0,0,0.30); }
-            button.ss-primary{
-                background: #111;
-                color: #fff;
-                border-color: #111;
-            }
-            button.ss-primary:hover{ background: #000; border-color: #000; }
-            input[type=number]{
-                width: 6.5em;
-                padding: 4px 6px;
-                border: 1px solid rgba(0,0,0,0.18);
-                border-radius: 8px;
-                font: inherit;
-            }
-            .scalebar-main input[type=number]{ width: 4.8em; }
-            .scalebar-grid{
-                display: grid;
-                grid-template-columns: 1fr;
-                gap: 4px;
-                margin: 4px 0;
-            }
-            .scalebar-toggle{ margin: 0; }
-            .scalebar-opts{
-                display: grid;
-                grid-template-columns: max-content max-content max-content 1fr;
-                align-items: center;
-                gap: 4px 8px;
-            }
-            .scalebar-row{ display: contents; }
-            .scalebar-opts .ss-row{ margin: 0; }
-            .scalebar-label-row{
-                grid-column: 1 / -1;
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                min-width: 0;
-                margin: 0;
-            }
-            .scalebar-label-hint{
-                margin-left: auto;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                min-width: 0;
-            }
-            .scalebar-error-row{
-                grid-column: 1 / -1;
-                margin-top: 2px;
-                margin-left: 0;
-                margin-right: 0;
-            }
-            .scalebar-px-hint{ white-space: nowrap; }
-            .ss-unit{ white-space: nowrap; }
-            select{
-                padding: 4px 6px;
-                border: 1px solid rgba(0,0,0,0.18);
-                border-radius: 8px;
-                font: inherit;
-                background: #fff;
-            }
-
-            .screenshot-results>*{ display:none; }
-            .screenshot-results.created .download{ display:block; }
-            .screenshot-results.pending .pending-message{ display:block; }
-            .screenshot-results:not(.created):not(.pending) .instructions{ display:block; }
-            .screenshot-results.created .scalebar-main{ display:block; }
-            .screenshot-results:not(.created):not(.pending) .scalebar-main{ display:block; }
-            .screenshot-results:not(.created):not(.pending) .ss-create-row{ display:flex; justify-content:flex-end; align-items:center; gap: 10px; }
-            .ss-create-hint{
-                color: rgba(0,0,0,0.78);
-                font-weight: 500;
-            }
-        </style>`;
-        if(!document.querySelector('style[data-type="screenshot-tool"]')){
-            document.querySelector('head').appendChild(domObjectFromHTML(css));
-        }
-
-        const el = domObjectFromHTML(html);
+        const el = createScreenshotDialogElement();
         this.viewer.container.appendChild(el);
 
         el.addEventListener('mousemove',ev=>ev.stopPropagation());
@@ -1032,37 +719,30 @@ class ScreenshotOverlay extends ViewerOverlayBase {
             this._setState('regionChosen');
         }));
         el.querySelectorAll('.cancel-screenshot').forEach(e=>e.addEventListener('click',()=>{
-            // Restore a real semantic state, not just CSS classes.
-            if(this._currentImageBounds){
-                this._setupScreenshotDialogFromImageBounds(this._currentImageBounds);
+            if(this._region){
+                this._setRegion(this._region);
                 this._setState('regionChosen');
                 return;
             }
             el.querySelector('.screenshot-results').classList.remove('pending','created');
         }));
         el.querySelectorAll('.create-screenshot').forEach(e=>e.addEventListener('click',()=>{
-            // Hard block on invalid scalebar inputs (when enabled).
             const sb = this._renderScalebarValidation({ mode: 'hard' });
-            if(sb && sb.ok === false){
-                return;
-            }
-            const sel = el.querySelector('.select-output-size-result');
-            const selectedOption = sel.options[sel.selectedIndex];
-            let data;
-            const ibEl = this.dialog.querySelector('[data-last-imagebounds-json]');
-            if(!ibEl){
+            if(sb && sb.ok === false) return;
+
+            if(!this._region){
                 alert('Missing screenshot region metadata.');
                 return;
             }
-            const imageBounds = JSON.parse(ibEl.getAttribute('data-last-imagebounds-json'));
             const base = this._lastBasePxForOutput;
             if(!base){
                 alert('Missing base pixel sizing metadata.');
                 return;
             }
+            const sel = el.querySelector('.select-output-size-result');
+            const selectedOption = sel.options[sel.selectedIndex];
             let factor;
             if(selectedOption?.value === '__other__' || this.settings.output.mode === 'other'){
-                // Hard validate the current draft when Other… is selected.
                 const otherInput = el.querySelector('.result-output-other-factor');
                 const draft = String(otherInput?.value ?? '').trim();
                 const parsed = this._parsePositiveFloatDraft(draft);
@@ -1082,14 +762,14 @@ class ScreenshotOverlay extends ViewerOverlayBase {
             }
             const safeFactor = Number.isFinite(factor) && factor > 0 ? factor : 1;
             const { outW, outH } = computeOutputSize(base.baseW, base.baseH, safeFactor);
-            data = {
+            const data = {
                 w: outW,
                 h: outH,
-                imageBounds,
+                viewportRect: this._region.viewportRect,
                 scaleFactor: outW / base.baseW,
             };
             this.dialog.querySelector('.screenshot-results').classList.add('pending');
-            this._createScreenshot(data).then(blobURL=>{
+            this._createScreenshot(data).then(()=>{
                 const x = this.dialog.querySelector('.screenshot-results');
                 x.classList.remove('pending');
                 x.classList.add('created');
@@ -1103,8 +783,7 @@ class ScreenshotOverlay extends ViewerOverlayBase {
             });
         }));
         el.querySelectorAll('button.download-screenshot').forEach(e=>e.addEventListener('click',()=>{
-            let a = el.querySelectorAll('a.download-screenshot');
-            a.dispatchEvent(new Event('change'));
+            el.querySelector('a.download-screenshot')?.click();
         }));
         el.querySelectorAll('.aspect-width').forEach(e=>{
             const onDraft = ()=>{
@@ -1171,12 +850,7 @@ class ScreenshotOverlay extends ViewerOverlayBase {
                     this._scalebarWidth = parsed.value;
                 }
                 this._syncScalebarUI();
-                const isCreated = this.dialog?.querySelector('.screenshot-results')?.classList.contains('created');
-                if(isCreated && this._baseScreenshot && v?.ok){
-                    this._recomposeFromCachedBaseIfPossible().catch(()=>this._resetScreenshotResults());
-                }else{
-                    this._resetScreenshotResults();
-                }
+                this._tryRecomposeOrReset();
             };
             e.addEventListener('input', onInput);
             e.addEventListener('change', onInput);
@@ -1201,14 +875,7 @@ class ScreenshotOverlay extends ViewerOverlayBase {
                     this._scalebarHeight = Math.round(v);
                 }
                 this._syncScalebarUI();
-
-                const vv = this._renderScalebarValidation({ mode: 'soft' });
-                const isCreated = this.dialog?.querySelector('.screenshot-results')?.classList.contains('created');
-                if(isCreated && this._baseScreenshot && vv?.ok){
-                    this._recomposeFromCachedBaseIfPossible().catch(()=>this._resetScreenshotResults());
-                }else{
-                    this._resetScreenshotResults();
-                }
+                this._tryRecomposeOrReset();
             };
             e.addEventListener('input', onInput);
             e.addEventListener('change', onInput);
@@ -1231,26 +898,14 @@ class ScreenshotOverlay extends ViewerOverlayBase {
                     this._maybeApplySmartScalebarDefaults();
                 }
                 this._syncScalebarUI();
-                const isCreated = this.dialog?.querySelector('.screenshot-results')?.classList.contains('created');
-                const v = this._renderScalebarValidation({ mode: 'soft' });
-                if(isCreated && this._baseScreenshot && v?.ok){
-                    this._recomposeFromCachedBaseIfPossible().catch(()=>this._resetScreenshotResults());
-                }else{
-                    this._resetScreenshotResults();
-                }
+                this._tryRecomposeOrReset();
             });
         });
         el.querySelectorAll('.scalebar-show-label').forEach(e=>{
             e.addEventListener('change',ev=>{
                 this._scalebarShowLabel = Boolean(ev.target.checked);
                 this._syncScalebarUI();
-                const isCreated = this.dialog?.querySelector('.screenshot-results')?.classList.contains('created');
-                const v = this._renderScalebarValidation({ mode: 'soft' });
-                if(isCreated && this._baseScreenshot && v?.ok){
-                    this._recomposeFromCachedBaseIfPossible().catch(()=>this._resetScreenshotResults());
-                }else{
-                    this._resetScreenshotResults();
-                }
+                this._tryRecomposeOrReset();
             });
         });
         this.dialog = el;
@@ -1265,72 +920,30 @@ class ScreenshotOverlay extends ViewerOverlayBase {
                 this._scheduleSaveSettings();
             });
         });
-        el.querySelectorAll('.fixed-base-width').forEach(i=>{
-            const onDraft = ()=>{
-                this._syncFixedBaseValidationUI();
-                // If draft is valid, update the fixed readout preview.
-                const bw = el.querySelector('.fixed-base-width');
-                const bh = el.querySelector('.fixed-base-height');
-                const ui = this._fixedOutputUI;
-                const pw = this._parsePositiveIntDraft(bw?.value);
-                const ph = this._parsePositiveIntDraft(bh?.value);
-                if(ui?.readout && pw.ok && ph.ok){
-                    const factor = this.settings.output.mode === 'other'
-                        ? Number(this.settings.output.otherFactor)
-                        : Number(this.settings.output.presetFactor);
-                    const safe = Number.isFinite(factor) && factor > 0 ? factor : 1;
-                    const { outW, outH } = computeOutputSize(pw.value, ph.value, safe);
-                    ui.readout.textContent = `→ ${outW} × ${outH} (${this._formatDownsampleLabel(safe)})`;
-                }
-            };
-            i.addEventListener('input', onDraft);
-            i.addEventListener('change', onDraft);
-            i.addEventListener('blur',()=>{
-                const parsed = this._parsePositiveIntDraft(i.value);
-                if(parsed.ok){
-                    this.settings.fixed.baseWidthPx = parsed.value;
-                    this.settings = normalizeScreenshotSettings(this.settings);
-                    this._scheduleSaveSettings();
-                    // Re-sync to repopulate fixed output options/readout/tool params.
-                    this._syncDialogFromSettings();
-                }else{
-                    i.value = String(this.settings.fixed.baseWidthPx);
-                }
-                this._syncFixedBaseValidationUI();
+        const wireFixedBaseInput = (selector, settingKey) => {
+            el.querySelectorAll(selector).forEach(i=>{
+                const onDraft = ()=>{
+                    this._syncFixedBaseValidationUI();
+                    this._syncFixedBaseDraftReadout();
+                };
+                i.addEventListener('input', onDraft);
+                i.addEventListener('change', onDraft);
+                i.addEventListener('blur',()=>{
+                    const parsed = this._parsePositiveIntDraft(i.value);
+                    if(parsed.ok){
+                        this.settings.fixed[settingKey] = parsed.value;
+                        this.settings = normalizeScreenshotSettings(this.settings);
+                        this._scheduleSaveSettings();
+                        this._syncDialogFromSettings();
+                    }else{
+                        i.value = String(this.settings.fixed[settingKey]);
+                    }
+                    this._syncFixedBaseValidationUI();
+                });
             });
-        });
-        el.querySelectorAll('.fixed-base-height').forEach(i=>{
-            const onDraft = ()=>{
-                this._syncFixedBaseValidationUI();
-                const bw = el.querySelector('.fixed-base-width');
-                const bh = el.querySelector('.fixed-base-height');
-                const ui = this._fixedOutputUI;
-                const pw = this._parsePositiveIntDraft(bw?.value);
-                const ph = this._parsePositiveIntDraft(bh?.value);
-                if(ui?.readout && pw.ok && ph.ok){
-                    const factor = this.settings.output.mode === 'other'
-                        ? Number(this.settings.output.otherFactor)
-                        : Number(this.settings.output.presetFactor);
-                    const safe = Number.isFinite(factor) && factor > 0 ? factor : 1;
-                    const { outW, outH } = computeOutputSize(pw.value, ph.value, safe);
-                    ui.readout.textContent = `→ ${outW} × ${outH} (${this._formatDownsampleLabel(safe)})`;
-                }
-            };
-            i.addEventListener('input', onDraft);
-            i.addEventListener('change', onDraft);
-            i.addEventListener('blur',()=>{
-                const parsed = this._parsePositiveIntDraft(i.value);
-                if(parsed.ok){
-                    this.settings.fixed.baseHeightPx = parsed.value;
-                    this.settings = normalizeScreenshotSettings(this.settings);
-                    this._scheduleSaveSettings();
-                    this._syncDialogFromSettings();
-                }else{
-                    i.value = String(this.settings.fixed.baseHeightPx);
-                }
-                this._syncFixedBaseValidationUI();
-            });
-        });
+        };
+        wireFixedBaseInput('.fixed-base-width', 'baseWidthPx');
+        wireFixedBaseInput('.fixed-base-height', 'baseHeightPx');
         if(el.querySelector('.fixed-output-controls')){
             this._wireOutputSizingControls(el.querySelector('.fixed-output-controls'), 'fixed');
         }
@@ -1414,28 +1027,18 @@ class ScreenshotOverlay extends ViewerOverlayBase {
             const parsed = this._parsePositiveFloatDraft(draft);
             if(parsed.ok){
                 setOtherError('');
-                // Update readout using draft without committing/mutating settings.
                 if(readout){
-                    if(kind === 'fixed'){
-                        const bw = Number(this.settings.fixed.baseWidthPx);
-                        const bh = Number(this.settings.fixed.baseHeightPx);
-                        const { outW, outH } = computeOutputSize(bw, bh, parsed.value);
-                        readout.textContent = `→ ${outW} × ${outH} (${this._formatDownsampleLabel(parsed.value)})`;
-                    }else{
-                        const base = this._lastBasePxForOutput;
-                        if(base){
-                            const { outW, outH } = computeOutputSize(base.baseW, base.baseH, parsed.value);
-                            readout.textContent = `→ ${outW} × ${outH} (${this._formatDownsampleLabel(parsed.value)})`;
-                        }
+                    const base = kind === 'fixed'
+                        ? { baseW: Number(this.settings.fixed.baseWidthPx), baseH: Number(this.settings.fixed.baseHeightPx) }
+                        : this._lastBasePxForOutput;
+                    if(base){
+                        const { outW, outH } = computeOutputSize(base.baseW, base.baseH, parsed.value);
+                        readout.textContent = this._formatReadout(outW, outH, parsed.value);
                     }
                 }
-                if(kind !== 'fixed'){
-                    // Preview affects scalebar px hint, which uses current output factor.
-                    this._syncScalebarUI();
-                }
+                if(kind !== 'fixed') this._syncScalebarUI();
             }else{
-                // Allow empty/partial while typing; show a soft warning.
-                setOtherError(draft === '' ? 'Enter a number > 0' : 'Enter a number > 0');
+                setOtherError('Enter a number > 0');
             }
         };
 
@@ -1548,27 +1151,36 @@ class ScreenshotOverlay extends ViewerOverlayBase {
         else this._syncResultOutputReadout();
     }
 
+    _syncFixedBaseDraftReadout(){
+        const bw = this.dialog?.querySelector('.fixed-base-width');
+        const bh = this.dialog?.querySelector('.fixed-base-height');
+        const ui = this._fixedOutputUI;
+        const pw = this._parsePositiveIntDraft(bw?.value);
+        const ph = this._parsePositiveIntDraft(bh?.value);
+        if(ui?.readout && pw.ok && ph.ok){
+            const factor = this._resolveEffectiveOutputFactor();
+            const { outW, outH } = computeOutputSize(pw.value, ph.value, factor);
+            ui.readout.textContent = this._formatReadout(outW, outH, factor);
+        }
+    }
+
     _syncFixedOutputReadout(){
         const ui = this._fixedOutputUI;
         if(!ui?.readout) return;
         const bw = Number(this.settings.fixed.baseWidthPx);
         const bh = Number(this.settings.fixed.baseHeightPx);
-        const factor = this.settings.output.mode === 'other'
-            ? Number(this.settings.output.otherFactor)
-            : Number(this.settings.output.presetFactor);
+        const factor = this._resolveEffectiveOutputFactor();
         const { outW, outH } = computeOutputSize(bw, bh, factor);
-        ui.readout.textContent = `→ ${outW} × ${outH} (${this._formatDownsampleLabel(factor)})`;
+        ui.readout.textContent = this._formatReadout(outW, outH, factor);
     }
 
     _syncResultOutputReadout(){
         const ui = this._resultOutputUI;
         if(!ui?.readout || !this._lastBasePxForOutput) return;
         const { baseW, baseH } = this._lastBasePxForOutput;
-        const factor = this.settings.output.mode === 'other'
-            ? Number(this.settings.output.otherFactor)
-            : Number(this.settings.output.presetFactor);
+        const factor = this._resolveEffectiveOutputFactor();
         const { outW, outH } = computeOutputSize(baseW, baseH, factor);
-        ui.readout.textContent = `→ ${outW} × ${outH} (${this._formatDownsampleLabel(factor)})`;
+        ui.readout.textContent = this._formatReadout(outW, outH, factor);
     }
 
     _syncDialogFromSettings(){
@@ -1637,41 +1249,35 @@ class ScreenshotOverlay extends ViewerOverlayBase {
 
         const baseW = Number(fp.fullResWidthPx ?? fp.baseWidthPx ?? this.settings.fixed.baseWidthPx);
         const baseH = Number(fp.fullResHeightPx ?? fp.baseHeightPx ?? this.settings.fixed.baseHeightPx);
-        const factor = this.settings.output.mode === 'other'
-            ? Number(this.settings.output.otherFactor)
-            : Number(this.settings.output.presetFactor);
-        const safeFactor = Number.isFinite(factor) && factor > 0 ? factor : 1;
-        const { outW, outH } = computeOutputSize(baseW, baseH, safeFactor);
 
+        // Cursor position in viewer-element (screen pixel) space
         const viewPt = ps.view.projectToView(projectPoint);
-        const viewerPt = new OpenSeadragon.Point(viewPt.x, viewPt.y);
-        const viewportPt = vp.viewerElementToViewportCoordinates(viewerPt);
-        const imagePt = vp.viewportToImageCoordinates(viewportPt);
 
-        const imageBounds = new OpenSeadragon.Rect(
-            imagePt.x - baseW / 2,
-            imagePt.y - baseH / 2,
-            baseW,
-            baseH
-        );
+        // Convert image dimensions to viewer-element pixel dimensions
+        // using point-level conversions (no Rect, no normalization).
+        const p0 = vp.pixelFromPoint(vp.imageToViewportCoordinates(0, 0), true);
+        const pW = vp.pixelFromPoint(vp.imageToViewportCoordinates(baseW, 0), true);
+        const pH = vp.pixelFromPoint(vp.imageToViewportCoordinates(0, baseH), true);
+        const viewerW = p0.distanceTo(pW);
+        const viewerH = p0.distanceTo(pH);
 
-        const viewportRect = vp.imageToViewportRectangle(imageBounds);
-        const viewerRect = vp.viewportToViewerElementRectangle(viewportRect);
+        // Screen-aligned viewer-element rect centered on cursor (degrees=0).
+        // This matches the free-draw path: _viewerElementRectToRegion receives
+        // a degrees=0 rect and correctly measures screen-axis image-pixel extents.
+        const viewerRect = new OpenSeadragon.Rect(
+            viewPt.x - viewerW / 2, viewPt.y - viewerH / 2, viewerW, viewerH);
+        const region = this._viewerElementRectToRegion(viewerRect);
 
-        const tl = ps.view.viewToProject(new paper.Point(viewerRect.x, viewerRect.y));
-        const br = ps.view.viewToProject(new paper.Point(viewerRect.x + viewerRect.width, viewerRect.y + viewerRect.height));
+        // Preview bounds: same rect, converted to paper.js project space
+        const tl = ps.view.viewToProject(new paper.Point(viewPt.x - viewerW / 2, viewPt.y - viewerH / 2));
+        const br = ps.view.viewToProject(new paper.Point(viewPt.x + viewerW / 2, viewPt.y + viewerH / 2));
         const bounds = new paper.Rectangle(tl, br);
 
         return {
             kind: 'fixed',
             autoCreate: Boolean(fp.autoCreateOnClick ?? this.settings.fixed.autoCreateOnClick),
             bounds,
-            screenshotData: {
-                w: outW,
-                h: outH,
-                imageBounds,
-                scaleFactor: outW / baseW,
-            },
+            region,
         };
     }
 
@@ -1687,62 +1293,86 @@ class ScreenshotOverlay extends ViewerOverlayBase {
         return world.getItemAt(0);
     }
 
-    _setupScreenshotDialogFromImageBounds(imageBounds){
+    /**
+     * Convert a viewer-element-space rectangle into a ScreenshotRegion.
+     * The input rect may carry a `degrees` property (e.g. from OSD's fromSummits);
+     * its actual corners (honoring degrees) are used for screen-axis measurements.
+     *
+     * @param {OpenSeadragon.Rect|{x,y,width,height,degrees?}} viewerElementRect
+     * @returns {{viewportRect: OpenSeadragon.Rect, screenWidth: number, screenHeight: number, rotation: number}}
+     */
+    _viewerElementRectToRegion(viewerElementRect){
+        const vp = this.viewer.viewport;
+        const osdRect = (viewerElementRect instanceof OpenSeadragon.Rect)
+            ? viewerElementRect
+            : new OpenSeadragon.Rect(viewerElementRect.x, viewerElementRect.y,
+                viewerElementRect.width, viewerElementRect.height, viewerElementRect.degrees || 0);
+
+        const viewportRect = vp.viewerElementToViewportRectangle(osdRect);
+
+        const tl = osdRect.getTopLeft();
+        const tr = osdRect.getTopRight();
+        const bl = osdRect.getBottomLeft();
+        const iTL = vp.viewerElementToImageCoordinates(tl);
+        const iTR = vp.viewerElementToImageCoordinates(tr);
+        const iBL = vp.viewerElementToImageCoordinates(bl);
+
+        return {
+            viewportRect,
+            screenWidth: iTR.distanceTo(iTL),
+            screenHeight: iBL.distanceTo(iTL),
+            rotation: vp.getRotation(true),
+        };
+    }
+
+    /**
+     * Store a ScreenshotRegion and update the dialog UI to reflect it.
+     * This is the single entry point for all code paths that establish or
+     * modify the selected screenshot region.
+     *
+     * @param {{viewportRect: OpenSeadragon.Rect, screenWidth: number, screenHeight: number, rotation: number}} region
+     */
+    _setRegion(region){
         this._resetScreenshotResults();
+        this._region = region;
 
-        // Normalize to a plain object (safe for JSON + later reconstruction).
-        const ib = imageBounds && typeof imageBounds === 'object'
-            ? {
-                x: Number(imageBounds.x) || 0,
-                y: Number(imageBounds.y) || 0,
-                width: Math.max(0, Number(imageBounds.width) || 0),
-                height: Math.max(0, Number(imageBounds.height) || 0),
-                degrees: Number(imageBounds.degrees) || 0,
-            }
-            : { x: 0, y: 0, width: 0, height: 0, degrees: 0 };
+        const bw = Math.round(region.screenWidth);
+        const bh = Math.round(region.screenHeight);
 
-        this._currentImageBounds = ib;
-
-        const bw = Math.round(ib.width);
-        const bh = Math.round(ib.height);
-
-        // Invalidate cached screenshots when region changes.
-        const nextKey = JSON.stringify({ x: ib.x, y: ib.y, width: ib.width, height: ib.height, degrees: ib.degrees });
-        if(this._lastImageBoundsKey !== nextKey){
-            this._lastImageBoundsKey = nextKey;
+        // Invalidate cached screenshots when the region changes.
+        const nextKey = JSON.stringify({
+            vp: { x: region.viewportRect.x, y: region.viewportRect.y,
+                  width: region.viewportRect.width, height: region.viewportRect.height,
+                  degrees: region.viewportRect.degrees },
+            rotation: region.rotation,
+        });
+        if(this._lastRegionKey !== nextKey){
+            this._lastRegionKey = nextKey;
             this._invalidateScreenshotCache();
         }
 
-        // Compact context line near output controls, including physical size when available.
         const ctx = this.dialog.querySelector('.output-context');
         const wEl = this.dialog.querySelector('.region-width');
         const hEl = this.dialog.querySelector('.region-height');
         if(wEl) wEl.value = bw;
         if(hEl) hEl.value = bh;
 
-        // mm display should also be derived from base pixels.
         let calculated_mm = false;
         this._mpp = null;
-        // Default scalebar config values (session-only for now).
-        if(this._includeScalebar == null) this._includeScalebar = false;
-        if(!Number.isFinite(this._scalebarWidth)) this._scalebarWidth = 0.5; // mm
-        if(!Number.isFinite(this._scalebarHeight)) this._scalebarHeight = 4; // px
-        if(this._scalebarWasTouched == null) this._scalebarWasTouched = false;
-        if(this._scalebarShowLabel == null) this._scalebarShowLabel = false;
 
         if(this.viewer.world.getItemCount() === 1){
             const mpp = this.viewer.world.getItemAt(0).source.mpp;
             if(mpp){
                 const mmEl = this.dialog.querySelector('.region-mm');
                 if(mmEl){
-                    mmEl.textContent = `${(mpp.x / 1000 * ib.width).toFixed(3)} × ${(mpp.y / 1000 * ib.height).toFixed(3)} mm`;
+                    mmEl.textContent = `${(mpp.x / 1000 * region.screenWidth).toFixed(3)} × ${(mpp.y / 1000 * region.screenHeight).toFixed(3)} mm`;
                     mmEl.classList.remove('hidden');
                 }
                 calculated_mm = true;
                 this._mpp = mpp;
 
                 if(ctx){
-                    ctx.textContent = `Region ${bw}×${bh} px (${(mpp.x / 1000 * ib.width).toFixed(2)}×${(mpp.y / 1000 * ib.height).toFixed(2)} mm)`;
+                    ctx.textContent = `Region ${bw}×${bh} px (${(mpp.x / 1000 * region.screenWidth).toFixed(2)}×${(mpp.y / 1000 * region.screenHeight).toFixed(2)} mm)`;
                 }
             }
         }
@@ -1757,44 +1387,49 @@ class ScreenshotOverlay extends ViewerOverlayBase {
             }
         }
 
-        const instructions = this.dialog.querySelector('.instructions');
-        instructions?.setAttribute('data-last-imagebounds-json', JSON.stringify(ib));
-
         const select = this.dialog.querySelector('.select-output-size-result');
-        const baseW = ib.width;
-        const baseH = ib.height;
+        const baseW = region.screenWidth;
+        const baseH = region.screenHeight;
         this._lastBasePxForOutput = { baseW, baseH };
         this._populateOutputSelect(select, baseW, baseH);
         this._applyOutputUISelection('result');
-        // If scalebar is enabled and user hasn't touched length, re-evaluate a good default for this region/output.
         if(this._includeScalebar){
             this._maybeApplySmartScalebarDefaults();
         }
         this._syncScalebarUI();
     }
 
-    _setupScreenshotDialog(bounds){
-        // Back-compat wrapper: convert viewer-element rectangle -> imageBounds, then drive UI from imageBounds.
-        const vp = this.viewer.viewport;
-        this._resolveActiveTiledImageOrThrow();
-        const boundsRect = new OpenSeadragon.Rect(bounds.x, bounds.y, bounds.width, bounds.height);
-        const viewportRect = vp.viewerElementToViewportRectangle(boundsRect);
-        const imageBounds = vp.viewportToImageRectangle(viewportRect);
-        this._setupScreenshotDialogFromImageBounds(imageBounds);
+    /**
+     * Scale the current region's viewportRect proportionally based on new
+     * screen-axis pixel dimensions, keeping the center and rotation fixed.
+     * @param {number} newScreenW
+     * @param {number} newScreenH
+     */
+    _resizeRegion(newScreenW, newScreenH){
+        if(!this._region) return;
+        const r = this._region;
+        const scaleX = newScreenW / r.screenWidth;
+        const scaleY = newScreenH / r.screenHeight;
+        const vr = r.viewportRect;
+        const center = vr.getCenter();
+        const nextVR = new OpenSeadragon.Rect(
+            center.x - (vr.width * scaleX) / 2,
+            center.y - (vr.height * scaleY) / 2,
+            vr.width * scaleX,
+            vr.height * scaleY,
+            vr.degrees
+        );
+        const viewerRect = this.viewer.viewport.viewportToViewerElementRectangle(nextVR);
+        const region = this._viewerElementRectToRegion(viewerRect);
+        this._setRegion(region);
     }
 
     _updateROI(){
-        if(!this._currentImageBounds) return;
+        if(!this._region) return;
         const baseWIn = Number(this.dialog.querySelector('.region-width').value);
         const baseHIn = Number(this.dialog.querySelector('.region-height').value);
-        const baseW = Math.max(1, Math.round(baseWIn));
-        const baseH = Math.max(1, Math.round(baseHIn));
-
-        const ib = this._currentImageBounds;
-        const cx = ib.x + ib.width / 2;
-        const cy = ib.y + ib.height / 2;
-        let nextW = baseW;
-        let nextH = baseH;
+        let nextW = Math.max(1, Math.round(baseWIn));
+        let nextH = Math.max(1, Math.round(baseHIn));
 
         if(this.dialog.querySelector('.lock-aspect-ratio').checked){
             const desiredRatio = this.tool._aspectWidth / this.tool._aspectHeight;
@@ -1808,41 +1443,7 @@ class ScreenshotOverlay extends ViewerOverlayBase {
             nextH = Math.max(1, nextH);
         }
 
-        const next = {
-            x: cx - nextW / 2,
-            y: cy - nextH / 2,
-            width: nextW,
-            height: nextH,
-            degrees: ib.degrees,
-        };
-
-        this._setupScreenshotDialogFromImageBounds(next);
-    }
-    _applyAspectRatio(){
-        if(!this._currentImageBounds) return;
-        const ib = this._currentImageBounds;
-        const cx = ib.x + ib.width / 2;
-        const cy = ib.y + ib.height / 2;
-
-        // adjust by the smallest amount to match the aspect ratio (base pixels)
-        const desiredRatio = this.tool._aspectWidth / this.tool._aspectHeight;
-        let nextW = Math.max(1, Math.round(ib.width));
-        let nextH = Math.max(1, Math.round(ib.height));
-        const currentRatio = nextW / nextH;
-        if(currentRatio / desiredRatio > 1){
-            nextW = Math.max(1, Math.round(nextH * desiredRatio));
-        } else if (currentRatio / desiredRatio < 1){
-            nextH = Math.max(1, Math.round(nextW / desiredRatio));
-        }
-
-        const next = {
-            x: cx - nextW / 2,
-            y: cy - nextH / 2,
-            width: nextW,
-            height: nextH,
-            degrees: ib.degrees,
-        };
-        this._setupScreenshotDialogFromImageBounds(next);
+        this._resizeRegion(nextW, nextH);
     }
 
     _resetScreenshotResults(){
@@ -1859,167 +1460,23 @@ class ScreenshotOverlay extends ViewerOverlayBase {
         }
     }
 
-    _waitForNextPaintFrames(n = 2){
-        n = Math.max(0, Math.floor(Number(n) || 0));
-        if(n === 0) return Promise.resolve();
-        const raf = (typeof window !== 'undefined' && window.requestAnimationFrame) ? window.requestAnimationFrame.bind(window) : null;
-        if(!raf){
-            return new Promise(resolve=>setTimeout(resolve, 50));
-        }
-        return new Promise(resolve=>{
-            const tick = () => {
-                n -= 1;
-                if(n <= 0) resolve();
-                else raf(tick);
-            };
-            raf(tick);
-        });
-    }
-
-    async _renderBaseScreenshot({ w, h, imageBounds }){
-        // Expensive path: offscreen OSD render to a base PNG (no scale bar).
-        const pixelRatio = OpenSeadragon.pixelDensityRatio;
-        const cssW = w / pixelRatio;
-        const cssH = h / pixelRatio;
-        const ib = imageBounds;
-        const boundsRect = new OpenSeadragon.Rect(ib.x, ib.y, ib.width, ib.height, ib.degrees);
-
-        const signature = this._computeRenderSignature({ w, h, imageBounds });
+    _buildRenderContext({ w, h, viewportRect }){
         const ti = this._resolveActiveTiledImageOrThrow();
         const ts = ti.source || this.viewer.tileSources[this.viewer.currentPage()];
         const rotation = this.viewer.viewport.getRotation(true);
-
-        const d = document.createElement('div');
-        document.body.appendChild(d);
-        d.style.cssText = `width:${cssW}px;height:${cssH}px;position:fixed;left:-${cssW*2}px;`;
-
-        let ssViewer = null;
-        try{
-            ssViewer = OpenSeadragon({
-                element: d,
-                tileSources: [ts],
-                crossOriginPolicy: this.viewer.crossOriginPolicy,
-                prefixUrl: this.viewer.prefixUrl,
-                immediateRender: true,
-            });
-            ssViewer.viewport.setRotation(rotation, true);
-            ssViewer.addHandler('tile-drawn',(ev)=>{
-                const coverage = ev.tiledImage.coverage;
-                const levels = Object.keys(coverage);
-                const maxLevel = levels[levels.length - 1];
-                if(ev.tile.level == maxLevel){
-                    const full = coverage[maxLevel];
-                    const status = Object.values(full).map(o=>Object.values(o)).flat();
-                    this._setProgress(status.filter(x=>x).length, status.length);
-                }
-            });
-
-            await new Promise((resolve, reject)=>{
-                ssViewer.addHandler('open',()=>{
-                    try{
-                        ssViewer.world.getItemAt(0).setRotation(ti.getRotation(true), true);
-                        const bounds = ssViewer.viewport.imageToViewportRectangle(boundsRect);
-                        ssViewer.viewport.fitBounds(bounds);
-                        ssViewer.world.getItemAt(0).addOnceHandler('fully-loaded-change',()=>{
-                            resolve();
-                        });
-                    }catch(e){
-                        reject(e);
-                    }
-                });
-                ssViewer.addHandler('open-failed', reject);
-            });
-
-            await this._waitForNextPaintFrames(2);
-
-            let blob = await new Promise((resolve)=>ssViewer.drawer.canvas.toBlob(resolve));
-            if(!blob) throw new Error('Failed to export screenshot canvas.');
-            if(pixelRatio !== 1){
-                blob = await changeDpiBlob(blob, 96 * pixelRatio);
-            }
-
-            return { blob, pixelRatio, signature };
-        } finally {
-            try{
-                const container = ssViewer?.element;
-                ssViewer?.destroy?.();
-                container?.remove?.();
-            }catch{ /* ignore */ }
-            try{ d.remove(); }catch{ /* ignore */ }
-        }
-    }
-
-    _computeRenderSignature({ w, h, imageBounds }){
-        const ib = imageBounds;
-        const ti = this._resolveActiveTiledImageOrThrow();
-        const ts = ti.source || this.viewer.tileSources[this.viewer.currentPage()];
-        const rotation = this.viewer.viewport.getRotation(true);
-        return JSON.stringify({
-            imageBounds: { x: ib.x, y: ib.y, width: ib.width, height: ib.height, degrees: ib.degrees },
-            outW: w,
-            outH: h,
-            rotation,
-            tileSourceKey: ts?.url || ts?.tilesUrl || ts?.tileUrl || ts?.Image?.Url || null,
-        });
-    }
-
-    async _composeScreenshotWithScalebar({ baseBlob, pixelRatio, scaleFactor }){
-        // Cheap path: draw scalebar onto the cached base image and export.
-        const img = (typeof createImageBitmap === 'function')
-            ? await createImageBitmap(baseBlob)
-            : await new Promise((resolve, reject)=>{
-                const url = URL.createObjectURL(baseBlob);
-                const image = new Image();
-                image.onload = () => { URL.revokeObjectURL(url); resolve(image); };
-                image.onerror = (e) => { URL.revokeObjectURL(url); reject(e); };
-                image.src = url;
-            });
-        const canvas = document.createElement('canvas');
-        canvas.width = img.width;
-        canvas.height = img.height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0);
-
-        if(this._includeScalebar && this._mpp){
-            const padding = 12;
-            const pxLen = Math.max(1, Math.round(this._scalebarWidth * 1000 / this._mpp.x * scaleFactor));
-            const pxH = Math.max(1, Math.round(this._scalebarHeight));
-            const x2 = canvas.width - padding;
-            const y2 = canvas.height - padding;
-            const x1 = Math.max(padding, x2 - pxLen);
-            const y1 = Math.max(padding, y2 - pxH);
-            ctx.fillStyle = '#000';
-            ctx.fillRect(x1, y1, x2 - x1, y2 - y1);
-
-            if(this._scalebarShowLabel){
-                const fit = this._scalebarLabelFit({ scaleFactor });
-                if(fit.enabled && fit.fits && fit.label){
-                    ctx.save();
-                    ctx.font = `${fit.fontPx || 12}px system-ui, -apple-system, Segoe UI, Roboto, sans-serif`;
-                    ctx.fillStyle = '#fff';
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    ctx.fillText(fit.label, (x1 + x2) / 2, (y1 + y2) / 2);
-                    ctx.restore();
-                }
-            }
-        }
-
-        let blob = await new Promise((resolve)=>canvas.toBlob(resolve));
-        if(!blob) throw new Error('Failed to export composed screenshot.');
-        if(pixelRatio !== 1){
-            blob = await changeDpiBlob(blob, 96 * pixelRatio);
-        }
-        return blob;
+        return { w, h, viewportRect, viewer: this.viewer, tiledImage: ti, tileSource: ts, rotation };
     }
 
     async _createScreenshot(data){
-        const { w, h, imageBounds, scaleFactor } = data;
-        const signature = this._computeRenderSignature({ w, h, imageBounds });
+        const { w, h, viewportRect, scaleFactor } = data;
+        const ctx = this._buildRenderContext({ w, h, viewportRect });
+        const signature = computeRenderSignature({ w, h, viewportRect, rotation: ctx.rotation, tileSource: ctx.tileSource });
 
-        // Render base screenshot if needed.
         if(!this._baseScreenshot || this._baseScreenshot.signature !== signature){
-            const base = await this._renderBaseScreenshot({ w, h, imageBounds });
+            const base = await renderBaseScreenshot({
+                ...ctx,
+                onProgress: (loaded, total) => this._setProgress(loaded, total),
+            });
             if(this._baseScreenshot?.url){
                 this._revokeObjectURL(this._baseScreenshot.url);
             }
@@ -2034,13 +1491,19 @@ class ScreenshotOverlay extends ViewerOverlayBase {
             this._lastScreenshotRequest = { data, signature };
         }
 
-        // Compose (or reuse base) depending on scalebar setting.
         let finalBlob;
         if(this._includeScalebar && this._mpp){
-            finalBlob = await this._composeScreenshotWithScalebar({
+            finalBlob = await composeScreenshotWithScalebar({
                 baseBlob: this._baseScreenshot.blob,
                 pixelRatio: this._baseScreenshot.pixelRatio,
                 scaleFactor,
+                scalebar: {
+                    include: true,
+                    widthMm: this._scalebarWidth,
+                    heightPx: this._scalebarHeight,
+                    mppX: this._mpp.x,
+                    label: this._scalebarShowLabel ? this._scalebarLabelFit({ scaleFactor }) : null,
+                },
             });
         }else{
             finalBlob = this._baseScreenshot.blob;
@@ -2054,211 +1517,6 @@ class ScreenshotOverlay extends ViewerOverlayBase {
     }
 }
 
-/**
- * @class 
- * @extends ToolBase
- * 
- */
-class ScreenshotTool extends ToolBase{
-    
-    
-    constructor(paperScope, overlay){
-        super(paperScope);
-        let self = this;
-        this._overlay = overlay;
-
-        this._ps = paperScope;
-        this.compoundPath = new paper.CompoundPath({children:[],fillRule:'evenodd'});
-        this.compoundPath.visible = false;
-        this.compoundPath.fillColor = 'black';
-        this.compoundPath.opacity = 0.3;
-
-        this.project.toolLayer.addChild(this.compoundPath);
-
-        this.crosshairTool = new paper.Group();
-        let h1 = new paper.Path({segments:[new paper.Point(0,0),new paper.Point(0,0)],strokeScaling:false,strokeWidth:1,strokeColor:'black'});
-        let h2 = new paper.Path({segments:[new paper.Point(0,0),new paper.Point(0,0)],strokeScaling:false,strokeWidth:1,strokeColor:'white',dashArray:[6,6]});
-        let v1 = new paper.Path({segments:[new paper.Point(0,0),new paper.Point(0,0)],strokeScaling:false,strokeWidth:1,strokeColor:'black'});
-        let v2 = new paper.Path({segments:[new paper.Point(0,0),new paper.Point(0,0)],strokeScaling:false,strokeWidth:1,strokeColor:'white',dashArray:[6,6]});
-        this.crosshairTool.addChildren([h1,h2,v1,v2]);
-        this.project.toolLayer.addChild(this.crosshairTool);
-        this.crosshairTool.visible = false;
-
-        this.fixedPreview = new paper.Path.Rectangle(new paper.Rectangle(0,0,1,1));
-        this.fixedPreview.visible = false;
-        this.fixedPreview.strokeColor = 'yellow';
-        this.fixedPreview.strokeWidth = 2;
-        this.fixedPreview.fillColor = null;
-        this.fixedPreview.dashArray = [6, 4];
-        this.project.toolLayer.addChild(this.fixedPreview);
-       
-        this._aspectHeight = 1;
-        this._aspectWidth = 1;
-        this._aspectLocked = false;
-        this._mode = 'idle'; // idle | freeSelect | fixedPlace
-        this._fixedParams = {
-            fullResWidthPx: 256,
-            fullResHeightPx: 256,
-            baseWidthPx: 256,
-            baseHeightPx: 256,
-            autoCreateOnClick: true,
-        };
-
-        
-        this.tool.onMouseDown= (ev) => {
-            if(this._mode === 'freeSelect'){
-                this.crosshairTool.visible = false;
-                this.fixedPreview.visible = false;
-                this.compoundPath.visible = true;
-                this.compoundPath.removeChildren();
-                this.compoundPath.addChild(new paper.Path.Rectangle(this._ps.view.bounds));
-                return;
-            }
-            if(this._mode === 'fixedPlace'){
-                // preview is positioned on move; click confirms
-                return;
-            }
-        };
-        this.tool.onMouseDrag= (ev) => {
-            if(this._mode !== 'freeSelect') return;
-            this.compoundPath.removeChildren(1);
-            let point = this.getPoint(ev);
-            this.compoundPath.addChild(new paper.Path.Rectangle(ev.downPoint, point));
-        };
-        this.tool.onMouseMove= (ev) => {
-            if(this._mode === 'freeSelect'){
-                this.crosshairTool.visible = true;
-                this.fixedPreview.visible = false;
-                setCursorPosition(self.tool, ev.point);
-                return;
-            }
-            if(this._mode === 'fixedPlace'){
-                this.crosshairTool.visible = false;
-                this.compoundPath.visible = false;
-                this.fixedPreview.visible = true;
-                const payload = this._overlay._computeFixedPlacementAtProjectPoint(ev.point, this._fixedParams);
-                this.fixedPreview.removeSegments();
-                this.fixedPreview.addSegments([
-                    payload.bounds.topLeft,
-                    payload.bounds.topRight,
-                    payload.bounds.bottomRight,
-                    payload.bounds.bottomLeft,
-                ]);
-                this.fixedPreview.closed = true;
-                return;
-            }
-            this.crosshairTool.visible = false;
-            this.fixedPreview.visible = false;
-            this.compoundPath.visible = false;
-        };
-        this.tool.onMouseUp = (ev) => {
-            if(this._mode === 'freeSelect'){
-                const rect = this._rectFromDrag(ev);
-                this.broadcast('region-selected', rect);
-                return;
-            }
-            if(this._mode === 'fixedPlace'){
-                const payload = this._overlay._computeFixedPlacementAtProjectPoint(ev.point, this._fixedParams);
-                this.broadcast('region-selected', payload);
-                return;
-            }
-        };
-        this.tool.extensions.onKeyDown=function(ev){
-            if(ev.key=='escape'){
-                overlay.deactivate();
-            }
-        }
-        this.extensions.onActivate = () => {
-            this._active = true;
-            this._syncVisibilityForMode();
-        }
-        this.extensions.onDeactivate = (finished) => {
-            this._active = false;
-            this.crosshairTool.visible = false;
-            this.compoundPath.visible = false;
-            this.fixedPreview.visible = false;
-        }   
-        
-
-        function setCursorPosition(tool, point){
-            
-            let pt = tool.view.projectToView(point);
-            let left=tool.view.viewToProject(new paper.Point(0, pt.y))
-            let right=tool.view.viewToProject(new paper.Point(tool.view.viewSize.width, pt.y))
-            let top=tool.view.viewToProject(new paper.Point(pt.x, 0))
-            let bottom=tool.view.viewToProject(new paper.Point(pt.x,tool.view.viewSize.height))
-            // console.log(viewBounds)
-            h1.segments[0].point = left;
-            h2.segments[0].point = left;
-            h1.segments[1].point = right;
-            h2.segments[1].point = right;
-            v1.segments[0].point = top;
-            v2.segments[0].point = top;
-            v1.segments[1].point = bottom;
-            v2.segments[1].point = bottom;
-        }
-
-    }
-
-    activate(){
-        super.activate();
-    }
-    deactivate(){
-        super.deactivate(true);
-    }
-    setMode(mode){
-        this._mode = mode || 'idle';
-        this._syncVisibilityForMode();
-    }
-    _syncVisibilityForMode(){
-        if(!this._active) return;
-        if(this._mode === 'freeSelect'){
-            this.crosshairTool.visible = true;
-            this.compoundPath.visible = false;
-            this.fixedPreview.visible = false;
-        } else if(this._mode === 'fixedPlace'){
-            this.crosshairTool.visible = false;
-            this.compoundPath.visible = false;
-            this.fixedPreview.visible = true;
-        } else {
-            this.crosshairTool.visible = false;
-            this.compoundPath.visible = false;
-            this.fixedPreview.visible = false;
-        }
-    }
-    setAspectHeight(h){
-        this._aspectHeight = h;
-    }
-    setAspectWidth(w){
-        this._aspectWidth = w;
-    }
-    setAspectLocked(l){
-        this._aspectLocked = l;
-    }
-    setFixedParams(params){
-        this._fixedParams = { ...this._fixedParams, ...(params || {}) };
-    }
-    getPoint(ev){
-        let point = ev.point;
-        if(this._aspectLocked){
-            let delta = ev.point.subtract(ev.downPoint);
-            
-            if(Math.abs(delta.x) > Math.abs(delta.y)){
-                point.y = ev.downPoint.y + (delta.y < 0 ? -1 : 1 ) * Math.abs(delta.x) * this._aspectHeight / this._aspectWidth;
-            } else {
-                point.x = ev.downPoint.x + (delta.x < 0 ? -1 : 1 ) * Math.abs(delta.y) * this._aspectWidth / this._aspectHeight;
-            }
-        }
-        return point;
-    }
-
-    _rectFromDrag(ev){
-        const point = this.getPoint(ev);
-        return new paper.Rectangle(ev.downPoint, point);
-    }
-    
-}
-export {ScreenshotTool};
-export {ScreenshotOverlay};
+export {ScreenshotOverlay, ScreenshotTool};
 
 
