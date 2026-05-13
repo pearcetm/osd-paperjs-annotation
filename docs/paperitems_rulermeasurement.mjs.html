@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: paperitems/rulermeasurement.mjs</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: paperitems/rulermeasurement.mjs</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * OpenSeadragon paperjs overlay plugin based on paper.js
+ * @version 0.5.0
+ *
+ * Copyright (c) 2022-2026, Thomas Pearce
+ * All rights reserved.
+ */
+
+import { MultiLinestring } from './multilinestring.mjs';
+import { paper } from '../paperjs.mjs';
+import { clampDecimals, normalizeRoundingMode, formatDecimal } from '../utils/measurementFormat.mjs';
+
+// Segment group layout: exactly 3 children (must match ruler.mjs): halo, path, labelGroup ([strokeLabel, fillLabel])
+const SEGMENT_HALO = 0;
+const SEGMENT_PATH = 1;
+const SEGMENT_LABEL_GROUP = 2;
+
+const RULER_LABEL_STROKE_PX = 3;
+const RULER_LABEL_GAP_PX = 4; // Gap between line and label in screen pixels (must match ruler.mjs)
+const DEFAULT_STROKE_WIDTH_PX = 2;
+const DEFAULT_HALO_EXTRA_PX = 2;
+const DEFAULT_LABEL_FONT_SIZE = 12;
+const DEFAULT_DECIMALS = 2;
+const DEFAULT_ROUNDING_MODE = 'round';
+
+/**
+ * Compute placement center for label offset above segment (constant pixel gap, zoom-aware).
+ * Same math as ruler tool's _computeLabelPlacementCenter; used only by the item.
+ * @param {paper.PointText} label - label with bounds set (after applyRescale)
+ * @param {paper.Point} p1 - segment start point
+ * @param {paper.Point} p2 - segment end point
+ * @param {paper.Point} midpoint - segment midpoint
+ * @param {number} gapPixels - gap in screen pixels (e.g. RULER_LABEL_GAP_PX)
+ * @returns {paper.Point} placement center (midpoint if segment too short, otherwise offset above)
+ */
+function computeLabelPlacementCenter(label, p1, p2, midpoint, gapPixels) {
+    const segmentDir = p2.subtract(p1);
+    const segmentLength = segmentDir.length;
+    if (segmentLength &lt; 1e-6) return midpoint;
+
+    const normalizedDir = segmentDir.normalize();
+    const normal = new paper.Point(normalizedDir.y, -normalizedDir.x);
+    const zoomFactor = label.view.scaling.x * label.layer.scaling.x;
+    const gapPaper = gapPixels / zoomFactor;
+    const labelBounds = (label.getInternalBounds &amp;&amp; label.getInternalBounds()) ? label.getInternalBounds() : label.bounds;
+    const labelHeight = labelBounds ? labelBounds.height : 0;
+    const offset = labelHeight / 2 + gapPaper;
+    return midpoint.add(normal.multiply(offset));
+}
+
+/**
+ * Build one 3-child segment group from a path and saved measurement properties.
+ * Label group counter-rotates with view (upright like PointText). Used when loading from GeoJSON.
+ * @param {paper.Path} path - existing path (two segments)
+ * @param {paper.Group} parentGroup - parent that will receive the segment (must be in project so labelGroup.view exists)
+ * @param {Object} props - geometry.properties (lengths, units, strokeWidthPixels, haloExtraPixels, labelFontSize, etc.)
+ * @param {number} index - segment index
+ * @returns {paper.Group}
+ */
+function buildSegmentGroupFromPath(path, parentGroup, props, index) {
+    const strokeWidthPixels = props.strokeWidthPixels != null ? props.strokeWidthPixels : DEFAULT_STROKE_WIDTH_PX;
+    const haloExtraPixels = props.haloExtraPixels != null ? props.haloExtraPixels : DEFAULT_HALO_EXTRA_PX;
+    const labelFontSize = props.labelFontSize != null ? props.labelFontSize : DEFAULT_LABEL_FONT_SIZE;
+    const units = props.units != null ? props.units : 'px';
+    const decimals = clampDecimals(props.decimals, DEFAULT_DECIMALS);
+    const roundingMode = normalizeRoundingMode(props.roundingMode, DEFAULT_ROUNDING_MODE);
+    const lengths = props.lengths || [];
+    const lengthDisplay = lengths[index] != null
+        ? (typeof lengths[index] === 'number' ? formatDecimal(lengths[index], decimals, roundingMode) : String(lengths[index])) + ' ' + units
+        : '—';
+
+    const p1 = path.segments[0].point.clone();
+    const p2 = path.segments[1].point.clone();
+    const midpoint = p1.add(p2).divide(2);
+    const fillColor = path.strokeColor || new paper.Color('black');
+
+    const haloPath = new paper.Path([p1.clone(), p2.clone()]);
+    haloPath.strokeColor = 'white';
+    haloPath.strokeCap = 'round';
+    haloPath.strokeJoin = 'round';
+    const haloWidthPixels = strokeWidthPixels + haloExtraPixels;
+    haloPath.rescale = { strokeWidth: haloWidthPixels };
+
+    path.strokeCap = 'round';
+    path.strokeJoin = 'round';
+    path.rescale = path.rescale || {};
+    path.rescale.strokeWidth = strokeWidthPixels;
+
+    const strokeLabel = new paper.PointText({
+        point: new paper.Point(0, 0),
+        content: lengthDisplay,
+        fontSize: labelFontSize,
+        fillColor: null,
+        strokeColor: 'white',
+        justification: 'center',
+    });
+    strokeLabel.rescale = {
+        fontSize: (z) => labelFontSize / z,
+        strokeWidth: (z) => RULER_LABEL_STROKE_PX / z,
+    };
+
+    const fillLabel = new paper.PointText({
+        point: new paper.Point(0, 0),
+        content: lengthDisplay,
+        fontSize: labelFontSize,
+        fillColor,
+        justification: 'center',
+    });
+    fillLabel.rescale = { fontSize: (z) => labelFontSize / z };
+
+    const labelGroup = new paper.Group();
+    labelGroup.pivot = new paper.Point(0, 0);
+    labelGroup.applyMatrix = true;
+    labelGroup.addChild(strokeLabel);
+    labelGroup.addChild(fillLabel);
+
+    const group = new paper.Group();
+    group.addChild(haloPath);
+    group.addChild(path);
+    group.addChild(labelGroup);
+
+    parentGroup.addChild(group);
+    if (fillLabel.applyRescale) fillLabel.applyRescale();
+    if (strokeLabel.applyRescale) strokeLabel.applyRescale();
+    const labelHeight = (fillLabel.getInternalBounds &amp;&amp; fillLabel.getInternalBounds()) ? fillLabel.getInternalBounds().height : (fillLabel.bounds ? fillLabel.bounds.height : 0);
+    if (labelHeight > 0) {
+        fillLabel.point = new paper.Point(0, labelHeight / 2);
+        strokeLabel.point = new paper.Point(0, labelHeight / 2);
+        labelGroup.pivot = new paper.Point(0, labelHeight / 2);
+    }
+    // Position and upright: same pass as PointText (group is in project after addChild)
+    if (labelGroup.view) {
+        labelGroup.position = computeLabelPlacementCenter(fillLabel, p1, p2, midpoint, RULER_LABEL_GAP_PX).clone();
+        function handleFlip() {
+            const angle = labelGroup.view.getFlipped() ? labelGroup.view.getRotation() : 180 - labelGroup.view.getRotation();
+            labelGroup.rotate(-angle);
+            labelGroup.scale(-1, 1);
+            labelGroup.rotate(angle);
+        }
+        if (labelGroup.view.getFlipped()) {
+            handleFlip();
+        }
+        const offsetAngle = labelGroup.view.getFlipped() ? 180 - labelGroup.view.getRotation() : -labelGroup.view.getRotation();
+        labelGroup.rotate(offsetAngle);
+        labelGroup.view.on('rotate', (ev) => {
+            const angle = -ev.rotatedBy;
+            labelGroup.rotate(angle);
+        });
+        labelGroup.view.on('flip', () => {
+            handleFlip();
+        });
+    }
+    return group;
+}
+
+/**
+ * Represents a ruler/measurement annotation: MultiLineString with subtype 'Measurement',
+ * storing units, measured lengths, and display settings in geometry.properties.
+ * @class
+ * @extends MultiLinestring
+ */
+class RulerMeasurement extends MultiLinestring {
+    /**
+     * @param {Object} geoJSON - GeoJSON feature with geometry.type === 'MultiLineString', geometry.properties.subtype === 'Measurement'
+     */
+    constructor(geoJSON) {
+        super(geoJSON);
+
+        const geom = geoJSON.geometry;
+        const props = geom.properties || {};
+        const grp = this.paperItem;
+
+        if (grp.children.length === 0) {
+            grp.data.ruler = {
+                units: props.units != null ? props.units : 'px',
+                unitsPerPixel: props.unitsPerPixel != null ? props.unitsPerPixel : 1,
+                decimals: clampDecimals(props.decimals, DEFAULT_DECIMALS),
+                roundingMode: normalizeRoundingMode(props.roundingMode, DEFAULT_ROUNDING_MODE),
+                strokeWidthPixels: props.strokeWidthPixels != null ? props.strokeWidthPixels : DEFAULT_STROKE_WIDTH_PX,
+                haloExtraPixels: props.haloExtraPixels != null ? props.haloExtraPixels : DEFAULT_HALO_EXTRA_PX,
+                labelFontSize: props.labelFontSize != null ? props.labelFontSize : DEFAULT_LABEL_FONT_SIZE,
+            };
+        } else {
+            const children = grp.children.slice();
+            grp.removeChildren();
+            for (let i = 0; i &lt; children.length; i++) {
+                const path = children[i];
+                buildSegmentGroupFromPath(path, grp, props, i);
+            }
+
+            grp.data.ruler = {
+                units: props.units != null ? props.units : 'px',
+                unitsPerPixel: props.unitsPerPixel != null ? props.unitsPerPixel : 1,
+                decimals: clampDecimals(props.decimals, DEFAULT_DECIMALS),
+                roundingMode: normalizeRoundingMode(props.roundingMode, DEFAULT_ROUNDING_MODE),
+                strokeWidthPixels: props.strokeWidthPixels != null ? props.strokeWidthPixels : DEFAULT_STROKE_WIDTH_PX,
+                haloExtraPixels: props.haloExtraPixels != null ? props.haloExtraPixels : DEFAULT_HALO_EXTRA_PX,
+                labelFontSize: props.labelFontSize != null ? props.labelFontSize : DEFAULT_LABEL_FONT_SIZE,
+            };
+        }
+
+        // Reposition labels when zoom changes so the screen-pixel gap stays constant.
+        const view = this.paperItem.project &amp;&amp; this.paperItem.project.view;
+        if (view) {
+            this._zoomChangedHandler = () => this.refreshSegmentLabels();
+            view.on('zoom-changed', this._zoomChangedHandler);
+            this.paperItem.on('removed', () => view.off('zoom-changed', this._zoomChangedHandler));
+        }
+    }
+
+    static supportsGeoJSONType(type, subtype = null) {
+        return type != null &amp;&amp; type.toLowerCase() === 'multilinestring' &amp;&amp;
+            subtype != null &amp;&amp; subtype.toLowerCase() === 'measurement';
+    }
+
+    getGeoJSONType() {
+        return {
+            type: 'MultiLineString',
+            subtype: 'Measurement',
+        };
+    }
+
+    /**
+     * Update label content and position for one segment group (content from path length + item.data.ruler).
+     * Used by the ruler tool when refreshing a single segment (e.g. after drag) or all segments.
+     * @param {paper.Group} segmentGroup - group with [halo, path, labelGroup] where labelGroup has [strokeLabel, fillLabel]
+     */
+    refreshSegmentLabel(segmentGroup) {
+        if (!segmentGroup || segmentGroup.children.length !== 3) return;
+        const path = segmentGroup.children[SEGMENT_PATH];
+        const labelGroup = segmentGroup.children[SEGMENT_LABEL_GROUP];
+        if (!path || path.segments.length &lt; 2 || !labelGroup || labelGroup.children.length &lt; 2) return;
+        const strokeLabel = labelGroup.children[0];
+        const fillLabel = labelGroup.children[1];
+        const p1 = path.segments[0].point;
+        const p2 = path.segments[1].point;
+        const distance = p1.getDistance(p2);
+        const midpoint = p1.add(p2).divide(2);
+        const ruler = this.paperItem.data.ruler || {};
+        const unitsPerPixel = ruler.unitsPerPixel != null ? ruler.unitsPerPixel : 1;
+        const units = ruler.units != null ? ruler.units : 'px';
+        const decimals = clampDecimals(ruler.decimals, DEFAULT_DECIMALS);
+        const roundingMode = normalizeRoundingMode(ruler.roundingMode, DEFAULT_ROUNDING_MODE);
+        const labelFontSize = ruler.labelFontSize != null ? ruler.labelFontSize : DEFAULT_LABEL_FONT_SIZE;
+        const lengthDisplay = formatDecimal(distance * unitsPerPixel, decimals, roundingMode) + ' ' + units;
+
+        fillLabel.justification = 'center';
+        fillLabel.fillColor = path.strokeColor || new paper.Color('black');
+        fillLabel.strokeColor = null;
+        fillLabel.content = lengthDisplay;
+        fillLabel.rescale = fillLabel.rescale || {};
+        fillLabel.rescale.fontSize = (z) => labelFontSize / z;
+        delete fillLabel.rescale.strokeWidth;
+        strokeLabel.justification = 'center';
+        strokeLabel.strokeColor = 'white';
+        strokeLabel.fillColor = null;
+        strokeLabel.content = lengthDisplay;
+        strokeLabel.rescale = strokeLabel.rescale || {};
+        strokeLabel.rescale.fontSize = (z) => labelFontSize / z;
+        strokeLabel.rescale.strokeWidth = (z) => RULER_LABEL_STROKE_PX / z;
+        if (fillLabel.applyRescale) fillLabel.applyRescale();
+        if (strokeLabel.applyRescale) strokeLabel.applyRescale();
+
+        const labelHeight = (fillLabel.getInternalBounds &amp;&amp; fillLabel.getInternalBounds()) ? fillLabel.getInternalBounds().height : (fillLabel.bounds ? fillLabel.bounds.height : 0);
+        if (labelHeight > 0) {
+            fillLabel.point = new paper.Point(0, labelHeight / 2);
+            strokeLabel.point = new paper.Point(0, labelHeight / 2);
+            labelGroup.pivot = new paper.Point(0, labelHeight / 2);
+        }
+        if (fillLabel.view) {
+            labelGroup.position = computeLabelPlacementCenter(fillLabel, p1, p2, midpoint, RULER_LABEL_GAP_PX).clone();
+        }
+    }
+
+    /**
+     * Update label content and position for all segment groups. Used by the ruler tool when units/settings change.
+     */
+    refreshSegmentLabels() {
+        const item = this.paperItem;
+        if (!item || !item.layer || !item.children.length) return;
+        item.children.forEach((child) => {
+            if (child instanceof paper.Group &amp;&amp; child.children.length === 3) {
+                this.refreshSegmentLabel(child);
+            }
+        });
+    }
+
+    /**
+     * Return geometry.properties (no subtype; base toGeoJSONGeometry adds it from getGeoJSONType).
+     */
+    getProperties() {
+        const item = this.paperItem;
+        const base = super.getProperties();
+        const ruler = item.data.ruler || {};
+        const unitsPerPixel = ruler.unitsPerPixel != null ? ruler.unitsPerPixel : 1;
+        const units = ruler.units != null ? ruler.units : 'px';
+        const decimals = clampDecimals(ruler.decimals, DEFAULT_DECIMALS);
+        const roundingMode = normalizeRoundingMode(ruler.roundingMode, DEFAULT_ROUNDING_MODE);
+
+        const lengths = [];
+        let total = 0;
+        for (let i = 0; i &lt; item.children.length; i++) {
+            const path = this._getPathFromChild(item.children[i]);
+            if (path.segments.length >= 2) {
+                const d = path.segments[0].point.getDistance(path.segments[1].point);
+                const lengthDisplay = d * unitsPerPixel;
+                lengths.push(lengthDisplay);
+                total += lengthDisplay;
+            } else {
+                lengths.push(0);
+            }
+        }
+
+        return {
+            ...base,
+            lengths,
+            length: total,
+            units,
+            unitsPerPixel,
+            decimals,
+            roundingMode,
+            strokeWidthPixels: ruler.strokeWidthPixels != null ? ruler.strokeWidthPixels : DEFAULT_STROKE_WIDTH_PX,
+            haloExtraPixels: ruler.haloExtraPixels != null ? ruler.haloExtraPixels : DEFAULT_HALO_EXTRA_PX,
+            labelFontSize: ruler.labelFontSize != null ? ruler.labelFontSize : DEFAULT_LABEL_FONT_SIZE,
+        };
+    }
+}
+
+export { RulerMeasurement };
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="OSDPaperjsAnnotation.html">OSDPaperjsAnnotation</a></li></ul><h3>Classes</h3><ul><li><a href="AnnotationLayout.html">AnnotationLayout</a></li><li><a href="Dialog.html">Dialog</a></li><li><a href="DragAndDrop.html">DragAndDrop</a></li><li><a href="EditableContent.html">EditableContent</a></li><li><a href="FieldOfViewOverlay.html">FieldOfViewOverlay</a></li><li><a href="FieldOfViewTool_FieldOfViewTool.html">FieldOfViewTool</a></li><li><a href="Morph.html">Morph</a></li><li><a href="OSDPaperjsAnnotation.AnnotationItem.html">AnnotationItem</a></li><li><a href="OSDPaperjsAnnotation.AnnotationItemFactory.html">AnnotationItemFactory</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolbar.html">AnnotationToolbar</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolkit.html">AnnotationToolkit</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolset.html">AnnotationToolset</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUI.html">AnnotationUI</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUITool.html">AnnotationUITool</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUITool.AnnotationUIToolbarBase.html">AnnotationUIToolbarBase</a></li><li><a href="OSDPaperjsAnnotation.BrushTool.html">BrushTool</a></li><li><a href="OSDPaperjsAnnotation.BrushTool.BrushToolbar.html">BrushToolbar</a></li><li><a href="OSDPaperjsAnnotation.DefaultTool.html">DefaultTool</a></li><li><a href="OSDPaperjsAnnotation.DefaultTool.DefaultToolbar.html">DefaultToolbar</a></li><li><a href="OSDPaperjsAnnotation.Ellipse.html">Ellipse</a></li><li><a href="OSDPaperjsAnnotation.EllipseTool.html">EllipseTool</a></li><li><a href="OSDPaperjsAnnotation.EllipseTool.EllipseToolbar.html">EllipseToolbar</a></li><li><a href="OSDPaperjsAnnotation.FeatureCollectionUI.html">FeatureCollectionUI</a></li><li><a href="OSDPaperjsAnnotation.FeatureUI.html">FeatureUI</a></li><li><a href="OSDPaperjsAnnotation.FileDialog.html">FileDialog</a></li><li><a href="OSDPaperjsAnnotation.LayerUI.html">LayerUI</a></li><li><a href="OSDPaperjsAnnotation.Linestring.html">Linestring</a></li><li><a href="OSDPaperjsAnnotation.LinestringTool.html">LinestringTool</a></li><li><a href="OSDPaperjsAnnotation.LinestringTool.LinestringToolbar.html">LinestringToolbar</a></li><li><a href="OSDPaperjsAnnotation.MultiLinestring.html">MultiLinestring</a></li><li><a href="OSDPaperjsAnnotation.MultiPolygon.html">MultiPolygon</a></li><li><a href="OSDPaperjsAnnotation.PaperOverlay.html">PaperOverlay</a></li><li><a href="OSDPaperjsAnnotation.Placeholder.html">Placeholder</a></li><li><a href="OSDPaperjsAnnotation.Point.html">Point</a></li><li><a href="OSDPaperjsAnnotation.PointText.html">PointText</a></li><li><a href="OSDPaperjsAnnotation.PointTextTool.html">PointTextTool</a></li><li><a href="OSDPaperjsAnnotation.PointTextTool.PointTextToolbar.html">PointTextToolbar</a></li><li><a href="OSDPaperjsAnnotation.PointTool.html">PointTool</a></li><li><a href="OSDPaperjsAnnotation.PointTool.PointToolbar.html">PointToolbar</a></li><li><a href="OSDPaperjsAnnotation.PolygonTool.html">PolygonTool</a></li><li><a href="OSDPaperjsAnnotation.PolygonTool.PolygonToolbar.html">PolygonToolbar</a></li><li><a href="OSDPaperjsAnnotation.Raster.html">Raster</a></li><li><a href="OSDPaperjsAnnotation.RasterTool.html">RasterTool</a></li><li><a href="OSDPaperjsAnnotation.RasterTool.RasterToolbar.html">RasterToolbar</a></li><li><a href="OSDPaperjsAnnotation.Rectangle.html">Rectangle</a></li><li><a href="OSDPaperjsAnnotation.RectangleTool.html">RectangleTool</a></li><li><a href="OSDPaperjsAnnotation.RectangleTool_RectToolbar.html">RectToolbar</a></li><li><a href="OSDPaperjsAnnotation.RotationControlOverlay.html">RotationControlOverlay</a></li><li><a href="OSDPaperjsAnnotation.RotationControlTool.html">RotationControlTool</a></li><li><a href="OSDPaperjsAnnotation.RotationControlWidget.html">RotationControlWidget</a></li><li><a href="OSDPaperjsAnnotation.RulerTool.html">RulerTool</a></li><li><a href="OSDPaperjsAnnotation.RulerTool.RulerToolbar.html">RulerToolbar</a></li><li><a href="OSDPaperjsAnnotation.StyleTool.html">StyleTool</a></li><li><a href="OSDPaperjsAnnotation.StyleTool.StyleToolbar.html">StyleToolbar</a></li><li><a href="OSDPaperjsAnnotation.ToolBase.html">ToolBase</a></li><li><a href="OSDPaperjsAnnotation.TransformTool.html">TransformTool</a></li><li><a href="OSDPaperjsAnnotation.TransformTool.TransformToolbar.html">TransformToolbar</a></li><li><a href="OSDPaperjsAnnotation.WandTool.html">WandTool</a></li><li><a href="OSDPaperjsAnnotation.WandTool.WandToolbar.html">WandToolbar</a></li><li><a href="OSDPaperjsAnnotation.exports.ConfigurationWidget.html">exports.ConfigurationWidget</a></li><li><a href="OSDPaperjsAnnotation.exports.ViewerOverlayBase.html">exports.ViewerOverlayBase</a></li><li><a href="RulerMeasurement.html">RulerMeasurement</a></li><li><a href="ScreenshotOverlay.html">ScreenshotOverlay</a></li><li><a href="ScreenshotTool.html">ScreenshotTool</a></li><li><a href="SelectTool.html">SelectTool</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ANNOTATION_TOOLBAR_PERSIST_ID_FILE">ANNOTATION_TOOLBAR_PERSIST_ID_FILE</a></li><li><a href="global.html#ANNOTATION_TOOLBAR_PERSIST_ID_PENCIL">ANNOTATION_TOOLBAR_PERSIST_ID_PENCIL</a></li><li><a href="global.html#COMPOUND_PATH_CONTRACT_MESSAGE">COMPOUND_PATH_CONTRACT_MESSAGE</a></li><li><a href="global.html#CONFIG_TOOLBAR_PERSIST_VERSION">CONFIG_TOOLBAR_PERSIST_VERSION</a></li><li><a href="global.html#FOV_DROP_UNDER_STROKE">FOV_DROP_UNDER_STROKE</a></li><li><a href="global.html#FOV_HIT_FILL_ALPHA">FOV_HIT_FILL_ALPHA</a></li><li><a href="global.html#FOV_PREVIEW_OVER_STROKE">FOV_PREVIEW_OVER_STROKE</a></li><li><a href="global.html#FOV_PREVIEW_UNDER_STROKE">FOV_PREVIEW_UNDER_STROKE</a></li><li><a href="global.html#_makeOverlayStyleRow">_makeOverlayStyleRow</a></li><li><a href="global.html#_paper">_paper</a></li><li><a href="global.html#adaptiveOffsetCurve">adaptiveOffsetCurve</a></li><li><a href="global.html#annotationToolPrimaryButtonActiveDrag">annotationToolPrimaryButtonActiveDrag</a></li><li><a href="global.html#annotationToolPrimaryButtonDownOrUp">annotationToolPrimaryButtonDownOrUp</a></li><li><a href="global.html#areaMm2FromDiameterPhysical">areaMm2FromDiameterPhysical</a></li><li><a href="global.html#attachAnnotationToolkitConfigurationWidget">attachAnnotationToolkitConfigurationWidget</a></li><li><a href="global.html#buildDownsampleOptions">buildDownsampleOptions</a></li><li><a href="global.html#buildScreenshotDialogCSS">buildScreenshotDialogCSS</a></li><li><a href="global.html#buildScreenshotDialogHTML">buildScreenshotDialogHTML</a></li><li><a href="global.html#buildSegmentGroupFromPath">buildSegmentGroupFromPath</a></li><li><a href="global.html#circlePreviewGeometryFromProjectPoint">circlePreviewGeometryFromProjectPoint</a></li><li><a href="global.html#composeScreenshotWithScalebar">composeScreenshotWithScalebar</a></li><li><a href="global.html#computeLabelPlacementCenter">computeLabelPlacementCenter</a></li><li><a href="global.html#computeOutputSize">computeOutputSize</a></li><li><a href="global.html#computeRenderSignature">computeRenderSignature</a></li><li><a href="global.html#connectAdjacentBezier">connectAdjacentBezier</a></li><li><a href="global.html#connectBeziers">connectBeziers</a></li><li><a href="global.html#convertFaIcons">convertFaIcons</a></li><li><a href="global.html#coordinatesMatchGeometryType">coordinatesMatchGeometryType</a></li><li><a href="global.html#createDroppedRingGroup">createDroppedRingGroup</a></li><li><a href="global.html#createPreviewRingGroup">createPreviewRingGroup</a></li><li><a href="global.html#createScreenshotDialogElement">createScreenshotDialogElement</a></li><li><a href="global.html#diameterPhysicalFromAreaMm2">diameterPhysicalFromAreaMm2</a></li><li><a href="global.html#diameterPhysicalToBasePixels">diameterPhysicalToBasePixels</a></li><li><a href="global.html#ensureNamedToolLayer">ensureNamedToolLayer</a></li><li><a href="global.html#evaluatePaperItemShapeContract">evaluatePaperItemShapeContract</a></li><li><a href="global.html#fovGeometryLog">fovGeometryLog</a></li><li><a href="global.html#fovOverlayLog">fovOverlayLog</a></li><li><a href="global.html#getPointLineIntersections">getPointLineIntersections</a></li><li><a href="global.html#iconDefs">iconDefs</a></li><li><a href="global.html#imagePointToProjectPoint">imagePointToProjectPoint</a></li><li><a href="global.html#isLineStringCoordinates">isLineStringCoordinates</a></li><li><a href="global.html#isLinearRing">isLinearRing</a></li><li><a href="global.html#isMultiLineStringCoordinates">isMultiLineStringCoordinates</a></li><li><a href="global.html#isMultiPointCoordinates">isMultiPointCoordinates</a></li><li><a href="global.html#isMultiPolygonCoordinates">isMultiPolygonCoordinates</a></li><li><a href="global.html#isPolygonCoordinates">isPolygonCoordinates</a></li><li><a href="global.html#isPosition">isPosition</a></li><li><a href="global.html#localImportsCompleted">localImportsCompleted</a></li><li><a href="global.html#makeFaIcon">makeFaIcon</a></li><li><a href="global.html#makeRoundJoin">makeRoundJoin</a></li><li><a href="global.html#mppFromTiledImage">mppFromTiledImage</a></li><li><a href="global.html#normalize">normalize</a></li><li><a href="global.html#offsetSegment">offsetSegment</a></li><li><a href="global.html#osd">osd</a></li><li><a href="global.html#projectPointToImagePoint">projectPointToImagePoint</a></li><li><a href="global.html#removeIntersection">removeIntersection</a></li><li><a href="global.html#removeOutsiders">removeOutsiders</a></li><li><a href="global.html#renderBaseScreenshot">renderBaseScreenshot</a></li><li><a href="global.html#styleDroppedOver">styleDroppedOver</a></li><li><a href="global.html#styleDroppedUnder">styleDroppedUnder</a></li><li><a href="global.html#stylePreviewRing">stylePreviewRing</a></li><li><a href="global.html#toolConstructors">toolConstructors</a></li><li><a href="global.html#updateFillOpacity">updateFillOpacity</a></li><li><a href="global.html#updateStrokeOpacity">updateStrokeOpacity</a></li><li><a href="global.html#validateGeoJSONGeometry">validateGeoJSONGeometry</a></li><li><a href="global.html#validatePaperItemShapeContract">validatePaperItemShapeContract</a></li><li><a href="global.html#waitForNextPaintFrames">waitForNextPaintFrames</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.0</a> on Wed May 13 2026 16:45:59 GMT-0400 (Eastern Daylight Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

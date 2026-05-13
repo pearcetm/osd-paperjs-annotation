@@ -1,6 +1,6 @@
 /**
  * OpenSeadragon paperjs overlay plugin based on paper.js
- * @version 0.7.0
+ * @version 0.7.1
  * 
  * Includes additional open source libraries which are subject to copyright notices
  * as indicated accompanying those segments of code.
@@ -49,7 +49,12 @@ import { PaperOverlay } from './paper-overlay.mjs';
 import { RotationControlOverlay } from './rotationcontrol.mjs';
 import { ScreenshotOverlay } from './overlays/screenshot/screenshot.mjs';
 import { FieldOfViewOverlay } from './overlays/fieldofview/fieldofview.mjs';
-import { ConfigurationWidget } from './overlays/configuration/configuration.mjs';
+import {
+    ANNOTATION_TOOLBAR_PERSIST_ID_FILE,
+    ANNOTATION_TOOLBAR_PERSIST_ID_PENCIL,
+    ConfigurationWidget,
+} from './overlays/configuration/configuration.mjs';
+import { attachAnnotationToolkitConfigurationWidget } from './overlays/annotations/index.mjs';
 import { ViewerOverlayBase } from './overlays/base.mjs';
 import { AnnotationUITool } from './papertools/annotationUITool.mjs';
 import { ToolBase } from './papertools/base.mjs';
@@ -81,6 +86,9 @@ export const OSDPaperjsAnnotation = {
     AnnotationLayout: AnnotationLayout,
     AnnotationToolbar: AnnotationToolbar,
     ConfigurationWidget: ConfigurationWidget,
+    ANNOTATION_TOOLBAR_PERSIST_ID_PENCIL: ANNOTATION_TOOLBAR_PERSIST_ID_PENCIL,
+    ANNOTATION_TOOLBAR_PERSIST_ID_FILE: ANNOTATION_TOOLBAR_PERSIST_ID_FILE,
+    attachAnnotationToolkitConfigurationWidget: attachAnnotationToolkitConfigurationWidget,
     ViewerOverlayBase: ViewerOverlayBase,
     FeatureCollectionUI :FeatureCollectionUI,
     FeatureUI:FeatureUI,
@@ -117,6 +125,9 @@ export {
     AnnotationLayout,
     AnnotationToolbar,
     ConfigurationWidget,
+    ANNOTATION_TOOLBAR_PERSIST_ID_PENCIL,
+    ANNOTATION_TOOLBAR_PERSIST_ID_FILE,
+    attachAnnotationToolkitConfigurationWidget,
     ViewerOverlayBase,
     FeatureCollectionUI,
     FeatureUI,

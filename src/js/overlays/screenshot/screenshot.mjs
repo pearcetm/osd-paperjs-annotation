@@ -1,6 +1,6 @@
 /**
  * OpenSeadragon paperjs overlay plugin based on paper.js
- * @version 0.7.0
+ * @version 0.7.1
  * 
  * Includes additional open source libraries which are subject to copyright notices
  * as indicated accompanying those segments of code.
@@ -1298,7 +1298,7 @@ class ScreenshotOverlay extends ViewerOverlayBase {
      * The input rect may carry a `degrees` property (e.g. from OSD's fromSummits);
      * its actual corners (honoring degrees) are used for screen-axis measurements.
      *
-     * @param {OpenSeadragon.Rect|{x,y,width,height,degrees?}} viewerElementRect
+     * @param {(OpenSeadragon.Rect|Object)} viewerElementRect - `OpenSeadragon.Rect` or plain object with `x`, `y`, `width`, `height`, and optional `degrees`
      * @returns {{viewportRect: OpenSeadragon.Rect, screenWidth: number, screenHeight: number, rotation: number}}
      */
     _viewerElementRectToRegion(viewerElementRect){

@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: overlays/screenshot/screenshot-render.mjs</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: overlays/screenshot/screenshot-render.mjs</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>import { OpenSeadragon } from '../../osd-loader.mjs';
+import { changeDpiBlob } from './changedpi.mjs';
+
+const BASE_SCREEN_DPI = 96;
+
+/**
+ * Waits for `n` requestAnimationFrame ticks (falls back to setTimeout).
+ * Useful to ensure painted state after OSD viewport operations.
+ * @param {number} n - Number of frames to wait
+ * @returns {Promise&lt;void>}
+ */
+export function waitForNextPaintFrames(n = 2){
+    n = Math.max(0, Math.floor(Number(n) || 0));
+    if(n === 0) return Promise.resolve();
+    const raf = (typeof window !== 'undefined' &amp;&amp; window.requestAnimationFrame)
+        ? window.requestAnimationFrame.bind(window)
+        : null;
+    if(!raf){
+        return new Promise(resolve => setTimeout(resolve, 50));
+    }
+    return new Promise(resolve => {
+        const tick = () => {
+            n -= 1;
+            if(n &lt;= 0) resolve();
+            else raf(tick);
+        };
+        raf(tick);
+    });
+}
+
+/**
+ * Builds a JSON signature string that uniquely identifies a render request,
+ * used for cache invalidation.
+ * @param {object} params
+ * @param {number} params.w - Output width in device pixels
+ * @param {number} params.h - Output height in device pixels
+ * @param {OpenSeadragon.Rect} params.viewportRect - Viewport-space rectangle
+ * @param {number} params.rotation - Viewport rotation
+ * @param {object} params.tileSource - The OSD tile source object
+ * @returns {string}
+ */
+export function computeRenderSignature({ w, h, viewportRect, rotation, tileSource }){
+    const vr = viewportRect;
+    const ts = tileSource;
+    return JSON.stringify({
+        viewportRect: { x: vr.x, y: vr.y, width: vr.width, height: vr.height, degrees: vr.degrees },
+        outW: w,
+        outH: h,
+        rotation,
+        tileSourceKey: ts?.url || ts?.tilesUrl || ts?.tileUrl || ts?.Image?.Url || null,
+    });
+}
+
+/**
+ * Creates an off-screen OpenSeadragon viewer, renders the specified viewport
+ * region at the given pixel dimensions, and returns the result as a Blob.
+ *
+ * @param {object} params
+ * @param {number} params.w - Output width in device pixels
+ * @param {number} params.h - Output height in device pixels
+ * @param {OpenSeadragon.Rect} params.viewportRect - Viewport-space rectangle to render
+ * @param {object} params.viewer - The main OSD viewer (for config like crossOriginPolicy)
+ * @param {object} params.tiledImage - The active tiled image
+ * @param {function} [params.onProgress] - Optional progress callback(loaded, total)
+ * @returns {Promise&lt;{blob: Blob, pixelRatio: number, signature: string}>}
+ */
+export async function renderBaseScreenshot({ w, h, viewportRect, viewer, tiledImage, onProgress }){
+    const pixelRatio = OpenSeadragon.pixelDensityRatio;
+    const cssW = w / pixelRatio;
+    const cssH = h / pixelRatio;
+
+    const ti = tiledImage;
+    const ts = ti.source || viewer.tileSources[viewer.currentPage()];
+    const rotation = viewer.viewport.getRotation(true);
+
+    const signature = computeRenderSignature({ w, h, viewportRect, rotation, tileSource: ts });
+
+    const d = document.createElement('div');
+    document.body.appendChild(d);
+    d.style.cssText = `width:${cssW}px;height:${cssH}px;position:fixed;left:-${cssW*2}px;`;
+
+    let ssViewer = null;
+    try{
+        ssViewer = OpenSeadragon({
+            element: d,
+            tileSources: [ts],
+            crossOriginPolicy: viewer.crossOriginPolicy,
+            prefixUrl: viewer.prefixUrl,
+            immediateRender: true,
+        });
+        ssViewer.viewport.setRotation(rotation, true);
+
+        if(onProgress){
+            ssViewer.addHandler('tile-drawn', (ev) => {
+                const coverage = ev.tiledImage.coverage;
+                const levels = Object.keys(coverage);
+                const maxLevel = levels[levels.length - 1];
+                if(ev.tile.level == maxLevel){
+                    const full = coverage[maxLevel];
+                    const status = Object.values(full).map(o => Object.values(o)).flat();
+                    onProgress(status.filter(x => x).length, status.length);
+                }
+            });
+        }
+
+        await new Promise((resolve, reject) => {
+            ssViewer.addHandler('open', () => {
+                try{
+                    ssViewer.world.getItemAt(0).setRotation(ti.getRotation(true), true);
+                    ssViewer.viewport.fitBounds(viewportRect, true);
+                    ssViewer.world.getItemAt(0).addOnceHandler('fully-loaded-change', () => {
+                        resolve();
+                    });
+                }catch(e){
+                    reject(e);
+                }
+            });
+            ssViewer.addHandler('open-failed', reject);
+        });
+
+        await waitForNextPaintFrames(2);
+
+        let blob = await new Promise((resolve) => ssViewer.drawer.canvas.toBlob(resolve));
+        if(!blob) throw new Error('Failed to export screenshot canvas.');
+        if(pixelRatio !== 1){
+            blob = await changeDpiBlob(blob, BASE_SCREEN_DPI * pixelRatio);
+        }
+
+        return { blob, pixelRatio, signature };
+    } finally {
+        try{
+            const container = ssViewer?.element;
+            ssViewer?.destroy?.();
+            container?.remove?.();
+        }catch{ /* ignore */ }
+        try{ d.remove(); }catch{ /* ignore */ }
+    }
+}
+
+/**
+ * Composes a scalebar onto a base screenshot blob.
+ *
+ * @param {object} params
+ * @param {Blob} params.baseBlob - The base screenshot blob
+ * @param {number} params.pixelRatio - Device pixel ratio used during base render
+ * @param {number} params.scaleFactor - Output scale factor (output pixels / base pixels)
+ * @param {object} params.scalebar - Scalebar configuration
+ * @param {boolean} params.scalebar.include - Whether to draw a scalebar
+ * @param {number} params.scalebar.widthMm - Scalebar physical length in mm
+ * @param {number} params.scalebar.heightPx - Scalebar bar height in pixels
+ * @param {number} params.scalebar.mppX - Microns per pixel along X axis
+ * @param {object} [params.scalebar.label] - Label fit info from _scalebarLabelFit
+ * @returns {Promise&lt;Blob>}
+ */
+export async function composeScreenshotWithScalebar({ baseBlob, pixelRatio, scaleFactor, scalebar }){
+    const img = (typeof createImageBitmap === 'function')
+        ? await createImageBitmap(baseBlob)
+        : await new Promise((resolve, reject) => {
+            const url = URL.createObjectURL(baseBlob);
+            const image = new Image();
+            image.onload = () => { URL.revokeObjectURL(url); resolve(image); };
+            image.onerror = (e) => { URL.revokeObjectURL(url); reject(e); };
+            image.src = url;
+        });
+
+    const canvas = document.createElement('canvas');
+    canvas.width = img.width;
+    canvas.height = img.height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0);
+
+    if(scalebar.include &amp;&amp; scalebar.mppX){
+        const PADDING = 12;
+        const pxLen = Math.max(1, Math.round(scalebar.widthMm * 1000 / scalebar.mppX * scaleFactor));
+        const pxH = Math.max(1, Math.round(scalebar.heightPx));
+        const x2 = canvas.width - PADDING;
+        const y2 = canvas.height - PADDING;
+        const x1 = Math.max(PADDING, x2 - pxLen);
+        const y1 = Math.max(PADDING, y2 - pxH);
+        ctx.fillStyle = '#000';
+        ctx.fillRect(x1, y1, x2 - x1, y2 - y1);
+
+        if(scalebar.label?.enabled &amp;&amp; scalebar.label?.fits &amp;&amp; scalebar.label?.label){
+            ctx.save();
+            ctx.font = `${scalebar.label.fontPx || 12}px system-ui, -apple-system, Segoe UI, Roboto, sans-serif`;
+            ctx.fillStyle = '#fff';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(scalebar.label.label, (x1 + x2) / 2, (y1 + y2) / 2);
+            ctx.restore();
+        }
+    }
+
+    let blob = await new Promise((resolve) => canvas.toBlob(resolve));
+    if(!blob) throw new Error('Failed to export composed screenshot.');
+    if(pixelRatio !== 1){
+        blob = await changeDpiBlob(blob, BASE_SCREEN_DPI * pixelRatio);
+    }
+    return blob;
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="OSDPaperjsAnnotation.html">OSDPaperjsAnnotation</a></li></ul><h3>Classes</h3><ul><li><a href="AnnotationLayout.html">AnnotationLayout</a></li><li><a href="Dialog.html">Dialog</a></li><li><a href="DragAndDrop.html">DragAndDrop</a></li><li><a href="EditableContent.html">EditableContent</a></li><li><a href="FieldOfViewOverlay.html">FieldOfViewOverlay</a></li><li><a href="FieldOfViewTool_FieldOfViewTool.html">FieldOfViewTool</a></li><li><a href="Morph.html">Morph</a></li><li><a href="OSDPaperjsAnnotation.AnnotationItem.html">AnnotationItem</a></li><li><a href="OSDPaperjsAnnotation.AnnotationItemFactory.html">AnnotationItemFactory</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolbar.html">AnnotationToolbar</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolkit.html">AnnotationToolkit</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolset.html">AnnotationToolset</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUI.html">AnnotationUI</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUITool.html">AnnotationUITool</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUITool.AnnotationUIToolbarBase.html">AnnotationUIToolbarBase</a></li><li><a href="OSDPaperjsAnnotation.BrushTool.html">BrushTool</a></li><li><a href="OSDPaperjsAnnotation.BrushTool.BrushToolbar.html">BrushToolbar</a></li><li><a href="OSDPaperjsAnnotation.DefaultTool.html">DefaultTool</a></li><li><a href="OSDPaperjsAnnotation.DefaultTool.DefaultToolbar.html">DefaultToolbar</a></li><li><a href="OSDPaperjsAnnotation.Ellipse.html">Ellipse</a></li><li><a href="OSDPaperjsAnnotation.EllipseTool.html">EllipseTool</a></li><li><a href="OSDPaperjsAnnotation.EllipseTool.EllipseToolbar.html">EllipseToolbar</a></li><li><a href="OSDPaperjsAnnotation.FeatureCollectionUI.html">FeatureCollectionUI</a></li><li><a href="OSDPaperjsAnnotation.FeatureUI.html">FeatureUI</a></li><li><a href="OSDPaperjsAnnotation.FileDialog.html">FileDialog</a></li><li><a href="OSDPaperjsAnnotation.LayerUI.html">LayerUI</a></li><li><a href="OSDPaperjsAnnotation.Linestring.html">Linestring</a></li><li><a href="OSDPaperjsAnnotation.LinestringTool.html">LinestringTool</a></li><li><a href="OSDPaperjsAnnotation.LinestringTool.LinestringToolbar.html">LinestringToolbar</a></li><li><a href="OSDPaperjsAnnotation.MultiLinestring.html">MultiLinestring</a></li><li><a href="OSDPaperjsAnnotation.MultiPolygon.html">MultiPolygon</a></li><li><a href="OSDPaperjsAnnotation.PaperOverlay.html">PaperOverlay</a></li><li><a href="OSDPaperjsAnnotation.Placeholder.html">Placeholder</a></li><li><a href="OSDPaperjsAnnotation.Point.html">Point</a></li><li><a href="OSDPaperjsAnnotation.PointText.html">PointText</a></li><li><a href="OSDPaperjsAnnotation.PointTextTool.html">PointTextTool</a></li><li><a href="OSDPaperjsAnnotation.PointTextTool.PointTextToolbar.html">PointTextToolbar</a></li><li><a href="OSDPaperjsAnnotation.PointTool.html">PointTool</a></li><li><a href="OSDPaperjsAnnotation.PointTool.PointToolbar.html">PointToolbar</a></li><li><a href="OSDPaperjsAnnotation.PolygonTool.html">PolygonTool</a></li><li><a href="OSDPaperjsAnnotation.PolygonTool.PolygonToolbar.html">PolygonToolbar</a></li><li><a href="OSDPaperjsAnnotation.Raster.html">Raster</a></li><li><a href="OSDPaperjsAnnotation.RasterTool.html">RasterTool</a></li><li><a href="OSDPaperjsAnnotation.RasterTool.RasterToolbar.html">RasterToolbar</a></li><li><a href="OSDPaperjsAnnotation.Rectangle.html">Rectangle</a></li><li><a href="OSDPaperjsAnnotation.RectangleTool.html">RectangleTool</a></li><li><a href="OSDPaperjsAnnotation.RectangleTool_RectToolbar.html">RectToolbar</a></li><li><a href="OSDPaperjsAnnotation.RotationControlOverlay.html">RotationControlOverlay</a></li><li><a href="OSDPaperjsAnnotation.RotationControlTool.html">RotationControlTool</a></li><li><a href="OSDPaperjsAnnotation.RotationControlWidget.html">RotationControlWidget</a></li><li><a href="OSDPaperjsAnnotation.RulerTool.html">RulerTool</a></li><li><a href="OSDPaperjsAnnotation.RulerTool.RulerToolbar.html">RulerToolbar</a></li><li><a href="OSDPaperjsAnnotation.StyleTool.html">StyleTool</a></li><li><a href="OSDPaperjsAnnotation.StyleTool.StyleToolbar.html">StyleToolbar</a></li><li><a href="OSDPaperjsAnnotation.ToolBase.html">ToolBase</a></li><li><a href="OSDPaperjsAnnotation.TransformTool.html">TransformTool</a></li><li><a href="OSDPaperjsAnnotation.TransformTool.TransformToolbar.html">TransformToolbar</a></li><li><a href="OSDPaperjsAnnotation.WandTool.html">WandTool</a></li><li><a href="OSDPaperjsAnnotation.WandTool.WandToolbar.html">WandToolbar</a></li><li><a href="OSDPaperjsAnnotation.exports.ConfigurationWidget.html">exports.ConfigurationWidget</a></li><li><a href="OSDPaperjsAnnotation.exports.ViewerOverlayBase.html">exports.ViewerOverlayBase</a></li><li><a href="RulerMeasurement.html">RulerMeasurement</a></li><li><a href="ScreenshotOverlay.html">ScreenshotOverlay</a></li><li><a href="ScreenshotTool.html">ScreenshotTool</a></li><li><a href="SelectTool.html">SelectTool</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ANNOTATION_TOOLBAR_PERSIST_ID_FILE">ANNOTATION_TOOLBAR_PERSIST_ID_FILE</a></li><li><a href="global.html#ANNOTATION_TOOLBAR_PERSIST_ID_PENCIL">ANNOTATION_TOOLBAR_PERSIST_ID_PENCIL</a></li><li><a href="global.html#COMPOUND_PATH_CONTRACT_MESSAGE">COMPOUND_PATH_CONTRACT_MESSAGE</a></li><li><a href="global.html#CONFIG_TOOLBAR_PERSIST_VERSION">CONFIG_TOOLBAR_PERSIST_VERSION</a></li><li><a href="global.html#FOV_DROP_UNDER_STROKE">FOV_DROP_UNDER_STROKE</a></li><li><a href="global.html#FOV_HIT_FILL_ALPHA">FOV_HIT_FILL_ALPHA</a></li><li><a href="global.html#FOV_PREVIEW_OVER_STROKE">FOV_PREVIEW_OVER_STROKE</a></li><li><a href="global.html#FOV_PREVIEW_UNDER_STROKE">FOV_PREVIEW_UNDER_STROKE</a></li><li><a href="global.html#_makeOverlayStyleRow">_makeOverlayStyleRow</a></li><li><a href="global.html#_paper">_paper</a></li><li><a href="global.html#adaptiveOffsetCurve">adaptiveOffsetCurve</a></li><li><a href="global.html#annotationToolPrimaryButtonActiveDrag">annotationToolPrimaryButtonActiveDrag</a></li><li><a href="global.html#annotationToolPrimaryButtonDownOrUp">annotationToolPrimaryButtonDownOrUp</a></li><li><a href="global.html#areaMm2FromDiameterPhysical">areaMm2FromDiameterPhysical</a></li><li><a href="global.html#attachAnnotationToolkitConfigurationWidget">attachAnnotationToolkitConfigurationWidget</a></li><li><a href="global.html#buildDownsampleOptions">buildDownsampleOptions</a></li><li><a href="global.html#buildScreenshotDialogCSS">buildScreenshotDialogCSS</a></li><li><a href="global.html#buildScreenshotDialogHTML">buildScreenshotDialogHTML</a></li><li><a href="global.html#buildSegmentGroupFromPath">buildSegmentGroupFromPath</a></li><li><a href="global.html#circlePreviewGeometryFromProjectPoint">circlePreviewGeometryFromProjectPoint</a></li><li><a href="global.html#composeScreenshotWithScalebar">composeScreenshotWithScalebar</a></li><li><a href="global.html#computeLabelPlacementCenter">computeLabelPlacementCenter</a></li><li><a href="global.html#computeOutputSize">computeOutputSize</a></li><li><a href="global.html#computeRenderSignature">computeRenderSignature</a></li><li><a href="global.html#connectAdjacentBezier">connectAdjacentBezier</a></li><li><a href="global.html#connectBeziers">connectBeziers</a></li><li><a href="global.html#convertFaIcons">convertFaIcons</a></li><li><a href="global.html#coordinatesMatchGeometryType">coordinatesMatchGeometryType</a></li><li><a href="global.html#createDroppedRingGroup">createDroppedRingGroup</a></li><li><a href="global.html#createPreviewRingGroup">createPreviewRingGroup</a></li><li><a href="global.html#createScreenshotDialogElement">createScreenshotDialogElement</a></li><li><a href="global.html#diameterPhysicalFromAreaMm2">diameterPhysicalFromAreaMm2</a></li><li><a href="global.html#diameterPhysicalToBasePixels">diameterPhysicalToBasePixels</a></li><li><a href="global.html#ensureNamedToolLayer">ensureNamedToolLayer</a></li><li><a href="global.html#evaluatePaperItemShapeContract">evaluatePaperItemShapeContract</a></li><li><a href="global.html#fovGeometryLog">fovGeometryLog</a></li><li><a href="global.html#fovOverlayLog">fovOverlayLog</a></li><li><a href="global.html#getPointLineIntersections">getPointLineIntersections</a></li><li><a href="global.html#iconDefs">iconDefs</a></li><li><a href="global.html#imagePointToProjectPoint">imagePointToProjectPoint</a></li><li><a href="global.html#isLineStringCoordinates">isLineStringCoordinates</a></li><li><a href="global.html#isLinearRing">isLinearRing</a></li><li><a href="global.html#isMultiLineStringCoordinates">isMultiLineStringCoordinates</a></li><li><a href="global.html#isMultiPointCoordinates">isMultiPointCoordinates</a></li><li><a href="global.html#isMultiPolygonCoordinates">isMultiPolygonCoordinates</a></li><li><a href="global.html#isPolygonCoordinates">isPolygonCoordinates</a></li><li><a href="global.html#isPosition">isPosition</a></li><li><a href="global.html#localImportsCompleted">localImportsCompleted</a></li><li><a href="global.html#makeFaIcon">makeFaIcon</a></li><li><a href="global.html#makeRoundJoin">makeRoundJoin</a></li><li><a href="global.html#mppFromTiledImage">mppFromTiledImage</a></li><li><a href="global.html#normalize">normalize</a></li><li><a href="global.html#offsetSegment">offsetSegment</a></li><li><a href="global.html#osd">osd</a></li><li><a href="global.html#projectPointToImagePoint">projectPointToImagePoint</a></li><li><a href="global.html#removeIntersection">removeIntersection</a></li><li><a href="global.html#removeOutsiders">removeOutsiders</a></li><li><a href="global.html#renderBaseScreenshot">renderBaseScreenshot</a></li><li><a href="global.html#styleDroppedOver">styleDroppedOver</a></li><li><a href="global.html#styleDroppedUnder">styleDroppedUnder</a></li><li><a href="global.html#stylePreviewRing">stylePreviewRing</a></li><li><a href="global.html#toolConstructors">toolConstructors</a></li><li><a href="global.html#updateFillOpacity">updateFillOpacity</a></li><li><a href="global.html#updateStrokeOpacity">updateStrokeOpacity</a></li><li><a href="global.html#validateGeoJSONGeometry">validateGeoJSONGeometry</a></li><li><a href="global.html#validatePaperItemShapeContract">validatePaperItemShapeContract</a></li><li><a href="global.html#waitForNextPaintFrames">waitForNextPaintFrames</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.0</a> on Wed May 13 2026 16:45:59 GMT-0400 (Eastern Daylight Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

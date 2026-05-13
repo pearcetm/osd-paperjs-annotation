@@ -28,7 +28,7 @@
         <article>
             <pre class="prettyprint source linenums"><code>/**
  * OpenSeadragon paperjs overlay plugin based on paper.js
- * @version 0.4.15
+ * @version 0.7.1
  * 
  * Includes additional open source libraries which are subject to copyright notices
  * as indicated accompanying those segments of code.
@@ -67,8 +67,7 @@
 //styles in annotationui.css
 
 import { addCSS } from './utils/addcss.mjs';
-import { AnnotationToolbar } from './annotationtoolbar.mjs';
-import { LayerUI } from './layerui.mjs';
+import { AnnotationLayout } from './annotationlayout.mjs';
 import { FileDialog } from './filedialog.mjs';
 
 addCSS('annotationui.css', 'annotationui');
@@ -77,7 +76,8 @@ addCSS('editablecontent.css', 'editablecontent');
 /**
  * @memberof OSDPaperjsAnnotation
  * @class
- * A class for creating and managing the annotation UI
+ * A class for creating and managing the annotation UI. Intended to be constructed only via AnnotationToolkit.addAnnotationUI().
+ * Toolbar and layer UI are owned by the toolkit; this class uses them via getToolbar()/getLayerUI() and places them via AnnotationLayout.
  */
 class AnnotationUI {
 
@@ -85,18 +85,19 @@ class AnnotationUI {
    * Creates an instance of AnnotationUI.
    *
    * @param {Object} annotationToolkit - The annotation toolkit object.
+   * @param {AnnotationToolset} toolset - The toolset (owned by the toolkit).
    * @param {Object} opts - The options for the AnnotationUI.
    * @param {boolean} [opts.autoOpen=true] - Determines if the AnnotationUI should be automatically opened.
    * @param {Array} [opts.featureCollections=[]] - An array of feature collections to load.
    * @param {boolean} [opts.addButton=true] - Determines if the AnnotationUI button should be added.
-   * @param {boolean} [opts.addToolbar=true] - Determines if the AnnotationToolbar should be added.
-   * @param {string[]} [opts.tools=null] - An array of tool names to use in the AnnotationToolbar. If not provided, all available tools will be used.
-   * @param {boolean} [opts.addLayerUI=true] - Determines if the LayerUI dialog should be added.
+   * @param {boolean} [opts.addToolbar=true] - Whether toolbar is requested (toolkit already created it via getToolbar if true).
+   * @param {string[]} [opts.tools=null] - An array of tool names to use in the AnnotationToolbar.
+   * @param {boolean} [opts.addLayerUI=true] - Whether layer UI is requested (toolkit already created it via getLayerUI if true).
    * @param {boolean} [opts.addFileButton=true] - Determines if the file button should be added for saving/loading annotations.
    * @param {boolean} [opts.buttonTogglesToolbar=true] - Determines if the AnnotationToolbar visibility is toggled by the AnnotationUI button.
    * @param {boolean} [opts.buttonTogglesLayerUI=true] - Determines if the LayerUI visibility is toggled by the AnnotationUI button.
    */
-  constructor(annotationToolkit, opts) {
+  constructor(annotationToolkit, toolset, opts) {
     let defaultOpts = {
       autoOpen: true,
       featureCollections: [],
@@ -110,70 +111,39 @@ class AnnotationUI {
     };
 
     opts = this.options = Object.assign(defaultOpts, opts);
-    let _viewer = this._viewer = annotationToolkit.viewer; // shorter alias
-    this._isOpen = !!opts.autoOpen;
+    this._annotationToolkit = annotationToolkit;
+    this._viewer = annotationToolkit.viewer;
 
-  
-    /**
-     * _toolbar: AnnotationToolbar UI for interactive tools
-     * @private
-     */
-    this._toolbar = new AnnotationToolbar(annotationToolkit.overlay.paperScope, opts.tools);
+    const toolbar = annotationToolkit.getToolbar?.() ?? null;
+    const layerUI = annotationToolkit.getLayerUI?.() ?? null;
+    const toolbarRef = toolbar ? { element: toolbar.element, show: () => toolbar.show(), hide: () => toolbar.hide() } : null;
+    const layerUIRef = layerUI ? { element: layerUI.element, show: () => layerUI.show(), hide: () => layerUI.hide() } : null;
 
-    /**
-     * _fileDialog: FileDialog UI for loading/saving data
-     * @private
-     */
-    this._fileDialog = new FileDialog(annotationToolkit, { appendTo: _viewer.element });
+    this._layout = new AnnotationLayout(this._viewer, {
+      toolbar: toolbarRef,
+      layerUI: layerUIRef,
+      addButton: opts.addButton !== false,
+      addViewerButton: (config) => annotationToolkit.overlay.addViewerButton(config),
+      buttonTogglesToolbar: opts.buttonTogglesToolbar !== false,
+      buttonTogglesLayerUI: opts.buttonTogglesLayerUI !== false,
+      initialOpen: opts.autoOpen !== false,
+    });
+
+    if (opts.autoOpen !== false) {
+      toolbar?.show();
+      layerUI?.show();
+    } else {
+      toolbar?.hide();
+      layerUI?.hide();
+    }
+
+    this._fileDialog = new FileDialog(annotationToolkit, { appendTo: this._viewer.element });
     this._filebutton = null;
     if (opts.addFileButton) {
-      //Handles the click event of the file button.
       this._filebutton = annotationToolkit.overlay.addViewerButton({
-        onClick: () => {
-          this._fileDialog.toggle();
-        },
+        onClick: () => this._fileDialog.toggle(),
         faIconClass: 'fa-save',
         tooltip: 'Save/Load Annotations',
-      });
-    }
-
-    /**
-     * _layerUI: LayerUI: graphical user interface for this annotation layer
-     * @private
-     */
-    this._layerUI = new LayerUI(annotationToolkit, opts.addFileButton);
-    if (opts.addLayerUI) {
-      this._addToViewer();
-    }
-
-    if(opts.autoOpen){
-      this._layerUI.show();
-      this._toolbar.show();
-    } else {
-      this._layerUI.hide();
-      this._toolbar.hide();
-    }
-
-
-    /**
-     * _button: Button for toggling LayerUI and/or AnnotationToolbar
-     * @private
-     */
-    this._button = null;
-    if (opts.addButton) {
-      this._button = annotationToolkit.overlay.addViewerButton({
-        onClick: () => {
-          this._isOpen = !this._isOpen;
-          if (this._isOpen) {
-            this.options.buttonTogglesToolbar &amp;&amp; this._toolbar.show();
-            this.options.buttonTogglesLayerUI &amp;&amp; this._layerUI.show();
-          } else {
-            this.options.buttonTogglesToolbar &amp;&amp; this._toolbar.hide();
-            this.options.buttonTogglesLayerUI &amp;&amp; this._layerUI.hide();
-          }
-        },
-        faIconClass: 'fa-pencil',
-        tooltip: 'Annotation Interface',
       });
     }
 
@@ -183,136 +153,90 @@ class AnnotationUI {
   }
 
   /**
-   * Destroys the AnnotationUI and cleans up its resources.
+   * Viewer toolbar buttons managed by this UI (for host integrations such as ConfigurationWidget addSection).
+   * @returns {{ pencil: Object|null, file: Object|null }} OpenSeadragon button objects with `.element`, or null entries when not created.
+   */
+  getViewerToolbarButtons() {
+    return {
+      pencil: this._layout?.getPencilViewerButton?.() ?? null,
+      file: this._filebutton,
+    };
+  }
+
+  /**
+   * Same as clicking the pencil button: toggles toolbar/layer visibility per constructor options.
+   */
+  toggleAnnotationPanels() {
+    this._layout?.togglePanelsFromButton?.();
+  }
+
+  /**
+   * Whether annotation panels are open (pencil toggle state).
+   * @returns {boolean}
+   */
+  areAnnotationPanelsVisible() {
+    return this._layout?.arePanelsVisible?.() ?? false;
+  }
+
+  /**
+   * Opens the save/load file dialog (no-op if addFileButton was false).
+   */
+  openFileDialog() {
+    this._fileDialog?.show?.();
+  }
+
+  /**
+   * Destroys the AnnotationUI and cleans up its resources. Does not destroy the toolkit's toolbar or layer UI.
    */
   destroy() {
-    this._layerUI.destroy();
-    this._toolbar.destroy();
-    if (this._button) {
-      let idx = this._viewer.buttonGroup.buttons.indexOf(this._button);
-      if (idx > -1) {
-        this._viewer.buttonGroup.buttons.splice(idx, 1);
-      }
-      this._button.element.remove();
-    }
+    this._layout?.destroy();
+    this._layout = null;
     if (this._filebutton) {
-      let idx = this._viewer.buttonGroup.buttons.indexOf(this._filebutton);
-      if (idx > -1) {
-        this._viewer.buttonGroup.buttons.splice(idx, 1);
-      }
+      const idx = this._viewer.buttonGroup.buttons.indexOf(this._filebutton);
+      if (idx > -1) this._viewer.buttonGroup.buttons.splice(idx, 1);
       this._filebutton.element.remove();
+      this._filebutton = null;
     }
   }
 
   /**
    * Show the LayerUI interface
    */
-  showUI(){
-    this.ui.show();
+  showUI() {
+    this.ui?.show();
   }
 
   /**
    * Hide the LayerUI interface
    */
-  hideUI(){
-    this.ui.hide();
+  hideUI() {
+    this.ui?.hide();
   }
 
   /**
    * Show the toolbar
    */
-  showToolbar(){
-    this.toolbar.show();
+  showToolbar() {
+    this.toolbar?.show();
   }
 
   /**
    * Hide the toolbar
    */
-  hideToolbar(){
-    this.toolbar.hide();
+  hideToolbar() {
+    this.toolbar?.hide();
   }
 
-  get ui(){
-    return this._layerUI;
+  get ui() {
+    return this._annotationToolkit.getLayerUI?.() ?? null;
   }
 
   get toolbar() {
-    return this._toolbar;
+    return this._annotationToolkit.getToolbar?.() ?? null;
   }
 
-  get element(){
-    return this._layerUI.element;
-  }
-
-  /**
-   * Set up the grid that adds the UI to the viewer
-   */
-  _addToViewer(){
-    
-    const container = document.createElement('div');
-    
-    this._viewer.element.appendChild(container);
-    
-    const top = document.createElement('div');
-    const bottom = document.createElement('div');
-    const center = document.createElement('div');
-    const left = document.createElement('div');
-    const right = document.createElement('div');
-    const resizeRight = document.createElement('div');
-    const classes={
-      'annotation-ui-grid':container,
-      'top':top,
-      'bottom':bottom,
-      'center':center,
-      'left':left,
-      'right':right,
-      'resize-right':resizeRight
-    }
-
-    Object.entries(classes).forEach(([name, node])=>node.classList.add(name));
-    [center, right, left, top, bottom].forEach(div => container.appendChild(div));
-
-    center.appendChild(this._viewer.container);
-    right.appendChild(resizeRight);
-    right.appendChild(this.element);
-    top.appendChild(this._toolbar.element);
-
-    // keep a reference to the UI element
-    const element = this.element;
-
-    // add event handlers to do the resizing.
-    const body = document.querySelector('body');
-    let offset;
-
-    resizeRight.addEventListener('mousedown',function(ev){
-      this.classList.add('resizing');
-      body.classList.add('.annotation-ui-noselect');
-
-      document.addEventListener('mousemove', moveHandler);
-      document.addEventListener('mouseleave', finishResize);
-      document.addEventListener('mouseup', finishResize);
-
-      offset = element.getBoundingClientRect().left - ev.x;
-
-    });
-
-    function moveHandler(ev){
-      if(resizeRight.classList.contains('resizing')){
-        if(ev.movementX){
-          const bounds = element.getBoundingClientRect();
-          element.style.width = bounds.right - ev.x - offset + 'px';
-        }
-        ev.preventDefault();
-      }
-    }
-    function finishResize(ev){
-      document.removeEventListener('mousemove', moveHandler);
-      document.removeEventListener('mouseleave', finishResize);
-      document.removeEventListener('mouseup', finishResize);
-      body.classList.remove('.annotation-ui-noselect');
-      resizeRight.classList.remove('resizing');
-    }
-    
+  get element() {
+    return this.ui?.element ?? null;
   }
 
 }
@@ -328,13 +252,13 @@ export { AnnotationUI };
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="OSDPaperjsAnnotation.html">OSDPaperjsAnnotation</a></li></ul><h3>Classes</h3><ul><li><a href="Dialog.html">Dialog</a></li><li><a href="DragAndDrop.html">DragAndDrop</a></li><li><a href="EditableContent.html">EditableContent</a></li><li><a href="Morph.html">Morph</a></li><li><a href="OSDPaperjsAnnotation.AnnotationItem.html">AnnotationItem</a></li><li><a href="OSDPaperjsAnnotation.AnnotationItemFactory.html">AnnotationItemFactory</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolbar.html">AnnotationToolbar</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolkit.html">AnnotationToolkit</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUI.html">AnnotationUI</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUITool.html">AnnotationUITool</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUITool.AnnotationUIToolbarBase.html">AnnotationUIToolbarBase</a></li><li><a href="OSDPaperjsAnnotation.BrushTool.html">BrushTool</a></li><li><a href="OSDPaperjsAnnotation.BrushTool.BrushToolbar.html">BrushToolbar</a></li><li><a href="OSDPaperjsAnnotation.DefaultTool.html">DefaultTool</a></li><li><a href="OSDPaperjsAnnotation.DefaultTool.DefaultToolbar.html">DefaultToolbar</a></li><li><a href="OSDPaperjsAnnotation.Ellipse.html">Ellipse</a></li><li><a href="OSDPaperjsAnnotation.EllipseTool.html">EllipseTool</a></li><li><a href="OSDPaperjsAnnotation.EllipseTool.EllipseToolbar.html">EllipseToolbar</a></li><li><a href="OSDPaperjsAnnotation.FeatureCollectionUI.html">FeatureCollectionUI</a></li><li><a href="OSDPaperjsAnnotation.FeatureUI.html">FeatureUI</a></li><li><a href="OSDPaperjsAnnotation.FileDialog.html">FileDialog</a></li><li><a href="OSDPaperjsAnnotation.LayerUI.html">LayerUI</a></li><li><a href="OSDPaperjsAnnotation.Linestring.html">Linestring</a></li><li><a href="OSDPaperjsAnnotation.LinestringTool.html">LinestringTool</a></li><li><a href="OSDPaperjsAnnotation.LinestringTool.LinestringToolbar.html">LinestringToolbar</a></li><li><a href="OSDPaperjsAnnotation.MultiLinestring.html">MultiLinestring</a></li><li><a href="OSDPaperjsAnnotation.MultiPolygon.html">MultiPolygon</a></li><li><a href="OSDPaperjsAnnotation.PaperOverlay.html">PaperOverlay</a></li><li><a href="OSDPaperjsAnnotation.Placeholder.html">Placeholder</a></li><li><a href="OSDPaperjsAnnotation.Point.html">Point</a></li><li><a href="OSDPaperjsAnnotation.PointText.html">PointText</a></li><li><a href="OSDPaperjsAnnotation.PointTextTool.html">PointTextTool</a></li><li><a href="OSDPaperjsAnnotation.PointTextTool.PointTextToolbar.html">PointTextToolbar</a></li><li><a href="OSDPaperjsAnnotation.PointTool.html">PointTool</a></li><li><a href="OSDPaperjsAnnotation.PointTool.PointToolbar.html">PointToolbar</a></li><li><a href="OSDPaperjsAnnotation.PolygonTool.html">PolygonTool</a></li><li><a href="OSDPaperjsAnnotation.PolygonTool.PolygonToolbar.html">PolygonToolbar</a></li><li><a href="OSDPaperjsAnnotation.Raster.html">Raster</a></li><li><a href="OSDPaperjsAnnotation.RasterTool.html">RasterTool</a></li><li><a href="OSDPaperjsAnnotation.RasterTool.RasterToolbar.html">RasterToolbar</a></li><li><a href="OSDPaperjsAnnotation.Rectangle.html">Rectangle</a></li><li><a href="OSDPaperjsAnnotation.RectangleTool.html">RectangleTool</a></li><li><a href="OSDPaperjsAnnotation.RectangleTool_RectToolbar.html">RectToolbar</a></li><li><a href="OSDPaperjsAnnotation.RotationControlOverlay.html">RotationControlOverlay</a></li><li><a href="OSDPaperjsAnnotation.RotationControlTool.html">RotationControlTool</a></li><li><a href="OSDPaperjsAnnotation.RotationControlWidget.html">RotationControlWidget</a></li><li><a href="OSDPaperjsAnnotation.StyleTool.html">StyleTool</a></li><li><a href="OSDPaperjsAnnotation.StyleTool.StyleToolbar.html">StyleToolbar</a></li><li><a href="OSDPaperjsAnnotation.ToolBase.html">ToolBase</a></li><li><a href="OSDPaperjsAnnotation.TransformTool.html">TransformTool</a></li><li><a href="OSDPaperjsAnnotation.TransformTool.TransformToolbar.html">TransformToolbar</a></li><li><a href="OSDPaperjsAnnotation.WandTool.html">WandTool</a></li><li><a href="OSDPaperjsAnnotation.WandTool.WandToolbar.html">WandToolbar</a></li><li><a href="ScreenshotOverlay.html">ScreenshotOverlay</a></li><li><a href="ScreenshotTool.html">ScreenshotTool</a></li><li><a href="SelectTool.html">SelectTool</a></li></ul><h3>Global</h3><ul><li><a href="global.html#_paper">_paper</a></li><li><a href="global.html#adaptiveOffsetCurve">adaptiveOffsetCurve</a></li><li><a href="global.html#connectAdjacentBezier">connectAdjacentBezier</a></li><li><a href="global.html#connectBeziers">connectBeziers</a></li><li><a href="global.html#convertFaIcons">convertFaIcons</a></li><li><a href="global.html#getPointLineIntersections">getPointLineIntersections</a></li><li><a href="global.html#iconDefs">iconDefs</a></li><li><a href="global.html#localImportsCompleted">localImportsCompleted</a></li><li><a href="global.html#makeFaIcon">makeFaIcon</a></li><li><a href="global.html#makeRoundJoin">makeRoundJoin</a></li><li><a href="global.html#normalize">normalize</a></li><li><a href="global.html#offsetSegment">offsetSegment</a></li><li><a href="global.html#osd">osd</a></li><li><a href="global.html#removeIntersection">removeIntersection</a></li><li><a href="global.html#removeOutsiders">removeOutsiders</a></li><li><a href="global.html#updateFillOpacity">updateFillOpacity</a></li><li><a href="global.html#updateStrokeOpacity">updateStrokeOpacity</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="OSDPaperjsAnnotation.html">OSDPaperjsAnnotation</a></li></ul><h3>Classes</h3><ul><li><a href="AnnotationLayout.html">AnnotationLayout</a></li><li><a href="Dialog.html">Dialog</a></li><li><a href="DragAndDrop.html">DragAndDrop</a></li><li><a href="EditableContent.html">EditableContent</a></li><li><a href="FieldOfViewOverlay.html">FieldOfViewOverlay</a></li><li><a href="FieldOfViewTool_FieldOfViewTool.html">FieldOfViewTool</a></li><li><a href="Morph.html">Morph</a></li><li><a href="OSDPaperjsAnnotation.AnnotationItem.html">AnnotationItem</a></li><li><a href="OSDPaperjsAnnotation.AnnotationItemFactory.html">AnnotationItemFactory</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolbar.html">AnnotationToolbar</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolkit.html">AnnotationToolkit</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolset.html">AnnotationToolset</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUI.html">AnnotationUI</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUITool.html">AnnotationUITool</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUITool.AnnotationUIToolbarBase.html">AnnotationUIToolbarBase</a></li><li><a href="OSDPaperjsAnnotation.BrushTool.html">BrushTool</a></li><li><a href="OSDPaperjsAnnotation.BrushTool.BrushToolbar.html">BrushToolbar</a></li><li><a href="OSDPaperjsAnnotation.DefaultTool.html">DefaultTool</a></li><li><a href="OSDPaperjsAnnotation.DefaultTool.DefaultToolbar.html">DefaultToolbar</a></li><li><a href="OSDPaperjsAnnotation.Ellipse.html">Ellipse</a></li><li><a href="OSDPaperjsAnnotation.EllipseTool.html">EllipseTool</a></li><li><a href="OSDPaperjsAnnotation.EllipseTool.EllipseToolbar.html">EllipseToolbar</a></li><li><a href="OSDPaperjsAnnotation.FeatureCollectionUI.html">FeatureCollectionUI</a></li><li><a href="OSDPaperjsAnnotation.FeatureUI.html">FeatureUI</a></li><li><a href="OSDPaperjsAnnotation.FileDialog.html">FileDialog</a></li><li><a href="OSDPaperjsAnnotation.LayerUI.html">LayerUI</a></li><li><a href="OSDPaperjsAnnotation.Linestring.html">Linestring</a></li><li><a href="OSDPaperjsAnnotation.LinestringTool.html">LinestringTool</a></li><li><a href="OSDPaperjsAnnotation.LinestringTool.LinestringToolbar.html">LinestringToolbar</a></li><li><a href="OSDPaperjsAnnotation.MultiLinestring.html">MultiLinestring</a></li><li><a href="OSDPaperjsAnnotation.MultiPolygon.html">MultiPolygon</a></li><li><a href="OSDPaperjsAnnotation.PaperOverlay.html">PaperOverlay</a></li><li><a href="OSDPaperjsAnnotation.Placeholder.html">Placeholder</a></li><li><a href="OSDPaperjsAnnotation.Point.html">Point</a></li><li><a href="OSDPaperjsAnnotation.PointText.html">PointText</a></li><li><a href="OSDPaperjsAnnotation.PointTextTool.html">PointTextTool</a></li><li><a href="OSDPaperjsAnnotation.PointTextTool.PointTextToolbar.html">PointTextToolbar</a></li><li><a href="OSDPaperjsAnnotation.PointTool.html">PointTool</a></li><li><a href="OSDPaperjsAnnotation.PointTool.PointToolbar.html">PointToolbar</a></li><li><a href="OSDPaperjsAnnotation.PolygonTool.html">PolygonTool</a></li><li><a href="OSDPaperjsAnnotation.PolygonTool.PolygonToolbar.html">PolygonToolbar</a></li><li><a href="OSDPaperjsAnnotation.Raster.html">Raster</a></li><li><a href="OSDPaperjsAnnotation.RasterTool.html">RasterTool</a></li><li><a href="OSDPaperjsAnnotation.RasterTool.RasterToolbar.html">RasterToolbar</a></li><li><a href="OSDPaperjsAnnotation.Rectangle.html">Rectangle</a></li><li><a href="OSDPaperjsAnnotation.RectangleTool.html">RectangleTool</a></li><li><a href="OSDPaperjsAnnotation.RectangleTool_RectToolbar.html">RectToolbar</a></li><li><a href="OSDPaperjsAnnotation.RotationControlOverlay.html">RotationControlOverlay</a></li><li><a href="OSDPaperjsAnnotation.RotationControlTool.html">RotationControlTool</a></li><li><a href="OSDPaperjsAnnotation.RotationControlWidget.html">RotationControlWidget</a></li><li><a href="OSDPaperjsAnnotation.RulerTool.html">RulerTool</a></li><li><a href="OSDPaperjsAnnotation.RulerTool.RulerToolbar.html">RulerToolbar</a></li><li><a href="OSDPaperjsAnnotation.StyleTool.html">StyleTool</a></li><li><a href="OSDPaperjsAnnotation.StyleTool.StyleToolbar.html">StyleToolbar</a></li><li><a href="OSDPaperjsAnnotation.ToolBase.html">ToolBase</a></li><li><a href="OSDPaperjsAnnotation.TransformTool.html">TransformTool</a></li><li><a href="OSDPaperjsAnnotation.TransformTool.TransformToolbar.html">TransformToolbar</a></li><li><a href="OSDPaperjsAnnotation.WandTool.html">WandTool</a></li><li><a href="OSDPaperjsAnnotation.WandTool.WandToolbar.html">WandToolbar</a></li><li><a href="OSDPaperjsAnnotation.exports.ConfigurationWidget.html">exports.ConfigurationWidget</a></li><li><a href="OSDPaperjsAnnotation.exports.ViewerOverlayBase.html">exports.ViewerOverlayBase</a></li><li><a href="RulerMeasurement.html">RulerMeasurement</a></li><li><a href="ScreenshotOverlay.html">ScreenshotOverlay</a></li><li><a href="ScreenshotTool.html">ScreenshotTool</a></li><li><a href="SelectTool.html">SelectTool</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ANNOTATION_TOOLBAR_PERSIST_ID_FILE">ANNOTATION_TOOLBAR_PERSIST_ID_FILE</a></li><li><a href="global.html#ANNOTATION_TOOLBAR_PERSIST_ID_PENCIL">ANNOTATION_TOOLBAR_PERSIST_ID_PENCIL</a></li><li><a href="global.html#COMPOUND_PATH_CONTRACT_MESSAGE">COMPOUND_PATH_CONTRACT_MESSAGE</a></li><li><a href="global.html#CONFIG_TOOLBAR_PERSIST_VERSION">CONFIG_TOOLBAR_PERSIST_VERSION</a></li><li><a href="global.html#FOV_DROP_UNDER_STROKE">FOV_DROP_UNDER_STROKE</a></li><li><a href="global.html#FOV_HIT_FILL_ALPHA">FOV_HIT_FILL_ALPHA</a></li><li><a href="global.html#FOV_PREVIEW_OVER_STROKE">FOV_PREVIEW_OVER_STROKE</a></li><li><a href="global.html#FOV_PREVIEW_UNDER_STROKE">FOV_PREVIEW_UNDER_STROKE</a></li><li><a href="global.html#_makeOverlayStyleRow">_makeOverlayStyleRow</a></li><li><a href="global.html#_paper">_paper</a></li><li><a href="global.html#adaptiveOffsetCurve">adaptiveOffsetCurve</a></li><li><a href="global.html#annotationToolPrimaryButtonActiveDrag">annotationToolPrimaryButtonActiveDrag</a></li><li><a href="global.html#annotationToolPrimaryButtonDownOrUp">annotationToolPrimaryButtonDownOrUp</a></li><li><a href="global.html#areaMm2FromDiameterPhysical">areaMm2FromDiameterPhysical</a></li><li><a href="global.html#attachAnnotationToolkitConfigurationWidget">attachAnnotationToolkitConfigurationWidget</a></li><li><a href="global.html#buildDownsampleOptions">buildDownsampleOptions</a></li><li><a href="global.html#buildScreenshotDialogCSS">buildScreenshotDialogCSS</a></li><li><a href="global.html#buildScreenshotDialogHTML">buildScreenshotDialogHTML</a></li><li><a href="global.html#buildSegmentGroupFromPath">buildSegmentGroupFromPath</a></li><li><a href="global.html#circlePreviewGeometryFromProjectPoint">circlePreviewGeometryFromProjectPoint</a></li><li><a href="global.html#composeScreenshotWithScalebar">composeScreenshotWithScalebar</a></li><li><a href="global.html#computeLabelPlacementCenter">computeLabelPlacementCenter</a></li><li><a href="global.html#computeOutputSize">computeOutputSize</a></li><li><a href="global.html#computeRenderSignature">computeRenderSignature</a></li><li><a href="global.html#connectAdjacentBezier">connectAdjacentBezier</a></li><li><a href="global.html#connectBeziers">connectBeziers</a></li><li><a href="global.html#convertFaIcons">convertFaIcons</a></li><li><a href="global.html#coordinatesMatchGeometryType">coordinatesMatchGeometryType</a></li><li><a href="global.html#createDroppedRingGroup">createDroppedRingGroup</a></li><li><a href="global.html#createPreviewRingGroup">createPreviewRingGroup</a></li><li><a href="global.html#createScreenshotDialogElement">createScreenshotDialogElement</a></li><li><a href="global.html#diameterPhysicalFromAreaMm2">diameterPhysicalFromAreaMm2</a></li><li><a href="global.html#diameterPhysicalToBasePixels">diameterPhysicalToBasePixels</a></li><li><a href="global.html#ensureNamedToolLayer">ensureNamedToolLayer</a></li><li><a href="global.html#evaluatePaperItemShapeContract">evaluatePaperItemShapeContract</a></li><li><a href="global.html#fovGeometryLog">fovGeometryLog</a></li><li><a href="global.html#fovOverlayLog">fovOverlayLog</a></li><li><a href="global.html#getPointLineIntersections">getPointLineIntersections</a></li><li><a href="global.html#iconDefs">iconDefs</a></li><li><a href="global.html#imagePointToProjectPoint">imagePointToProjectPoint</a></li><li><a href="global.html#isLineStringCoordinates">isLineStringCoordinates</a></li><li><a href="global.html#isLinearRing">isLinearRing</a></li><li><a href="global.html#isMultiLineStringCoordinates">isMultiLineStringCoordinates</a></li><li><a href="global.html#isMultiPointCoordinates">isMultiPointCoordinates</a></li><li><a href="global.html#isMultiPolygonCoordinates">isMultiPolygonCoordinates</a></li><li><a href="global.html#isPolygonCoordinates">isPolygonCoordinates</a></li><li><a href="global.html#isPosition">isPosition</a></li><li><a href="global.html#localImportsCompleted">localImportsCompleted</a></li><li><a href="global.html#makeFaIcon">makeFaIcon</a></li><li><a href="global.html#makeRoundJoin">makeRoundJoin</a></li><li><a href="global.html#mppFromTiledImage">mppFromTiledImage</a></li><li><a href="global.html#normalize">normalize</a></li><li><a href="global.html#offsetSegment">offsetSegment</a></li><li><a href="global.html#osd">osd</a></li><li><a href="global.html#projectPointToImagePoint">projectPointToImagePoint</a></li><li><a href="global.html#removeIntersection">removeIntersection</a></li><li><a href="global.html#removeOutsiders">removeOutsiders</a></li><li><a href="global.html#renderBaseScreenshot">renderBaseScreenshot</a></li><li><a href="global.html#styleDroppedOver">styleDroppedOver</a></li><li><a href="global.html#styleDroppedUnder">styleDroppedUnder</a></li><li><a href="global.html#stylePreviewRing">stylePreviewRing</a></li><li><a href="global.html#toolConstructors">toolConstructors</a></li><li><a href="global.html#updateFillOpacity">updateFillOpacity</a></li><li><a href="global.html#updateStrokeOpacity">updateStrokeOpacity</a></li><li><a href="global.html#validateGeoJSONGeometry">validateGeoJSONGeometry</a></li><li><a href="global.html#validatePaperItemShapeContract">validatePaperItemShapeContract</a></li><li><a href="global.html#waitForNextPaintFrames">waitForNextPaintFrames</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.0</a> on Tue May 07 2024 19:46:14 GMT-0400 (Eastern Daylight Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.0</a> on Wed May 13 2026 16:45:59 GMT-0400 (Eastern Daylight Time)
 </footer>
 
 <script> prettyPrint(); </script>

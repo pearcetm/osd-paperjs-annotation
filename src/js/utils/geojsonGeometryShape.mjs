@@ -102,8 +102,8 @@ export function coordinatesMatchGeometryType(type, coordinates) {
 
 /**
  * Structural check only: `coordinates` array depth vs `type`. Skips `GeometryCollection` and missing/empty coordinates.
- * @param {{ type?: string|null, coordinates?: unknown, geometries?: unknown }} geom
- * @returns {{ ok: boolean, message?: string }}
+ * @param {Object} geom - GeoJSON-like object with optional `type`, `coordinates`, `geometries`
+ * @returns {Object} `{ ok: boolean }` and optional `message` (string) when `ok` is false
  */
 export function validateGeoJSONGeometry(geom) {
     if (!geom || geom.type === 'GeometryCollection') return { ok: true };

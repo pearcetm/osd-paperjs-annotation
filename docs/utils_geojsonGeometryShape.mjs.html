@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: utils/geojsonGeometryShape.mjs</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: utils/geojsonGeometryShape.mjs</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * Minimal RFC 7946 coordinate-structure checks for GeoJSON Geometry `coordinates`.
+ * Aligned with RFC 7946 Geometry object `coordinates` definitions.
+ * Validates nesting (Polygon vs MultiPolygon, etc.), not ring orientation, bbox, or right-hand rule.
+ * @see https://datatracker.ietf.org/doc/html/rfc7946#section-3.1
+ */
+
+/**
+ * @param {unknown} pos
+ * @returns {boolean}
+ */
+function isPosition(pos) {
+    if (!Array.isArray(pos) || pos.length &lt; 2) return false;
+    const [x, y, z] = pos;
+    if (typeof x !== 'number' || typeof y !== 'number') return false;
+    if (pos.length === 2) return true;
+    if (pos.length === 3) return typeof z === 'number';
+    return false;
+}
+
+/**
+ * Linear ring: closed loop; RFC requires >= 4 positions.
+ * @param {unknown} ring
+ * @returns {boolean}
+ */
+function isLinearRing(ring) {
+    if (!Array.isArray(ring) || ring.length &lt; 4) return false;
+    return ring.every(isPosition);
+}
+
+/**
+ * @param {unknown} coords
+ * @returns {boolean}
+ */
+function isPolygonCoordinates(coords) {
+    if (!Array.isArray(coords)) return false;
+    return coords.every(isLinearRing);
+}
+
+/**
+ * @param {unknown} coords
+ * @returns {boolean}
+ */
+function isMultiPolygonCoordinates(coords) {
+    if (!Array.isArray(coords)) return false;
+    return coords.every((polygon) => isPolygonCoordinates(polygon));
+}
+
+/**
+ * @param {unknown} coords
+ * @returns {boolean}
+ */
+function isLineStringCoordinates(coords) {
+    if (!Array.isArray(coords) || coords.length &lt; 2) return false;
+    return coords.every(isPosition);
+}
+
+/**
+ * @param {unknown} coords
+ * @returns {boolean}
+ */
+function isMultiLineStringCoordinates(coords) {
+    if (!Array.isArray(coords)) return false;
+    return coords.every((line) => isLineStringCoordinates(line));
+}
+
+/**
+ * @param {unknown} coords
+ * @returns {boolean}
+ */
+function isMultiPointCoordinates(coords) {
+    if (!Array.isArray(coords)) return false;
+    return coords.every(isPosition);
+}
+
+/**
+ * Returns whether `coordinates` matches the RFC 7946 array shape for `type`.
+ * @param {string|null|undefined} type - GeoJSON geometry type
+ * @param {unknown} coordinates
+ * @returns {boolean}
+ */
+export function coordinatesMatchGeometryType(type, coordinates) {
+    if (type == null || type === 'GeometryCollection') return true;
+    const t = String(type);
+    switch (t) {
+        case 'Point':
+            return isPosition(coordinates);
+        case 'MultiPoint':
+            return isMultiPointCoordinates(coordinates);
+        case 'LineString':
+            return isLineStringCoordinates(coordinates);
+        case 'MultiLineString':
+            return isMultiLineStringCoordinates(coordinates);
+        case 'Polygon':
+            return isPolygonCoordinates(coordinates);
+        case 'MultiPolygon':
+            return isMultiPolygonCoordinates(coordinates);
+        default:
+            return true;
+    }
+}
+
+/**
+ * Structural check only: `coordinates` array depth vs `type`. Skips `GeometryCollection` and missing/empty coordinates.
+ * @param {Object} geom - GeoJSON-like object with optional `type`, `coordinates`, `geometries`
+ * @returns {Object} `{ ok: boolean }` and optional `message` (string) when `ok` is false
+ */
+export function validateGeoJSONGeometry(geom) {
+    if (!geom || geom.type === 'GeometryCollection') return { ok: true };
+    const type = geom.type;
+    const coordinates = geom.coordinates;
+    if (type == null) return { ok: true };
+    if (coordinates === undefined || coordinates === null) return { ok: true };
+    if (Array.isArray(coordinates) &amp;&amp; coordinates.length === 0) return { ok: true };
+
+    if (coordinatesMatchGeometryType(type, coordinates)) return { ok: true };
+    return {
+        ok: false,
+        message: `GeoJSON coordinates nesting does not match RFC 7946 for geometry type "${type}".`,
+    };
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="OSDPaperjsAnnotation.html">OSDPaperjsAnnotation</a></li></ul><h3>Classes</h3><ul><li><a href="AnnotationLayout.html">AnnotationLayout</a></li><li><a href="Dialog.html">Dialog</a></li><li><a href="DragAndDrop.html">DragAndDrop</a></li><li><a href="EditableContent.html">EditableContent</a></li><li><a href="FieldOfViewOverlay.html">FieldOfViewOverlay</a></li><li><a href="FieldOfViewTool_FieldOfViewTool.html">FieldOfViewTool</a></li><li><a href="Morph.html">Morph</a></li><li><a href="OSDPaperjsAnnotation.AnnotationItem.html">AnnotationItem</a></li><li><a href="OSDPaperjsAnnotation.AnnotationItemFactory.html">AnnotationItemFactory</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolbar.html">AnnotationToolbar</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolkit.html">AnnotationToolkit</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolset.html">AnnotationToolset</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUI.html">AnnotationUI</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUITool.html">AnnotationUITool</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUITool.AnnotationUIToolbarBase.html">AnnotationUIToolbarBase</a></li><li><a href="OSDPaperjsAnnotation.BrushTool.html">BrushTool</a></li><li><a href="OSDPaperjsAnnotation.BrushTool.BrushToolbar.html">BrushToolbar</a></li><li><a href="OSDPaperjsAnnotation.DefaultTool.html">DefaultTool</a></li><li><a href="OSDPaperjsAnnotation.DefaultTool.DefaultToolbar.html">DefaultToolbar</a></li><li><a href="OSDPaperjsAnnotation.Ellipse.html">Ellipse</a></li><li><a href="OSDPaperjsAnnotation.EllipseTool.html">EllipseTool</a></li><li><a href="OSDPaperjsAnnotation.EllipseTool.EllipseToolbar.html">EllipseToolbar</a></li><li><a href="OSDPaperjsAnnotation.FeatureCollectionUI.html">FeatureCollectionUI</a></li><li><a href="OSDPaperjsAnnotation.FeatureUI.html">FeatureUI</a></li><li><a href="OSDPaperjsAnnotation.FileDialog.html">FileDialog</a></li><li><a href="OSDPaperjsAnnotation.LayerUI.html">LayerUI</a></li><li><a href="OSDPaperjsAnnotation.Linestring.html">Linestring</a></li><li><a href="OSDPaperjsAnnotation.LinestringTool.html">LinestringTool</a></li><li><a href="OSDPaperjsAnnotation.LinestringTool.LinestringToolbar.html">LinestringToolbar</a></li><li><a href="OSDPaperjsAnnotation.MultiLinestring.html">MultiLinestring</a></li><li><a href="OSDPaperjsAnnotation.MultiPolygon.html">MultiPolygon</a></li><li><a href="OSDPaperjsAnnotation.PaperOverlay.html">PaperOverlay</a></li><li><a href="OSDPaperjsAnnotation.Placeholder.html">Placeholder</a></li><li><a href="OSDPaperjsAnnotation.Point.html">Point</a></li><li><a href="OSDPaperjsAnnotation.PointText.html">PointText</a></li><li><a href="OSDPaperjsAnnotation.PointTextTool.html">PointTextTool</a></li><li><a href="OSDPaperjsAnnotation.PointTextTool.PointTextToolbar.html">PointTextToolbar</a></li><li><a href="OSDPaperjsAnnotation.PointTool.html">PointTool</a></li><li><a href="OSDPaperjsAnnotation.PointTool.PointToolbar.html">PointToolbar</a></li><li><a href="OSDPaperjsAnnotation.PolygonTool.html">PolygonTool</a></li><li><a href="OSDPaperjsAnnotation.PolygonTool.PolygonToolbar.html">PolygonToolbar</a></li><li><a href="OSDPaperjsAnnotation.Raster.html">Raster</a></li><li><a href="OSDPaperjsAnnotation.RasterTool.html">RasterTool</a></li><li><a href="OSDPaperjsAnnotation.RasterTool.RasterToolbar.html">RasterToolbar</a></li><li><a href="OSDPaperjsAnnotation.Rectangle.html">Rectangle</a></li><li><a href="OSDPaperjsAnnotation.RectangleTool.html">RectangleTool</a></li><li><a href="OSDPaperjsAnnotation.RectangleTool_RectToolbar.html">RectToolbar</a></li><li><a href="OSDPaperjsAnnotation.RotationControlOverlay.html">RotationControlOverlay</a></li><li><a href="OSDPaperjsAnnotation.RotationControlTool.html">RotationControlTool</a></li><li><a href="OSDPaperjsAnnotation.RotationControlWidget.html">RotationControlWidget</a></li><li><a href="OSDPaperjsAnnotation.RulerTool.html">RulerTool</a></li><li><a href="OSDPaperjsAnnotation.RulerTool.RulerToolbar.html">RulerToolbar</a></li><li><a href="OSDPaperjsAnnotation.StyleTool.html">StyleTool</a></li><li><a href="OSDPaperjsAnnotation.StyleTool.StyleToolbar.html">StyleToolbar</a></li><li><a href="OSDPaperjsAnnotation.ToolBase.html">ToolBase</a></li><li><a href="OSDPaperjsAnnotation.TransformTool.html">TransformTool</a></li><li><a href="OSDPaperjsAnnotation.TransformTool.TransformToolbar.html">TransformToolbar</a></li><li><a href="OSDPaperjsAnnotation.WandTool.html">WandTool</a></li><li><a href="OSDPaperjsAnnotation.WandTool.WandToolbar.html">WandToolbar</a></li><li><a href="OSDPaperjsAnnotation.exports.ConfigurationWidget.html">exports.ConfigurationWidget</a></li><li><a href="OSDPaperjsAnnotation.exports.ViewerOverlayBase.html">exports.ViewerOverlayBase</a></li><li><a href="RulerMeasurement.html">RulerMeasurement</a></li><li><a href="ScreenshotOverlay.html">ScreenshotOverlay</a></li><li><a href="ScreenshotTool.html">ScreenshotTool</a></li><li><a href="SelectTool.html">SelectTool</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ANNOTATION_TOOLBAR_PERSIST_ID_FILE">ANNOTATION_TOOLBAR_PERSIST_ID_FILE</a></li><li><a href="global.html#ANNOTATION_TOOLBAR_PERSIST_ID_PENCIL">ANNOTATION_TOOLBAR_PERSIST_ID_PENCIL</a></li><li><a href="global.html#COMPOUND_PATH_CONTRACT_MESSAGE">COMPOUND_PATH_CONTRACT_MESSAGE</a></li><li><a href="global.html#CONFIG_TOOLBAR_PERSIST_VERSION">CONFIG_TOOLBAR_PERSIST_VERSION</a></li><li><a href="global.html#FOV_DROP_UNDER_STROKE">FOV_DROP_UNDER_STROKE</a></li><li><a href="global.html#FOV_HIT_FILL_ALPHA">FOV_HIT_FILL_ALPHA</a></li><li><a href="global.html#FOV_PREVIEW_OVER_STROKE">FOV_PREVIEW_OVER_STROKE</a></li><li><a href="global.html#FOV_PREVIEW_UNDER_STROKE">FOV_PREVIEW_UNDER_STROKE</a></li><li><a href="global.html#_makeOverlayStyleRow">_makeOverlayStyleRow</a></li><li><a href="global.html#_paper">_paper</a></li><li><a href="global.html#adaptiveOffsetCurve">adaptiveOffsetCurve</a></li><li><a href="global.html#annotationToolPrimaryButtonActiveDrag">annotationToolPrimaryButtonActiveDrag</a></li><li><a href="global.html#annotationToolPrimaryButtonDownOrUp">annotationToolPrimaryButtonDownOrUp</a></li><li><a href="global.html#areaMm2FromDiameterPhysical">areaMm2FromDiameterPhysical</a></li><li><a href="global.html#attachAnnotationToolkitConfigurationWidget">attachAnnotationToolkitConfigurationWidget</a></li><li><a href="global.html#buildDownsampleOptions">buildDownsampleOptions</a></li><li><a href="global.html#buildScreenshotDialogCSS">buildScreenshotDialogCSS</a></li><li><a href="global.html#buildScreenshotDialogHTML">buildScreenshotDialogHTML</a></li><li><a href="global.html#buildSegmentGroupFromPath">buildSegmentGroupFromPath</a></li><li><a href="global.html#circlePreviewGeometryFromProjectPoint">circlePreviewGeometryFromProjectPoint</a></li><li><a href="global.html#composeScreenshotWithScalebar">composeScreenshotWithScalebar</a></li><li><a href="global.html#computeLabelPlacementCenter">computeLabelPlacementCenter</a></li><li><a href="global.html#computeOutputSize">computeOutputSize</a></li><li><a href="global.html#computeRenderSignature">computeRenderSignature</a></li><li><a href="global.html#connectAdjacentBezier">connectAdjacentBezier</a></li><li><a href="global.html#connectBeziers">connectBeziers</a></li><li><a href="global.html#convertFaIcons">convertFaIcons</a></li><li><a href="global.html#coordinatesMatchGeometryType">coordinatesMatchGeometryType</a></li><li><a href="global.html#createDroppedRingGroup">createDroppedRingGroup</a></li><li><a href="global.html#createPreviewRingGroup">createPreviewRingGroup</a></li><li><a href="global.html#createScreenshotDialogElement">createScreenshotDialogElement</a></li><li><a href="global.html#diameterPhysicalFromAreaMm2">diameterPhysicalFromAreaMm2</a></li><li><a href="global.html#diameterPhysicalToBasePixels">diameterPhysicalToBasePixels</a></li><li><a href="global.html#ensureNamedToolLayer">ensureNamedToolLayer</a></li><li><a href="global.html#evaluatePaperItemShapeContract">evaluatePaperItemShapeContract</a></li><li><a href="global.html#fovGeometryLog">fovGeometryLog</a></li><li><a href="global.html#fovOverlayLog">fovOverlayLog</a></li><li><a href="global.html#getPointLineIntersections">getPointLineIntersections</a></li><li><a href="global.html#iconDefs">iconDefs</a></li><li><a href="global.html#imagePointToProjectPoint">imagePointToProjectPoint</a></li><li><a href="global.html#isLineStringCoordinates">isLineStringCoordinates</a></li><li><a href="global.html#isLinearRing">isLinearRing</a></li><li><a href="global.html#isMultiLineStringCoordinates">isMultiLineStringCoordinates</a></li><li><a href="global.html#isMultiPointCoordinates">isMultiPointCoordinates</a></li><li><a href="global.html#isMultiPolygonCoordinates">isMultiPolygonCoordinates</a></li><li><a href="global.html#isPolygonCoordinates">isPolygonCoordinates</a></li><li><a href="global.html#isPosition">isPosition</a></li><li><a href="global.html#localImportsCompleted">localImportsCompleted</a></li><li><a href="global.html#makeFaIcon">makeFaIcon</a></li><li><a href="global.html#makeRoundJoin">makeRoundJoin</a></li><li><a href="global.html#mppFromTiledImage">mppFromTiledImage</a></li><li><a href="global.html#normalize">normalize</a></li><li><a href="global.html#offsetSegment">offsetSegment</a></li><li><a href="global.html#osd">osd</a></li><li><a href="global.html#projectPointToImagePoint">projectPointToImagePoint</a></li><li><a href="global.html#removeIntersection">removeIntersection</a></li><li><a href="global.html#removeOutsiders">removeOutsiders</a></li><li><a href="global.html#renderBaseScreenshot">renderBaseScreenshot</a></li><li><a href="global.html#styleDroppedOver">styleDroppedOver</a></li><li><a href="global.html#styleDroppedUnder">styleDroppedUnder</a></li><li><a href="global.html#stylePreviewRing">stylePreviewRing</a></li><li><a href="global.html#toolConstructors">toolConstructors</a></li><li><a href="global.html#updateFillOpacity">updateFillOpacity</a></li><li><a href="global.html#updateStrokeOpacity">updateStrokeOpacity</a></li><li><a href="global.html#validateGeoJSONGeometry">validateGeoJSONGeometry</a></li><li><a href="global.html#validatePaperItemShapeContract">validatePaperItemShapeContract</a></li><li><a href="global.html#waitForNextPaintFrames">waitForNextPaintFrames</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.0</a> on Wed May 13 2026 16:45:59 GMT-0400 (Eastern Daylight Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

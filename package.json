@@ -1,7 +1,7 @@
 {
   "name": "osd-paperjs-annotation",
   "description": "Annotation tools for OpenSeadragon using PaperJS",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "files": [
     "dist",
     "src/js",

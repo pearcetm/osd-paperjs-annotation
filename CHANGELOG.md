@@ -4,6 +4,17 @@ All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.7.1] - 2026-05-13
+
+### Added
+
+- `src/js/overlays/annotations/`: optional `ConfigurationWidget` integration for `AnnotationToolkit` (`attachAnnotationToolkitConfigurationWidget`, `AnnotationToolkit#registerWithConfigurationWidget`); documented in that folder's `README.md`. Also exported on `OSDPaperjsAnnotation`.
+- Added support for saving user choices for configuration locally via localstorage.
+
+### Changed
+
+- Field of view overlay: viewer and configuration UI icon updated from binoculars to microscope (`fa-microscope`)
+
 ## [0.7.0] - 2026-05-12
 
 ### Added

@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: overlays/fieldofview/fieldofview-tool.mjs</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: overlays/fieldofview/fieldofview-tool.mjs</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * Field of view placement tool: preview on toolLayer, commits circles on the tiled image Paper layer.
+ */
+
+import { ToolBase } from '../../papertools/base.mjs';
+import {
+    annotationToolPrimaryButtonActiveDrag,
+    annotationToolPrimaryButtonDownOrUp,
+} from '../../papertools/annotationUITool.mjs';
+import { paper } from '../../paperjs.mjs';
+import { circlePreviewGeometryFromProjectPoint, projectPointToImagePoint } from './fieldofview-geometry.mjs';
+
+/** White halo stroke (px, logical; no rescale on toolLayer preview). */
+const FOV_PREVIEW_UNDER_STROKE = 4;
+/** Black dashed stroke on top of halo (px). */
+const FOV_PREVIEW_OVER_STROKE = 2;
+const FOV_DASH_ARRAY = [6, 4];
+
+/** Dropped ring: same visual weights, in image space with rescale (see applyRescale). */
+const FOV_DROP_UNDER_STROKE = 3;
+const FOV_DROP_OVER_STROKE = 1.5;
+
+/**
+ * Nearly invisible fill so hitTest / selection see the disk interior (Paper.js null fill skips fill hits).
+ * @see https://github.com/paperjs/paper.js/issues — stroke-only circles are hard to pick
+ */
+const FOV_HIT_FILL_ALPHA = 0.0001;
+
+/**
+ * @param {paper.Group} group
+ * @param {paper.Shape.Circle} under
+ * @param {paper.Shape.Circle} over
+ */
+function stylePreviewRing(group, under, over) {
+    under.strokeColor = new paper.Color(1, 1, 1);
+    under.strokeWidth = FOV_PREVIEW_UNDER_STROKE;
+    under.fillColor = null;
+    under.rescale = { strokeWidth: FOV_PREVIEW_UNDER_STROKE };
+
+    over.strokeColor = new paper.Color(0, 0, 0);
+    over.strokeWidth = FOV_PREVIEW_OVER_STROKE;
+    over.dashArray = FOV_DASH_ARRAY.slice();
+    over.fillColor = null;
+    over.rescale = { strokeWidth: FOV_PREVIEW_OVER_STROKE, dashArray: FOV_DASH_ARRAY.slice() };
+
+    group.applyMatrix = false;
+}
+
+/**
+ * @param {paper.Path.Circle} under
+ */
+function styleDroppedUnder(under) {
+    under.strokeColor = new paper.Color(1, 1, 1);
+    under.strokeWidth = FOV_DROP_UNDER_STROKE;
+    under.fillColor = new paper.Color(1, 1, 1, FOV_HIT_FILL_ALPHA);
+    under.rescale = { strokeWidth: FOV_DROP_UNDER_STROKE };
+}
+
+/**
+ * @param {paper.Path.Circle} over
+ */
+function styleDroppedOver(over) {
+    over.strokeColor = new paper.Color(0, 0, 0);
+    over.strokeWidth = FOV_DROP_OVER_STROKE;
+    over.fillColor = null;
+    over.rescale = {
+        strokeWidth: FOV_DROP_OVER_STROKE
+    };
+}
+
+/**
+ * @returns {{ group: paper.Group, under: paper.Shape.Circle, over: paper.Shape.Circle }}
+ */
+function createPreviewRingGroup() {
+    const group = new paper.Group();
+    group.name = 'fovPreviewRing';
+    const under = new paper.Shape.Circle(new paper.Point(0, 0), 1);
+    const over = new paper.Shape.Circle(new paper.Point(0, 0), 1);
+    group.addChild(under);
+    group.addChild(over);
+    stylePreviewRing(group, under, over);
+    return { group, under, over };
+}
+
+/**
+ * @param {number} radiusImg
+ * @returns {{ group: paper.Group, under: paper.Path.Circle, over: paper.Path.Circle }}
+ */
+function createDroppedRingGroup(radiusImg) {
+    const group = new paper.Group();
+    group.name = 'fovDroppedRing';
+    group.applyMatrix = false;
+    const under = new paper.Path.Circle({
+        center: new paper.Point(0, 0),
+        radius: radiusImg,
+    });
+    const over = new paper.Path.Circle({
+        center: new paper.Point(0, 0),
+        radius: radiusImg,
+    });
+    group.addChild(under);
+    group.addChild(over);
+    styleDroppedUnder(under);
+    styleDroppedOver(over);
+    return { group, under, over };
+}
+
+export class FieldOfViewTool extends ToolBase {
+    /**
+     * @param {paper.PaperScope} paperScope
+     * @param {*} fovOverlay - FieldOfViewOverlay instance (`viewer`, `getDropTargetLayer`, `buildDropItemData`)
+     */
+    constructor(paperScope, fovOverlay) {
+        super(paperScope);
+        /** Same object as ToolBase `this.project.paperScope`; local shorthand (same pattern as wand tool). */
+        this.paperScope = this.project.paperScope;
+        this._fov = fovOverlay;
+        this._mode = 'idle';
+        this._diameterPx = null;
+        /** @type {{ ring: paper.Item, offsetImg: paper.Point } | null} */
+        this._editDrag = null;
+
+        const preview = createPreviewRingGroup();
+        this._previewGroup = preview.group;
+        this._previewUnder = preview.under;
+        this._previewOver = preview.over;
+        this._previewGroup.visible = false;
+        this.project.toolLayer.addChild(this._previewGroup);
+        this._debugLastMoveLog = 0;
+
+        this.tool.extensions.onKeyDown = (ev) => {
+            if (ev.key === 'escape') {
+                fovOverlay.deactivate();
+            }
+        };
+        this.extensions.onActivate = () => {
+            this._active = true;
+            this._syncPreviewVisibility();
+        };
+        this.extensions.onDeactivate = () => {
+            this._active = false;
+            this._previewGroup.visible = false;
+            this._clearFovEditInteractionState();
+        };
+    }
+
+    /**
+     * Clears edit drag + canvas cursor classes (e.g. compact “+” returns to full config while overlay stays active).
+     */
+    clearEditUiState() {
+        this._clearFovEditInteractionState();
+    }
+
+    setMode(mode) {
+        const next = mode || 'idle';
+        if (this._mode === 'editing' &amp;&amp; next !== 'editing') {
+            this._clearFovEditInteractionState();
+        }
+        this._mode = next;
+        this._syncPreviewVisibility();
+    }
+
+    setDiameterPixels(diameterPx) {
+        const n = Number(diameterPx);
+        this._diameterPx = Number.isFinite(n) &amp;&amp; n > 0 ? n : null;
+        this._syncPreviewVisibility();
+    }
+
+    _clearFovEditInteractionState() {
+        this._editDrag = null;
+        const ol = this.project?.overlay;
+        if (ol?.removeClass) {
+            ol.removeClass('fov-edit-hover', 'fov-edit-grabbing');
+        }
+    }
+
+    _syncEditHover(projectPoint) {
+        const ol = this.project.overlay;
+        if (!ol?.addClass) return;
+        const ring = this._fov.hitTestFovRingAtProjectPoint(projectPoint);
+        if (ring) {
+            ol.addClass('fov-edit-hover');
+        } else {
+            ol.removeClass('fov-edit-hover');
+        }
+    }
+
+    _moveRingToProjectPoint(ring, projectPoint) {
+        if (!ring || !projectPoint) return;
+        const dPx = Number(ring.data?.diameterPx);
+        if (!Number.isFinite(dPx) || dPx &lt;= 0) return;
+        const centerImg = projectPointToImagePoint(this._fov.viewer, this.paperScope, projectPoint);
+        if (
+            !Number.isFinite(centerImg.x) ||
+            !Number.isFinite(centerImg.y) ||
+            Number.isNaN(centerImg.x) ||
+            Number.isNaN(centerImg.y)
+        ) {
+            return;
+        }
+        ring.position = new paper.Point(centerImg.x, centerImg.y);
+        ring.data = this._fov.buildDropItemData(centerImg, dPx);
+    }
+
+    onMouseDown(ev) {
+        if (this._mode !== 'editing') return;
+        if (!annotationToolPrimaryButtonDownOrUp(ev)) return;
+        const ring = this._fov.hitTestFovRingAtProjectPoint(ev.point);
+        if (!ring) return;
+        const downImg = projectPointToImagePoint(this._fov.viewer, this.paperScope, ev.point);
+        if (
+            !Number.isFinite(downImg.x) ||
+            !Number.isFinite(downImg.y) ||
+            Number.isNaN(downImg.x) ||
+            Number.isNaN(downImg.y)
+        ) {
+            return;
+        }
+        // Preserve initial cursor-to-center offset (in image space) so the ring does not jump on drag.
+        const offsetImg = ring.position.subtract(new paper.Point(downImg.x, downImg.y));
+        this._editDrag = { ring, offsetImg };
+        const ol = this.project.overlay;
+        ol.removeClass('fov-edit-hover');
+        ol.addClass('fov-edit-grabbing');
+    }
+
+    onMouseMove(ev) {
+        if (this._mode === 'placing') {
+            this._updatePreviewAt(ev.point);
+            return;
+        }
+        if (this._mode !== 'editing') {
+            this.project.overlay.removeClass('fov-edit-hover');
+            return;
+        }
+        if (!this._editDrag) {
+            this._syncEditHover(ev.point);
+        }
+    }
+
+    onMouseDrag(ev) {
+        if (this._mode !== 'editing') return;
+        if (!annotationToolPrimaryButtonActiveDrag(ev)) return;
+        const drag = this._editDrag;
+        if (!drag?.ring) return;
+
+        const dPx = Number(drag.ring.data?.diameterPx);
+        if (!Number.isFinite(dPx) || dPx &lt;= 0) return;
+
+        const curImg = projectPointToImagePoint(this._fov.viewer, this.paperScope, ev.point);
+        if (
+            !Number.isFinite(curImg.x) ||
+            !Number.isFinite(curImg.y) ||
+            Number.isNaN(curImg.x) ||
+            Number.isNaN(curImg.y)
+        ) {
+            return;
+        }
+
+        const center = new paper.Point(curImg.x, curImg.y).add(drag.offsetImg);
+        drag.ring.position = center;
+        drag.ring.data = this._fov.buildDropItemData({ x: center.x, y: center.y }, dPx);
+    }
+
+    onMouseUp(ev) {
+        if (this._mode === 'placing') {
+            if (!annotationToolPrimaryButtonDownOrUp(ev)) return;
+            this._dropAt(ev.point);
+            return;
+        }
+        if (this._mode === 'editing' &amp;&amp; this._editDrag &amp;&amp; annotationToolPrimaryButtonDownOrUp(ev)) {
+            this._editDrag = null;
+            this.project.overlay.removeClass('fov-edit-grabbing');
+            this._syncEditHover(ev.point);
+        }
+    }
+
+    _syncPreviewVisibility() {
+        if (!this._active) {
+            return;
+        }
+        const show = this._mode === 'placing' &amp;&amp; this._diameterPx != null;
+        this._previewGroup.visible = Boolean(show);
+    }
+
+    _updatePreviewAt(projectPoint) {
+        const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+        const throttleMs = 300;
+        const doLog = now - (this._debugLastMoveLog || 0) > throttleMs;
+        if (doLog) this._debugLastMoveLog = now;
+
+        if (!projectPoint || this._diameterPx == null) {
+            return;
+        }
+        const g = circlePreviewGeometryFromProjectPoint(
+            this._fov.viewer,
+            this.paperScope,
+            projectPoint,
+            this._diameterPx,
+        );
+        if (!g) {
+            return;
+        }
+        const r = Math.max(0.5, g.radiusProj);
+        this._previewGroup.position = g.centerProj;
+        this._previewUnder.radius = r;
+        this._previewOver.radius = r;
+        this._previewGroup.visible = true;
+    }
+
+    _dropAt(projectPoint) {
+        if (this._diameterPx == null) {
+            return;
+        }
+        const layer = this._fov.getDropTargetLayer();
+        if (!layer) {
+            return;
+        }
+        const g = circlePreviewGeometryFromProjectPoint(
+            this._fov.viewer,
+            this.paperScope,
+            projectPoint,
+            this._diameterPx,
+        );
+        if (!g) {
+            return;
+        }
+
+        const radiusImg = this._diameterPx / 2;
+        const { group: ring, under, over } = createDroppedRingGroup(radiusImg);
+        ring.position = new paper.Point(g.centerImg.x, g.centerImg.y);
+        ring.data = this._fov.buildDropItemData(g.centerImg, this._diameterPx);
+        layer.addChild(ring);
+        under.applyRescale();
+        over.applyRescale();
+        this._fov.notifyFovRingGeometryChanged?.();
+    }
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="OSDPaperjsAnnotation.html">OSDPaperjsAnnotation</a></li></ul><h3>Classes</h3><ul><li><a href="AnnotationLayout.html">AnnotationLayout</a></li><li><a href="Dialog.html">Dialog</a></li><li><a href="DragAndDrop.html">DragAndDrop</a></li><li><a href="EditableContent.html">EditableContent</a></li><li><a href="FieldOfViewOverlay.html">FieldOfViewOverlay</a></li><li><a href="FieldOfViewTool_FieldOfViewTool.html">FieldOfViewTool</a></li><li><a href="Morph.html">Morph</a></li><li><a href="OSDPaperjsAnnotation.AnnotationItem.html">AnnotationItem</a></li><li><a href="OSDPaperjsAnnotation.AnnotationItemFactory.html">AnnotationItemFactory</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolbar.html">AnnotationToolbar</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolkit.html">AnnotationToolkit</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolset.html">AnnotationToolset</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUI.html">AnnotationUI</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUITool.html">AnnotationUITool</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUITool.AnnotationUIToolbarBase.html">AnnotationUIToolbarBase</a></li><li><a href="OSDPaperjsAnnotation.BrushTool.html">BrushTool</a></li><li><a href="OSDPaperjsAnnotation.BrushTool.BrushToolbar.html">BrushToolbar</a></li><li><a href="OSDPaperjsAnnotation.DefaultTool.html">DefaultTool</a></li><li><a href="OSDPaperjsAnnotation.DefaultTool.DefaultToolbar.html">DefaultToolbar</a></li><li><a href="OSDPaperjsAnnotation.Ellipse.html">Ellipse</a></li><li><a href="OSDPaperjsAnnotation.EllipseTool.html">EllipseTool</a></li><li><a href="OSDPaperjsAnnotation.EllipseTool.EllipseToolbar.html">EllipseToolbar</a></li><li><a href="OSDPaperjsAnnotation.FeatureCollectionUI.html">FeatureCollectionUI</a></li><li><a href="OSDPaperjsAnnotation.FeatureUI.html">FeatureUI</a></li><li><a href="OSDPaperjsAnnotation.FileDialog.html">FileDialog</a></li><li><a href="OSDPaperjsAnnotation.LayerUI.html">LayerUI</a></li><li><a href="OSDPaperjsAnnotation.Linestring.html">Linestring</a></li><li><a href="OSDPaperjsAnnotation.LinestringTool.html">LinestringTool</a></li><li><a href="OSDPaperjsAnnotation.LinestringTool.LinestringToolbar.html">LinestringToolbar</a></li><li><a href="OSDPaperjsAnnotation.MultiLinestring.html">MultiLinestring</a></li><li><a href="OSDPaperjsAnnotation.MultiPolygon.html">MultiPolygon</a></li><li><a href="OSDPaperjsAnnotation.PaperOverlay.html">PaperOverlay</a></li><li><a href="OSDPaperjsAnnotation.Placeholder.html">Placeholder</a></li><li><a href="OSDPaperjsAnnotation.Point.html">Point</a></li><li><a href="OSDPaperjsAnnotation.PointText.html">PointText</a></li><li><a href="OSDPaperjsAnnotation.PointTextTool.html">PointTextTool</a></li><li><a href="OSDPaperjsAnnotation.PointTextTool.PointTextToolbar.html">PointTextToolbar</a></li><li><a href="OSDPaperjsAnnotation.PointTool.html">PointTool</a></li><li><a href="OSDPaperjsAnnotation.PointTool.PointToolbar.html">PointToolbar</a></li><li><a href="OSDPaperjsAnnotation.PolygonTool.html">PolygonTool</a></li><li><a href="OSDPaperjsAnnotation.PolygonTool.PolygonToolbar.html">PolygonToolbar</a></li><li><a href="OSDPaperjsAnnotation.Raster.html">Raster</a></li><li><a href="OSDPaperjsAnnotation.RasterTool.html">RasterTool</a></li><li><a href="OSDPaperjsAnnotation.RasterTool.RasterToolbar.html">RasterToolbar</a></li><li><a href="OSDPaperjsAnnotation.Rectangle.html">Rectangle</a></li><li><a href="OSDPaperjsAnnotation.RectangleTool.html">RectangleTool</a></li><li><a href="OSDPaperjsAnnotation.RectangleTool_RectToolbar.html">RectToolbar</a></li><li><a href="OSDPaperjsAnnotation.RotationControlOverlay.html">RotationControlOverlay</a></li><li><a href="OSDPaperjsAnnotation.RotationControlTool.html">RotationControlTool</a></li><li><a href="OSDPaperjsAnnotation.RotationControlWidget.html">RotationControlWidget</a></li><li><a href="OSDPaperjsAnnotation.RulerTool.html">RulerTool</a></li><li><a href="OSDPaperjsAnnotation.RulerTool.RulerToolbar.html">RulerToolbar</a></li><li><a href="OSDPaperjsAnnotation.StyleTool.html">StyleTool</a></li><li><a href="OSDPaperjsAnnotation.StyleTool.StyleToolbar.html">StyleToolbar</a></li><li><a href="OSDPaperjsAnnotation.ToolBase.html">ToolBase</a></li><li><a href="OSDPaperjsAnnotation.TransformTool.html">TransformTool</a></li><li><a href="OSDPaperjsAnnotation.TransformTool.TransformToolbar.html">TransformToolbar</a></li><li><a href="OSDPaperjsAnnotation.WandTool.html">WandTool</a></li><li><a href="OSDPaperjsAnnotation.WandTool.WandToolbar.html">WandToolbar</a></li><li><a href="OSDPaperjsAnnotation.exports.ConfigurationWidget.html">exports.ConfigurationWidget</a></li><li><a href="OSDPaperjsAnnotation.exports.ViewerOverlayBase.html">exports.ViewerOverlayBase</a></li><li><a href="RulerMeasurement.html">RulerMeasurement</a></li><li><a href="ScreenshotOverlay.html">ScreenshotOverlay</a></li><li><a href="ScreenshotTool.html">ScreenshotTool</a></li><li><a href="SelectTool.html">SelectTool</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ANNOTATION_TOOLBAR_PERSIST_ID_FILE">ANNOTATION_TOOLBAR_PERSIST_ID_FILE</a></li><li><a href="global.html#ANNOTATION_TOOLBAR_PERSIST_ID_PENCIL">ANNOTATION_TOOLBAR_PERSIST_ID_PENCIL</a></li><li><a href="global.html#COMPOUND_PATH_CONTRACT_MESSAGE">COMPOUND_PATH_CONTRACT_MESSAGE</a></li><li><a href="global.html#CONFIG_TOOLBAR_PERSIST_VERSION">CONFIG_TOOLBAR_PERSIST_VERSION</a></li><li><a href="global.html#FOV_DROP_UNDER_STROKE">FOV_DROP_UNDER_STROKE</a></li><li><a href="global.html#FOV_HIT_FILL_ALPHA">FOV_HIT_FILL_ALPHA</a></li><li><a href="global.html#FOV_PREVIEW_OVER_STROKE">FOV_PREVIEW_OVER_STROKE</a></li><li><a href="global.html#FOV_PREVIEW_UNDER_STROKE">FOV_PREVIEW_UNDER_STROKE</a></li><li><a href="global.html#_makeOverlayStyleRow">_makeOverlayStyleRow</a></li><li><a href="global.html#_paper">_paper</a></li><li><a href="global.html#adaptiveOffsetCurve">adaptiveOffsetCurve</a></li><li><a href="global.html#annotationToolPrimaryButtonActiveDrag">annotationToolPrimaryButtonActiveDrag</a></li><li><a href="global.html#annotationToolPrimaryButtonDownOrUp">annotationToolPrimaryButtonDownOrUp</a></li><li><a href="global.html#areaMm2FromDiameterPhysical">areaMm2FromDiameterPhysical</a></li><li><a href="global.html#attachAnnotationToolkitConfigurationWidget">attachAnnotationToolkitConfigurationWidget</a></li><li><a href="global.html#buildDownsampleOptions">buildDownsampleOptions</a></li><li><a href="global.html#buildScreenshotDialogCSS">buildScreenshotDialogCSS</a></li><li><a href="global.html#buildScreenshotDialogHTML">buildScreenshotDialogHTML</a></li><li><a href="global.html#buildSegmentGroupFromPath">buildSegmentGroupFromPath</a></li><li><a href="global.html#circlePreviewGeometryFromProjectPoint">circlePreviewGeometryFromProjectPoint</a></li><li><a href="global.html#composeScreenshotWithScalebar">composeScreenshotWithScalebar</a></li><li><a href="global.html#computeLabelPlacementCenter">computeLabelPlacementCenter</a></li><li><a href="global.html#computeOutputSize">computeOutputSize</a></li><li><a href="global.html#computeRenderSignature">computeRenderSignature</a></li><li><a href="global.html#connectAdjacentBezier">connectAdjacentBezier</a></li><li><a href="global.html#connectBeziers">connectBeziers</a></li><li><a href="global.html#convertFaIcons">convertFaIcons</a></li><li><a href="global.html#coordinatesMatchGeometryType">coordinatesMatchGeometryType</a></li><li><a href="global.html#createDroppedRingGroup">createDroppedRingGroup</a></li><li><a href="global.html#createPreviewRingGroup">createPreviewRingGroup</a></li><li><a href="global.html#createScreenshotDialogElement">createScreenshotDialogElement</a></li><li><a href="global.html#diameterPhysicalFromAreaMm2">diameterPhysicalFromAreaMm2</a></li><li><a href="global.html#diameterPhysicalToBasePixels">diameterPhysicalToBasePixels</a></li><li><a href="global.html#ensureNamedToolLayer">ensureNamedToolLayer</a></li><li><a href="global.html#evaluatePaperItemShapeContract">evaluatePaperItemShapeContract</a></li><li><a href="global.html#fovGeometryLog">fovGeometryLog</a></li><li><a href="global.html#fovOverlayLog">fovOverlayLog</a></li><li><a href="global.html#getPointLineIntersections">getPointLineIntersections</a></li><li><a href="global.html#iconDefs">iconDefs</a></li><li><a href="global.html#imagePointToProjectPoint">imagePointToProjectPoint</a></li><li><a href="global.html#isLineStringCoordinates">isLineStringCoordinates</a></li><li><a href="global.html#isLinearRing">isLinearRing</a></li><li><a href="global.html#isMultiLineStringCoordinates">isMultiLineStringCoordinates</a></li><li><a href="global.html#isMultiPointCoordinates">isMultiPointCoordinates</a></li><li><a href="global.html#isMultiPolygonCoordinates">isMultiPolygonCoordinates</a></li><li><a href="global.html#isPolygonCoordinates">isPolygonCoordinates</a></li><li><a href="global.html#isPosition">isPosition</a></li><li><a href="global.html#localImportsCompleted">localImportsCompleted</a></li><li><a href="global.html#makeFaIcon">makeFaIcon</a></li><li><a href="global.html#makeRoundJoin">makeRoundJoin</a></li><li><a href="global.html#mppFromTiledImage">mppFromTiledImage</a></li><li><a href="global.html#normalize">normalize</a></li><li><a href="global.html#offsetSegment">offsetSegment</a></li><li><a href="global.html#osd">osd</a></li><li><a href="global.html#projectPointToImagePoint">projectPointToImagePoint</a></li><li><a href="global.html#removeIntersection">removeIntersection</a></li><li><a href="global.html#removeOutsiders">removeOutsiders</a></li><li><a href="global.html#renderBaseScreenshot">renderBaseScreenshot</a></li><li><a href="global.html#styleDroppedOver">styleDroppedOver</a></li><li><a href="global.html#styleDroppedUnder">styleDroppedUnder</a></li><li><a href="global.html#stylePreviewRing">stylePreviewRing</a></li><li><a href="global.html#toolConstructors">toolConstructors</a></li><li><a href="global.html#updateFillOpacity">updateFillOpacity</a></li><li><a href="global.html#updateStrokeOpacity">updateStrokeOpacity</a></li><li><a href="global.html#validateGeoJSONGeometry">validateGeoJSONGeometry</a></li><li><a href="global.html#validatePaperItemShapeContract">validatePaperItemShapeContract</a></li><li><a href="global.html#waitForNextPaintFrames">waitForNextPaintFrames</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.0</a> on Wed May 13 2026 16:45:59 GMT-0400 (Eastern Daylight Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

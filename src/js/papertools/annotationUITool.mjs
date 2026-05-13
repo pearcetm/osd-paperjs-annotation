@@ -1,6 +1,6 @@
 /**
  * OpenSeadragon paperjs overlay plugin based on paper.js
- * @version 0.7.0
+ * @version 0.7.1
  * 
  * Includes additional open source libraries which are subject to copyright notices
  * as indicated accompanying those segments of code.
@@ -44,7 +44,7 @@ import { SimplifyJS } from '../utils/simplify.mjs';
  * Paper.js tool/mouse events expose the native DOM event as `event`.
  * Use for gating so only the primary button drives annotation tools (right/middle clicks do not draw).
  *
- * @param {{ event?: MouseEvent }} ev - Paper ToolEvent or compatible.
+ * @param {Object} ev - Paper ToolEvent or compatible; may include `event` (MouseEvent).
  * @returns {boolean} True if this is a primary-button mousedown or mouseup (`button === 0`).
  */
 export function annotationToolPrimaryButtonDownOrUp(ev) {
@@ -53,7 +53,7 @@ export function annotationToolPrimaryButtonDownOrUp(ev) {
 }
 
 /**
- * @param {{ event?: MouseEvent }} ev
+ * @param {Object} ev - Paper ToolEvent or compatible; may include `event` (MouseEvent).
  * @returns {boolean} True while the primary mouse button is still held during move/drag (`buttons & 1`).
  */
 export function annotationToolPrimaryButtonActiveDrag(ev) {

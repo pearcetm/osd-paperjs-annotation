@@ -1,6 +1,6 @@
 /**
  * OpenSeadragon paperjs overlay plugin based on paper.js
- * @version 0.7.0
+ * @version 0.7.1
  * 
  * Includes additional open source libraries which are subject to copyright notices
  * as indicated accompanying those segments of code.
@@ -122,6 +122,39 @@ class AnnotationUI {
     if (opts.featureCollections) {
       annotationToolkit.loadGeoJSON(opts.featureCollections);
     }
+  }
+
+  /**
+   * Viewer toolbar buttons managed by this UI (for host integrations such as ConfigurationWidget addSection).
+   * @returns {{ pencil: Object|null, file: Object|null }} OpenSeadragon button objects with `.element`, or null entries when not created.
+   */
+  getViewerToolbarButtons() {
+    return {
+      pencil: this._layout?.getPencilViewerButton?.() ?? null,
+      file: this._filebutton,
+    };
+  }
+
+  /**
+   * Same as clicking the pencil button: toggles toolbar/layer visibility per constructor options.
+   */
+  toggleAnnotationPanels() {
+    this._layout?.togglePanelsFromButton?.();
+  }
+
+  /**
+   * Whether annotation panels are open (pencil toggle state).
+   * @returns {boolean}
+   */
+  areAnnotationPanelsVisible() {
+    return this._layout?.arePanelsVisible?.() ?? false;
+  }
+
+  /**
+   * Opens the save/load file dialog (no-op if addFileButton was false).
+   */
+  openFileDialog() {
+    this._fileDialog?.show?.();
   }
 
   /**

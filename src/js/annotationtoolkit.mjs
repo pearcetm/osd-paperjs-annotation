@@ -1,6 +1,6 @@
 /**
  * OpenSeadragon annotation plugin based on paper.js
- * @version 0.7.0
+ * @version 0.7.1
  * 
  * Includes additional open source libraries which are subject to copyright notices
  * as indicated accompanying those segments of code.
@@ -44,6 +44,7 @@ import { AnnotationToolset } from './annotationtoolset.mjs';
 import { AnnotationToolbar } from './annotationtoolbar.mjs';
 import { LayerUI } from './layerui.mjs';
 import { AnnotationLayout } from './annotationlayout.mjs';
+import { attachAnnotationToolkitConfigurationWidget } from './overlays/annotations/index.mjs';
 import { PaperOverlay } from './paper-overlay.mjs';
 import { AnnotationItemFactory } from './paperitems/annotationitem.mjs';
 import { MultiPolygon } from './paperitems/multipolygon.mjs';
@@ -240,7 +241,7 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
      * @param {string} name - event name (kebab-case)
      * @param {Object} payload - event payload (will be shallow-cloned and enriched)
      * @param {Object} [ctx]
-     * @param {import('./papertools/base.mjs').ToolBase} [ctx.tool] - tool instance associated with the event
+     * @param {OSDPaperjsAnnotation.ToolBase} [ctx.tool] - tool instance associated with the event
      */
     _emitIntegrationEvent(name, payload = {}, ctx = {}) {
         const tool = ctx && ctx.tool ? ctx.tool : null;
@@ -453,6 +454,35 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
     }
 
     /**
+     * Opt in to a {@link ConfigurationWidget} by adding an "Annotations" custom section (generic addSection only).
+     * The toolkit owns the section DOM (toolbar visibility toggles for the pencil and save/load buttons when present).
+     * Requires `addAnnotationUI()` first. Idempotent when called again with the same widget. Unregisters automatically on `destroy()`.
+     *
+     * @param {OSDPaperjsAnnotation.ConfigurationWidget} configurationWidget
+     */
+    registerWithConfigurationWidget(configurationWidget) {
+        if (this._annotationConfigSectionEl?.isConnected && this._annotationConfigSectionWidget === configurationWidget) {
+            return;
+        }
+        this._unregisterConfigurationWidgetSection();
+        const root = attachAnnotationToolkitConfigurationWidget(this, configurationWidget);
+        if (root) {
+            this._annotationConfigSectionEl = root;
+            this._annotationConfigSectionWidget = configurationWidget;
+        }
+    }
+
+    _unregisterConfigurationWidgetSection() {
+        const el = this._annotationConfigSectionEl;
+        const w = this._annotationConfigSectionWidget;
+        this._annotationConfigSectionEl = null;
+        this._annotationConfigSectionWidget = null;
+        if (el && w && typeof w.removeSection === 'function') {
+            w.removeSection(el);
+        }
+    }
+
+    /**
      * Add a set of tools without the full UI (toolbar). Use when addUI is false.
      * Creates a toolset (tool layer + tool instances) so getTool(name) and activation work.
      * @param {string[]} [toolNames] - Array of tool names (e.g. ['default', 'ruler']). Default tool is always included.
@@ -463,7 +493,7 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
     /**
      * Get a tool instance by name (e.g. 'ruler', 'default'). Works with full UI or headless addTools().
      * @param {string} name - Tool name.
-     * @returns {import('./papertools/base.mjs').ToolBase|null}
+     * @returns {OSDPaperjsAnnotation.ToolBase|null}
      */
     getTool(name) {
         return this._toolset ? this._toolset.getTool(name) : null;
@@ -475,6 +505,8 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
         this.raiseEvent('before-destroy');
         let tool=this.paperScope && this.paperScope.getActiveTool();
         if(tool) tool.deactivate(true);
+
+        this._unregisterConfigurationWidgetSection();
 
         this.viewer.annotationToolkit = null;
         if (this._annotationLayout) {

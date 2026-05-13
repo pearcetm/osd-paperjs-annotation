@@ -1,6 +1,6 @@
 /**
  * OpenSeadragon paperjs overlay plugin based on paper.js
- * @version 0.7.0
+ * @version 0.7.1
  *
  * Includes additional open source libraries which are subject to copyright notices
  * as indicated accompanying those segments of code.
@@ -578,7 +578,7 @@ class RulerTool extends AnnotationUITool {
      * @private
      * @param {paper.Point} p1 - segment start
      * @param {paper.Point} p2 - segment end
-     * @param {{ preview?: boolean }} [options] - preview: true for dashed path
+     * @param {Object} [options] - `preview`: true for dashed path
      * @returns {paper.Group}
      */
     buildSegmentGroup(p1, p2, options = {}) {

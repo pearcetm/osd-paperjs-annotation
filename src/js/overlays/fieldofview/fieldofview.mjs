@@ -42,10 +42,10 @@ function ensureNamedToolLayer(paperScope) {
 
 class FieldOfViewOverlay extends ViewerOverlayBase {
     static get label() { return 'Field of view'; }
-    static get faIconClass() { return 'fa-binoculars'; }
+    static get faIconClass() { return 'fa-microscope'; }
 
     /**
-     * @param {import('../../osd-loader.mjs').OpenSeadragon.Viewer} viewer
+     * @param {OpenSeadragon.Viewer} viewer
      * @param {Object} [opts]
      * @param {boolean} [opts.registerWithConfig=true] Set false to suppress auto-registration with ConfigurationWidget
      */
@@ -100,7 +100,7 @@ class FieldOfViewOverlay extends ViewerOverlayBase {
         this.viewer.world.addHandler('remove-item', this._onWorldItemCount);
 
         this.button = this.overlay.addViewerButton({
-            faIconClass: 'fa-binoculars',
+            faIconClass: 'fa-microscope',
             tooltip: 'Field of view',
             onClick: () => {
                 this._active ? this.deactivate() : this.activate();
@@ -157,7 +157,7 @@ class FieldOfViewOverlay extends ViewerOverlayBase {
     }
 
     /**
-     * @returns {import('../../osd-loader.mjs').OpenSeadragon.TiledImage}
+     * @returns {OpenSeadragon.TiledImage}
      */
     _resolveActiveTiledImageOrThrow() {
         const world = this.viewer?.world;
@@ -427,7 +427,7 @@ class FieldOfViewOverlay extends ViewerOverlayBase {
     }
 
     /**
-     * @param {import('../../osd-loader.mjs').OpenSeadragon.Point} centerImg
+     * @param {OpenSeadragon.Point} centerImg
      * @param {number} diameterPx
      */
     buildDropItemData(centerImg, diameterPx) {

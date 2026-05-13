@@ -1,6 +1,6 @@
 /**
  * OpenSeadragon paperjs overlay plugin based on paper.js
- * @version 0.7.0
+ * @version 0.7.1
  *
  * Lightweight layout for annotation UI: grid, resize handle, and optional toggle button.
  * Does not depend on AnnotationToolkit or AnnotationUI. Caller provides optional
@@ -131,6 +131,29 @@ class AnnotationLayout {
       this._opts.buttonTogglesToolbar && this._opts.toolbar && this._opts.toolbar.hide();
       this._opts.buttonTogglesLayerUI && this._opts.layerUI && this._opts.layerUI.hide();
     }
+  }
+
+  /**
+   * OpenSeadragon viewer button for the annotation toggle (pencil), or null if addButton was false.
+   * @returns {Object|null}
+   */
+  getPencilViewerButton() {
+    return this._button || null;
+  }
+
+  /**
+   * Whether toolbar/layer panels are in the "open" state (same as after pencil toggle).
+   * @returns {boolean}
+   */
+  arePanelsVisible() {
+    return !!this._isOpen;
+  }
+
+  /**
+   * Same behavior as clicking the pencil viewer button (toggle toolbar/layer visibility per options).
+   */
+  togglePanelsFromButton() {
+    this._onToggleClick();
   }
 
   /**

@@ -1,6 +1,6 @@
 /**
  * OpenSeadragon paperjs overlay plugin based on paper.js
- * @version 0.7.0
+ * @version 0.7.1
  * 
  * Includes additional open source libraries which are subject to copyright notices
  * as indicated accompanying those segments of code.
@@ -40,6 +40,21 @@ import { PaperOverlay } from '../../paper-overlay.mjs';
 import { domObjectFromHTML } from '../../utils/domObjectFromHTML.mjs';
 import { makeFaIcon } from '../../utils/faIcon.mjs';
 
+/** Schema version for {@link ConfigurationWidget} toolbar visibility JSON in localStorage. */
+const CONFIG_TOOLBAR_PERSIST_VERSION = 1;
+
+/**
+ * Persist id for the annotation pencil toolbar row (ConfigurationWidget custom section).
+ * @type {string}
+ */
+export const ANNOTATION_TOOLBAR_PERSIST_ID_PENCIL = 'annotation:pencil';
+
+/**
+ * Persist id for the annotation save/load toolbar row.
+ * @type {string}
+ */
+export const ANNOTATION_TOOLBAR_PERSIST_ID_FILE = 'annotation:file';
+
 /**
  * A unified configuration widget that appears as a gear button on the OpenSeadragon viewer.
  * Opens a dialog allowing users to manage registered overlays (show/hide buttons,
@@ -51,13 +66,18 @@ import { makeFaIcon } from '../../utils/faIcon.mjs';
 export class ConfigurationWidget {
     /**
      * @param {OpenSeadragon.Viewer} viewer - The OpenSeadragon viewer instance.
+     * @param {Object} [widgetOpts]
+     * @param {string|null} [widgetOpts.storageKey] - If set, toolbar "Show Button" preferences for registered overlays and annotation rows are read from and written to localStorage under this key. Omit or null to disable persistence.
      */
-    constructor(viewer) {
+    constructor(viewer, widgetOpts = {}) {
         this.viewer = viewer;
         this.viewer.configurationWidget = this;
         this._overlays = [];
         this._sections = [];
         this._open = false;
+        this._storageKey = widgetOpts.storageKey != null && widgetOpts.storageKey !== ''
+            ? String(widgetOpts.storageKey)
+            : null;
 
         this.overlay = new PaperOverlay(viewer, { overlayType: 'viewer', renderless: true });
         this.button = this.overlay.addViewerButton({
@@ -76,16 +96,98 @@ export class ConfigurationWidget {
      * @param {Object} [opts]
      * @param {string} [opts.label] - Display label. Falls back to overlay.constructor.label or constructor name.
      * @param {string} [opts.faIconClass] - FA icon class for the row. Falls back to overlay.constructor.faIconClass.
+     * @param {boolean} [opts.showButton=true] - Initial toolbar button visibility when nothing is stored for this key.
+     * @param {string} [opts.overlayKey] - Stable id for persistence (defaults to overlay.constructor.name). Use distinct keys if multiple instances of the same class register on one viewer.
      */
     register(overlay, opts = {}) {
         if (this._overlays.find(e => e.overlay === overlay)) return;
         const label = opts.label || overlay.constructor.label || overlay.constructor.name;
         const faIconClass = opts.faIconClass || overlay.constructor.faIconClass || null;
-        const showButton = opts.showButton !== false;
-        const entry = { overlay, label, faIconClass, showButton, opts };
+        const overlayKey = opts.overlayKey || overlay.constructor.name;
+        let showButton = opts.showButton !== false;
+        if (this._storageKey) {
+            const persisted = this.getPersistedToolbarVisibility(overlayKey);
+            if (typeof persisted === 'boolean') {
+                showButton = persisted;
+            }
+        }
+        const entry = { overlay, label, faIconClass, showButton, overlayKey, opts };
         this._overlays.push(entry);
         this._addOverlayRow(entry);
         this._updateEmptyState();
+    }
+
+    /**
+     * True when this widget was constructed with a non-empty storageKey (toolbar visibility is persisted).
+     * @returns {boolean}
+     */
+    persistToolbarVisibilityEnabled() {
+        return !!this._storageKey;
+    }
+
+    /**
+     * Read persisted toolbar button visibility for a logical overlay id (including annotation ids).
+     * @param {string} overlayKey - Same as register opts.overlayKey or ANNOTATION_TOOLBAR_PERSIST_ID_*.
+     * @returns {boolean|undefined} Undefined if persistence is off or no stored value for this key.
+     */
+    getPersistedToolbarVisibility(overlayKey) {
+        if (!this._storageKey) return undefined;
+        const doc = this._loadPersistedDoc();
+        const row = doc.overlays && doc.overlays[overlayKey];
+        if (!row || typeof row.showButton !== 'boolean') return undefined;
+        return row.showButton;
+    }
+
+    /**
+     * Store toolbar button visibility for a logical overlay id.
+     * @param {string} overlayKey
+     * @param {boolean} visible
+     */
+    setPersistedToolbarVisibility(overlayKey, visible) {
+        if (!this._storageKey) return;
+        try {
+            const doc = this._loadPersistedDoc();
+            doc.v = CONFIG_TOOLBAR_PERSIST_VERSION;
+            if (!doc.overlays) doc.overlays = {};
+            if (!doc.overlays[overlayKey]) doc.overlays[overlayKey] = {};
+            doc.overlays[overlayKey].showButton = !!visible;
+            localStorage.setItem(this._storageKey, JSON.stringify(doc));
+        } catch (e) {
+            /* quota / private mode */
+        }
+    }
+
+    /**
+     * Remove all persisted toolbar visibility data for this widget's storageKey from localStorage.
+     * Does not change the current session UI until rows are rebuilt or toggles change.
+     */
+    clearPersistedOverlayToolbarState() {
+        if (!this._storageKey) return;
+        try {
+            localStorage.removeItem(this._storageKey);
+        } catch (e) {
+            /* */
+        }
+    }
+
+    _loadPersistedDoc() {
+        if (!this._storageKey) {
+            return { v: CONFIG_TOOLBAR_PERSIST_VERSION, overlays: {} };
+        }
+        try {
+            const raw = localStorage.getItem(this._storageKey);
+            if (!raw) return { v: CONFIG_TOOLBAR_PERSIST_VERSION, overlays: {} };
+            const parsed = JSON.parse(raw);
+            if (!parsed || typeof parsed !== 'object') {
+                return { v: CONFIG_TOOLBAR_PERSIST_VERSION, overlays: {} };
+            }
+            if (!parsed.overlays || typeof parsed.overlays !== 'object') {
+                parsed.overlays = {};
+            }
+            return parsed;
+        } catch (e) {
+            return { v: CONFIG_TOOLBAR_PERSIST_VERSION, overlays: {} };
+        }
     }
 
     /**
@@ -464,6 +566,9 @@ export class ConfigurationWidget {
         checkbox.addEventListener('change', () => {
             if (overlayBtn && overlayBtn.element) {
                 overlayBtn.element.style.display = checkbox.checked ? originalDisplay : 'none';
+            }
+            if (this._storageKey && entry.overlayKey) {
+                this.setPersistedToolbarVisibility(entry.overlayKey, checkbox.checked);
             }
         });
 

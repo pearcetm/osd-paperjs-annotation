@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: overlays/screenshot/screenshot-dialog.mjs</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: overlays/screenshot/screenshot-dialog.mjs</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>import { domObjectFromHTML } from '../../utils/domObjectFromHTML.mjs';
+
+/**
+ * Returns the HTML string for the screenshot dialog.
+ * @returns {string}
+ */
+export function buildScreenshotDialogHTML(){
+    return `&lt;div class="screenshot-dialog hidden">
+        &lt;div class="ss-header">
+            &lt;div class="ss-title">Screenshot&lt;/div>
+            &lt;button class="close ss-close" type="button" aria-label="Close">×&lt;/button>
+        &lt;/div>
+
+        &lt;div class="screenshot-setup">
+            &lt;div class="screenshot-mode">
+                &lt;label class="ss-radio">&lt;input type="radio" name="screenshot-mode" value="free" class="mode-free"> Free select&lt;/label>
+                &lt;label class="ss-radio">&lt;input type="radio" name="screenshot-mode" value="fixed" class="mode-fixed"> Defined size&lt;/label>
+            &lt;/div>
+
+            &lt;div class="setup-free">
+                &lt;div class="ss-row">
+                    &lt;label class="ss-check">&lt;input class="lock-aspect-ratio" type="checkbox"/> Use fixed aspect ratio&lt;/label>
+                    &lt;span class="ss-inline">
+                        &lt;span class="ss-muted">Aspect:&lt;/span>
+                        &lt;input type="number" step="any" inputmode="decimal" value="1" class="aspect-width"/> :
+                        &lt;input type="number" step="any" inputmode="decimal" value="1" class="aspect-height"/>
+                        &lt;span class="aspect-error ss-muted hidden">&lt;/span>
+                    &lt;/span>
+                &lt;/div>
+                &lt;div class="setup-hint">Start selection, then drag. Esc cancels.&lt;/div>
+            &lt;/div>
+
+            &lt;div class="setup-fixed">
+                &lt;div class="ss-row">
+                    &lt;span class="ss-muted">Base region:&lt;/span>
+                    &lt;input class="fixed-base-width" type="number" min="1" step="1" value="256"/> ×
+                    &lt;input class="fixed-base-height" type="number" min="1" step="1" value="256"/> &lt;span class="ss-muted">px&lt;/span>
+                    &lt;span class="fixed-base-error ss-muted hidden">&lt;/span>
+                &lt;/div>
+                &lt;div class="ss-row fixed-output-controls">
+                    &lt;span class="ss-muted">Output:&lt;/span>
+                    &lt;select class="select-output-size-fixed">&lt;/select>
+                    &lt;span class="fixed-output-other hidden">
+                        &lt;span class="ss-muted" title="Downsample factor">1 /&lt;/span>
+                        &lt;input class="fixed-output-other-factor" type="number" step="any" inputmode="decimal" value="1"/>
+                        &lt;span class="fixed-output-readout ss-muted">&lt;/span>
+                        &lt;span class="downsample-error ss-muted hidden">&lt;/span>
+                    &lt;/span>
+                    &lt;span class="output-help ss-muted hidden">&lt;/span>
+                &lt;/div>
+                &lt;div class="ss-row">
+                    &lt;label class="ss-check">&lt;input type="checkbox" class="fixed-auto-create"/> Auto-create on click&lt;/label>
+                &lt;/div>
+                &lt;div class="setup-hint">Click Start, then click to place.&lt;/div>
+            &lt;/div>
+
+            &lt;div class="ss-actions">
+                &lt;button class="start ss-primary" type="button">Start selection&lt;/button>
+            &lt;/div>
+        &lt;/div>
+
+        &lt;div class="screenshot-after hidden">
+            &lt;div class="ss-section">
+                &lt;div class="screenshot-results">
+                    &lt;div class="instructions">
+                        &lt;div class="ss-row ss-space-between">
+                            &lt;div class="output-context ss-muted ss-mono">&lt;/div>
+                            &lt;button class="edit-region" type="button">Edit&lt;/button>
+                        &lt;/div>
+                        &lt;div class="ss-row">
+                            &lt;span class="ss-muted">Output:&lt;/span>
+                            &lt;select class="select-output-size-result">&lt;/select>
+                            &lt;span class="result-output-other hidden">
+                                &lt;span class="ss-muted" title="Downsample factor">1 /&lt;/span>
+                                &lt;input class="result-output-other-factor" type="number" step="any" inputmode="decimal" value="1"/>
+                                &lt;span class="result-output-readout ss-muted">&lt;/span>
+                                &lt;span class="downsample-error ss-muted hidden">&lt;/span>
+                            &lt;/span>
+                        &lt;/div>
+                        &lt;div class="output-help ss-muted hidden">&lt;/div>
+                    &lt;/div>
+
+                    &lt;div class="scalebar-main hidden">
+                        &lt;div class="scalebar-grid">
+                            &lt;label class="ss-check scalebar-toggle">&lt;input class="include-scalebar" type="checkbox"> Scale bar&lt;/label>
+                            &lt;span class="scalebar-disabled-reason ss-muted hidden">&lt;/span>
+
+                            &lt;div class="scalebar-opts hidden">
+                                &lt;div class="scalebar-row scalebar-length">
+                                    &lt;span class="ss-muted">Length&lt;/span>
+                                    &lt;input class="scalebar-width" type="number" step="any" inputmode="decimal">
+                                    &lt;span class="ss-muted ss-unit">mm&lt;/span>
+                                    &lt;span class="ss-muted scalebar-px-hint">&lt;/span>
+                                &lt;/div>
+                                &lt;div class="scalebar-row scalebar-height">
+                                    &lt;span class="ss-muted">Height&lt;/span>
+                                    &lt;input class="scalebar-height" type="number" value="4" step="1" inputmode="numeric">
+                                    &lt;span class="ss-muted ss-unit">px&lt;/span>
+                                &lt;/div>
+                                &lt;div class="ss-row scalebar-label-row">
+                                    &lt;label class="ss-check">&lt;input class="scalebar-show-label" type="checkbox"> Label&lt;/label>
+                                    &lt;span class="scalebar-label-hint ss-muted hidden">&lt;/span>
+                                &lt;/div>
+                                &lt;div class="ss-row scalebar-error-row hidden">
+                                    &lt;span class="scalebar-error ss-muted">&lt;/span>
+                                &lt;/div>
+                            &lt;/div>
+                        &lt;/div>
+                    &lt;/div>
+
+                    &lt;div class="ss-row ss-create-row">
+                        &lt;span class="ss-create-hint">A region was selected. Next:&lt;/span>
+                        &lt;button class="create-screenshot ss-primary" type="button">Create&lt;/button>
+                    &lt;/div>
+
+                    &lt;div class="download">
+                        &lt;div class="created-confirm ss-muted">Screenshot created.&lt;/div>
+                        &lt;div class="created-summary ss-muted">&lt;/div>
+                        &lt;div class="ss-row">
+                            &lt;a class="open-screenshot screenshot-link" target="_blank">&lt;button type="button">Open&lt;/button>&lt;/a>
+                            &lt;a class="download-screenshot screenshot-link" download="screenshot.png">&lt;button type="button">Download&lt;/button>&lt;/a>
+                            &lt;button class="cancel-screenshot" type="button">Change output&lt;/button>
+                        &lt;/div>
+                    &lt;/div>
+
+                    &lt;div class="pending-message">
+                        &lt;div class="ss-row ss-space-between">
+                            &lt;span class="ss-muted">Creating…&lt;/span>
+                            &lt;button class="cancel-screenshot" type="button">Change output&lt;/button>
+                        &lt;/div>
+                        &lt;div class="screenshot-progress">
+                            &lt;progress>&lt;/progress>
+                            &lt;div class="ss-muted">Loaded &lt;span class="loaded">&lt;/span> of &lt;span class="total">&lt;span> tiles&lt;/div>
+                        &lt;/div>
+                    &lt;/div>
+                &lt;/div>
+            &lt;/div>
+
+            &lt;div class="ss-footer">
+                &lt;button class="back-to-setup" type="button">Back&lt;/button>
+                &lt;button class="rect" type="button">Select new area&lt;/button>
+            &lt;/div>
+        &lt;/div>
+
+        &lt;div class="screenshot-edit hidden">
+            &lt;div class="ss-section">
+                &lt;div class="ss-label">Edit&lt;/div>
+                &lt;div class="ss-row">
+                    &lt;span class="ss-muted">Size:&lt;/span>
+                    &lt;input class="region-width region-dim" type="number" min="1" step="1"/> ×
+                    &lt;input class="region-height region-dim" type="number" min="1" step="1"/> &lt;span class="ss-muted">px&lt;/span>
+                &lt;/div>
+                &lt;div class="region-mm ss-muted hidden">&lt;/div>
+            &lt;/div>
+            &lt;div class="ss-footer">
+                &lt;button class="done-edit" type="button">Done&lt;/button>
+                &lt;button class="rect" type="button">Select new area&lt;/button>
+            &lt;/div>
+        &lt;/div>
+    &lt;/div>`;
+}
+
+/**
+ * Returns the CSS string for the screenshot dialog.
+ * All selectors are scoped to .screenshot-dialog to avoid global leaks.
+ * @returns {string}
+ */
+export function buildScreenshotDialogCSS(){
+    return `&lt;style data-type="screenshot-tool">
+        .screenshot-dialog{
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            box-sizing: border-box;
+            width: min(400px, calc(100% - 24px));
+            max-height: calc(100% - 24px);
+            overflow: auto;
+            background: #fff;
+            color: #111;
+            border: 1px solid rgba(0,0,0,0.14);
+            border-radius: 10px;
+            box-shadow: 0 14px 40px rgba(0,0,0,0.22);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-size: 13px;
+            line-height: 1.25;
+        }
+        .screenshot-dialog.hidden{ display:none; }
+        .screenshot-dialog .hidden{ display:none !important; }
+        .screenshot-dialog .screenshot-after.hidden,
+        .screenshot-dialog .screenshot-setup.hidden{ display:none; }
+
+        .ss-header{
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            padding: 10px 12px;
+            border-bottom: 1px solid rgba(0,0,0,0.08);
+            position: sticky;
+            top: 0;
+            background: #fff;
+            z-index: 1;
+        }
+        .ss-title{
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .ss-close{
+            border: none;
+            background: transparent;
+            font-size: 18px;
+            line-height: 1;
+            padding: 2px 6px;
+            cursor: pointer;
+            color: rgba(0,0,0,0.6);
+        }
+        .ss-close:hover{ color: rgba(0,0,0,0.9); }
+
+        .screenshot-setup{ padding: 10px 12px; }
+        .screenshot-after{ padding: 0 12px; }
+        .ss-section{ padding: 4px 0; }
+        .ss-footer{
+            display:flex;
+            gap: 8px;
+            padding-top: 4px;
+            padding-bottom: 4px;
+            border-top: 1px solid rgba(0,0,0,0.08);
+        }
+
+        .screenshot-mode{
+            display:flex;
+            gap: 14px;
+            align-items:center;
+            margin-bottom: 8px;
+        }
+        .ss-radio{ display:flex; gap:6px; align-items:center; }
+        .ss-check{ display:flex; gap:6px; align-items:center; }
+        .ss-row{
+            display:flex;
+            gap: 8px;
+            align-items:center;
+            flex-wrap: wrap;
+            margin: 1px 0;
+        }
+        .ss-space-between{ justify-content:space-between; }
+        .ss-inline{ display:flex; gap:6px; align-items:center; }
+        .ss-label{ font-weight: 600; margin-bottom: 2px; }
+        .ss-muted{ color: rgba(0,0,0,0.60); }
+        .ss-mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+
+        .setup-hint{ margin-top: 6px; color: rgba(0,0,0,0.60); }
+        .ss-actions{ margin-top: 10px; display:flex; justify-content:flex-end; }
+
+        .screenshot-dialog button{
+            font: inherit;
+            padding: 5px 10px;
+            border: 1px solid rgba(0,0,0,0.18);
+            background: #fff;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .screenshot-dialog button:hover{ border-color: rgba(0,0,0,0.30); }
+        .screenshot-dialog button.ss-primary{
+            background: #111;
+            color: #fff;
+            border-color: #111;
+        }
+        .screenshot-dialog button.ss-primary:hover{ background: #000; border-color: #000; }
+        .screenshot-dialog input[type=number]{
+            width: 6.5em;
+            padding: 4px 6px;
+            border: 1px solid rgba(0,0,0,0.18);
+            border-radius: 8px;
+            font: inherit;
+        }
+        .scalebar-main input[type=number]{ width: 4.8em; }
+        .scalebar-grid{
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 4px;
+            margin: 4px 0;
+        }
+        .scalebar-toggle{ margin: 0; }
+        .scalebar-opts{
+            display: grid;
+            grid-template-columns: max-content max-content max-content 1fr;
+            align-items: center;
+            gap: 4px 8px;
+        }
+        .scalebar-row{ display: contents; }
+        .scalebar-opts .ss-row{ margin: 0; }
+        .scalebar-label-row{
+            grid-column: 1 / -1;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
+            margin: 0;
+        }
+        .scalebar-label-hint{
+            margin-left: auto;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            min-width: 0;
+        }
+        .scalebar-error-row{
+            grid-column: 1 / -1;
+            margin-top: 2px;
+            margin-left: 0;
+            margin-right: 0;
+        }
+        .scalebar-px-hint{ white-space: nowrap; }
+        .ss-unit{ white-space: nowrap; }
+        .screenshot-dialog select{
+            padding: 4px 6px;
+            border: 1px solid rgba(0,0,0,0.18);
+            border-radius: 8px;
+            font: inherit;
+            background: #fff;
+        }
+
+        .screenshot-results>*{ display:none; }
+        .screenshot-results.created .download{ display:block; }
+        .screenshot-results.pending .pending-message{ display:block; }
+        .screenshot-results:not(.created):not(.pending) .instructions{ display:block; }
+        .screenshot-results.created .scalebar-main{ display:block; }
+        .screenshot-results:not(.created):not(.pending) .scalebar-main{ display:block; }
+        .screenshot-results:not(.created):not(.pending) .ss-create-row{ display:flex; justify-content:flex-end; align-items:center; gap: 10px; }
+        .ss-create-hint{
+            color: rgba(0,0,0,0.78);
+            font-weight: 500;
+        }
+    &lt;/style>`;
+}
+
+/**
+ * Injects the screenshot dialog CSS into the document head (once) and
+ * creates the dialog DOM element.
+ * @returns {HTMLElement} The dialog element
+ */
+export function createScreenshotDialogElement(){
+    if(!document.querySelector('style[data-type="screenshot-tool"]')){
+        document.querySelector('head').appendChild(domObjectFromHTML(buildScreenshotDialogCSS()));
+    }
+    return domObjectFromHTML(buildScreenshotDialogHTML());
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="OSDPaperjsAnnotation.html">OSDPaperjsAnnotation</a></li></ul><h3>Classes</h3><ul><li><a href="AnnotationLayout.html">AnnotationLayout</a></li><li><a href="Dialog.html">Dialog</a></li><li><a href="DragAndDrop.html">DragAndDrop</a></li><li><a href="EditableContent.html">EditableContent</a></li><li><a href="FieldOfViewOverlay.html">FieldOfViewOverlay</a></li><li><a href="FieldOfViewTool_FieldOfViewTool.html">FieldOfViewTool</a></li><li><a href="Morph.html">Morph</a></li><li><a href="OSDPaperjsAnnotation.AnnotationItem.html">AnnotationItem</a></li><li><a href="OSDPaperjsAnnotation.AnnotationItemFactory.html">AnnotationItemFactory</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolbar.html">AnnotationToolbar</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolkit.html">AnnotationToolkit</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolset.html">AnnotationToolset</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUI.html">AnnotationUI</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUITool.html">AnnotationUITool</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUITool.AnnotationUIToolbarBase.html">AnnotationUIToolbarBase</a></li><li><a href="OSDPaperjsAnnotation.BrushTool.html">BrushTool</a></li><li><a href="OSDPaperjsAnnotation.BrushTool.BrushToolbar.html">BrushToolbar</a></li><li><a href="OSDPaperjsAnnotation.DefaultTool.html">DefaultTool</a></li><li><a href="OSDPaperjsAnnotation.DefaultTool.DefaultToolbar.html">DefaultToolbar</a></li><li><a href="OSDPaperjsAnnotation.Ellipse.html">Ellipse</a></li><li><a href="OSDPaperjsAnnotation.EllipseTool.html">EllipseTool</a></li><li><a href="OSDPaperjsAnnotation.EllipseTool.EllipseToolbar.html">EllipseToolbar</a></li><li><a href="OSDPaperjsAnnotation.FeatureCollectionUI.html">FeatureCollectionUI</a></li><li><a href="OSDPaperjsAnnotation.FeatureUI.html">FeatureUI</a></li><li><a href="OSDPaperjsAnnotation.FileDialog.html">FileDialog</a></li><li><a href="OSDPaperjsAnnotation.LayerUI.html">LayerUI</a></li><li><a href="OSDPaperjsAnnotation.Linestring.html">Linestring</a></li><li><a href="OSDPaperjsAnnotation.LinestringTool.html">LinestringTool</a></li><li><a href="OSDPaperjsAnnotation.LinestringTool.LinestringToolbar.html">LinestringToolbar</a></li><li><a href="OSDPaperjsAnnotation.MultiLinestring.html">MultiLinestring</a></li><li><a href="OSDPaperjsAnnotation.MultiPolygon.html">MultiPolygon</a></li><li><a href="OSDPaperjsAnnotation.PaperOverlay.html">PaperOverlay</a></li><li><a href="OSDPaperjsAnnotation.Placeholder.html">Placeholder</a></li><li><a href="OSDPaperjsAnnotation.Point.html">Point</a></li><li><a href="OSDPaperjsAnnotation.PointText.html">PointText</a></li><li><a href="OSDPaperjsAnnotation.PointTextTool.html">PointTextTool</a></li><li><a href="OSDPaperjsAnnotation.PointTextTool.PointTextToolbar.html">PointTextToolbar</a></li><li><a href="OSDPaperjsAnnotation.PointTool.html">PointTool</a></li><li><a href="OSDPaperjsAnnotation.PointTool.PointToolbar.html">PointToolbar</a></li><li><a href="OSDPaperjsAnnotation.PolygonTool.html">PolygonTool</a></li><li><a href="OSDPaperjsAnnotation.PolygonTool.PolygonToolbar.html">PolygonToolbar</a></li><li><a href="OSDPaperjsAnnotation.Raster.html">Raster</a></li><li><a href="OSDPaperjsAnnotation.RasterTool.html">RasterTool</a></li><li><a href="OSDPaperjsAnnotation.RasterTool.RasterToolbar.html">RasterToolbar</a></li><li><a href="OSDPaperjsAnnotation.Rectangle.html">Rectangle</a></li><li><a href="OSDPaperjsAnnotation.RectangleTool.html">RectangleTool</a></li><li><a href="OSDPaperjsAnnotation.RectangleTool_RectToolbar.html">RectToolbar</a></li><li><a href="OSDPaperjsAnnotation.RotationControlOverlay.html">RotationControlOverlay</a></li><li><a href="OSDPaperjsAnnotation.RotationControlTool.html">RotationControlTool</a></li><li><a href="OSDPaperjsAnnotation.RotationControlWidget.html">RotationControlWidget</a></li><li><a href="OSDPaperjsAnnotation.RulerTool.html">RulerTool</a></li><li><a href="OSDPaperjsAnnotation.RulerTool.RulerToolbar.html">RulerToolbar</a></li><li><a href="OSDPaperjsAnnotation.StyleTool.html">StyleTool</a></li><li><a href="OSDPaperjsAnnotation.StyleTool.StyleToolbar.html">StyleToolbar</a></li><li><a href="OSDPaperjsAnnotation.ToolBase.html">ToolBase</a></li><li><a href="OSDPaperjsAnnotation.TransformTool.html">TransformTool</a></li><li><a href="OSDPaperjsAnnotation.TransformTool.TransformToolbar.html">TransformToolbar</a></li><li><a href="OSDPaperjsAnnotation.WandTool.html">WandTool</a></li><li><a href="OSDPaperjsAnnotation.WandTool.WandToolbar.html">WandToolbar</a></li><li><a href="OSDPaperjsAnnotation.exports.ConfigurationWidget.html">exports.ConfigurationWidget</a></li><li><a href="OSDPaperjsAnnotation.exports.ViewerOverlayBase.html">exports.ViewerOverlayBase</a></li><li><a href="RulerMeasurement.html">RulerMeasurement</a></li><li><a href="ScreenshotOverlay.html">ScreenshotOverlay</a></li><li><a href="ScreenshotTool.html">ScreenshotTool</a></li><li><a href="SelectTool.html">SelectTool</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ANNOTATION_TOOLBAR_PERSIST_ID_FILE">ANNOTATION_TOOLBAR_PERSIST_ID_FILE</a></li><li><a href="global.html#ANNOTATION_TOOLBAR_PERSIST_ID_PENCIL">ANNOTATION_TOOLBAR_PERSIST_ID_PENCIL</a></li><li><a href="global.html#COMPOUND_PATH_CONTRACT_MESSAGE">COMPOUND_PATH_CONTRACT_MESSAGE</a></li><li><a href="global.html#CONFIG_TOOLBAR_PERSIST_VERSION">CONFIG_TOOLBAR_PERSIST_VERSION</a></li><li><a href="global.html#FOV_DROP_UNDER_STROKE">FOV_DROP_UNDER_STROKE</a></li><li><a href="global.html#FOV_HIT_FILL_ALPHA">FOV_HIT_FILL_ALPHA</a></li><li><a href="global.html#FOV_PREVIEW_OVER_STROKE">FOV_PREVIEW_OVER_STROKE</a></li><li><a href="global.html#FOV_PREVIEW_UNDER_STROKE">FOV_PREVIEW_UNDER_STROKE</a></li><li><a href="global.html#_makeOverlayStyleRow">_makeOverlayStyleRow</a></li><li><a href="global.html#_paper">_paper</a></li><li><a href="global.html#adaptiveOffsetCurve">adaptiveOffsetCurve</a></li><li><a href="global.html#annotationToolPrimaryButtonActiveDrag">annotationToolPrimaryButtonActiveDrag</a></li><li><a href="global.html#annotationToolPrimaryButtonDownOrUp">annotationToolPrimaryButtonDownOrUp</a></li><li><a href="global.html#areaMm2FromDiameterPhysical">areaMm2FromDiameterPhysical</a></li><li><a href="global.html#attachAnnotationToolkitConfigurationWidget">attachAnnotationToolkitConfigurationWidget</a></li><li><a href="global.html#buildDownsampleOptions">buildDownsampleOptions</a></li><li><a href="global.html#buildScreenshotDialogCSS">buildScreenshotDialogCSS</a></li><li><a href="global.html#buildScreenshotDialogHTML">buildScreenshotDialogHTML</a></li><li><a href="global.html#buildSegmentGroupFromPath">buildSegmentGroupFromPath</a></li><li><a href="global.html#circlePreviewGeometryFromProjectPoint">circlePreviewGeometryFromProjectPoint</a></li><li><a href="global.html#composeScreenshotWithScalebar">composeScreenshotWithScalebar</a></li><li><a href="global.html#computeLabelPlacementCenter">computeLabelPlacementCenter</a></li><li><a href="global.html#computeOutputSize">computeOutputSize</a></li><li><a href="global.html#computeRenderSignature">computeRenderSignature</a></li><li><a href="global.html#connectAdjacentBezier">connectAdjacentBezier</a></li><li><a href="global.html#connectBeziers">connectBeziers</a></li><li><a href="global.html#convertFaIcons">convertFaIcons</a></li><li><a href="global.html#coordinatesMatchGeometryType">coordinatesMatchGeometryType</a></li><li><a href="global.html#createDroppedRingGroup">createDroppedRingGroup</a></li><li><a href="global.html#createPreviewRingGroup">createPreviewRingGroup</a></li><li><a href="global.html#createScreenshotDialogElement">createScreenshotDialogElement</a></li><li><a href="global.html#diameterPhysicalFromAreaMm2">diameterPhysicalFromAreaMm2</a></li><li><a href="global.html#diameterPhysicalToBasePixels">diameterPhysicalToBasePixels</a></li><li><a href="global.html#ensureNamedToolLayer">ensureNamedToolLayer</a></li><li><a href="global.html#evaluatePaperItemShapeContract">evaluatePaperItemShapeContract</a></li><li><a href="global.html#fovGeometryLog">fovGeometryLog</a></li><li><a href="global.html#fovOverlayLog">fovOverlayLog</a></li><li><a href="global.html#getPointLineIntersections">getPointLineIntersections</a></li><li><a href="global.html#iconDefs">iconDefs</a></li><li><a href="global.html#imagePointToProjectPoint">imagePointToProjectPoint</a></li><li><a href="global.html#isLineStringCoordinates">isLineStringCoordinates</a></li><li><a href="global.html#isLinearRing">isLinearRing</a></li><li><a href="global.html#isMultiLineStringCoordinates">isMultiLineStringCoordinates</a></li><li><a href="global.html#isMultiPointCoordinates">isMultiPointCoordinates</a></li><li><a href="global.html#isMultiPolygonCoordinates">isMultiPolygonCoordinates</a></li><li><a href="global.html#isPolygonCoordinates">isPolygonCoordinates</a></li><li><a href="global.html#isPosition">isPosition</a></li><li><a href="global.html#localImportsCompleted">localImportsCompleted</a></li><li><a href="global.html#makeFaIcon">makeFaIcon</a></li><li><a href="global.html#makeRoundJoin">makeRoundJoin</a></li><li><a href="global.html#mppFromTiledImage">mppFromTiledImage</a></li><li><a href="global.html#normalize">normalize</a></li><li><a href="global.html#offsetSegment">offsetSegment</a></li><li><a href="global.html#osd">osd</a></li><li><a href="global.html#projectPointToImagePoint">projectPointToImagePoint</a></li><li><a href="global.html#removeIntersection">removeIntersection</a></li><li><a href="global.html#removeOutsiders">removeOutsiders</a></li><li><a href="global.html#renderBaseScreenshot">renderBaseScreenshot</a></li><li><a href="global.html#styleDroppedOver">styleDroppedOver</a></li><li><a href="global.html#styleDroppedUnder">styleDroppedUnder</a></li><li><a href="global.html#stylePreviewRing">stylePreviewRing</a></li><li><a href="global.html#toolConstructors">toolConstructors</a></li><li><a href="global.html#updateFillOpacity">updateFillOpacity</a></li><li><a href="global.html#updateStrokeOpacity">updateStrokeOpacity</a></li><li><a href="global.html#validateGeoJSONGeometry">validateGeoJSONGeometry</a></li><li><a href="global.html#validatePaperItemShapeContract">validatePaperItemShapeContract</a></li><li><a href="global.html#waitForNextPaintFrames">waitForNextPaintFrames</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.0</a> on Wed May 13 2026 16:45:59 GMT-0400 (Eastern Daylight Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

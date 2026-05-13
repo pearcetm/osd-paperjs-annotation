@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: overlays/configuration/configuration.mjs</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: overlays/configuration/configuration.mjs</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * OpenSeadragon paperjs overlay plugin based on paper.js
+ * @version 0.7.1
+ * 
+ * Includes additional open source libraries which are subject to copyright notices
+ * as indicated accompanying those segments of code.
+ * 
+ * Original code:
+ * Copyright (c) 2022-2026, Thomas Pearce
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 
+ * * Redistributions of source code must retain the above copyright notice, this
+ *   list of conditions and the following disclaimer.
+ * 
+ * * Redistributions in binary form must reproduce the above copyright notice,
+ *   this list of conditions and the following disclaimer in the documentation
+ *   and/or other materials provided with the distribution.
+ * 
+ * * Neither the name of osd-paperjs-annotation nor the names of its
+ *   contributors may be used to endorse or promote products derived from
+ *   this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * 
+ */
+
+import { PaperOverlay } from '../../paper-overlay.mjs';
+import { domObjectFromHTML } from '../../utils/domObjectFromHTML.mjs';
+import { makeFaIcon } from '../../utils/faIcon.mjs';
+
+/** Schema version for {@link ConfigurationWidget} toolbar visibility JSON in localStorage. */
+const CONFIG_TOOLBAR_PERSIST_VERSION = 1;
+
+/**
+ * Persist id for the annotation pencil toolbar row (ConfigurationWidget custom section).
+ * @type {string}
+ */
+export const ANNOTATION_TOOLBAR_PERSIST_ID_PENCIL = 'annotation:pencil';
+
+/**
+ * Persist id for the annotation save/load toolbar row.
+ * @type {string}
+ */
+export const ANNOTATION_TOOLBAR_PERSIST_ID_FILE = 'annotation:file';
+
+/**
+ * A unified configuration widget that appears as a gear button on the OpenSeadragon viewer.
+ * Opens a dialog allowing users to manage registered overlays (show/hide buttons,
+ * activate/deactivate) and provides a container for custom configuration sections.
+ *
+ * @class
+ * @memberof OSDPaperjsAnnotation
+ */
+export class ConfigurationWidget {
+    /**
+     * @param {OpenSeadragon.Viewer} viewer - The OpenSeadragon viewer instance.
+     * @param {Object} [widgetOpts]
+     * @param {string|null} [widgetOpts.storageKey] - If set, toolbar "Show Button" preferences for registered overlays and annotation rows are read from and written to localStorage under this key. Omit or null to disable persistence.
+     */
+    constructor(viewer, widgetOpts = {}) {
+        this.viewer = viewer;
+        this.viewer.configurationWidget = this;
+        this._overlays = [];
+        this._sections = [];
+        this._open = false;
+        this._storageKey = widgetOpts.storageKey != null &amp;&amp; widgetOpts.storageKey !== ''
+            ? String(widgetOpts.storageKey)
+            : null;
+
+        this.overlay = new PaperOverlay(viewer, { overlayType: 'viewer', renderless: true });
+        this.button = this.overlay.addViewerButton({
+            faIconClass: 'fa-gear',
+            tooltip: 'Configuration',
+            onClick: () => this._open ? this.close() : this.open(),
+        });
+        this.button.element.querySelector('svg.icon')?.style.setProperty('width', '1em');
+
+        this._makeDialog();
+    }
+
+    /**
+     * Register an overlay with the configuration widget.
+     * @param {Object} overlay - The overlay instance (must have activate/deactivate methods).
+     * @param {Object} [opts]
+     * @param {string} [opts.label] - Display label. Falls back to overlay.constructor.label or constructor name.
+     * @param {string} [opts.faIconClass] - FA icon class for the row. Falls back to overlay.constructor.faIconClass.
+     * @param {boolean} [opts.showButton=true] - Initial toolbar button visibility when nothing is stored for this key.
+     * @param {string} [opts.overlayKey] - Stable id for persistence (defaults to overlay.constructor.name). Use distinct keys if multiple instances of the same class register on one viewer.
+     */
+    register(overlay, opts = {}) {
+        if (this._overlays.find(e => e.overlay === overlay)) return;
+        const label = opts.label || overlay.constructor.label || overlay.constructor.name;
+        const faIconClass = opts.faIconClass || overlay.constructor.faIconClass || null;
+        const overlayKey = opts.overlayKey || overlay.constructor.name;
+        let showButton = opts.showButton !== false;
+        if (this._storageKey) {
+            const persisted = this.getPersistedToolbarVisibility(overlayKey);
+            if (typeof persisted === 'boolean') {
+                showButton = persisted;
+            }
+        }
+        const entry = { overlay, label, faIconClass, showButton, overlayKey, opts };
+        this._overlays.push(entry);
+        this._addOverlayRow(entry);
+        this._updateEmptyState();
+    }
+
+    /**
+     * True when this widget was constructed with a non-empty storageKey (toolbar visibility is persisted).
+     * @returns {boolean}
+     */
+    persistToolbarVisibilityEnabled() {
+        return !!this._storageKey;
+    }
+
+    /**
+     * Read persisted toolbar button visibility for a logical overlay id (including annotation ids).
+     * @param {string} overlayKey - Same as register opts.overlayKey or ANNOTATION_TOOLBAR_PERSIST_ID_*.
+     * @returns {boolean|undefined} Undefined if persistence is off or no stored value for this key.
+     */
+    getPersistedToolbarVisibility(overlayKey) {
+        if (!this._storageKey) return undefined;
+        const doc = this._loadPersistedDoc();
+        const row = doc.overlays &amp;&amp; doc.overlays[overlayKey];
+        if (!row || typeof row.showButton !== 'boolean') return undefined;
+        return row.showButton;
+    }
+
+    /**
+     * Store toolbar button visibility for a logical overlay id.
+     * @param {string} overlayKey
+     * @param {boolean} visible
+     */
+    setPersistedToolbarVisibility(overlayKey, visible) {
+        if (!this._storageKey) return;
+        try {
+            const doc = this._loadPersistedDoc();
+            doc.v = CONFIG_TOOLBAR_PERSIST_VERSION;
+            if (!doc.overlays) doc.overlays = {};
+            if (!doc.overlays[overlayKey]) doc.overlays[overlayKey] = {};
+            doc.overlays[overlayKey].showButton = !!visible;
+            localStorage.setItem(this._storageKey, JSON.stringify(doc));
+        } catch (e) {
+            /* quota / private mode */
+        }
+    }
+
+    /**
+     * Remove all persisted toolbar visibility data for this widget's storageKey from localStorage.
+     * Does not change the current session UI until rows are rebuilt or toggles change.
+     */
+    clearPersistedOverlayToolbarState() {
+        if (!this._storageKey) return;
+        try {
+            localStorage.removeItem(this._storageKey);
+        } catch (e) {
+            /* */
+        }
+    }
+
+    _loadPersistedDoc() {
+        if (!this._storageKey) {
+            return { v: CONFIG_TOOLBAR_PERSIST_VERSION, overlays: {} };
+        }
+        try {
+            const raw = localStorage.getItem(this._storageKey);
+            if (!raw) return { v: CONFIG_TOOLBAR_PERSIST_VERSION, overlays: {} };
+            const parsed = JSON.parse(raw);
+            if (!parsed || typeof parsed !== 'object') {
+                return { v: CONFIG_TOOLBAR_PERSIST_VERSION, overlays: {} };
+            }
+            if (!parsed.overlays || typeof parsed.overlays !== 'object') {
+                parsed.overlays = {};
+            }
+            return parsed;
+        } catch (e) {
+            return { v: CONFIG_TOOLBAR_PERSIST_VERSION, overlays: {} };
+        }
+    }
+
+    /**
+     * Unregister an overlay from the configuration widget.
+     * @param {Object} overlay - The overlay instance to remove.
+     */
+    unregister(overlay) {
+        const idx = this._overlays.findIndex(e => e.overlay === overlay);
+        if (idx >= 0) {
+            const entry = this._overlays[idx];
+            if (entry._activeChangeHandler &amp;&amp; entry.overlay.removeHandler) {
+                entry.overlay.removeHandler('active-change', entry._activeChangeHandler);
+            }
+            this._overlays.splice(idx, 1);
+            this._rebuildOverlayRows();
+            this._updateEmptyState();
+        }
+    }
+
+    /**
+     * Add a custom section to the configuration dialog.
+     * @param {string} label - Section heading text.
+     * @param {HTMLElement} element - The DOM element to inject.
+     * @returns {HTMLElement} The element, for chaining.
+     */
+    addSection(label, element) {
+        const entry = { label, element };
+        this._sections.push(entry);
+        const container = this.dialog.querySelector('.config-custom-sections');
+        const wrapper = document.createElement('div');
+        wrapper.classList.add('config-section-wrapper');
+        const heading = document.createElement('div');
+        heading.classList.add('config-section-heading');
+        heading.textContent = label;
+        wrapper.appendChild(heading);
+        wrapper.appendChild(element);
+        container.appendChild(wrapper);
+        entry._wrapper = wrapper;
+        this._updateEmptyState();
+        return element;
+    }
+
+    /**
+     * Remove a custom section from the configuration dialog.
+     * @param {HTMLElement} element - The element previously passed to addSection.
+     */
+    removeSection(element) {
+        const idx = this._sections.findIndex(s => s.element === element);
+        if (idx >= 0) {
+            const entry = this._sections[idx];
+            if (entry._wrapper) entry._wrapper.remove();
+            this._sections.splice(idx, 1);
+            this._updateEmptyState();
+        }
+    }
+
+    /**
+     * Open the configuration dialog.
+     */
+    open() {
+        this._open = true;
+        this.dialog.classList.remove('hidden');
+    }
+
+    /**
+     * Close the configuration dialog.
+     */
+    close() {
+        this._open = false;
+        this.dialog.classList.add('hidden');
+    }
+
+    /**
+     * Destroy the configuration widget and clean up.
+     */
+    destroy() {
+        this.dialog.remove();
+        this.overlay.destroy();
+        if (this.viewer.configurationWidget === this) {
+            this.viewer.configurationWidget = null;
+        }
+    }
+
+    _makeDialog() {
+        const css = `&lt;style data-type="osd-configuration-widget">
+.config-dialog {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: min(380px, calc(100% - 24px));
+    max-height: calc(100% - 24px);
+    overflow-y: auto;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 14px;
+    z-index: 10000;
+    padding: 0;
+    color: #222;
+}
+.config-dialog.hidden {
+    display: none;
+}
+.config-dialog-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid #eee;
+}
+.config-dialog-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+.config-dialog-close {
+    cursor: pointer;
+    background: none;
+    border: none;
+    font-size: 20px;
+    line-height: 1;
+    color: #666;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+.config-dialog-close:hover {
+    background: #f0f0f0;
+    color: #222;
+}
+.config-dialog-body {
+    padding: 12px 16px;
+}
+.config-overlay-list {
+    display: grid;
+    grid-template-columns: 18px 1fr auto auto;
+    column-gap: 10px;
+    row-gap: 0;
+    align-items: center;
+}
+.config-overlay-heading-row {
+    display: contents;
+}
+.config-overlay-heading-row .config-heading-title {
+    grid-column: 1 / 3;
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #666;
+    padding-bottom: 8px;
+    white-space: nowrap;
+}
+.config-overlay-heading-row .config-col-header {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    color: #999;
+    padding-bottom: 8px;
+    justify-self: center;
+}
+.config-overlay-row {
+    display: contents;
+}
+.config-overlay-row > *:not(.config-toggle) {
+    padding: 8px 0;
+    border-bottom: 1px solid #f5f5f5;
+}
+.config-overlay-row:last-of-type > *:not(.config-toggle) {
+    border-bottom: none;
+}
+.config-overlay-row > .config-toggle {
+    border-bottom: 1px solid #f5f5f5;
+}
+.config-overlay-row:last-of-type > .config-toggle {
+    border-bottom: none;
+}
+.config-overlay-icon {
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #555;
+}
+.config-overlay-icon svg {
+    width: 14px;
+    height: 14px;
+}
+.config-overlay-label {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.config-overlay-row button {
+    cursor: pointer;
+    background: #f0f0f0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 12px;
+    line-height: 1;
+    color: #333;
+}
+.config-overlay-row button:hover {
+    background: #e0e0e0;
+}
+.config-overlay-row button.active {
+    background: #2a6ef5;
+    border-color: #2a6ef5;
+    color: white;
+}
+.config-toggle {
+    position: relative;
+    width: 32px;
+    height: 18px;
+    display: inline-block;
+    justify-self: center;
+}
+.config-toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+.config-toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: #ccc;
+    border-radius: 18px;
+    transition: background 0.2s;
+}
+.config-toggle-slider:before {
+    content: "";
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    left: 2px;
+    bottom: 2px;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.2s;
+}
+.config-toggle input:checked + .config-toggle-slider {
+    background: #2a6ef5;
+}
+.config-toggle input:checked + .config-toggle-slider:before {
+    transform: translateX(14px);
+}
+.config-custom-sections:not(:empty) {
+    border-top: 1px solid #eee;
+    margin-top: 12px;
+    padding-top: 12px;
+}
+.config-section-wrapper + .config-section-wrapper {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #eee;
+}
+.config-section-heading {
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #666;
+    margin-bottom: 8px;
+}
+.config-empty-message {
+    font-size: 13px;
+    color: #999;
+    font-style: italic;
+    padding: 8px 0;
+}
+.config-custom-sections:empty {
+    display: none;
+}
+&lt;/style>`;
+
+        const html = `&lt;div class="config-dialog hidden">
+    &lt;div class="config-dialog-header">
+        &lt;h3>Configuration&lt;/h3>
+        &lt;button class="config-dialog-close" title="Close">&amp;times;&lt;/button>
+    &lt;/div>
+    &lt;div class="config-dialog-body">
+        &lt;div class="config-empty-message">No configurable options have been set up for this viewer.&lt;/div>
+        &lt;div class="config-overlay-list">&lt;div class="config-overlay-heading-row">&lt;span class="config-heading-title">Available Overlays&lt;/span>&lt;span class="config-col-header" title="Include a button directly in the viewer's toolbar">Show Button&lt;/span>&lt;span>&lt;/span>&lt;/div>&lt;/div>
+        &lt;div class="config-custom-sections">&lt;/div>
+    &lt;/div>
+&lt;/div>`;
+
+        if (!document.querySelector('style[data-type="osd-configuration-widget"]')) {
+            document.querySelector('head')?.appendChild(domObjectFromHTML(css));
+        }
+
+        const el = domObjectFromHTML(html);
+        this.viewer.container.appendChild(el);
+        el.addEventListener('mousemove', ev => ev.stopPropagation());
+
+        el.querySelector('.config-dialog-close').addEventListener('click', () => this.close());
+
+        this.dialog = el;
+
+        for (const entry of this._overlays) {
+            this._addOverlayRow(entry);
+        }
+        this._updateEmptyState();
+    }
+
+    _addOverlayRow(entry) {
+        const list = this.dialog.querySelector('.config-overlay-list');
+        const row = document.createElement('div');
+        row.classList.add('config-overlay-row');
+        row.dataset.overlayIdx = this._overlays.indexOf(entry);
+
+        const iconEl = document.createElement('div');
+        iconEl.classList.add('config-overlay-icon');
+        if (entry.faIconClass) {
+            iconEl.appendChild(makeFaIcon(entry.faIconClass));
+        }
+        row.appendChild(iconEl);
+
+        const labelEl = document.createElement('div');
+        labelEl.classList.add('config-overlay-label');
+        labelEl.textContent = entry.label;
+        row.appendChild(labelEl);
+
+        // Activate/deactivate button
+        const activateBtn = document.createElement('button');
+        activateBtn.textContent = 'Activate';
+        activateBtn.title = 'Activate / Deactivate';
+        activateBtn.addEventListener('click', () => {
+            const overlay = entry.overlay;
+            if (overlay._active) {
+                overlay.deactivate();
+            } else {
+                overlay.activate();
+                this.close();
+            }
+        });
+        entry._activateBtn = activateBtn;
+        if (entry.overlay.addHandler) {
+            entry._activeChangeHandler = (ev) => {
+                if (ev.active) {
+                    activateBtn.classList.add('active');
+                    activateBtn.textContent = 'Deactivate';
+                } else {
+                    activateBtn.classList.remove('active');
+                    activateBtn.textContent = 'Activate';
+                }
+            };
+            entry.overlay.addHandler('active-change', entry._activeChangeHandler);
+        }
+
+        // Show/hide button toggle
+        const toggle = document.createElement('label');
+        toggle.classList.add('config-toggle');
+        toggle.title = 'Include a button directly in the viewer\'s toolbar';
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = true;
+        const slider = document.createElement('span');
+        slider.classList.add('config-toggle-slider');
+        toggle.appendChild(checkbox);
+        toggle.appendChild(slider);
+
+        const overlayBtn = entry.overlay.button || (entry.overlay._viewerButtons &amp;&amp; entry.overlay._viewerButtons[0]);
+        const originalDisplay = (overlayBtn &amp;&amp; overlayBtn.element) ? (overlayBtn.element.style.display || 'inline-block') : 'inline-block';
+        if (!entry.showButton) {
+            checkbox.checked = false;
+            if (overlayBtn &amp;&amp; overlayBtn.element) {
+                overlayBtn.element.style.display = 'none';
+            }
+        }
+        checkbox.addEventListener('change', () => {
+            if (overlayBtn &amp;&amp; overlayBtn.element) {
+                overlayBtn.element.style.display = checkbox.checked ? originalDisplay : 'none';
+            }
+            if (this._storageKey &amp;&amp; entry.overlayKey) {
+                this.setPersistedToolbarVisibility(entry.overlayKey, checkbox.checked);
+            }
+        });
+
+        row.appendChild(toggle);
+        row.appendChild(activateBtn);
+        list.appendChild(row);
+        entry._row = row;
+    }
+
+    _rebuildOverlayRows() {
+        const list = this.dialog.querySelector('.config-overlay-list');
+        list.innerHTML = '';
+        for (const entry of this._overlays) {
+            this._addOverlayRow(entry);
+        }
+    }
+
+    _updateEmptyState() {
+        const empty = this._overlays.length === 0 &amp;&amp; this._sections.length === 0;
+        this.dialog.querySelector('.config-empty-message').style.display = empty ? '' : 'none';
+        this.dialog.querySelector('.config-overlay-list').style.display = this._overlays.length === 0 ? 'none' : '';
+        const customSections = this.dialog.querySelector('.config-custom-sections');
+        if (this._overlays.length === 0) {
+            customSections.style.borderTop = 'none';
+            customSections.style.marginTop = '0';
+            customSections.style.paddingTop = '0';
+        } else {
+            customSections.style.borderTop = '';
+            customSections.style.marginTop = '';
+            customSections.style.paddingTop = '';
+        }
+    }
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="OSDPaperjsAnnotation.html">OSDPaperjsAnnotation</a></li></ul><h3>Classes</h3><ul><li><a href="AnnotationLayout.html">AnnotationLayout</a></li><li><a href="Dialog.html">Dialog</a></li><li><a href="DragAndDrop.html">DragAndDrop</a></li><li><a href="EditableContent.html">EditableContent</a></li><li><a href="FieldOfViewOverlay.html">FieldOfViewOverlay</a></li><li><a href="FieldOfViewTool_FieldOfViewTool.html">FieldOfViewTool</a></li><li><a href="Morph.html">Morph</a></li><li><a href="OSDPaperjsAnnotation.AnnotationItem.html">AnnotationItem</a></li><li><a href="OSDPaperjsAnnotation.AnnotationItemFactory.html">AnnotationItemFactory</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolbar.html">AnnotationToolbar</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolkit.html">AnnotationToolkit</a></li><li><a href="OSDPaperjsAnnotation.AnnotationToolset.html">AnnotationToolset</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUI.html">AnnotationUI</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUITool.html">AnnotationUITool</a></li><li><a href="OSDPaperjsAnnotation.AnnotationUITool.AnnotationUIToolbarBase.html">AnnotationUIToolbarBase</a></li><li><a href="OSDPaperjsAnnotation.BrushTool.html">BrushTool</a></li><li><a href="OSDPaperjsAnnotation.BrushTool.BrushToolbar.html">BrushToolbar</a></li><li><a href="OSDPaperjsAnnotation.DefaultTool.html">DefaultTool</a></li><li><a href="OSDPaperjsAnnotation.DefaultTool.DefaultToolbar.html">DefaultToolbar</a></li><li><a href="OSDPaperjsAnnotation.Ellipse.html">Ellipse</a></li><li><a href="OSDPaperjsAnnotation.EllipseTool.html">EllipseTool</a></li><li><a href="OSDPaperjsAnnotation.EllipseTool.EllipseToolbar.html">EllipseToolbar</a></li><li><a href="OSDPaperjsAnnotation.FeatureCollectionUI.html">FeatureCollectionUI</a></li><li><a href="OSDPaperjsAnnotation.FeatureUI.html">FeatureUI</a></li><li><a href="OSDPaperjsAnnotation.FileDialog.html">FileDialog</a></li><li><a href="OSDPaperjsAnnotation.LayerUI.html">LayerUI</a></li><li><a href="OSDPaperjsAnnotation.Linestring.html">Linestring</a></li><li><a href="OSDPaperjsAnnotation.LinestringTool.html">LinestringTool</a></li><li><a href="OSDPaperjsAnnotation.LinestringTool.LinestringToolbar.html">LinestringToolbar</a></li><li><a href="OSDPaperjsAnnotation.MultiLinestring.html">MultiLinestring</a></li><li><a href="OSDPaperjsAnnotation.MultiPolygon.html">MultiPolygon</a></li><li><a href="OSDPaperjsAnnotation.PaperOverlay.html">PaperOverlay</a></li><li><a href="OSDPaperjsAnnotation.Placeholder.html">Placeholder</a></li><li><a href="OSDPaperjsAnnotation.Point.html">Point</a></li><li><a href="OSDPaperjsAnnotation.PointText.html">PointText</a></li><li><a href="OSDPaperjsAnnotation.PointTextTool.html">PointTextTool</a></li><li><a href="OSDPaperjsAnnotation.PointTextTool.PointTextToolbar.html">PointTextToolbar</a></li><li><a href="OSDPaperjsAnnotation.PointTool.html">PointTool</a></li><li><a href="OSDPaperjsAnnotation.PointTool.PointToolbar.html">PointToolbar</a></li><li><a href="OSDPaperjsAnnotation.PolygonTool.html">PolygonTool</a></li><li><a href="OSDPaperjsAnnotation.PolygonTool.PolygonToolbar.html">PolygonToolbar</a></li><li><a href="OSDPaperjsAnnotation.Raster.html">Raster</a></li><li><a href="OSDPaperjsAnnotation.RasterTool.html">RasterTool</a></li><li><a href="OSDPaperjsAnnotation.RasterTool.RasterToolbar.html">RasterToolbar</a></li><li><a href="OSDPaperjsAnnotation.Rectangle.html">Rectangle</a></li><li><a href="OSDPaperjsAnnotation.RectangleTool.html">RectangleTool</a></li><li><a href="OSDPaperjsAnnotation.RectangleTool_RectToolbar.html">RectToolbar</a></li><li><a href="OSDPaperjsAnnotation.RotationControlOverlay.html">RotationControlOverlay</a></li><li><a href="OSDPaperjsAnnotation.RotationControlTool.html">RotationControlTool</a></li><li><a href="OSDPaperjsAnnotation.RotationControlWidget.html">RotationControlWidget</a></li><li><a href="OSDPaperjsAnnotation.RulerTool.html">RulerTool</a></li><li><a href="OSDPaperjsAnnotation.RulerTool.RulerToolbar.html">RulerToolbar</a></li><li><a href="OSDPaperjsAnnotation.StyleTool.html">StyleTool</a></li><li><a href="OSDPaperjsAnnotation.StyleTool.StyleToolbar.html">StyleToolbar</a></li><li><a href="OSDPaperjsAnnotation.ToolBase.html">ToolBase</a></li><li><a href="OSDPaperjsAnnotation.TransformTool.html">TransformTool</a></li><li><a href="OSDPaperjsAnnotation.TransformTool.TransformToolbar.html">TransformToolbar</a></li><li><a href="OSDPaperjsAnnotation.WandTool.html">WandTool</a></li><li><a href="OSDPaperjsAnnotation.WandTool.WandToolbar.html">WandToolbar</a></li><li><a href="OSDPaperjsAnnotation.exports.ConfigurationWidget.html">exports.ConfigurationWidget</a></li><li><a href="OSDPaperjsAnnotation.exports.ViewerOverlayBase.html">exports.ViewerOverlayBase</a></li><li><a href="RulerMeasurement.html">RulerMeasurement</a></li><li><a href="ScreenshotOverlay.html">ScreenshotOverlay</a></li><li><a href="ScreenshotTool.html">ScreenshotTool</a></li><li><a href="SelectTool.html">SelectTool</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ANNOTATION_TOOLBAR_PERSIST_ID_FILE">ANNOTATION_TOOLBAR_PERSIST_ID_FILE</a></li><li><a href="global.html#ANNOTATION_TOOLBAR_PERSIST_ID_PENCIL">ANNOTATION_TOOLBAR_PERSIST_ID_PENCIL</a></li><li><a href="global.html#COMPOUND_PATH_CONTRACT_MESSAGE">COMPOUND_PATH_CONTRACT_MESSAGE</a></li><li><a href="global.html#CONFIG_TOOLBAR_PERSIST_VERSION">CONFIG_TOOLBAR_PERSIST_VERSION</a></li><li><a href="global.html#FOV_DROP_UNDER_STROKE">FOV_DROP_UNDER_STROKE</a></li><li><a href="global.html#FOV_HIT_FILL_ALPHA">FOV_HIT_FILL_ALPHA</a></li><li><a href="global.html#FOV_PREVIEW_OVER_STROKE">FOV_PREVIEW_OVER_STROKE</a></li><li><a href="global.html#FOV_PREVIEW_UNDER_STROKE">FOV_PREVIEW_UNDER_STROKE</a></li><li><a href="global.html#_makeOverlayStyleRow">_makeOverlayStyleRow</a></li><li><a href="global.html#_paper">_paper</a></li><li><a href="global.html#adaptiveOffsetCurve">adaptiveOffsetCurve</a></li><li><a href="global.html#annotationToolPrimaryButtonActiveDrag">annotationToolPrimaryButtonActiveDrag</a></li><li><a href="global.html#annotationToolPrimaryButtonDownOrUp">annotationToolPrimaryButtonDownOrUp</a></li><li><a href="global.html#areaMm2FromDiameterPhysical">areaMm2FromDiameterPhysical</a></li><li><a href="global.html#attachAnnotationToolkitConfigurationWidget">attachAnnotationToolkitConfigurationWidget</a></li><li><a href="global.html#buildDownsampleOptions">buildDownsampleOptions</a></li><li><a href="global.html#buildScreenshotDialogCSS">buildScreenshotDialogCSS</a></li><li><a href="global.html#buildScreenshotDialogHTML">buildScreenshotDialogHTML</a></li><li><a href="global.html#buildSegmentGroupFromPath">buildSegmentGroupFromPath</a></li><li><a href="global.html#circlePreviewGeometryFromProjectPoint">circlePreviewGeometryFromProjectPoint</a></li><li><a href="global.html#composeScreenshotWithScalebar">composeScreenshotWithScalebar</a></li><li><a href="global.html#computeLabelPlacementCenter">computeLabelPlacementCenter</a></li><li><a href="global.html#computeOutputSize">computeOutputSize</a></li><li><a href="global.html#computeRenderSignature">computeRenderSignature</a></li><li><a href="global.html#connectAdjacentBezier">connectAdjacentBezier</a></li><li><a href="global.html#connectBeziers">connectBeziers</a></li><li><a href="global.html#convertFaIcons">convertFaIcons</a></li><li><a href="global.html#coordinatesMatchGeometryType">coordinatesMatchGeometryType</a></li><li><a href="global.html#createDroppedRingGroup">createDroppedRingGroup</a></li><li><a href="global.html#createPreviewRingGroup">createPreviewRingGroup</a></li><li><a href="global.html#createScreenshotDialogElement">createScreenshotDialogElement</a></li><li><a href="global.html#diameterPhysicalFromAreaMm2">diameterPhysicalFromAreaMm2</a></li><li><a href="global.html#diameterPhysicalToBasePixels">diameterPhysicalToBasePixels</a></li><li><a href="global.html#ensureNamedToolLayer">ensureNamedToolLayer</a></li><li><a href="global.html#evaluatePaperItemShapeContract">evaluatePaperItemShapeContract</a></li><li><a href="global.html#fovGeometryLog">fovGeometryLog</a></li><li><a href="global.html#fovOverlayLog">fovOverlayLog</a></li><li><a href="global.html#getPointLineIntersections">getPointLineIntersections</a></li><li><a href="global.html#iconDefs">iconDefs</a></li><li><a href="global.html#imagePointToProjectPoint">imagePointToProjectPoint</a></li><li><a href="global.html#isLineStringCoordinates">isLineStringCoordinates</a></li><li><a href="global.html#isLinearRing">isLinearRing</a></li><li><a href="global.html#isMultiLineStringCoordinates">isMultiLineStringCoordinates</a></li><li><a href="global.html#isMultiPointCoordinates">isMultiPointCoordinates</a></li><li><a href="global.html#isMultiPolygonCoordinates">isMultiPolygonCoordinates</a></li><li><a href="global.html#isPolygonCoordinates">isPolygonCoordinates</a></li><li><a href="global.html#isPosition">isPosition</a></li><li><a href="global.html#localImportsCompleted">localImportsCompleted</a></li><li><a href="global.html#makeFaIcon">makeFaIcon</a></li><li><a href="global.html#makeRoundJoin">makeRoundJoin</a></li><li><a href="global.html#mppFromTiledImage">mppFromTiledImage</a></li><li><a href="global.html#normalize">normalize</a></li><li><a href="global.html#offsetSegment">offsetSegment</a></li><li><a href="global.html#osd">osd</a></li><li><a href="global.html#projectPointToImagePoint">projectPointToImagePoint</a></li><li><a href="global.html#removeIntersection">removeIntersection</a></li><li><a href="global.html#removeOutsiders">removeOutsiders</a></li><li><a href="global.html#renderBaseScreenshot">renderBaseScreenshot</a></li><li><a href="global.html#styleDroppedOver">styleDroppedOver</a></li><li><a href="global.html#styleDroppedUnder">styleDroppedUnder</a></li><li><a href="global.html#stylePreviewRing">stylePreviewRing</a></li><li><a href="global.html#toolConstructors">toolConstructors</a></li><li><a href="global.html#updateFillOpacity">updateFillOpacity</a></li><li><a href="global.html#updateStrokeOpacity">updateStrokeOpacity</a></li><li><a href="global.html#validateGeoJSONGeometry">validateGeoJSONGeometry</a></li><li><a href="global.html#validatePaperItemShapeContract">validatePaperItemShapeContract</a></li><li><a href="global.html#waitForNextPaintFrames">waitForNextPaintFrames</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.0</a> on Wed May 13 2026 16:45:59 GMT-0400 (Eastern Daylight Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
