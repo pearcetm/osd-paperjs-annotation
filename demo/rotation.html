@@ -1,81 +1,53 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Rotation Control Demo</title>
+    <title>Rotation control overlay demo</title>
     <script type="text/javascript" src="./openseadragon/openseadragon.min.js"></script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/paper.js/0.12.17/paper-full.js"></script>
+    <script type="module" src="./rotation.mjs"></script>
     <link rel="stylesheet" href="./demo.css">
-
-
-    <script type="module">
-      import {RotationControlOverlay} from '../src/js/rotationcontrol.mjs'
-
-      // Basic viewer setup
-      let viewer = OpenSeadragon({
-        element: 'rotating-viewer',
-        prefixUrl: "https://openseadragon.github.io/openseadragon/images/",
-        tileSources: {
-          type: 'image',
-          url: 'https://openseadragon.github.io/example-images/grand-canyon-landscape-overlooking.jpg',
-          buildPyramid: false
-        },
-        minZoomImageRatio: 0.01,
-        visibilityRatio: 0,
-        crossOriginPolicy: 'Anonymous',
-        ajaxWithCredentials: false
-      });
-
-      viewer.addHandler('open', () => {
-        new RotationControlOverlay(viewer);
-      });
-    </script>
 </head>
 <body>
     <div class="content">
         <div class="demo">
-            <h3>Rotation Control Overlay Demo</h3>
-            <div id="rotating-viewer" class="viewer"></div>
-            <div>
-                <h4>How to use:</h4>
-                <p>Toggle the controller using the button on the upper left toolbar.</p>
-                <p>Rotate the image using the following options:
-                <ul>
-                    <li>Click the control boxes at the cardinal directions (N, E, S, W) to jump to those angles</li>
-                    <li>Click and drag the cross-hair controller to the desired center point for the rotation</li>
-                    <li>Click and drag the indicator dot to directly set the orientation</li>
-                    <li>Click and drag other places on the viewer. A line shows you the axis between the center point and your cursor, for alignment with features in the image. </li>
-                </ul>
-                </p>
+            <h3>Rotation control overlay demo</h3>
+
+            <div class="demo-section">
+                <h4>About the overlay</h4>
                 <p>
-                    While the controller is active, hold the shift key to zoom/pan the image. The controller will reactivate after the key press.
+                    <code>RotationControlOverlay</code> adds a rotate toolbar button, a Paper.js overlay, and wires the internal
+                    <code>RotationControlTool</code> (you normally do not construct the tool yourself).
+                    It extends <code>ViewerOverlayBase</code>, so it can register with a
+                    <a href="./configuration.html">configuration widget</a> when one is attached to the viewer first.
                 </p>
-                <p>Pressing escape will deactivate the rotation control tool.</p>
+            </div>
 
-                <h4>Code:</h4>
-                <pre>
-                    // Must be placed inside a module: script with type="module" for import to work
-                    import {RotationControlOverlay} from '../src/js/rotationcontrol.mjs'
+            <div class="demo-section">
+                <h4>How to use</h4>
+                <ul>
+                    <li>Click the rotate button on the viewer toolbar to activate the overlay.</li>
+                    <li>Click the control boxes at the cardinal directions (N, E, S, W) to jump to those angles.</li>
+                    <li>Click and drag the cross-hair controller to move the rotation center.</li>
+                    <li>Click and drag the indicator dot to set orientation directly.</li>
+                    <li>Click and drag elsewhere on the viewer: a line shows the axis from the center to the cursor for alignment with image features.</li>
+                    <li>While the overlay is active, hold <strong>Shift</strong> to pan/zoom; the rotation UI returns after the key is released.</li>
+                    <li>Press <strong>Escape</strong> to deactivate the overlay.</li>
+                </ul>
+            </div>
 
-                    // Basic viewer setup
-                    let viewer = OpenSeadragon({
-                        element:'rotating-viewer',
-                        prefixUrl: "https://openseadragon.github.io/openseadragon/images/",
-                        tileSources: {
-                            type: 'image',
-                            url:  'https://openseadragon.github.io/example-images/grand-canyon-landscape-overlooking.jpg',
-                            buildPyramid: false
-                        },
-                        minZoomImageRatio:0.01,
-                        visibilityRatio:0,
-                        crossOriginPolicy: 'Anonymous',
-                        ajaxWithCredentials: false
-                    });
+            <div class="demo-section">
+                <h4>Scenario 1: Overlay only</h4>
+                <p>No configuration widget; only the rotation overlay (see <code>demo/rotation.mjs</code>).</p>
+                <div id="rotation-viewer" class="viewer"></div>
+            </div>
 
-                    //Add a RotationControlOverlay to the viewer
-                    viewer.addHandler('open',()=>{
-                        new RotationControlOverlay(viewer)
-                    });
-                </pre>
+            <div class="demo-section">
+                <h4>Scenario 2: Overlay + configuration widget</h4>
+                <p>
+                    Open the <strong>gear</strong> menu to show or hide the rotate toolbar button and to activate/deactivate the overlay
+                    from the configuration panel (same pattern as other <code>ViewerOverlayBase</code> overlays).
+                </p>
+                <div id="rotation-viewer-config" class="viewer"></div>
             </div>
         </div>
     </div>

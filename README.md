@@ -68,5 +68,5 @@ Gulp DocUpdater: only updates documentation whenever you save a file
 Gulp PackUpdater: only updates bundle.js whenever you save a file
 Gulp webpack: updates bundle.js
 Gulp doc: updates documentation
-Gulp Demo: Launches the rotional control demo on a local html address on your default browser
+Gulp Demo: Launches the rotation control overlay demo on a local HTML address in your default browser
 
