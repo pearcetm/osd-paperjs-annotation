@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.7.2] - 2026-05-15
+
 ### Added
 
 - Exported `mppFromTiledImage`, `mppFromActiveViewerImage`, and `applyRulerPhysicalScaleFromMpp` to sync ruler mm/µm scale from `tiledImage.source.mpp` (isotropic +X via `mpp.x`, same as field-of-view). Ruler must be in the toolset; syncing updates toolbar display and in-progress segment labels, not persisted measurement metadata until the user measures again.
@@ -88,6 +90,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Detection and handling when paper items with invalid geometries are added as annotation subtypes.
 - Ignore drawing actions from non-primary mouse buttons (e.g. middle or right click).
 
+[0.7.2]: https://github.com/pearcetm/osd-paperjs-annotation/compare/v0.7.1...v0.7.2
+[0.7.1]: https://github.com/pearcetm/osd-paperjs-annotation/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/pearcetm/osd-paperjs-annotation/releases/tag/v0.7.0
 [0.6.0]: https://github.com/pearcetm/osd-paperjs-annotation/releases/tag/v0.6.0
 [0.5.0]: https://github.com/pearcetm/osd-paperjs-annotation/releases/tag/v0.5.0

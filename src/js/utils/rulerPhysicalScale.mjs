@@ -4,9 +4,10 @@
  */
 
 /**
- * @param {import('../annotationtoolkit.mjs').AnnotationToolkit} toolkit
- * @param {{ x: number, y: number } | null} mpp - Microns per source pixel (isotropic +X uses mpp.x)
- * @param {{ unit?: 'mm' | 'um' }} [options]
+ * @param {OSDPaperjsAnnotation.AnnotationToolkit} toolkit
+ * @param {Object|null} mpp - Microns per source pixel `{ x, y }` (isotropic +X uses `mpp.x`)
+ * @param {Object} [options]
+ * @param {string} [options.unit] - Display unit: `'mm'` (default) or `'um'`
  * @returns {boolean} true if ruler toolbar was updated
  */
 export function applyRulerPhysicalScaleFromMpp(toolkit, mpp, options = {}) {
