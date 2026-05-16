@@ -58,6 +58,7 @@ import { PointText } from './paperitems/pointtext.mjs';
 import { Rectangle } from './paperitems/rectangle.mjs';
 import { Ellipse } from './paperitems/ellipse.mjs';
 import { cyrb53 } from './utils/hash.mjs';
+import { ANNOTATION_UI_SCOPE_CLASS } from './utils/annotationUIScope.mjs';
 
 //extend paper prototypes to add functionality
 //property definitions
@@ -161,7 +162,10 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
             }
         };
         this.viewer = openSeadragonViewer;
-        
+        if (this.viewer?.element) {
+            this.viewer.element.classList.add(ANNOTATION_UI_SCOPE_CLASS);
+        }
+
         // set up overlay. If one is passed in, use it. Otherwise, create one.
         if(this.options.overlay){
             if(this.options.overlay instanceof PaperOverlay){
@@ -509,6 +513,9 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
         this._unregisterConfigurationWidgetSection();
 
         this.viewer.annotationToolkit = null;
+        if (this.viewer?.element) {
+            this.viewer.element.classList.remove(ANNOTATION_UI_SCOPE_CLASS);
+        }
         if (this._annotationLayout) {
             this._annotationLayout.destroy();
             this._annotationLayout = null;

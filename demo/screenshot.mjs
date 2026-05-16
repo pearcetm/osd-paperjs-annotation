@@ -1,5 +1,5 @@
-
 import { ScreenshotOverlay } from '../src/js/overlays/screenshot/screenshot.mjs';
+import { DSA_DZI_URL, prefetchDsaMpp } from './dsa-wsi.mjs';
 
 const SETTINGS_KEY = 'osd-paperjs-annotation.screenshotOverlay.v1';
 
@@ -45,31 +45,6 @@ function getTileSources() {
         },
         // 'https://openseadragon.github.io/example-images/highsmith/highsmith.dzi',
     ];
-}
-
-const DSA_ITEM_ID = '5b9f00f7e62914002e94cf83';
-const DSA_TILES_META_URL = `https://api.digitalslidearchive.org/api/v1/item/${DSA_ITEM_ID}/tiles`;
-const DSA_DZI_URL = `https://api.digitalslidearchive.org/api/v1/item/${DSA_ITEM_ID}/tiles/dzi.dzi`;
-
-async function prefetchDsaMpp() {
-    try {
-        const meta = await fetch(DSA_TILES_META_URL, { mode: 'cors' }).then(r => r.json());
-        const mmX = Number(meta?.mm_x);
-        const mmY = Number(meta?.mm_y);
-        if (!Number.isFinite(mmX) || !Number.isFinite(mmY) || mmX <= 0 || mmY <= 0) {
-            // eslint-disable-next-line no-console
-            console.warn('DSA metadata missing mm_x/mm_y; skipping DSA slide.');
-            return null;
-        }
-        const mpp = { x: mmX * 1000, y: mmY * 1000 }; // µm/px
-        // eslint-disable-next-line no-console
-        console.log('DSA metadata loaded; enabling WSI page with mpp:', mpp);
-        return mpp;
-    } catch (e) {
-        // eslint-disable-next-line no-console
-        console.warn('Could not fetch DSA /tiles metadata; skipping DSA slide.', e);
-        return null;
-    }
 }
 
 async function buildTileSourcesWithOptionalDsa() {

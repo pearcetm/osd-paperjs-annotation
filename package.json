@@ -8,9 +8,10 @@
     "src/css"
   ],
   "scripts": {
-    "test": "node test/geojsonGeometryShape.test.mjs && node test/emptyGeometryExport.test.mjs && node test/paperItemShapeContractCore.test.mjs",
+    "test": "node test/geojsonGeometryShape.test.mjs && node test/emptyGeometryExport.test.mjs && node test/paperItemShapeContractCore.test.mjs && node test/mpp.test.mjs && node test/rulerPhysicalScale.test.mjs",
     "generate-docs": "jsdoc -c ./jsdoc-config.json",
-    "build": "webpack",
+    "scope-css": "node scripts/scope-css.mjs",
+    "build": "npm run scope-css && webpack",
     "prepublishOnly": "npm run build"
   },
   "repository": {
@@ -37,6 +38,10 @@
     "file-loader": "^6.2.0",
     "imports-loader": "4.0.1",
     "jsdoc": "4.0.0",
+    "postcss": "^8.5.14",
+    "postcss-cli": "^11.0.1",
+    "postcss-loader": "^8.2.1",
+    "postcss-prefix-selector": "^2.1.1",
     "style-loader": "3.3.3",
     "svg-url-loader": "^8.0.0",
     "unminified-webpack-plugin": "3.0.0",

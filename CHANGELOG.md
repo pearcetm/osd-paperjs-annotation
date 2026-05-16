@@ -4,6 +4,23 @@ All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+
+- Exported `mppFromTiledImage`, `mppFromActiveViewerImage`, and `applyRulerPhysicalScaleFromMpp` to sync ruler mm/µm scale from `tiledImage.source.mpp` (isotropic +X via `mpp.x`, same as field-of-view). Ruler must be in the toolset; syncing updates toolbar display and in-progress segment labels, not persisted measurement metadata until the user measures again.
+
+### Changed
+
+- **Demos:** Ruler demo (`demo/ruler.html`) shows px default, WSI scale from `tiledImage.source.mpp`, and programmatic `applyRulerPhysicalScaleFromMpp`. Field-of-view demo documents both ruler paths; shared DSA helpers in `demo/dsa-wsi.mjs`.
+- **CSS scoping:** `annotationui.css` is generated with PostCSS under `.osd-paperjs-annotation`, fixing global leakage of bootstrap-shim rules (`input[type=range]`, `.btn`, `.hidden`, `button[disabled]`, etc.) into host pages. Edit `src/css/annotationui.unscoped.css`, then run `npm run scope-css`. `AnnotationToolkit` adds the scope class to `viewer.element`; UI mounted outside the viewer must wrap mount points with the same class. Exported `ANNOTATION_UI_SCOPE_CLASS`. See [docs/css-scoping.md](docs/css-scoping.md).
+- Webpack-injected styles are marked with `data-osd-paperjs-annotation`; `addCSS()` link tags use the same attribute.
+
+### Fixed
+
+- Demos and `addAnnotationUI()` broken layout / missing viewer image after initial CSS scoping (scope on `viewer.element`; `annotation-ui-grid` unchanged from pre-scoping DOM).
+- Embedders no longer need host-specific CSS overrides for unrelated header controls (e.g. magnification range sliders) when loading the bundle before page chrome.
+
 ## [0.7.1] - 2026-05-13
 
 ### Added

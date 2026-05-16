@@ -4,24 +4,14 @@
 
 import { OpenSeadragon } from '../../osd-loader.mjs';
 import { paper } from '../../paperjs.mjs';
+import { mppFromTiledImage } from '../../utils/mpp.mjs';
+
+export { mppFromTiledImage };
 
 const FOV_DEBUG = true;
 /** @param {...unknown} args */
 function fovGeometryLog(...args) {
     if (FOV_DEBUG) console.log('[FOV geometry]', ...args);
-}
-
-/**
- * @param {OpenSeadragon.TiledImage} tiledImage
- * @returns {{ x: number, y: number } | null}
- */
-export function mppFromTiledImage(tiledImage) {
-    const mpp = tiledImage?.source?.mpp;
-    if (!mpp) return null;
-    const x = Number(mpp.x);
-    const y = Number(mpp.y);
-    if (!Number.isFinite(x) || !Number.isFinite(y) || x <= 0 || y <= 0) return null;
-    return { x, y };
 }
 
 /**

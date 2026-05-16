@@ -1,4 +1,3 @@
-/* Generated from annotationui.unscoped.css — edit that file, then run: npm run scope-css */
 /**
  * OpenSeadragon paperjs overlay plugin based on paper.js
  * @version 0.7.1
@@ -37,23 +36,23 @@
  * 
  */
 /* Edit this file, then run: npm run scope-css (writes annotationui.css with .osd-paperjs-annotation scope). */
-body.annotation-ui-noselect{
+.annotation-ui-noselect{
     user-select:none;
 }
-.osd-paperjs-annotation .ui-dialog{
+.ui-dialog{
     font-size:14px;
 }
-.osd-paperjs-annotation .ui-dialog, .osd-paperjs-annotation .ui-dialog-content {
+.ui-dialog, .ui-dialog-content {
     box-sizing: content-box;
 }
-.osd-paperjs-annotation .flex-row{
+.flex-row{
     display:flex;
     flex-direction:row;
 }
-.osd-paperjs-annotation .annotation-ui-mainwindow .templates{
+.annotation-ui-mainwindow .templates{
     display:none;
 }
-.osd-paperjs-annotation .annotation-ui-mainwindow{
+.annotation-ui-mainwindow{
     height:100%;
     width:16em;
     min-width:12em;
@@ -65,7 +64,7 @@ body.annotation-ui-noselect{
     padding:2px;
     box-sizing:border-box;
 }
-.osd-paperjs-annotation .annotation-visibility-controls{
+.annotation-visibility-controls{
     display:flex;
     flex-grow:0;
     flex-shrink:0;
@@ -73,133 +72,134 @@ body.annotation-ui-noselect{
     padding-bottom:2px;
     margin-bottom:2px;
 }
-.osd-paperjs-annotation .annotation-visibility-controls .visibility-buttons{
+.annotation-visibility-controls .visibility-buttons{
     flex-grow:0;
     display:flex;
     margin-right:5px;
 }
-.osd-paperjs-annotation .annotation-visibility-controls .annotation-opacity-container{
+.annotation-visibility-controls .annotation-opacity-container{
     flex-grow:1;
 }
-.osd-paperjs-annotation .annotation-ui-mainwindow button.btn{
+.annotation-ui-mainwindow button.btn{
     padding:0 3px;
 }
-.osd-paperjs-annotation .file-button{
+.file-button{
     padding:0.1em 0.5em;
     margin-right:0.3em;
 }
-.osd-paperjs-annotation .annotation-ui label{
+.annotation-ui label{
     margin:0;
 }
-.osd-paperjs-annotation .annotation-ui-feature-collections{
+.annotation-ui-feature-collections{
     overflow:auto;
     border-bottom:thin gray solid;
 }
-.osd-paperjs-annotation .annotation-ui-feature-collections:empty::before {
+.annotation-ui-feature-collections:empty::before {
     content: 'Click below to begin a new feature collection';
     color: gray;
 }
-.osd-paperjs-annotation .feature-collection{
+.feature-collection{
     border: thin transparent solid;
     padding:2px;
     opacity:0.1;
 }
-.osd-paperjs-annotation .annotation-ui-feature-collections .feature-collection{
+.annotation-ui-feature-collections .feature-collection{
     transition: opacity 1s;
 }
-.osd-paperjs-annotation .annotation-ui-feature-collections .feature-collection.inserted:not(.trashed):not(.draganddrop-dragging){
+.annotation-ui-feature-collections .feature-collection.inserted:not(.trashed):not(.draganddrop-dragging){
     opacity:1;
 }
-.osd-paperjs-annotation .annotation-ui-feature-collections .feature-collection:not(.trashed).selected{
+.annotation-ui-feature-collections .feature-collection:not(.trashed).selected{
     border:thin black solid;
     background-color:azure;
 } 
-.osd-paperjs-annotation .annotation-ui-feature-collections
-    .feature-collection:not(.trashed,.annotation-hidden,.selected):hover,.osd-paperjs-annotation .feature-collection.svg-hovered:not(.trashed):not(.annotation-hidden){
+.annotation-ui-feature-collections
+    .feature-collection:not(.trashed,.annotation-hidden,.selected):hover, 
+    .feature-collection.svg-hovered:not(.trashed):not(.annotation-hidden){
     background-color:lightgoldenrodyellow;
     border:thin black solid;
 }
-.osd-paperjs-annotation .feature-collection.annotation-hidden [data-action="hide"]{
+.feature-collection.annotation-hidden [data-action="hide"]{
     display:none;
 }
-.osd-paperjs-annotation .feature-collection:not(.annotation-hidden) [data-action="show"]{
+.feature-collection:not(.annotation-hidden) [data-action="show"]{
     display:none;
 }
-.osd-paperjs-annotation .feature-collection.annotation-hidden .features{
+.feature-collection.annotation-hidden .features{
     pointer-events:none;
     opacity:50%;
 }
-.osd-paperjs-annotation .annotation-ui-feature-collections .name{
+.annotation-ui-feature-collections .name{
     font-weight:bold;
 }
-.osd-paperjs-annotation .annotation-details{
+.annotation-details{
     flex-grow:1;
 }
-.osd-paperjs-annotation .feature-item{
+.feature-item{
     margin-left:1em;
 }
 
-.osd-paperjs-annotation .feature-collection [data-action], .osd-paperjs-annotation .feature [data-action]{
+.feature-collection [data-action], .feature [data-action]{
     margin-left:0.2em;
 }
-.osd-paperjs-annotation .hoverable-actions:not(:hover) .onhover{
+.hoverable-actions:not(:hover) .onhover{
     visibility:hidden;
 }
-.osd-paperjs-annotation .hoverable-actions:hover .editablecontent .onhover {
+.hoverable-actions:hover .editablecontent .onhover {
     visibility:visible;
 }
-.osd-paperjs-annotation .feature-collection.trashed{
+.feature-collection.trashed{
     background-color:darkred;
     opacity:0.3;
     pointer-events:none;
 }
-.osd-paperjs-annotation .annotation-header{
+.annotation-header{
     display:grid;
     grid-template-columns:auto 1fr auto auto auto;
 }
-.osd-paperjs-annotation .feature-collection.trashed .annotation-header [data-action="trash"]{
+.feature-collection.trashed .annotation-header [data-action="trash"]{
     pointer-events:all;
     visibility:visible;
 }
-.osd-paperjs-annotation .feature-collection .toggle-list{
+.feature-collection .toggle-list{
     flex-grow:0
 }
-.osd-paperjs-annotation .feature-collection .features{
+.feature-collection .features{
     flex-grow:1;
 }
-.osd-paperjs-annotation .features.collapsed .features-list{
+.features.collapsed .features-list{
     display:none;
 }
-.osd-paperjs-annotation .features:not(.collapsed) .features-summary{
+.features:not(.collapsed) .features-summary{
     display:none;
 }
-.osd-paperjs-annotation .features.collapsed [data-action="collapse-up"]{
+.features.collapsed [data-action="collapse-up"]{
     display:none;
 }
-.osd-paperjs-annotation .features:not(.collapsed) [data-action="collapse-down"]{
+.features:not(.collapsed) [data-action="collapse-down"]{
     display:none;
 }
-.osd-paperjs-annotation .features-summary:not([data-num-elements="1"]) .pluralize::before{
+.features-summary:not([data-num-elements="1"]) .pluralize::before{
     content:'s';
 }
-.osd-paperjs-annotation .feature.selected{
+.feature.selected{
     background-color:green;
 }
-.osd-paperjs-annotation .feature{
+.feature{
     cursor:default;
 }
-.osd-paperjs-annotation .annotation-ui-mainwindow.disabled .disable-when-annotations-hidden{
+.annotation-ui-mainwindow.disabled .disable-when-annotations-hidden{
     opacity:0.5;
     pointer-events:none;
     cursor:not-allowed;
 }
-.osd-paperjs-annotation .annotation-ui-mainwindow.deactivated .disable-when-deactivated{
+.annotation-ui-mainwindow.deactivated .disable-when-deactivated{
     opacity:0.5;
     pointer-events:none;
     cursor:not-allowed;
 }
 
-.osd-paperjs-annotation .annotation-ui-grid{
+.annotation-ui-grid{
     display: grid;
     grid-template-rows: auto 1fr auto;
     grid-template-columns: auto 1fr auto;
@@ -207,32 +207,32 @@ body.annotation-ui-noselect{
     height: 100%;
     background-color:white;
 }
-.osd-paperjs-annotation .annotation-ui-grid .center{
+.annotation-ui-grid .center{
     grid-column: 2 / 3;
     grid-row: 2 / 3;
     position:relative;
     z-index:0; /* reset the z-index basis for this container so children can be manipulated independently of siblings */
 }
-.osd-paperjs-annotation .annotation-ui-grid .top {
+.annotation-ui-grid .top {
     grid-column: 1 / 3;
     grid-row: 1 / 2;
     text-align:center;
     border-bottom:thin gray solid;
 }
-.osd-paperjs-annotation .annotation-ui-grid .bottom {
+.annotation-ui-grid .bottom {
     grid-column: 1 / 3;
     grid-row: 3 / 4;
 }
-.osd-paperjs-annotation .annotation-ui-grid .left {
+.annotation-ui-grid .left {
     grid-column: 1 / 2;
     grid-row: 2 / 3;
 }
-.osd-paperjs-annotation .annotation-ui-grid .right {
+.annotation-ui-grid .right {
     grid-column: 3 / 4;
     grid-row: 1 / 4;
     position:relative;
 }
-.osd-paperjs-annotation .annotation-ui-grid .resize-right{
+.annotation-ui-grid .resize-right{
     width: 15px;
     left: -15px;
     position: absolute;
@@ -246,17 +246,17 @@ body.annotation-ui-noselect{
     border-top-left-radius: 5px;
     border-bottom-left-radius: 5px;
 }
-.osd-paperjs-annotation .annotation-ui-grid .resize-right::before{
+.annotation-ui-grid .resize-right::before{
     content:'||';
 }
-.osd-paperjs-annotation .annotation-ui-grid .resize-right.resizing{
+.annotation-ui-grid .resize-right.resizing{
     cursor:grabbing;
 }
-.osd-paperjs-annotation .annotation-ui-grid .right:not(:hover) .resize-right{
+.annotation-ui-grid .right:not(:hover) .resize-right{
     display:none;
 }
 
-.osd-paperjs-annotation .annotation-ui-drawing-toolbar .pseudohidden, .osd-paperjs-annotation .annotation-ui-drawing-toolbar .invisible{
+.annotation-ui-drawing-toolbar .pseudohidden, .annotation-ui-drawing-toolbar .invisible{
     visibility:hidden;
     width: 0;
     height: 0;
@@ -264,49 +264,49 @@ body.annotation-ui-noselect{
     padding:0;
     border:none;
 }
-.osd-paperjs-annotation .annotation-ui-drawing-toolbar{
+.annotation-ui-drawing-toolbar{
     background-color:lightgray;
     display: inline-block;
     max-width:100%;
     text-align:left;
 }
-.osd-paperjs-annotation .annotation-ui-drawing-toolbar button[disabled]{
+.annotation-ui-drawing-toolbar button[disabled]{
     pointer-events:none;
     cursor:not-allowed;
     border:thin solid transparent;
 }
-.osd-paperjs-annotation .annotation-ui-drawing-toolbar button:not([disabled]){
+.annotation-ui-drawing-toolbar button:not([disabled]){
     border:thin rgb(195, 195, 195) solid;
 }
-.osd-paperjs-annotation .annotation-ui-drawing-toolbar button:not([disabled]):hover{
+.annotation-ui-drawing-toolbar button:not([disabled]):hover{
     border:thin rgb(41, 41, 41) solid;
     z-index:2;
 }
-.osd-paperjs-annotation .annotation-ui-drawing-toolbar .dropdowns>*:not(.active){
+.annotation-ui-drawing-toolbar .dropdowns>*:not(.active){
     display:none;
 }
-.osd-paperjs-annotation .annotation-ui-buttonbar>.btn.active{
+.annotation-ui-buttonbar>.btn.active{
     color:black;
     background-color:darkgray;
 }
-.osd-paperjs-annotation .annotation-ui-buttonbar>.btn:not(.active){
+.annotation-ui-buttonbar>.btn:not(.active){
     color:rgb(62, 62, 62);
     background-color:lightgrey;
 }
-.osd-paperjs-annotation .dropdowns-container{
+.dropdowns-container{
     position:relative;
     background-color:inherit;
 }
-.osd-paperjs-annotation .dropdowns{
+.dropdowns{
     color:black;
     position:absolute;
     background-color:inherit;
     min-width:100%;
 }
-.osd-paperjs-annotation .dropdowns:has(.dropdown.active .ruler-toolbar) { min-width: 280px; }
-.osd-paperjs-annotation .dropdowns:has(.dropdown.active .linestring-toolbar) { min-width: 280px; }
-.osd-paperjs-annotation .dropdowns:has(.dropdown.active .brush-toolbar) { min-width: 280px; }
-.osd-paperjs-annotation .dropdown{
+.dropdowns:has(.dropdown.active .ruler-toolbar) { min-width: 280px; }
+.dropdowns:has(.dropdown.active .linestring-toolbar) { min-width: 280px; }
+.dropdowns:has(.dropdown.active .brush-toolbar) { min-width: 280px; }
+.dropdown{
     width:100%;
     display:grid;
     vertical-align: middle;
@@ -314,28 +314,28 @@ body.annotation-ui-noselect{
     grid-template-columns:auto;
 }
 /* brush-toolbar styles */
-.osd-paperjs-annotation .dropdown.brush-toolbar{
+.dropdown.brush-toolbar{
     grid-template-columns: auto minmax(8em, 1fr) auto auto;    
 }
 /* end brush-toolbar styles */
 
 /* polygon-toolbar styles */
-.osd-paperjs-annotation .dropdown.polygon-toolbar{
+.dropdown.polygon-toolbar{
     grid-template-columns: 1fr auto auto auto auto auto;    
 }
-.osd-paperjs-annotation .dropdown.polygon-toolbar button[data-action="simplify"]{
+.dropdown.polygon-toolbar button[data-action="simplify"]{
     margin-right:0.2em;
 }
 /* end polygon-toolbar styles */
 
 /* linestring-toolbar styles */
-.osd-paperjs-annotation .dropdown.linestring-toolbar{
+.dropdown.linestring-toolbar{
     grid-template-columns: auto minmax(8em, 1fr) auto auto;
 }
 /* end linestring-toolbar styles */
 
 /* ruler-toolbar styles: single length row + collapsible details panel (column layout) */
-.osd-paperjs-annotation .dropdown.ruler-toolbar{
+.dropdown.ruler-toolbar{
     display: flex;
     flex-direction: column;
     align-items: stretch;
@@ -344,28 +344,28 @@ body.annotation-ui-noselect{
     font-size: 12px;
     line-height: 1.35;
 }
-.osd-paperjs-annotation .dropdown.ruler-toolbar .ruler-length-row{
+.dropdown.ruler-toolbar .ruler-length-row{
     display: flex;
     align-items: center;
     flex-wrap: nowrap;
     gap: 0.35rem;
 }
-.osd-paperjs-annotation .dropdown.ruler-toolbar .ruler-length-value{
+.dropdown.ruler-toolbar .ruler-length-value{
     font-variant-numeric: tabular-nums;
 }
-.osd-paperjs-annotation .dropdown.ruler-toolbar .ruler-details-toggle{
+.dropdown.ruler-toolbar .ruler-details-toggle{
     display: flex;
     margin-left: auto;
 }
-.osd-paperjs-annotation .dropdown.ruler-toolbar .ruler-details-panel{
+.dropdown.ruler-toolbar .ruler-details-panel{
     margin-top: 0.35rem;
     padding-top: 0.35rem;
     border-top: 1px solid rgba(0, 0, 0, 0.12);
 }
-.osd-paperjs-annotation .dropdown.ruler-toolbar .ruler-details-panel[hidden]{
+.dropdown.ruler-toolbar .ruler-details-panel[hidden]{
     display: none !important;
 }
-.osd-paperjs-annotation .dropdown.ruler-toolbar .ruler-details-content{
+.dropdown.ruler-toolbar .ruler-details-content{
     display: grid;
     grid-template-columns: minmax(7.5rem, auto) minmax(4.5rem, 1fr);
     column-gap: 0.5rem;
@@ -373,17 +373,17 @@ body.annotation-ui-noselect{
     min-width: 0;
     align-items: center;
 }
-.osd-paperjs-annotation .dropdown.ruler-toolbar .ruler-detail-row{
+.dropdown.ruler-toolbar .ruler-detail-row{
     display: contents;
 }
-.osd-paperjs-annotation .dropdown.ruler-toolbar .ruler-detail-row > label,
-.osd-paperjs-annotation .dropdown.ruler-toolbar .ruler-detail-row > .ruler-detail-label{
+.dropdown.ruler-toolbar .ruler-detail-row > label,
+.dropdown.ruler-toolbar .ruler-detail-row > .ruler-detail-label{
     justify-self: end;
     text-align: right;
     color: #333;
     font-weight: 500;
 }
-.osd-paperjs-annotation .dropdown.ruler-toolbar .ruler-detail-row > .ruler-detail-value{
+.dropdown.ruler-toolbar .ruler-detail-row > .ruler-detail-value{
     justify-self: stretch;
     font-variant-numeric: tabular-nums;
     color: #222;
@@ -392,14 +392,14 @@ body.annotation-ui-noselect{
     text-overflow: ellipsis;
     white-space: nowrap;
 }
-.osd-paperjs-annotation .dropdown.ruler-toolbar .ruler-instructions{
+.dropdown.ruler-toolbar .ruler-instructions{
     grid-column: 1 / -1;
     color: #555;
     margin-bottom: 0.15rem;
     min-width: 0;
 }
-.osd-paperjs-annotation .dropdown.ruler-toolbar .ruler-details-content input,
-.osd-paperjs-annotation .dropdown.ruler-toolbar .ruler-details-content select{
+.dropdown.ruler-toolbar .ruler-details-content input,
+.dropdown.ruler-toolbar .ruler-details-content select{
     box-sizing: border-box;
     width: 100%;
     min-width: 0;
@@ -411,63 +411,63 @@ body.annotation-ui-noselect{
     font: inherit;
     color: inherit;
 }
-.osd-paperjs-annotation .dropdown.ruler-toolbar .ruler-details-content select{
+.dropdown.ruler-toolbar .ruler-details-content select{
     padding-right: 0.15rem;
 }
 /* end ruler-toolbar styles */
-.osd-paperjs-annotation canvas.selectable-layer{
+canvas.selectable-layer{
     cursor:pointer;
 }
-.osd-paperjs-annotation canvas.fov-edit-hover{
+canvas.fov-edit-hover{
     cursor: move;
 }
-.osd-paperjs-annotation canvas.fov-edit-grabbing{
+canvas.fov-edit-grabbing{
     cursor: grabbing;
 }
-.osd-paperjs-annotation canvas.point-tool-grab{
+canvas.point-tool-grab{
     cursor:grab;
 }
-.osd-paperjs-annotation canvas.point-tool-grabbing{
+canvas.point-tool-grabbing{
     cursor:grabbing;
 }
-.osd-paperjs-annotation canvas.rectangle-tool-move{
+canvas.rectangle-tool-move{
     cursor: move;
 }
-.osd-paperjs-annotation canvas.rectangle-tool-resize{
+canvas.rectangle-tool-resize{
     cursor:nesw-resize;
 }
-.osd-paperjs-annotation canvas.transform-tool-move{
+canvas.transform-tool-move{
     cursor: move;
 }
-.osd-paperjs-annotation canvas.transform-tool-resize{
+canvas.transform-tool-resize{
     cursor:nesw-resize;
 }
-.osd-paperjs-annotation canvas.transform-tool-rotate{
+canvas.transform-tool-rotate{
     cursor: pointer;
 }
-.osd-paperjs-annotation .tool-action[data-tool-action="segment"]{
+.tool-action[data-tool-action="segment"]{
     cursor:move;
 }
-.osd-paperjs-annotation .tool-action[data-tool-action="stroke"]{
+.tool-action[data-tool-action="stroke"]{
     cursor:copy;
 }
-.osd-paperjs-annotation .tool-action[data-tool-action="segment-erase"]{
+.tool-action[data-tool-action="segment-erase"]{
     cursor:not-allowed;
 }
-.osd-paperjs-annotation .tool-action[data-tool-action="colorpicker"]{
+.tool-action[data-tool-action="colorpicker"]{
     cursor:none;
 }
 
 /* wand-toolbar styles */
-.osd-paperjs-annotation .dropdown.wand-toolbar{
+.dropdown.wand-toolbar{
     grid-template-columns: 5em 1fr auto auto;
 }
 
-.osd-paperjs-annotation .wand-toolbar .threshold-container{
+.wand-toolbar .threshold-container{
     display:flex;
     flex-direction:column;
 }
-.osd-paperjs-annotation .wand-toolbar .threshold-container label, .osd-paperjs-annotation .wand-toolbar .label{
+.wand-toolbar .threshold-container label, .wand-toolbar .label{
     margin-bottom:0;
     font-size:0.8em;
 }
@@ -478,39 +478,39 @@ body.annotation-ui-noselect{
 /* .wand-toolbar .toggle.btn-primary{
     margin-bottom:0;
 } */
-.osd-paperjs-annotation .wand-toolbar .toggles{
+.wand-toolbar .toggles{
     display:grid;
     column-gap:2px;
     grid-template-columns:7em 5em 8em;
 }
-.osd-paperjs-annotation .wand-toolbar .option-toggle{
+.wand-toolbar .option-toggle{
     display:grid;
     grid-template-rows:auto auto;
     cursor: pointer;
     user-select: none;
     -webkit-user-select:none;
 }
-.osd-paperjs-annotation .wand-toolbar .option-toggle:hover .option{
+.wand-toolbar .option-toggle:hover .option{
     background-color:darkgray;
 }
-.osd-paperjs-annotation .wand-toolbar .option-toggle .option:not(.selected){
+.wand-toolbar .option-toggle .option:not(.selected){
     display:none;
 }
 /* End wand-toolbar styles */
 
-.osd-paperjs-annotation .viewer-controls-topleft{
+.viewer-controls-topleft{
     display:flex;
 }
 
 /* style-toolbar styles */
 
-.osd-paperjs-annotation .style-toolbar .style-row{
+.style-toolbar .style-row{
     display:grid;
     grid-template-columns:auto auto auto auto;
     column-gap:0.5em;
     align-items:center;
 }
-.osd-paperjs-annotation .style-toolbar .style-item{
+.style-toolbar .style-item{
     display:inline-block;
     width:7em;
     white-space: nowrap;
@@ -519,35 +519,35 @@ body.annotation-ui-noselect{
     padding-left:0.5em;
     cursor:pointer;
 }
-.osd-paperjs-annotation .style-toolbar .style-item.selected{
+.style-toolbar .style-item.selected{
     outline:medium lightskyblue solid;
 }
-.osd-paperjs-annotation .style-toolbar .hierarchy-up{
+.style-toolbar .hierarchy-up{
     cursor:pointer;
     padding:0 0.5em;
 }
-.osd-paperjs-annotation .style-toolbar input[type="number"]{
+.style-toolbar input[type="number"]{
     width:3.5em;
 }
-.osd-paperjs-annotation .style-toolbar .colorpicker-row.hidden{
+.style-toolbar .colorpicker-row.hidden{
     display:none;
 }
-.osd-paperjs-annotation .style-toolbar .colorpicker-row{
+.style-toolbar .colorpicker-row{
     display:grid;
     grid-template-columns:repeat(4,auto)
 }
-.osd-paperjs-annotation .style-toolbar .preview{
+.style-toolbar .preview{
     position:relative;
     display:block;
     background: repeating-conic-gradient(#d0d0d0 0% 25%, white 0% 50%) 
               50% / 20px 20px
 }
-.osd-paperjs-annotation .style-toolbar .preview::after{
+.style-toolbar .preview::after{
     /* This is just so the height is set correctly since children are absolute positioned */
     content:'Preview';
     visibility:hidden;
 }
-.osd-paperjs-annotation .style-toolbar .preview .bg{
+.style-toolbar .preview .bg{
     display:block;
     position:absolute;
     outline:thin solid black;
@@ -556,145 +556,145 @@ body.annotation-ui-noselect{
     bottom:0;
     right:0;
 }
-.osd-paperjs-annotation .style-toolbar .preview .text{
+.style-toolbar .preview .text{
     display:block;
     position:absolute;
     padding:0 0.2em;
 }
-.osd-paperjs-annotation .style-toolbar input[type="range"]{
+.style-toolbar input[type="range"]{
     display:inline-block;
 }
 
 /* end style-toolbar styles */
 
 
-.osd-paperjs-annotation .new-feature,.osd-paperjs-annotation .new-feature-collection{
+.new-feature,.new-feature-collection{
     cursor:pointer;
 }
-.osd-paperjs-annotation .new-feature:hover,.osd-paperjs-annotation .new-feature-collection:hover{
+.new-feature:hover,.new-feature-collection:hover{
     background-color:antiquewhite;
     outline:thin gray solid;
 }
 /* Annotation UI File Dialog Styles*/
-.osd-paperjs-annotation .annotation-ui-filedialog{
+.annotation-ui-filedialog{
     display:grid;
     grid-template-columns: auto auto auto;
 }
-.osd-paperjs-annotation .annotation-ui-filedialog>div{
+.annotation-ui-filedialog>div{
     padding: 0 0.3em;
 }
-.osd-paperjs-annotation .annotation-ui-filedialog .featurecollection-selection{
+.annotation-ui-filedialog .featurecollection-selection{
     border-right:thin gray solid;
     border-left:thin gray solid;
     width:15em;
     overflow-x:hidden;
 }
-.osd-paperjs-annotation .annotation-ui-filedialog .featurecollection-list{
+.annotation-ui-filedialog .featurecollection-list{
     display:flex;
     flex-direction:column;
     overflow:auto;
 }
-.osd-paperjs-annotation .annotation-ui-filedialog .localstorage-key-list::before{
+.annotation-ui-filedialog .localstorage-key-list::before{
     content:'Saved in local storage:';
     display:block;
     color:gray;
 }
-.osd-paperjs-annotation .annotation-ui-filedialog .localstorage-key-list:empty::after{
+.annotation-ui-filedialog .localstorage-key-list:empty::after{
     content:'No items were found in local storage';
     font-style:italic;
     color:gray;
 }
-.osd-paperjs-annotation .annotation-ui-filedialog .localstorage-key{
+.annotation-ui-filedialog .localstorage-key{
     cursor:pointer;
 }
-.osd-paperjs-annotation .annotation-ui-filedialog .localstorage-key:hover{
+.annotation-ui-filedialog .localstorage-key:hover{
     background-color:lightgoldenrodyellow;
 }
-.osd-paperjs-annotation .annotation-ui-filedialog .localstorage-key-test.key-exists::after{
+.annotation-ui-filedialog .localstorage-key-test.key-exists::after{
     content: '(overwrite)';
     font-weight:bold;
     background-color:rgb(190, 99, 66);
     color:white;
     padding:0 0.2em;
 }
-.osd-paperjs-annotation .annotation-ui-filedialog .finalize-panel{
+.annotation-ui-filedialog .finalize-panel{
     width:15em;
     overflow-x:hidden;
 }
-.osd-paperjs-annotation .annotation-ui-filedialog .header{
+.annotation-ui-filedialog .header{
     white-space: nowrap;
     border-bottom:thin gray solid;
     padding-bottom:2px;
     margin-bottom:2px;
 }
-.osd-paperjs-annotation .annotation-ui-filedialog button{
+.annotation-ui-filedialog button{
     display:block;
 }
 
-.osd-paperjs-annotation .annotation-ui-filedialog .file-actions{
+.annotation-ui-filedialog .file-actions{
     display:flex;
     flex-direction:column;
 }
-.osd-paperjs-annotation .annotation-ui-filedialog .file-actions hr{
+.annotation-ui-filedialog .file-actions hr{
     margin: 5px 0;
 }
 
-.osd-paperjs-annotation button[disabled]{
+button[disabled]{
     opacity:0.3;
 }
 
-.osd-paperjs-annotation .dropdown button[data-action="erase"].active{
+.dropdown button[data-action="erase"].active{
     background-color:rgb(187, 86, 86);
 
 }
-.osd-paperjs-annotation .feature .bounding-element{
+.feature .bounding-element{
     margin-right:-1.2em;
 }
-.osd-paperjs-annotation .feature .bounding-element:not(.active){
+.feature .bounding-element:not(.active){
     visibility:visible;
     color:lightgray;
 }
-.osd-paperjs-annotation .feature .bounding-element.active{
+.feature .bounding-element.active{
     visibility:visible;
     color:black;
 }
-.osd-paperjs-annotation .feature:not(:hover) .bounding-element:not(.active){
+.feature:not(:hover) .bounding-element:not(.active){
     visibility:hidden;
 }
 
-.osd-paperjs-annotation .hidden{
+.hidden{
     display:none;
 }
 
-.osd-paperjs-annotation .draganddrop-dragging{
+.draganddrop-dragging{
     opacity:0.3;
 }
-.osd-paperjs-annotation .draganddrop-hide{
+.draganddrop-hide{
     display:none;
 }
-.osd-paperjs-annotation .draganddrop-drop-target{
+.draganddrop-drop-target{
     outline:thick rgb(112, 111, 111) solid;
 }
-.osd-paperjs-annotation .draganddrop-drop-target:hover{
+.draganddrop-drop-target:hover{
     outline-color:black;
 }
-.osd-paperjs-annotation .draganddrop-drop-target>*>*{
+.draganddrop-drop-target>*>*{
     pointer-events:none;
 }
-.osd-paperjs-annotation .draganddrop-placeholder{
+.draganddrop-placeholder{
     border: thin black solid;
     border-radius:2px;
 }
-.osd-paperjs-annotation .draganddrop-placeholder>*{
+.draganddrop-placeholder>*{
     visibility:hidden;
 }
 
 /* From bootstrap */
-.osd-paperjs-annotation input[type=range] {
+input[type=range] {
     display: block;
     width: 100%;
 }
-.osd-paperjs-annotation .btn {
+.btn {
     display: inline-block;
     padding: 2px 8px;
     margin-bottom: 0;
@@ -715,20 +715,20 @@ body.annotation-ui-noselect{
     border: 1px solid transparent;
     /* border-radius: 4px; */
 }
-.osd-paperjs-annotation .btn.btn-sm{
+.btn.btn-sm{
     font-size:12px;
 }
 
-.osd-paperjs-annotation .icon {
+.icon {
     width: 1em;
     height: 1em;
     vertical-align: -0.125em;
 }
 /* Items with [data-action] are supposed to be clickable but if the sub-object gets the click it doesn't work, so stop pointer events on children */
-.osd-paperjs-annotation [data-action]>*{
+[data-action]>*{
     pointer-events:none;
 }
 
-.osd-paperjs-annotation .rotate-by{
+.rotate-by{
     transform:rotate(var(--rotate-angle));
 }

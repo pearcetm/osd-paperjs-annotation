@@ -72,6 +72,9 @@ import { SelectTool } from './papertools/select.mjs';
 import { StyleTool } from './papertools/style.mjs';
 import { TransformTool } from './papertools/transform.mjs';
 import { WandTool } from './papertools/wand.mjs';
+import { mppFromTiledImage, mppFromActiveViewerImage } from './utils/mpp.mjs';
+import { applyRulerPhysicalScaleFromMpp } from './utils/rulerPhysicalScale.mjs';
+import { ANNOTATION_UI_SCOPE_CLASS } from './utils/annotationUIScope.mjs';
 
 /**
  *
@@ -114,7 +117,11 @@ export const OSDPaperjsAnnotation = {
     SelectTool:SelectTool,
     StyleTool:StyleTool,
     TransformTool:TransformTool,
-    WandTool:WandTool
+    WandTool:WandTool,
+    mppFromTiledImage,
+    mppFromActiveViewerImage,
+    applyRulerPhysicalScaleFromMpp,
+    ANNOTATION_UI_SCOPE_CLASS,
 
 }
 
@@ -153,6 +160,10 @@ export {
     SelectTool,
     StyleTool,
     TransformTool,
-    WandTool
+    WandTool,
+    mppFromTiledImage,
+    mppFromActiveViewerImage,
+    applyRulerPhysicalScaleFromMpp,
+    ANNOTATION_UI_SCOPE_CLASS,
 
 }

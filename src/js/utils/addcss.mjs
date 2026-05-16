@@ -80,6 +80,7 @@ function addCSS(url, nameToCheck){
     let link = document.createElement('link');
     link.rel='stylesheet';
     link.href=url;
+    link.setAttribute('data-osd-paperjs-annotation', 'true');
     document.head.appendChild(link);
     
 }

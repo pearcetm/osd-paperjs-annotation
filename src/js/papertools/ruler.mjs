@@ -861,21 +861,30 @@ class RulerToolbar extends AnnotationUIToolbarBase {
         this.instructions.className = 'ruler-instructions';
         detailsContent.appendChild(this.instructions);
 
-        this.p1El = document.createElement('div');
-        this.p1El.className = 'ruler-detail-p1';
-        this.p1El.textContent = 'P1: —';
-        detailsContent.appendChild(this.p1El);
-        this.p2El = document.createElement('div');
-        this.p2El.className = 'ruler-detail-p2';
-        this.p2El.textContent = 'P2: —';
-        detailsContent.appendChild(this.p2El);
+        const addReadonlyRow = (labelText) => {
+            const row = document.createElement('div');
+            row.classList.add('ruler-detail-row', 'ruler-detail-readonly');
+            const lab = document.createElement('span');
+            lab.classList.add('ruler-detail-label');
+            lab.textContent = labelText;
+            const val = document.createElement('span');
+            val.classList.add('ruler-detail-value');
+            val.textContent = '—';
+            row.appendChild(lab);
+            row.appendChild(val);
+            detailsContent.appendChild(row);
+            return val;
+        };
+        this.p1ValueEl = addReadonlyRow('P1');
+        this.p2ValueEl = addReadonlyRow('P2');
 
-        const addRow = (labelText, inputEl, inputId) => {
+        const addRow = (labelText, inputEl, inputId, title) => {
             const row = document.createElement('div');
             row.classList.add('ruler-detail-row');
             const lab = document.createElement('label');
             lab.htmlFor = inputId;
             lab.textContent = labelText;
+            if (title) lab.title = title;
             row.appendChild(lab);
             inputEl.id = inputId;
             row.appendChild(inputEl);
@@ -892,7 +901,7 @@ class RulerToolbar extends AnnotationUIToolbarBase {
             const tk = rulerTool?.project?.paperScope?.annotationToolkit;
             if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('ruler-setting-changed', { key: 'widthPixels', value: Number(this.widthInput.value) }, { tool: rulerTool });
         });
-        addRow('Line width (px):', this.widthInput, 'ruler-line-width');
+        addRow('Line width', this.widthInput, 'ruler-line-width', 'Line width in screen pixels');
 
         this.haloInput = document.createElement('input');
         this.haloInput.type = 'number';
@@ -904,7 +913,7 @@ class RulerToolbar extends AnnotationUIToolbarBase {
             const tk = rulerTool?.project?.paperScope?.annotationToolkit;
             if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('ruler-setting-changed', { key: 'haloPixels', value: Number(this.haloInput.value) }, { tool: rulerTool });
         });
-        addRow('Padding / Halo (px):', this.haloInput, 'ruler-halo');
+        addRow('Halo', this.haloInput, 'ruler-halo', 'Padding / halo width in screen pixels');
 
         this.fontSizeInput = document.createElement('input');
         this.fontSizeInput.type = 'number';
@@ -917,7 +926,7 @@ class RulerToolbar extends AnnotationUIToolbarBase {
             const tk = rulerTool?.project?.paperScope?.annotationToolkit;
             if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('ruler-setting-changed', { key: 'fontSize', value: Number(this.fontSizeInput.value) }, { tool: rulerTool });
         });
-        addRow('Font size:', this.fontSizeInput, 'ruler-font-size');
+        addRow('Font size', this.fontSizeInput, 'ruler-font-size');
 
         this.unitsInput = document.createElement('input');
         this.unitsInput.type = 'text';
@@ -930,7 +939,7 @@ class RulerToolbar extends AnnotationUIToolbarBase {
             const tk = rulerTool?.project?.paperScope?.annotationToolkit;
             if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('ruler-setting-changed', { key: 'units', value: this.labelUnit }, { tool: rulerTool });
         });
-        addRow('Units:', this.unitsInput, 'ruler-units');
+        addRow('Units', this.unitsInput, 'ruler-units');
 
         this.unitsPerPixelInput = document.createElement('input');
         this.unitsPerPixelInput.type = 'number';
@@ -946,7 +955,7 @@ class RulerToolbar extends AnnotationUIToolbarBase {
             const tk = rulerTool?.project?.paperScope?.annotationToolkit;
             if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('ruler-setting-changed', { key: 'unitsPerPixel', value: this.unitsPerPixel }, { tool: rulerTool });
         });
-        addRow('Units per pixel:', this.unitsPerPixelInput, 'ruler-units-per-pixel');
+        addRow('Scale', this.unitsPerPixelInput, 'ruler-units-per-pixel', 'Units per pixel (display units per paper unit)');
 
         this.decimalsInput = document.createElement('input');
         this.decimalsInput.type = 'number';
@@ -959,7 +968,7 @@ class RulerToolbar extends AnnotationUIToolbarBase {
             const tk = rulerTool?.project?.paperScope?.annotationToolkit;
             if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('ruler-setting-changed', { key: 'decimals', value: Number(this.decimalsInput.value) }, { tool: rulerTool });
         });
-        addRow('Decimals:', this.decimalsInput, 'ruler-decimals');
+        addRow('Decimals', this.decimalsInput, 'ruler-decimals');
 
         this.roundingModeInput = document.createElement('select');
         this.roundingModeInput.classList.add('ruler-rounding-mode-input');
@@ -976,7 +985,7 @@ class RulerToolbar extends AnnotationUIToolbarBase {
             const tk = rulerTool?.project?.paperScope?.annotationToolkit;
             if (tk && tk._emitIntegrationEvent) tk._emitIntegrationEvent('ruler-setting-changed', { key: 'roundingMode', value: this.roundingModeInput.value }, { tool: rulerTool });
         });
-        addRow('Rounding mode:', this.roundingModeInput, 'ruler-rounding-mode');
+        addRow('Round', this.roundingModeInput, 'ruler-rounding-mode', 'Rounding mode');
 
         rulerTool.setStrokeWidthPixels(2);
         rulerTool.setHaloExtraPixels(2);
@@ -1006,8 +1015,8 @@ class RulerToolbar extends AnnotationUIToolbarBase {
     updateMeasurement(p1, p2, distance) {
         this.lengthEl.textContent = distance != null ? this.formatDistance(distance) : '—';
         const fmt = (p) => (p ? `(${this.formatNum(p.x)}, ${this.formatNum(p.y)})` : '—');
-        this.p1El.textContent = 'P1: ' + (p1 != null ? fmt(p1) : '—');
-        this.p2El.textContent = 'P2: ' + (p2 != null ? fmt(p2) : '—');
+        this.p1ValueEl.textContent = p1 != null ? fmt(p1) : '—';
+        this.p2ValueEl.textContent = p2 != null ? fmt(p2) : '—';
     }
 
     isEnabledForMode(mode) {

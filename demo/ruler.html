@@ -6,18 +6,65 @@
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/paper.js/0.12.17/paper-full.js"></script>
     <script type="module" src="./ruler.mjs"></script>
     <link rel="stylesheet" href="./demo.css">
+    <link rel="stylesheet" href="../src/css/annotationui.css">
 </head>
 <body>
     <div class="content">
         <div class="demo">
-            <h3>Ruler tool – development</h3>
+            <h3>Ruler tool – physical scale (mpp)</h3>
+            <p>
+                Headless default + ruler (<code>addUI: false</code>). Two ways to get <strong>mm</strong> labels on the ruler toolbar:
+                read mpp from <code>tiledImage.source.mpp</code>, or pass mpp programmatically to
+                <code>applyRulerPhysicalScaleFromMpp</code>.
+            </p>
+            <p id="ruler-dsa-network-notice" class="demo-section" hidden>
+                DSA whole-slide scenarios require network access to load slide metadata and tiles.
+            </p>
+
             <div class="demo-section">
-                <h4>Headless (programmatic) – 0.25 µm/px</h4>
-                <div id="ruler-headless-controls" class="headless-controls" aria-label="Headless tool controls">
+                <h4>Scenario 1: No mpp (paper pixels)</h4>
+                <p>No <code>source.mpp</code> on the tile — ruler stays at default <strong>px</strong> (<code>unitsPerPixel: 1</code>).</p>
+                <div id="ruler-px-headless-controls" class="headless-controls osd-paperjs-annotation" aria-label="Headless tool controls">
                     <div class="headless-tool-buttons btn-group btn-group-sm"></div>
-                    <div id="ruler-headless-tool-outlet" class="headless-tool-outlet"></div>
+                    <div id="ruler-px-headless-tool-outlet" class="headless-tool-outlet"></div>
                 </div>
-                <div id="ruler-viewer-headless" class="viewer"></div>
+                <p class="code-snippet-label">Ruler scale: <code id="ruler-px-scale-readout">—</code></p>
+                <div id="ruler-viewer-px" class="viewer"></div>
+            </div>
+
+            <div id="ruler-wsi-sections">
+                <div class="demo-section">
+                    <h4>Scenario 2a: WSI — scale from tile source mpp</h4>
+                    <p>
+                        Host sets <code>item.source.mpp</code> (µm/px), then syncs the ruler from the active viewer image.
+                        Field-of-view and other overlays can read the same mpp from the tile.
+                    </p>
+                    <pre class="code-snippet"><code>attachMppToViewerItem(viewer, mpp);
+syncRulerFromTileMpp(viewer, toolkit);
+// equivalent: applyRulerPhysicalScaleFromMpp(toolkit, mppFromActiveViewerImage(viewer));</code></pre>
+                    <div id="ruler-wsi-tile-headless-controls" class="headless-controls osd-paperjs-annotation" aria-label="Headless tool controls">
+                        <div class="headless-tool-buttons btn-group btn-group-sm"></div>
+                        <div id="ruler-wsi-tile-headless-tool-outlet" class="headless-tool-outlet"></div>
+                    </div>
+                    <p class="code-snippet-label">Ruler scale: <code id="ruler-wsi-tile-scale-readout">—</code></p>
+                    <div id="ruler-viewer-wsi-tile" class="viewer"></div>
+                </div>
+
+                <div class="demo-section">
+                    <h4>Scenario 2b: WSI — scale programmatic</h4>
+                    <p>
+                        Pass mpp from metadata/API directly — <strong>no</strong> <code>source.mpp</code> on the tile.
+                        Ruler shows mm; FOV would not work on this viewer without attaching mpp to the source separately.
+                    </p>
+                    <pre class="code-snippet"><code>const mpp = await prefetchDsaMpp();
+applyRulerPhysicalScaleFromMpp(toolkit, mpp);</code></pre>
+                    <div id="ruler-wsi-programmatic-headless-controls" class="headless-controls osd-paperjs-annotation" aria-label="Headless tool controls">
+                        <div class="headless-tool-buttons btn-group btn-group-sm"></div>
+                        <div id="ruler-wsi-programmatic-headless-tool-outlet" class="headless-tool-outlet"></div>
+                    </div>
+                    <p class="code-snippet-label">Ruler scale: <code id="ruler-wsi-programmatic-scale-readout">—</code></p>
+                    <div id="ruler-viewer-wsi-programmatic" class="viewer"></div>
+                </div>
             </div>
         </div>
     </div>

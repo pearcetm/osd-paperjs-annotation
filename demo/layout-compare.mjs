@@ -190,9 +190,9 @@ tk.addAnnotationLayout({ addButton: false, initialOpen: true });`,
         snippet: `const tk = new AnnotationToolkit(viewer, { addUI: false, cacheAnnotations: true });
 tk.getToolbar({ tools });
 tk.getLayerUI({ addFileButton: true });
-// No addAnnotationLayout – place UI in your own layout (use your container refs):
-toolbarContainer.appendChild(tk.getToolbar().element);
-layerUIContainer.appendChild(tk.getLayerUI().element);`,
+// Mount containers need class osd-paperjs-annotation (see layout-compare.html).
+toolbarContainer.appendChild(tk.getToolbarElement());
+layerUIContainer.appendChild(tk.getLayerUIElement());`,
     },
     {
         id: 'constructor-full-layout',

@@ -6,27 +6,52 @@
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/paper.js/0.12.17/paper-full.js"></script>
     <script type="module" src="./fieldofview.mjs"></script>
     <link rel="stylesheet" href="./demo.css">
+    <link rel="stylesheet" href="../src/css/annotationui.css">
 </head>
 <body>
     <div class="content">
         <div class="demo">
             <h3>Field of view overlay demo</h3>
 
+            <p id="fov-dsa-network-notice" class="demo-section" hidden>
+                DSA whole-slide demo requires network access to load slide metadata and tiles.
+            </p>
+
             <div class="demo-section">
-                <h4>How to use</h4>
+                <h4>How to use (field of view)</h4>
                 <ul>
                     <li>Click the circle icon to open the dialog.</li>
                     <li>Set a diameter (mm/µm), then click <b>Place field of view</b>.</li>
                     <li>Move the mouse to preview; click to drop circles (repeat as needed).</li>
-                    <li>This page runs a separate <b>annotation toolkit</b> overlay (default + ruler) on the same slide. Use <b>Ruler</b> to draw a measurement and compare visually to a dropped FOV ring (two Paper layers; they do not share geometry).</li>
+                    <li>FOV reads mpp from <code>tiledImage.source.mpp</code> once the host attaches it (see below).</li>
+                    <li>This page also runs a headless <b>ruler</b> on the same slide for visual comparison (separate Paper layers; they do not share geometry).</li>
                     <li>If clicks do not reach the ruler, press <b>Ruler</b> or <b>Default</b> again—the toolkit overlay is brought forward. Use the microscope control for FOV; that overlay brings itself forward when activated.</li>
                 </ul>
             </div>
 
             <div class="demo-section">
+                <h4>Physical scale: tile mpp vs programmatic (ruler)</h4>
+                <p><b>Field of view</b> always needs <code>item.source.mpp</code> (µm/px) on the active tiled image.</p>
+                <p><b>Ruler</b> can sync mm labels in two ways:</p>
+                <ol>
+                    <li><b>From tile source</b> (used on load): attach mpp, then <code>syncRulerFromTileMpp(viewer, toolkit)</code>.</li>
+                    <li><b>Programmatic</b>: pass mpp from your API via <code>applyRulerPhysicalScaleFromMpp(toolkit, mpp)</code> (button below).</li>
+                </ol>
+                <pre class="code-snippet"><code>// Tile path (after attachMppToViewerItem):
+syncRulerFromTileMpp(viewer, toolkit);
+
+// Programmatic (mpp from metadata, tile may already have source.mpp for FOV):
+applyRulerPhysicalScaleFromMpp(toolkit, mpp);</code></pre>
+                <p>Ruler scale after load: <code id="fov-ruler-scale-readout">—</code></p>
+                <div class="btn-group btn-group-sm" style="margin-bottom: 0.5em;">
+                    <button type="button" id="fov-ruler-scale-programmatic" class="btn btn-sm">Re-apply ruler scale (programmatic mpp)</button>
+                </div>
+            </div>
+
+            <div class="demo-section">
                 <h4>Ruler (headless)</h4>
-                <p>Programmatic default + ruler tools (<code>addUI: false</code>), same pattern as the ruler demo.</p>
-                <div id="fov-ruler-headless-controls" class="headless-controls" aria-label="Headless tool controls">
+                <p>Programmatic default + ruler tools (<code>addUI: false</code>).</p>
+                <div id="fov-ruler-headless-controls" class="headless-controls osd-paperjs-annotation" aria-label="Headless tool controls">
                     <div class="headless-tool-buttons btn-group btn-group-sm"></div>
                     <div id="fov-ruler-headless-tool-outlet" class="headless-tool-outlet"></div>
                 </div>
@@ -49,4 +74,3 @@
     </div>
 </body>
 </html>
-

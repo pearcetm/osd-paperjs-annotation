@@ -1,3 +1,5 @@
+import { ANNOTATION_UI_SCOPE_CLASS } from '../src/js/utils/annotationUIScope.mjs';
+
 const HEADLESS_TOOL_NAMES = ['default', 'ruler'];
 
 /** @param {*} toolkit @param {{ headlessControlsId?: string, toolOutletId?: string }} [options] */
@@ -16,7 +18,7 @@ export function setupRulerHeadlessButtonsAndOutlet(toolkit, options = {}) {
     const project = toolkit.paperScope?.project;
 
     const wrapper = document.createElement('div');
-    wrapper.className = 'headless-toolbar-and-list';
+    wrapper.className = `headless-toolbar-and-list ${ANNOTATION_UI_SCOPE_CLASS}`;
     const toolbarCol = document.createElement('div');
     toolbarCol.className = 'headless-toolbar-outlet';
     const measurementsPanel = document.createElement('div');

@@ -38,6 +38,10 @@ See the [JSDoc documentation pages](https://pearcetm.github.io/osd-paperjs-annot
 
 **Tool and project events:** Tools emit `item-created`, `item-updated`, and `item-converted` (and the project re-emits them). Subscribe on a tool or on the project to react to annotation creation and edits. See [docs/tool-and-project-events.md](docs/tool-and-project-events.md).
 
+### CSS scoping (embedding in larger apps)
+
+Annotation UI styles are scoped under `.osd-paperjs-annotation` so they do not style unrelated page chrome. `AnnotationToolkit` adds that class to `viewer.element`; UI mounted outside the viewer needs the same class on a wrapper around each mount point. See [docs/css-scoping.md](docs/css-scoping.md).
+
 ## Demo pages:
 
 See the [Demo pages](https://pearcetm.github.io/osd-paperjs-annotation/demo/) to try out the functionality.
