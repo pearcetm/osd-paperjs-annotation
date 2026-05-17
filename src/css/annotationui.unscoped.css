@@ -1,6 +1,6 @@
 /**
  * OpenSeadragon paperjs overlay plugin based on paper.js
- * @version 0.7.2
+ * @version 0.7.3
  * 
  * Includes additional open source libraries which are subject to copyright notices
  * as indicated accompanying those segments of code.
@@ -231,6 +231,10 @@
     grid-column: 3 / 4;
     grid-row: 1 / 4;
     position:relative;
+}
+/* Scope wrapper fills the grid cell so .annotation-ui-mainwindow { height: 100% } works */
+.annotation-ui-grid .right > .osd-paperjs-annotation {
+    height: 100%;
 }
 .annotation-ui-grid .resize-right{
     width: 15px;

@@ -190,7 +190,6 @@ tk.addAnnotationLayout({ addButton: false, initialOpen: true });`,
         snippet: `const tk = new AnnotationToolkit(viewer, { addUI: false, cacheAnnotations: true });
 tk.getToolbar({ tools });
 tk.getLayerUI({ addFileButton: true });
-// Mount containers need class osd-paperjs-annotation (see layout-compare.html).
 toolbarContainer.appendChild(tk.getToolbarElement());
 layerUIContainer.appendChild(tk.getLayerUIElement());`,
     },

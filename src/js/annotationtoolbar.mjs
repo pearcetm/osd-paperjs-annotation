@@ -1,10 +1,12 @@
 /**
  * OpenSeadragon paperjs overlay plugin based on paper.js
- * @version 0.7.2
+ * @version 0.7.3
  *
  * Copyright (c) 2022-2026, Thomas Pearce
  * All rights reserved.
  */
+
+import { createAnnotationUIScopeRoot } from './utils/annotationUIScope.mjs';
 
 /**
  * Optional visual wrapper over an AnnotationToolset. Builds the toolbar DOM and wires
@@ -77,22 +79,25 @@ class AnnotationToolbar {
     }
 
     _makeUI() {
-        this._element = document.createElement('div');
+        const toolbar = document.createElement('div');
         this._buttonbar = document.createElement('div');
         this._dropdowns = document.createElement('div');
         const dropdownContainer = document.createElement('div');
-        this._element.appendChild(this._buttonbar);
-        this._element.appendChild(dropdownContainer);
+        toolbar.appendChild(this._buttonbar);
+        toolbar.appendChild(dropdownContainer);
         dropdownContainer.appendChild(this._dropdowns);
 
         const classes = 'annotation-ui-drawing-toolbar btn-group btn-group-sm mode-selection'.split(' ');
-        classes.forEach((c) => this._element.classList.add(c));
+        classes.forEach((c) => toolbar.classList.add(c));
 
         dropdownContainer.classList.add('dropdowns-container');
         this._dropdowns.classList.add('dropdowns');
         this._buttonbar.classList.add('annotation-ui-buttonbar');
 
-        return this._element;
+        const root = createAnnotationUIScopeRoot();
+        root.appendChild(toolbar);
+        this._element = root;
+        return root;
     }
 }
 

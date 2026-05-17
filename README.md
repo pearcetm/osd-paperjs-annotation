@@ -40,7 +40,7 @@ See the [JSDoc documentation pages](https://pearcetm.github.io/osd-paperjs-annot
 
 ### CSS scoping (embedding in larger apps)
 
-Annotation UI styles are scoped under `.osd-paperjs-annotation` so they do not style unrelated page chrome. `AnnotationToolkit` adds that class to `viewer.element`; UI mounted outside the viewer needs the same class on a wrapper around each mount point. See [docs/css-scoping.md](docs/css-scoping.md).
+Annotation UI styles are scoped under `.osd-paperjs-annotation` so they do not style unrelated page chrome. `AnnotationToolkit` adds that class to `viewer.element`; official toolbar/layer UI from `getToolbar()` / `getLayerUI()` include a built-in scope wrapper. Custom DOM outside those roots may need the same class. See [docs/css-scoping.md](docs/css-scoping.md).
 
 ## Demo pages:
 

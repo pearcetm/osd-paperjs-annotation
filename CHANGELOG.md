@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.7.3] - 2026-05-16
+
+### Fixed
+
+- Annotation UI styles load for split integration paths (`getToolbar`, `getLayerUI`, `addAnnotationLayout`, constructor `toolbar` / `layerUI` / `layout`) without calling deprecated `addAnnotationUI()`. Fixes missing styles when bundlers tree-shake `annotationui.mjs`.
+- Official toolbar and layer UI roots include an internal scope wrapper so external placement works without adding `osd-paperjs-annotation` to host mount containers.
+
+
 ## [0.7.2] - 2026-05-15
 
 ### Added
@@ -90,6 +98,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Detection and handling when paper items with invalid geometries are added as annotation subtypes.
 - Ignore drawing actions from non-primary mouse buttons (e.g. middle or right click).
 
+[0.7.3]: https://github.com/pearcetm/osd-paperjs-annotation/compare/v0.7.2...v0.7.3
 [0.7.2]: https://github.com/pearcetm/osd-paperjs-annotation/compare/v0.7.1...v0.7.2
 [0.7.1]: https://github.com/pearcetm/osd-paperjs-annotation/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/pearcetm/osd-paperjs-annotation/releases/tag/v0.7.0

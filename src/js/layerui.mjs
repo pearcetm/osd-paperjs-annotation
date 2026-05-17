@@ -1,6 +1,6 @@
 /**
  * OpenSeadragon paperjs overlay plugin based on paper.js
- * @version 0.7.2
+ * @version 0.7.3
  * 
  * Includes additional open source libraries which are subject to copyright notices
  * as indicated accompanying those segments of code.
@@ -43,6 +43,7 @@ import { domObjectFromHTML } from './utils/domObjectFromHTML.mjs';
 import { datastore } from './utils/datastore.mjs';
 import { DragAndDrop } from './utils/draganddrop.mjs';
 import { IconFactory } from './utils/faIcon.mjs';
+import { createAnnotationUIScopeRoot } from './utils/annotationUIScope.mjs';
 
 /**
  * A user interface for managing layers of feature collections.
@@ -65,40 +66,45 @@ class LayerUI extends OpenSeadragon.EventSource{
         this.paperScope = this._tk.paperScope;
         this.paperScope.project.on('feature-collection-added',ev=>this._onFeatureCollectionAdded(ev));
         
-        this.element = makeHTMLElement();
-        this.iconFactory = new IconFactory(this.element.querySelector('.icon-factory-container'));
-        this.iconFactory.convertFaIcons(this.element);
+        const panel = makeHTMLElement();
+        const root = createAnnotationUIScopeRoot();
+        root.appendChild(panel);
+        this._panel = panel;
+        this.element = root;
+
+        this.iconFactory = new IconFactory(this._panel.querySelector('.icon-factory-container'));
+        this.iconFactory.convertFaIcons(this._panel);
         
-        this.element.querySelector('.new-feature-collection').addEventListener('click', ev => {
+        this._panel.querySelector('.new-feature-collection').addEventListener('click', ev => {
             ev.stopPropagation();
             ev.preventDefault();
             this._tk.addEmptyFeatureCollectionGroup();
         });
 
-        this.element.querySelector('.annotation-ui-feature-collections').addEventListener('click', function(){
+        this._panel.querySelector('.annotation-ui-feature-collections').addEventListener('click', function(){
             if(this.textContent.trim().length === 0){
                 _this._tk.addEmptyFeatureCollectionGroup();
             }
         });
 
-        this.element.querySelector('.toggle-annotations').addEventListener('click',() => {
-            let hidden = this.element.querySelectorAll('.annotation-ui-feature-collections .feature-collection.annotation-hidden');
+        this._panel.querySelector('.toggle-annotations').addEventListener('click',() => {
+            let hidden = this._panel.querySelectorAll('.annotation-ui-feature-collections .feature-collection.annotation-hidden');
             if(hidden.length > 0){
                 hidden.forEach(e=>{
                     e.querySelectorAll('[data-action="show"]').forEach(a=>a.dispatchEvent(new Event('click', {bubbles:true})));
                 })
             } else {
-                const fcs = this.element.querySelectorAll('.annotation-ui-feature-collections .feature-collection:not(.hidden) [data-action="hide"]')
+                const fcs = this._panel.querySelectorAll('.annotation-ui-feature-collections .feature-collection:not(.hidden) [data-action="hide"]')
                 fcs.forEach(a=>a.dispatchEvent(new Event('click',{bubbles:true})));
             }
         });
 
         this._dragAndDrop = new DragAndDrop({
-            parent: this.element, 
+            parent: this._panel,
             selector: '.feature-collection',
-            dropTarget: this.element.querySelector('.annotation-ui-feature-collections'),
+            dropTarget: this._panel.querySelector('.annotation-ui-feature-collections'),
             onDrop:()=>{
-                this.element.querySelectorAll('.annotation-ui-feature-collections .feature-collection').forEach(g => {
+                this._panel.querySelectorAll('.annotation-ui-feature-collections .feature-collection').forEach(g => {
                     let fg = datastore.get(g, 'featureCollection');
                     fg.group.bringToFront();
                 })
@@ -108,21 +114,21 @@ class LayerUI extends OpenSeadragon.EventSource{
         
         //set up delegated events
 
-        this.element.addEventListener('selected', function(ev){
+        this._panel.addEventListener('selected', function(ev){
             if(ev.target.matches('.feature')){
                 ev.stopPropagation();
                 this.classList.add('selected');
                 this.scrollIntoView({block:'nearest'});
             }
         });
-        this.element.addEventListener('deselected', function(ev){
+        this._panel.addEventListener('deselected', function(ev){
             if(ev.target.matches('.feature')){
                 ev.stopPropagation();
                 this.classList.remove('selected');
             }
         });
         
-        this.element.addEventListener('click', function(ev){
+        this._panel.addEventListener('click', function(ev){
             if(ev.target.matches('.toggle-list')){
                 this.closest('.features').classList.toggle('collapsed');
                 ev.stopPropagation();
@@ -130,18 +136,18 @@ class LayerUI extends OpenSeadragon.EventSource{
             
         });
         
-        this.element.addEventListener('value-changed',() => {
-            this.element.querySelector('.feature.selected').dispatchEvent(new Event('selected'));
-            this.element.querySelector('.feature-collection.active').dispatchEvent(new Event('selected'));
+        this._panel.addEventListener('value-changed',() => {
+            this._panel.querySelector('.feature.selected').dispatchEvent(new Event('selected'));
+            this._panel.querySelector('.feature-collection.active').dispatchEvent(new Event('selected'));
         });
 
-        const totalOpacitySlider= this.element.querySelector('input.annotation-total-opacity');
+        const totalOpacitySlider= this._panel.querySelector('input.annotation-total-opacity');
         totalOpacitySlider.addEventListener('input',function(){
             setOpacity(this.value);
         })
         totalOpacitySlider.dispatchEvent(new Event('input'));
 
-        const fillOpacitySlider = this.element.querySelector('input.annotation-fill-opacity');
+        const fillOpacitySlider = this._panel.querySelector('input.annotation-fill-opacity');
         fillOpacitySlider.addEventListener('input',function(){
             _this.paperScope.view.fillOpacity = this.value;
         });
@@ -153,7 +159,7 @@ class LayerUI extends OpenSeadragon.EventSource{
          * @param {number} o - The opacity value between 0 and 1.
          */
         function setOpacity(o){
-            let status = Array.from(_this.element.querySelectorAll('.feature-collection')).reduce(function(ac,el){
+            let status = Array.from(_this._panel.querySelectorAll('.feature-collection')).reduce(function(ac,el){
                 if( el.classList.contains('selected') ){
                     ac.selected.push(el);
                 }
@@ -204,7 +210,7 @@ class LayerUI extends OpenSeadragon.EventSource{
      * 
      */
     hide(){
-        this.element.classList.add('hidden');
+        this._panel.classList.add('hidden');
         this.raiseEvent('hide');
     }
     /**
@@ -212,26 +218,26 @@ class LayerUI extends OpenSeadragon.EventSource{
      * 
      */
     show(){
-        this.element.classList.remove('hidden');
+        this._panel.classList.remove('hidden');
         this.raiseEvent('show');
     }
     /**
      * Toggle the visibility of the layer UI element.
      */
     toggle(){
-        this.element.matches(':visible') ? this.hide() : this.show();
+        this._panel.matches(':visible') ? this.hide() : this.show();
     }
     /**
      * Deactivate the layer UI element.
      */
     deactivate(){
-        this.element.classList.add('deactivated');
+        this._panel.classList.add('deactivated');
     }
     /**
      * Activate the layer UI element.
      */
     activate(){
-        this.element.classList.remove('deactivated');
+        this._panel.classList.remove('deactivated');
     }
     /**
      * Destroy the layer UI element.
@@ -254,7 +260,7 @@ class LayerUI extends OpenSeadragon.EventSource{
         let fc=new FeatureCollectionUI(grp, {
             iconFactory: this.iconFactory
         });
-        this.element.querySelector('.annotation-ui-feature-collections').appendChild(fc.element);
+        this._panel.querySelector('.annotation-ui-feature-collections').appendChild(fc.element);
         this._dragAndDrop.refresh();
         fc.element.dispatchEvent(new Event('element-added'));
         setTimeout(function(){fc.element.classList.add('inserted'); }, 30);//this allows opacity fade-in to be triggered

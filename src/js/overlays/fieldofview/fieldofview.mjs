@@ -16,20 +16,11 @@ import {
 import { FieldOfViewTool } from './fieldofview-tool.mjs';
 import { ViewerOverlayBase } from '../base.mjs';
 
-const FOV_DEBUG = true;
-/** @param {...unknown} args */
-function fovOverlayLog(...args) {
-    if (FOV_DEBUG) console.log('[FOV overlay]', ...args);
-}
-
 /**
  * @param {paper.PaperScope} paperScope
  */
 function ensureNamedToolLayer(paperScope) {
     if (paperScope.project.layers.toolLayer) {
-        fovOverlayLog('ensureNamedToolLayer: toolLayer already present', {
-            name: paperScope.project.layers.toolLayer.name,
-        });
         return;
     }
     const toolLayer = new paperScope.Layer();
@@ -37,7 +28,6 @@ function ensureNamedToolLayer(paperScope) {
     toolLayer.name = 'toolLayer';
     toolLayer.applyMatrix = false;
     paperScope.project.addLayer(toolLayer);
-    fovOverlayLog('ensureNamedToolLayer: created toolLayer', { name: toolLayer.name });
 }
 
 class FieldOfViewOverlay extends ViewerOverlayBase {
@@ -119,13 +109,6 @@ class FieldOfViewOverlay extends ViewerOverlayBase {
             this._dismissFovContextMenu();
         });
 
-        const worldCount = this.viewer.world?.getItemCount?.() ?? 0;
-        fovOverlayLog('constructor done', {
-            overlayType: this.overlay.overlayType,
-            worldItemCount: worldCount,
-            hasDropLayerHint: worldCount === 1 ? Boolean(this.getDropTargetLayer()) : null,
-        });
-
         this._autoRegister();
     }
 
@@ -134,18 +117,12 @@ class FieldOfViewOverlay extends ViewerOverlayBase {
         this._mouseNavEnabledAtActivation = this._mouseNavEnabledAtActivation || reactivate;
         this.overlay.bringToFront();
         this._setActive(true);
-        fovOverlayLog('activate', {
-            setOSDMouseNavDisabled: true,
-            reactivateHint: reactivate,
-            worldItemCount: this.viewer.world?.getItemCount?.() ?? 0,
-        });
         this.tool.activate();
         this.tool.setMode('idle');
         this._setState('config');
     }
 
     deactivate() {
-        fovOverlayLog('deactivate');
         this._setActive(false);
         this._setState('inactive');
         this.tool.setMode('idle');
@@ -178,18 +155,8 @@ class FieldOfViewOverlay extends ViewerOverlayBase {
     getDropTargetLayer() {
         try {
             const ti = this._resolveActiveTiledImageOrThrow();
-            const layer = this.overlay.getPaperLayer(ti) ?? null;
-            fovOverlayLog('getDropTargetLayer', {
-                mapSize: ti._paperLayerMap.size,
-                hasLayer: Boolean(layer),
-                layerName: layer?.name,
-                tiledImageIndex: 0,
-            });
-            return layer;
-        } catch (err) {
-            fovOverlayLog('getDropTargetLayer failed', {
-                message: err instanceof Error ? err.message : String(err),
-            });
+            return this.overlay.getPaperLayer(ti) ?? null;
+        } catch {
             return null;
         }
     }
@@ -851,12 +818,6 @@ class FieldOfViewOverlay extends ViewerOverlayBase {
             this._commitFovDialogInputsFromDom();
             this._syncDialogFromSettings();
             const px = this._diameterPixelsFromSettings();
-            fovOverlayLog('Place clicked', {
-                diameterPx: px,
-                unit: this.settings.unit,
-                diameterPhysical: this.settings.diameter,
-                mpp: this._getMppOrNull(),
-            });
             if (!px) return;
             this.tool.setDiameterPixels(px);
             this.tool.setMode('placing');

@@ -1,6 +1,6 @@
 /**
  * OpenSeadragon annotation plugin based on paper.js
- * @version 0.7.2
+ * @version 0.7.3
  * 
  * Includes additional open source libraries which are subject to copyright notices
  * as indicated accompanying those segments of code.
@@ -59,6 +59,7 @@ import { Rectangle } from './paperitems/rectangle.mjs';
 import { Ellipse } from './paperitems/ellipse.mjs';
 import { cyrb53 } from './utils/hash.mjs';
 import { ANNOTATION_UI_SCOPE_CLASS } from './utils/annotationUIScope.mjs';
+import { ensureAnnotationUIStyles } from './utils/annotationUIStyles.mjs';
 
 //extend paper prototypes to add functionality
 //property definitions
@@ -382,6 +383,7 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
     getToolbar(opts = {}) {
         if (this._toolbar) return this._toolbar;
         if (this._annotationUI) return this._toolbar ?? null;
+        ensureAnnotationUIStyles();
         this._toolset = this._toolset || new AnnotationToolset(this.paperScope, opts.tools ?? null);
         this._toolbar = new AnnotationToolbar(this._toolset);
         return this._toolbar;
@@ -395,6 +397,7 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
     getLayerUI(opts = {}) {
         if (this._layerUI) return this._layerUI;
         if (this._annotationUI) return this._layerUI ?? null;
+        ensureAnnotationUIStyles();
         this._layerUI = new LayerUI(this, opts.addFileButton);
         return this._layerUI;
     }

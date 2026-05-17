@@ -1,6 +1,6 @@
 /**
  * OpenSeadragon paperjs overlay plugin based on paper.js
- * @version 0.7.2
+ * @version 0.7.3
  * 
  * Includes additional open source libraries which are subject to copyright notices
  * as indicated accompanying those segments of code.
@@ -36,14 +36,8 @@
  * 
  */
 
-//styles in annotationui.css
-
-import { addCSS } from './utils/addcss.mjs';
 import { AnnotationLayout } from './annotationlayout.mjs';
 import { FileDialog } from './filedialog.mjs';
-
-addCSS('annotationui.css', 'annotationui');
-addCSS('editablecontent.css', 'editablecontent');
 
 /**
  * @memberof OSDPaperjsAnnotation

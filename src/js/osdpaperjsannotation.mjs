@@ -1,6 +1,6 @@
 /**
  * OpenSeadragon paperjs overlay plugin based on paper.js
- * @version 0.7.2
+ * @version 0.7.3
  * 
  * Includes additional open source libraries which are subject to copyright notices
  * as indicated accompanying those segments of code.
@@ -75,6 +75,10 @@ import { WandTool } from './papertools/wand.mjs';
 import { mppFromTiledImage, mppFromActiveViewerImage } from './utils/mpp.mjs';
 import { applyRulerPhysicalScaleFromMpp } from './utils/rulerPhysicalScale.mjs';
 import { ANNOTATION_UI_SCOPE_CLASS } from './utils/annotationUIScope.mjs';
+import {
+    ensureAnnotationUIStyles,
+    annotationUIStylesReady,
+} from './utils/annotationUIStyles.mjs';
 
 /**
  *
@@ -122,6 +126,8 @@ export const OSDPaperjsAnnotation = {
     mppFromActiveViewerImage,
     applyRulerPhysicalScaleFromMpp,
     ANNOTATION_UI_SCOPE_CLASS,
+    ensureAnnotationUIStyles,
+    annotationUIStylesReady,
 
 }
 
@@ -165,5 +171,7 @@ export {
     mppFromActiveViewerImage,
     applyRulerPhysicalScaleFromMpp,
     ANNOTATION_UI_SCOPE_CLASS,
+    ensureAnnotationUIStyles,
+    annotationUIStylesReady,
 
 }

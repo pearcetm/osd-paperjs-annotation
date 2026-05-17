@@ -1,6 +1,6 @@
 /**
  * OpenSeadragon paperjs overlay plugin based on paper.js
- * @version 0.7.2
+ * @version 0.7.3
  * 
  * Includes additional open source libraries which are subject to copyright notices
  * as indicated accompanying those segments of code.
@@ -82,6 +82,8 @@ export class IconFactory{
      */
     makeFaIcon(classname, currentColor=true){
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('width', '1em');
+        svg.setAttribute('height', '1em');
         svg.classList.add('icon');
         if(currentColor){
             svg.setAttribute('fill', 'currentColor');

@@ -8,12 +8,6 @@ import { mppFromTiledImage } from '../../utils/mpp.mjs';
 
 export { mppFromTiledImage };
 
-const FOV_DEBUG = true;
-/** @param {...unknown} args */
-function fovGeometryLog(...args) {
-    if (FOV_DEBUG) console.log('[FOV geometry]', ...args);
-}
-
 /**
  * Isotropic diameter along image +X (mpp.x), v1 policy per overlay spec.
  * @param {{ x: number, y: number }} mpp
@@ -92,10 +86,6 @@ export function imagePointToProjectPoint(viewer, paperScope, imagePoint) {
 export function circlePreviewGeometryFromProjectPoint(viewer, paperScope, projectPoint, diameterPx) {
     const d = Number(diameterPx);
     if (!projectPoint || !Number.isFinite(d) || d <= 0) {
-        fovGeometryLog('circlePreviewGeometryFromProjectPoint null (inputs)', {
-            hasProjectPoint: Boolean(projectPoint),
-            diameterPx: d,
-        });
         return null;
     }
     const rPx = d / 2;
@@ -106,10 +96,6 @@ export function circlePreviewGeometryFromProjectPoint(viewer, paperScope, projec
         Number.isNaN(centerImg.x) ||
         Number.isNaN(centerImg.y)
     ) {
-        fovGeometryLog('circlePreviewGeometryFromProjectPoint null (centerImg NaN)', {
-            centerImg: { x: centerImg.x, y: centerImg.y },
-            projectPoint: { x: projectPoint.x, y: projectPoint.y },
-        });
         return null;
     }
     const rimImg = new OpenSeadragon.Point(centerImg.x + rPx, centerImg.y);
@@ -117,11 +103,6 @@ export function circlePreviewGeometryFromProjectPoint(viewer, paperScope, projec
     const rimProj = imagePointToProjectPoint(viewer, paperScope, rimImg);
     const radiusProj = centerProj.getDistance(rimProj);
     if (!Number.isFinite(radiusProj) || radiusProj <= 0) {
-        fovGeometryLog('circlePreviewGeometryFromProjectPoint null (radiusProj)', {
-            radiusProj,
-            centerProj: { x: centerProj.x, y: centerProj.y },
-            rimProj: { x: rimProj.x, y: rimProj.y },
-        });
         return null;
     }
     return { centerProj, radiusProj, centerImg };
