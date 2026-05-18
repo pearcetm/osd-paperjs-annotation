@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.7.4] - 2026-05-16
+
+### Fixed
+
+- Webpack bundle (`dist/main.js`) no longer contains `import.meta`, so classic `<script>` hosts (e.g. OSDPlus) can parse and run the library. ESM demos still load CSS via `addcss.mjs` and `import.meta.url`.
+- `ConfigurationWidget` Annotations section works with the split API (`getToolbar`, `getLayerUI`, `addAnnotationLayout`) without deprecated `addAnnotationUI()`. Toolkit owns viewer file button and integration methods; deprecated `addAnnotationUI()` uses the same layout path.
+
+### Changed
+
+- Deprecated `addAnnotationUI()` builds layout via `addAnnotationLayout()`; `AnnotationUI` is a thin wrapper delegating to the toolkit.
+
 ## [0.7.3] - 2026-05-16
 
 ### Fixed
@@ -98,6 +109,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Detection and handling when paper items with invalid geometries are added as annotation subtypes.
 - Ignore drawing actions from non-primary mouse buttons (e.g. middle or right click).
 
+[0.7.4]: https://github.com/pearcetm/osd-paperjs-annotation/compare/v0.7.3...v0.7.4
 [0.7.3]: https://github.com/pearcetm/osd-paperjs-annotation/compare/v0.7.2...v0.7.3
 [0.7.2]: https://github.com/pearcetm/osd-paperjs-annotation/compare/v0.7.1...v0.7.2
 [0.7.1]: https://github.com/pearcetm/osd-paperjs-annotation/compare/v0.7.0...v0.7.1

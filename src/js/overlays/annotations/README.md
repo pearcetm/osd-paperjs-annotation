@@ -4,16 +4,19 @@ This folder holds **viewer integration** code that connects the annotation UI to
 
 ## Prerequisites
 
-- Construct `AnnotationToolkit` and call **`addAnnotationUI(...)`** so the pencil and (optionally) save/load toolbar buttons exist.
+- Construct `AnnotationToolkit` and set up annotation UI via the **split API** (`getToolbar()`, `getLayerUI()`, `addAnnotationLayout()`) or constructor options `toolbar` / `layerUI` / `layout`, **or** deprecated `addAnnotationUI()`.
+- Layout must include the pencil viewer button (`addAnnotationLayout({ addButton: true })` or default) for the Annotations section to attach.
 - Use a **`ConfigurationWidget`** instance bound to the **same** `OpenSeadragon.Viewer` as the toolkit.
 
 ## Recommended API
 
-Call **`annotationToolkit.registerWithConfigurationWidget(configurationWidget)`** after both objects exist.
+Call **`annotationToolkit.registerWithConfigurationWidget(configurationWidget)`** after the toolkit and layout exist.
 
 - Adds an **Annotations** section to the config dialog (via the widget’s generic **`addSection`** only).
 - **Idempotent** when called again with the same widget.
 - **`annotationToolkit.destroy()`** removes the section from the widget when possible.
+
+The save/load row appears only when a file viewer button exists (`getLayerUI({ addFileButton: true })` or default; use `addFileButton: false` for pencil-only).
 
 ## Advanced: attach without toolkit lifecycle
 
@@ -28,12 +31,12 @@ const root = attachAnnotationToolkitConfigurationWidget(toolkit, configWidget);
 ## Section behavior
 
 - **Show Button** column: toggles visibility of the pencil and save/load buttons in the OpenSeadragon toolbar (same idea as overlay rows).
-- **Annotation interface** row **Open** / **Close**: same as the pencil control (toolbar / layer visibility per your `addAnnotationUI` options).
+- **Annotation interface** row **Open** / **Close**: same as the pencil control (toolbar / layer visibility per layout options).
 - **Save / load** row **Open**: opens the file dialog and closes the configuration dialog.
 
 ## Toolbar persistence
 
-If the **`ConfigurationWidget`** was constructed with **`{ storageKey: '…' }`**, the **Show Button** toggles for the pencil and save/load rows are read from and written to the same JSON document as other overlays (keys **`annotation:pencil`** and **`annotation:file`**, exported as **`ANNOTATION_TOOLBAR_PERSIST_ID_PENCIL`** and **`ANNOTATION_TOOLBAR_PERSIST_ID_FILE`** from [`../configuration/configuration.mjs`](../configuration/configuration.mjs)). When a key has no stored value yet, the row follows the real toolbar visibility from the DOM (your `addAnnotationUI` options). Stored values override that on load.
+If the **`ConfigurationWidget`** was constructed with **`{ storageKey: '…' }`**, the **Show Button** toggles for the pencil and save/load rows are read from and written to the same JSON document as other overlays (keys **`annotation:pencil`** and **`annotation:file`**, exported as **`ANNOTATION_TOOLBAR_PERSIST_ID_PENCIL`** and **`ANNOTATION_TOOLBAR_PERSIST_ID_FILE`** from [`../configuration/configuration.mjs`](../configuration/configuration.mjs)). When a key has no stored value yet, the row follows the real toolbar visibility from the DOM. Stored values override that on load.
 
 ## Bundle / namespace
 

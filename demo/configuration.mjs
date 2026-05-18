@@ -87,6 +87,16 @@ function wireAnnotationScenario(viewer, configWidget) {
     tk.registerWithConfigurationWidget(configWidget);
 }
 
+function wireAnnotationSplitScenario(viewer, configWidget) {
+    const tk = new AnnotationToolkit(viewer, {
+        cacheAnnotations: true,
+        toolbar: { tools: annotationTools },
+        layerUI: { addFileButton: true },
+        layout: { initialOpen: true },
+    });
+    tk.registerWithConfigurationWidget(configWidget);
+}
+
 // Scenario 1: All overlays + custom section (persistence off)
 const viewer = window.viewer = OpenSeadragon(osdOpts('config-viewer'));
 viewer.addHandler('open', () => {
@@ -166,4 +176,14 @@ viewer8.addHandler('open', () => {
     new ScreenshotOverlay(viewer8);
     new FieldOfViewOverlay(viewer8);
     wireAnnotationScenario(viewer8, configWidget);
+});
+
+// Scenario 9: Split API (getToolbar / getLayerUI / addAnnotationLayout) + ConfigurationWidget
+const viewer9 = OpenSeadragon(osdOpts('config-viewer-split-api'));
+viewer9.addHandler('open', () => {
+    const configWidget = new ConfigurationWidget(viewer9);
+    new RotationControlOverlay(viewer9);
+    new ScreenshotOverlay(viewer9);
+    new FieldOfViewOverlay(viewer9);
+    wireAnnotationSplitScenario(viewer9, configWidget);
 });

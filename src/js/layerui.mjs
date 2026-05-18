@@ -1,6 +1,6 @@
 /**
  * OpenSeadragon paperjs overlay plugin based on paper.js
- * @version 0.7.3
+ * @version 0.7.4
  * 
  * Includes additional open source libraries which are subject to copyright notices
  * as indicated accompanying those segments of code.
@@ -59,7 +59,7 @@ class LayerUI extends OpenSeadragon.EventSource{
      * @property {HTMLElement} element - The HTML element associated with the LayerUI instance. refer to typedef for subproperties
      * @param {AnnotationToolkit} annotationToolkit - The paper scope object.
      */
-    constructor(annotationToolkit, addFileButton){
+    constructor(annotationToolkit){
         super();
         let _this=this;
         this._tk = annotationToolkit

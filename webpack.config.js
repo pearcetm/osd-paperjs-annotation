@@ -7,6 +7,14 @@ module.exports = {
         "errorDetails": true,
         "children": true
     },
+    resolve: {
+        alias: {
+            [path.resolve(__dirname, 'src/js/utils/addcss.mjs')]: path.resolve(
+                __dirname,
+                'src/js/utils/addcss.bundle.mjs',
+            ),
+        },
+    },
     output:{
         libraryTarget: 'umd',
         // filename: '[name].min.js'
@@ -57,7 +65,7 @@ module.exports = {
                 },
             },
             {
-                test: require.resolve("./src/js/utils/addcss.mjs"),
+                test: require.resolve("./src/js/utils/addcss.bundle.mjs"),
                 loader: "imports-loader",
                 options: {
                     type: "module",

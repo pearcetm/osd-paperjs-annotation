@@ -1,6 +1,6 @@
 /**
  * OpenSeadragon annotation plugin based on paper.js
- * @version 0.7.3
+ * @version 0.7.4
  * 
  * Includes additional open source libraries which are subject to copyright notices
  * as indicated accompanying those segments of code.
@@ -45,6 +45,7 @@ import { AnnotationToolbar } from './annotationtoolbar.mjs';
 import { LayerUI } from './layerui.mjs';
 import { AnnotationLayout } from './annotationlayout.mjs';
 import { attachAnnotationToolkitConfigurationWidget } from './overlays/annotations/index.mjs';
+import { FileDialog } from './filedialog.mjs';
 import { PaperOverlay } from './paper-overlay.mjs';
 import { AnnotationItemFactory } from './paperitems/annotationitem.mjs';
 import { MultiPolygon } from './paperitems/multipolygon.mjs';
@@ -369,7 +370,19 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
             console.warn('[osd-paperjs-annotation] addAnnotationUI is deprecated. Use getToolbar(), getLayerUI(), and addAnnotationLayout() (or place the returned .element nodes in your own layout). See the layout configuration demo.');
             this._toolset = this._toolset || new AnnotationToolset(this.paperScope, opts.tools);
             if (opts.addToolbar !== false) this.getToolbar({ tools: opts.tools });
-            if (opts.addLayerUI !== false) this.getLayerUI({ addFileButton: opts.addFileButton });
+            if (opts.addLayerUI !== false) {
+                this.getLayerUI({ addFileButton: opts.addFileButton });
+            } else if (opts.addFileButton !== false) {
+                this._ensureViewerFileButton();
+            }
+            this.addAnnotationLayout({
+                addButton: opts.addButton !== false,
+                buttonTogglesToolbar: opts.buttonTogglesToolbar !== false,
+                buttonTogglesLayerUI: opts.buttonTogglesLayerUI !== false,
+                initialOpen: opts.autoOpen !== false,
+                addToolbar: opts.addToolbar !== false,
+                addLayerUI: opts.addLayerUI !== false,
+            });
             this._annotationUI = new AnnotationUI(this, this._toolset, opts);
         }
         return this._annotationUI;
@@ -398,7 +411,10 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
         if (this._layerUI) return this._layerUI;
         if (this._annotationUI) return this._layerUI ?? null;
         ensureAnnotationUIStyles();
-        this._layerUI = new LayerUI(this, opts.addFileButton);
+        this._layerUI = new LayerUI(this);
+        if (opts.addFileButton !== false) {
+            this._ensureViewerFileButton();
+        }
         return this._layerUI;
     }
 
@@ -422,15 +438,16 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
 
     /**
      * Build the annotation layout (grid, resize, toggle button) using AnnotationLayout.
-     * Uses getToolbar() and getLayerUI() (lazy-creating with default opts if needed). Mutually exclusive with addAnnotationUI.
+     * Uses getToolbar() and getLayerUI() (lazy-creating with default opts if needed).
      * @param {Object} [opts] - addButton, buttonTogglesToolbar, buttonTogglesLayerUI, initialOpen (all optional).
-     * @returns {AnnotationLayout|null} The layout, or null if addAnnotationUI already exists.
+     * @param {boolean} [opts.addToolbar=true] - When false, do not create toolbar (deprecated addAnnotationUI path).
+     * @param {boolean} [opts.addLayerUI=true] - When false, do not create layer UI (deprecated addAnnotationUI path).
+     * @returns {AnnotationLayout|null} The layout, or null if already created.
      */
     addAnnotationLayout(opts = {}) {
-        if (this._annotationUI) return null;
         if (this._annotationLayout) return this._annotationLayout;
-        const toolbar = this.getToolbar();
-        const layerUI = this.getLayerUI();
+        const toolbar = opts.addToolbar === false ? null : this.getToolbar();
+        const layerUI = opts.addLayerUI === false ? null : this.getLayerUI();
         const toolbarRef = toolbar ? {
             element: toolbar.element,
             show: () => toolbar.show(),
@@ -461,9 +478,70 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
     }
 
     /**
+     * Viewer toolbar buttons for ConfigurationWidget and host integrations.
+     * @returns {{ pencil: Object|null, file: Object|null }} OpenSeadragon button objects with `.element`.
+     */
+    getViewerToolbarButtons() {
+        return {
+            pencil: this._annotationLayout?.getPencilViewerButton?.() ?? null,
+            file: this._viewerFileButton ?? null,
+        };
+    }
+
+    /**
+     * Whether annotation panels are open (pencil toggle state).
+     * @returns {boolean}
+     */
+    areAnnotationPanelsVisible() {
+        return this._annotationLayout?.arePanelsVisible?.() ?? false;
+    }
+
+    /**
+     * Same as clicking the pencil viewer button (toggle toolbar/layer visibility per layout options).
+     */
+    toggleAnnotationPanels() {
+        this._annotationLayout?.togglePanelsFromButton?.();
+    }
+
+    /**
+     * Opens the save/load file dialog (no-op if no file button was created).
+     */
+    openFileDialog() {
+        this._fileDialog?.show?.();
+    }
+
+    _ensureViewerFileButton() {
+        if (this._viewerFileButton) {
+            return;
+        }
+        this._fileDialog = this._fileDialog || new FileDialog(this, { appendTo: this.viewer.element });
+        this._viewerFileButton = this.overlay.addViewerButton({
+            onClick: () => this._fileDialog.toggle(),
+            faIconClass: 'fa-save',
+            tooltip: 'Save/Load Annotations',
+        });
+    }
+
+    _removeViewerFileButton() {
+        if (!this._viewerFileButton) {
+            return;
+        }
+        const btn = this._viewerFileButton;
+        if (this.viewer?.buttonGroup?.buttons) {
+            const idx = this.viewer.buttonGroup.buttons.indexOf(btn);
+            if (idx > -1) {
+                this.viewer.buttonGroup.buttons.splice(idx, 1);
+            }
+        }
+        btn.element?.remove();
+        this._viewerFileButton = null;
+        this._fileDialog = null;
+    }
+
+    /**
      * Opt in to a {@link ConfigurationWidget} by adding an "Annotations" custom section (generic addSection only).
      * The toolkit owns the section DOM (toolbar visibility toggles for the pencil and save/load buttons when present).
-     * Requires `addAnnotationUI()` first. Idempotent when called again with the same widget. Unregisters automatically on `destroy()`.
+     * Requires layout with a pencil button (`addAnnotationLayout()` or deprecated `addAnnotationUI()`). Idempotent when called again with the same widget. Unregisters automatically on `destroy()`.
      *
      * @param {OSDPaperjsAnnotation.ConfigurationWidget} configurationWidget
      */
@@ -519,6 +597,7 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
         if (this.viewer?.element) {
             this.viewer.element.classList.remove(ANNOTATION_UI_SCOPE_CLASS);
         }
+        this._removeViewerFileButton();
         if (this._annotationLayout) {
             this._annotationLayout.destroy();
             this._annotationLayout = null;

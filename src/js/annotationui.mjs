@@ -1,28 +1,28 @@
 /**
  * OpenSeadragon paperjs overlay plugin based on paper.js
- * @version 0.7.3
- * 
+ * @version 0.7.4
+ *
  * Includes additional open source libraries which are subject to copyright notices
  * as indicated accompanying those segments of code.
- * 
+ *
  * Original code:
  * Copyright (c) 2022-2026, Thomas Pearce
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright notice, this
  *   list of conditions and the following disclaimer.
- * 
+ *
  * * Redistributions in binary form must reproduce the above copyright notice,
  *   this list of conditions and the following disclaimer in the documentation
  *   and/or other materials provided with the distribution.
- * 
+ *
  * * Neither the name of osd-paperjs-annotation nor the names of its
  *   contributors may be used to endorse or promote products derived from
  *   this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -33,38 +33,24 @@
  * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
+ *
  */
-
-import { AnnotationLayout } from './annotationlayout.mjs';
-import { FileDialog } from './filedialog.mjs';
 
 /**
  * @memberof OSDPaperjsAnnotation
  * @class
- * A class for creating and managing the annotation UI. Intended to be constructed only via AnnotationToolkit.addAnnotationUI().
- * Toolbar and layer UI are owned by the toolkit; this class uses them via getToolbar()/getLayerUI() and places them via AnnotationLayout.
+ * Deprecated wrapper around split toolkit APIs. Constructed only via AnnotationToolkit.addAnnotationUI().
+ * Layout, viewer buttons, and FileDialog are owned by the toolkit.
  */
 class AnnotationUI {
 
   /**
-   * Creates an instance of AnnotationUI.
-   *
-   * @param {Object} annotationToolkit - The annotation toolkit object.
-   * @param {AnnotationToolset} toolset - The toolset (owned by the toolkit).
-   * @param {Object} opts - The options for the AnnotationUI.
-   * @param {boolean} [opts.autoOpen=true] - Determines if the AnnotationUI should be automatically opened.
-   * @param {Array} [opts.featureCollections=[]] - An array of feature collections to load.
-   * @param {boolean} [opts.addButton=true] - Determines if the AnnotationUI button should be added.
-   * @param {boolean} [opts.addToolbar=true] - Whether toolbar is requested (toolkit already created it via getToolbar if true).
-   * @param {string[]} [opts.tools=null] - An array of tool names to use in the AnnotationToolbar.
-   * @param {boolean} [opts.addLayerUI=true] - Whether layer UI is requested (toolkit already created it via getLayerUI if true).
-   * @param {boolean} [opts.addFileButton=true] - Determines if the file button should be added for saving/loading annotations.
-   * @param {boolean} [opts.buttonTogglesToolbar=true] - Determines if the AnnotationToolbar visibility is toggled by the AnnotationUI button.
-   * @param {boolean} [opts.buttonTogglesLayerUI=true] - Determines if the LayerUI visibility is toggled by the AnnotationUI button.
+   * @param {Object} annotationToolkit
+   * @param {AnnotationToolset} toolset
+   * @param {Object} opts
    */
   constructor(annotationToolkit, toolset, opts) {
-    let defaultOpts = {
+    const defaultOpts = {
       autoOpen: true,
       featureCollections: [],
       addButton: true,
@@ -76,119 +62,46 @@ class AnnotationUI {
       buttonTogglesLayerUI: true,
     };
 
-    opts = this.options = Object.assign(defaultOpts, opts);
+    this.options = Object.assign(defaultOpts, opts);
     this._annotationToolkit = annotationToolkit;
-    this._viewer = annotationToolkit.viewer;
+    this._toolset = toolset;
 
-    const toolbar = annotationToolkit.getToolbar?.() ?? null;
-    const layerUI = annotationToolkit.getLayerUI?.() ?? null;
-    const toolbarRef = toolbar ? { element: toolbar.element, show: () => toolbar.show(), hide: () => toolbar.hide() } : null;
-    const layerUIRef = layerUI ? { element: layerUI.element, show: () => layerUI.show(), hide: () => layerUI.hide() } : null;
-
-    this._layout = new AnnotationLayout(this._viewer, {
-      toolbar: toolbarRef,
-      layerUI: layerUIRef,
-      addButton: opts.addButton !== false,
-      addViewerButton: (config) => annotationToolkit.overlay.addViewerButton(config),
-      buttonTogglesToolbar: opts.buttonTogglesToolbar !== false,
-      buttonTogglesLayerUI: opts.buttonTogglesLayerUI !== false,
-      initialOpen: opts.autoOpen !== false,
-    });
-
-    if (opts.autoOpen !== false) {
-      toolbar?.show();
-      layerUI?.show();
-    } else {
-      toolbar?.hide();
-      layerUI?.hide();
-    }
-
-    this._fileDialog = new FileDialog(annotationToolkit, { appendTo: this._viewer.element });
-    this._filebutton = null;
-    if (opts.addFileButton) {
-      this._filebutton = annotationToolkit.overlay.addViewerButton({
-        onClick: () => this._fileDialog.toggle(),
-        faIconClass: 'fa-save',
-        tooltip: 'Save/Load Annotations',
-      });
-    }
-
-    if (opts.featureCollections) {
-      annotationToolkit.loadGeoJSON(opts.featureCollections);
+    if (this.options.featureCollections?.length) {
+      annotationToolkit.loadGeoJSON(this.options.featureCollections);
     }
   }
 
-  /**
-   * Viewer toolbar buttons managed by this UI (for host integrations such as ConfigurationWidget addSection).
-   * @returns {{ pencil: Object|null, file: Object|null }} OpenSeadragon button objects with `.element`, or null entries when not created.
-   */
   getViewerToolbarButtons() {
-    return {
-      pencil: this._layout?.getPencilViewerButton?.() ?? null,
-      file: this._filebutton,
-    };
+    return this._annotationToolkit.getViewerToolbarButtons();
   }
 
-  /**
-   * Same as clicking the pencil button: toggles toolbar/layer visibility per constructor options.
-   */
   toggleAnnotationPanels() {
-    this._layout?.togglePanelsFromButton?.();
+    this._annotationToolkit.toggleAnnotationPanels();
   }
 
-  /**
-   * Whether annotation panels are open (pencil toggle state).
-   * @returns {boolean}
-   */
   areAnnotationPanelsVisible() {
-    return this._layout?.arePanelsVisible?.() ?? false;
+    return this._annotationToolkit.areAnnotationPanelsVisible();
   }
 
-  /**
-   * Opens the save/load file dialog (no-op if addFileButton was false).
-   */
   openFileDialog() {
-    this._fileDialog?.show?.();
+    this._annotationToolkit.openFileDialog();
   }
 
-  /**
-   * Destroys the AnnotationUI and cleans up its resources. Does not destroy the toolkit's toolbar or layer UI.
-   */
-  destroy() {
-    this._layout?.destroy();
-    this._layout = null;
-    if (this._filebutton) {
-      const idx = this._viewer.buttonGroup.buttons.indexOf(this._filebutton);
-      if (idx > -1) this._viewer.buttonGroup.buttons.splice(idx, 1);
-      this._filebutton.element.remove();
-      this._filebutton = null;
-    }
-  }
+  /** @deprecated Toolkit owns layout; no-op for compatibility. */
+  destroy() {}
 
-  /**
-   * Show the LayerUI interface
-   */
   showUI() {
     this.ui?.show();
   }
 
-  /**
-   * Hide the LayerUI interface
-   */
   hideUI() {
     this.ui?.hide();
   }
 
-  /**
-   * Show the toolbar
-   */
   showToolbar() {
     this.toolbar?.show();
   }
 
-  /**
-   * Hide the toolbar
-   */
   hideToolbar() {
     this.toolbar?.hide();
   }

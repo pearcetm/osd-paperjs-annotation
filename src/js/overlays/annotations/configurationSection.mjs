@@ -24,12 +24,11 @@ export function attachAnnotationToolkitConfigurationWidget(annotationToolkit, co
         console.warn('[osd-paperjs-annotation] attachAnnotationToolkitConfigurationWidget: configuration widget viewer does not match toolkit viewer.');
         return null;
     }
-    const ui = annotationToolkit.annotationUI;
-    if (!ui || typeof ui.getViewerToolbarButtons !== 'function') {
-        console.warn('[osd-paperjs-annotation] attachAnnotationToolkitConfigurationWidget requires AnnotationToolkit.addAnnotationUI().');
+    if (typeof annotationToolkit.getViewerToolbarButtons !== 'function') {
+        console.warn('[osd-paperjs-annotation] attachAnnotationToolkitConfigurationWidget requires getToolbar(), getLayerUI(), and addAnnotationLayout() (or deprecated addAnnotationUI()).');
         return null;
     }
-    const { pencil, file } = ui.getViewerToolbarButtons();
+    const { pencil, file } = annotationToolkit.getViewerToolbarButtons();
     if (!pencil && !file) {
         console.warn('[osd-paperjs-annotation] attachAnnotationToolkitConfigurationWidget: no pencil or file toolbar button to configure.');
         return null;
@@ -63,7 +62,7 @@ export function attachAnnotationToolkitConfigurationWidget(annotationToolkit, co
             osdButton: pencil,
             configurationWidget,
             kind: 'pencil',
-            ui,
+            toolkit: annotationToolkit,
         }));
     }
     if (file?.element) {
@@ -73,7 +72,7 @@ export function attachAnnotationToolkitConfigurationWidget(annotationToolkit, co
             osdButton: file,
             configurationWidget,
             kind: 'file',
-            ui,
+            toolkit: annotationToolkit,
         }));
     }
 
@@ -89,10 +88,10 @@ export function attachAnnotationToolkitConfigurationWidget(annotationToolkit, co
  * @param {{ element: HTMLElement }} p.osdButton
  * @param {OSDPaperjsAnnotation.ConfigurationWidget} p.configurationWidget
  * @param {'pencil'|'file'} p.kind
- * @param {Object} p.ui - AnnotationUI instance
+ * @param {OSDPaperjsAnnotation.AnnotationToolkit} p.toolkit
  */
 function _makeOverlayStyleRow(p) {
-    const { labelText, faIconClass, osdButton, configurationWidget, kind, ui } = p;
+    const { labelText, faIconClass, osdButton, configurationWidget, kind, toolkit } = p;
     const row = document.createElement('div');
     row.classList.add('config-overlay-row');
 
@@ -149,17 +148,17 @@ function _makeOverlayStyleRow(p) {
 
     if (kind === 'pencil') {
         const syncPencilLabel = () => {
-            activateBtn.textContent = ui.areAnnotationPanelsVisible() ? 'Close' : 'Open';
+            activateBtn.textContent = toolkit.areAnnotationPanelsVisible() ? 'Close' : 'Open';
         };
         syncPencilLabel();
         activateBtn.addEventListener('click', () => {
-            ui.toggleAnnotationPanels();
+            toolkit.toggleAnnotationPanels();
             syncPencilLabel();
         });
     } else {
         activateBtn.textContent = 'Open';
         activateBtn.addEventListener('click', () => {
-            ui.openFileDialog();
+            toolkit.openFileDialog();
             configurationWidget.close();
         });
     }
