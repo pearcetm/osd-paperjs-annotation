@@ -22,8 +22,8 @@ export function buildScreenshotDialogHTML(){
                     <label class="ss-check"><input class="lock-aspect-ratio" type="checkbox"/> Use fixed aspect ratio</label>
                     <span class="ss-inline">
                         <span class="ss-muted">Aspect:</span>
-                        <input type="number" step="any" inputmode="decimal" value="1" class="aspect-width"/> :
-                        <input type="number" step="any" inputmode="decimal" value="1" class="aspect-height"/>
+                        <input type="number" inputmode="decimal" value="1" class="aspect-width"/> :
+                        <input type="number" inputmode="decimal" value="1" class="aspect-height"/>
                         <span class="aspect-error ss-muted hidden"></span>
                     </span>
                 </div>
@@ -42,7 +42,7 @@ export function buildScreenshotDialogHTML(){
                     <select class="select-output-size-fixed"></select>
                     <span class="fixed-output-other hidden">
                         <span class="ss-muted" title="Downsample factor">1 /</span>
-                        <input class="fixed-output-other-factor" type="number" step="any" inputmode="decimal" value="1"/>
+                        <input class="fixed-output-other-factor" type="number" inputmode="decimal" value="1"/>
                         <span class="fixed-output-readout ss-muted"></span>
                         <span class="downsample-error ss-muted hidden"></span>
                     </span>
@@ -72,7 +72,7 @@ export function buildScreenshotDialogHTML(){
                             <select class="select-output-size-result"></select>
                             <span class="result-output-other hidden">
                                 <span class="ss-muted" title="Downsample factor">1 /</span>
-                                <input class="result-output-other-factor" type="number" step="any" inputmode="decimal" value="1"/>
+                                <input class="result-output-other-factor" type="number" inputmode="decimal" value="1"/>
                                 <span class="result-output-readout ss-muted"></span>
                                 <span class="downsample-error ss-muted hidden"></span>
                             </span>
@@ -88,7 +88,7 @@ export function buildScreenshotDialogHTML(){
                             <div class="scalebar-opts hidden">
                                 <div class="scalebar-row scalebar-length">
                                     <span class="ss-muted">Length</span>
-                                    <input class="scalebar-width" type="number" step="any" inputmode="decimal">
+                                    <input class="scalebar-width" type="number" inputmode="decimal">
                                     <span class="ss-muted ss-unit">mm</span>
                                     <span class="ss-muted scalebar-px-hint"></span>
                                 </div>

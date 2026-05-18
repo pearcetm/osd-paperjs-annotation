@@ -1,6 +1,6 @@
 /**
  * OpenSeadragon paperjs overlay plugin based on paper.js
- * @version 0.7.5
+ * @version 0.7.6
  * 
  * Includes additional open source libraries which are subject to copyright notices
  * as indicated accompanying those segments of code.
@@ -45,6 +45,7 @@ import { buildDownsampleOptions, computeOutputSize } from './screenshot-sizing.m
 import { ViewerOverlayBase } from '../base.mjs';
 import { ScreenshotTool } from './screenshot-tool.mjs';
 import { createScreenshotDialogElement } from './screenshot-dialog.mjs';
+import { syncNumericInputStep } from '../../utils/numericInputStep.mjs';
 import { renderBaseScreenshot, composeScreenshotWithScalebar, computeRenderSignature } from './screenshot-render.mjs';
 
 class ScreenshotOverlay extends ViewerOverlayBase {
@@ -217,7 +218,9 @@ class ScreenshotOverlay extends ViewerOverlayBase {
     _setIfNotFocused(input, valueString){
         if(!input) return;
         if(this._isFocused(input)) return;
-        input.value = String(valueString ?? '');
+        const s = String(valueString ?? '');
+        input.value = s;
+        syncNumericInputStep(input, s);
     }
 
     _parsePositiveFloatDraft(text){
@@ -787,6 +790,7 @@ class ScreenshotOverlay extends ViewerOverlayBase {
         }));
         el.querySelectorAll('.aspect-width').forEach(e=>{
             const onDraft = ()=>{
+                syncNumericInputStep(e);
                 // Draft lives in DOM; soft-validate only (no commits while typing).
                 this._syncAspectValidationUI();
             };
@@ -803,11 +807,13 @@ class ScreenshotOverlay extends ViewerOverlayBase {
                 }else{
                     e.value = String(this.settings.free.aspectWidth);
                 }
+                syncNumericInputStep(e);
                 this._syncAspectValidationUI();
             });
         });
         el.querySelectorAll('.aspect-height').forEach(e=>{
             const onDraft = ()=>{
+                syncNumericInputStep(e);
                 this._syncAspectValidationUI();
             };
             e.addEventListener('input', onDraft);
@@ -823,6 +829,7 @@ class ScreenshotOverlay extends ViewerOverlayBase {
                 }else{
                     e.value = String(this.settings.free.aspectHeight);
                 }
+                syncNumericInputStep(e);
                 this._syncAspectValidationUI();
             });
         });
@@ -840,6 +847,7 @@ class ScreenshotOverlay extends ViewerOverlayBase {
         el.querySelectorAll('.region-dim').forEach(e=>e.addEventListener('change',()=>this._updateROI()));
         el.querySelectorAll('.scalebar-width').forEach(e=>{
             const onInput = (ev)=>{
+                syncNumericInputStep(ev.target);
                 const text = String(ev.target.value ?? '');
                 if(!this._scalebarWasTouched) this._scalebarWasTouched = true;
                 // Soft validation derives from DOM draft.
@@ -863,6 +871,7 @@ class ScreenshotOverlay extends ViewerOverlayBase {
                 }else{
                     e.value = String(this._scalebarWidth);
                 }
+                syncNumericInputStep(e);
                 this._syncScalebarUI();
             });
         });
@@ -1023,6 +1032,7 @@ class ScreenshotOverlay extends ViewerOverlayBase {
 
         const softSyncOtherDraft = ()=>{
             if(!otherInput) return;
+            syncNumericInputStep(otherInput);
             const draft = String(otherInput.value ?? '').trim();
             const parsed = this._parsePositiveFloatDraft(draft);
             if(parsed.ok){
@@ -1059,11 +1069,13 @@ class ScreenshotOverlay extends ViewerOverlayBase {
                 setOtherError('');
                 // Ensure the field renders the committed value after normalization.
                 otherInput.value = String(this.settings.output.otherFactor);
+                syncNumericInputStep(otherInput);
                 if(kind === 'fixed') this._syncFixedOutputReadout();
                 else { this._syncResultOutputReadout(); this._syncScalebarUI(); }
             }else{
                 // Revert to last committed value.
                 otherInput.value = String(this.settings.output.otherFactor);
+                syncNumericInputStep(otherInput);
                 setOtherError('');
                 if(kind === 'fixed') this._syncFixedOutputReadout();
                 else { this._syncResultOutputReadout(); this._syncScalebarUI(); }
@@ -1123,7 +1135,10 @@ class ScreenshotOverlay extends ViewerOverlayBase {
         if(s.mode === 'other'){
             ui.select.value = '__other__';
             ui.otherWrap?.classList.remove('hidden');
-            if(ui.otherInput) ui.otherInput.value = String(s.otherFactor);
+            if(ui.otherInput){
+                ui.otherInput.value = String(s.otherFactor);
+                syncNumericInputStep(ui.otherInput);
+            }
         }else{
             const desired = String(s.presetFactor);
             let matched = Array.from(ui.select.options).find(o=>o.value === desired && !o.disabled);

@@ -3,6 +3,8 @@
  * Ruler displays `paperDistance * unitsPerPixel` + labelUnit; do not pass µm/px as unitsPerPixel.
  */
 
+import { syncNumericInputStep } from './numericInputStep.mjs';
+
 /**
  * @param {OSDPaperjsAnnotation.AnnotationToolkit} toolkit
  * @param {Object|null} mpp - Microns per source pixel `{ x, y }` (isotropic +X uses `mpp.x`)
@@ -24,7 +26,11 @@ export function applyRulerPhysicalScaleFromMpp(toolkit, mpp, options = {}) {
     tc.labelUnit = labelUnit;
     tc.unitsPerPixel = unitsPerPixel;
     if (tc.unitsInput) tc.unitsInput.value = labelUnit;
-    if (tc.unitsPerPixelInput) tc.unitsPerPixelInput.value = String(unitsPerPixel);
+    if (tc.unitsPerPixelInput) {
+        const s = String(unitsPerPixel);
+        tc.unitsPerPixelInput.value = s;
+        syncNumericInputStep(tc.unitsPerPixelInput, s);
+    }
 
     const lm = ruler._lastMeasurement;
     tc.updateMeasurement(lm?.p1 ?? null, lm?.p2 ?? null, lm?.distance ?? null);

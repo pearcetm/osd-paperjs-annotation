@@ -6,6 +6,7 @@
 import { PaperOverlay } from '../../paper-overlay.mjs';
 import { paper } from '../../paperjs.mjs';
 import { domObjectFromHTML } from '../../utils/domObjectFromHTML.mjs';
+import { syncNumericInputStep } from '../../utils/numericInputStep.mjs';
 import { loadFieldOfViewSettings, normalizeFieldOfViewSettings, saveFieldOfViewSettings } from './fieldofview-settings.mjs';
 import {
     areaMm2FromDiameterPhysical,
@@ -458,7 +459,17 @@ class FieldOfViewOverlay extends ViewerOverlayBase {
     _setIfNotFocused(input, valueString) {
         if (!input) return;
         if (this._isFocused(input)) return;
-        input.value = String(valueString ?? '');
+        const s = String(valueString ?? '');
+        input.value = s;
+        syncNumericInputStep(input, s);
+    }
+
+    /** @param {number} d @param {'mm'|'um'} unit */
+    _formatDiameterForInput(d, unit) {
+        if (!Number.isFinite(d) || d <= 0) return '';
+        const digits = unit === 'um' ? 2 : 4;
+        const s = d.toFixed(digits);
+        return s.replace(/(\.\d*?[1-9])0+$/, '$1').replace(/\.0+$/, '');
     }
 
     /** @param {number} a */
@@ -526,12 +537,13 @@ class FieldOfViewOverlay extends ViewerOverlayBase {
         const diameterInput = el.querySelector('.fov-diameter');
         const areaInput = el.querySelector('.fov-area-mm2');
         const unitSel = el.querySelector('.fov-unit');
-        this._setIfNotFocused(diameterInput, String(this.settings.diameter));
+        this._setIfNotFocused(diameterInput, this._formatDiameterForInput(this.settings.diameter, this.settings.unit));
         const aMm2 = areaMm2FromDiameterPhysical(this.settings.diameter, this.settings.unit);
         if (aMm2 != null) {
             this._setIfNotFocused(areaInput, this._formatAreaMm2ForInput(aMm2));
         } else if (areaInput && !this._isFocused(areaInput)) {
             areaInput.value = '';
+            syncNumericInputStep(areaInput, '');
         }
         if (unitSel) unitSel.value = this.settings.unit;
 
@@ -595,7 +607,7 @@ class FieldOfViewOverlay extends ViewerOverlayBase {
                 <div class="fov-body">
                     <div class="fov-row">
                         <span class="fov-muted">Diameter</span>
-                        <input class="fov-diameter" type="number" step="any" inputmode="decimal" />
+                        <input class="fov-diameter" type="number" inputmode="decimal" />
                         <select class="fov-unit">
                             <option value="mm">mm</option>
                             <option value="um">µm</option>
@@ -603,7 +615,7 @@ class FieldOfViewOverlay extends ViewerOverlayBase {
                     </div>
                     <div class="fov-row">
                         <span class="fov-muted">Area</span>
-                        <input class="fov-area-mm2" type="number" step="any" inputmode="decimal" />
+                        <input class="fov-area-mm2" type="number" inputmode="decimal" />
                         <span class="fov-muted">mm²</span>
                     </div>
                     <div class="fov-row fov-mpp-warning fov-muted hidden"></div>
@@ -757,6 +769,7 @@ class FieldOfViewOverlay extends ViewerOverlayBase {
             this.tool.setDiameterPixels(this._diameterPixelsFromSettings());
         });
         diameterInput?.addEventListener('input', () => {
+            syncNumericInputStep(diameterInput);
             const parsed = this._parsePositiveFloatDraft(diameterInput.value);
             if (parsed.ok) {
                 const aMm2 = areaMm2FromDiameterPhysical(parsed.value, this.settings.unit);
@@ -785,11 +798,12 @@ class FieldOfViewOverlay extends ViewerOverlayBase {
             this.tool.setDiameterPixels(this._diameterPixelsFromSettings());
         });
         areaInput?.addEventListener('input', () => {
+            syncNumericInputStep(areaInput);
             const parsed = this._parsePositiveFloatDraft(areaInput.value);
             if (parsed.ok) {
                 const dPhys = diameterPhysicalFromAreaMm2(parsed.value, this.settings.unit);
                 if (dPhys != null) {
-                    this._setIfNotFocused(diameterInput, String(dPhys));
+                    this._setIfNotFocused(diameterInput, this._formatDiameterForInput(dPhys, this.settings.unit));
                     const mpp = this._getMppOrNull();
                     if (mpp) {
                         const px = diameterPhysicalToBasePixels(mpp, dPhys, this.settings.unit);

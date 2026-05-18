@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.7.6] - 2026-05-15
+
+### Fixed
+
+- Number-input spinner increments for field-of-view (diameter, area), screenshot (aspect ratio, output factor, scalebar length), and ruler scale (`units per pixel`) now step by the smallest decimal place shown (e.g. `0.55` → `0.56`) instead of whole units when `step="any"` was used.
+- Ruler Scale field no longer fails HTML5 validation for values such as `1.5` when dynamic `step` was combined with `min=0.0001` (browser had offered only `1.4001` / `1.5001` as valid).
+
 ## [0.7.5] - 2026-05-16
 
 ### Fixed

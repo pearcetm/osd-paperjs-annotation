@@ -1,6 +1,6 @@
 /**
  * OpenSeadragon paperjs overlay plugin based on paper.js
- * @version 0.7.5
+ * @version 0.7.6
  *
  * Includes additional open source libraries which are subject to copyright notices
  * as indicated accompanying those segments of code.
@@ -40,6 +40,7 @@ import { AnnotationUITool, AnnotationUIToolbarBase } from './annotationUITool.mj
 import { paper } from '../paperjs.mjs';
 import { makeFaIcon } from '../utils/faIcon.mjs';
 import { clampDecimals, normalizeRoundingMode, formatDecimal } from '../utils/measurementFormat.mjs';
+import { syncNumericInputStep } from '../utils/numericInputStep.mjs';
 
 const ZERO_LENGTH_EPSILON = 1e-6;
 const CROSSHAIR_SIZE_PX = 8;
@@ -501,7 +502,7 @@ class RulerTool extends AnnotationUITool {
      * Refresh on-canvas label content/position for all segments (e.g. when units or unitsPerPixel change).
      */
     refreshSegmentLabels() {
-        if (!this.item || !this.item.children.length) return;
+        if (!this.item || !this.item.children || this.item.children.length === 0) return;
         this._writeRulerDataToItem();
         this.item.children.forEach((child) => {
             if (child instanceof paper.Group && child.children.length === 3) {
@@ -943,11 +944,17 @@ class RulerToolbar extends AnnotationUIToolbarBase {
 
         this.unitsPerPixelInput = document.createElement('input');
         this.unitsPerPixelInput.type = 'number';
-        this.unitsPerPixelInput.min = 0.0001;
-        this.unitsPerPixelInput.step = 'any';
+        this.unitsPerPixelInput.min = 0;
+        this.unitsPerPixelInput.inputMode = 'decimal';
         this.unitsPerPixelInput.value = 1;
+        syncNumericInputStep(this.unitsPerPixelInput, '1');
         this.unitsPerPixelInput.classList.add('ruler-units-per-pixel-input');
+        const onUnitsPerPixelInput = () => {
+            syncNumericInputStep(this.unitsPerPixelInput);
+        };
+        this.unitsPerPixelInput.addEventListener('input', onUnitsPerPixelInput);
         this.unitsPerPixelInput.addEventListener('change', () => {
+            syncNumericInputStep(this.unitsPerPixelInput);
             const v = parseFloat(this.unitsPerPixelInput.value);
             this.unitsPerPixel = (v > 0 && Number.isFinite(v)) ? v : 1;
             this.updateMeasurement(rulerTool._lastMeasurement?.p1 ?? null, rulerTool._lastMeasurement?.p2 ?? null, rulerTool._lastMeasurement?.distance ?? null);
