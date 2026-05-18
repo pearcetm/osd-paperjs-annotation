@@ -6,11 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.7.5] - 2026-05-16
+
+### Fixed
+
+- Removed inappropriate double-scoped css rules in webpack.
+
 ## [0.7.4] - 2026-05-16
 
 ### Fixed
 
 - Webpack bundle (`dist/main.js`) no longer contains `import.meta`, so classic `<script>` hosts (e.g. OSDPlus) can parse and run the library. ESM demos still load CSS via `addcss.mjs` and `import.meta.url`.
+- Webpack bundle no longer double-prefixes `annotationui.css` (`.osd-paperjs-annotation .osd-paperjs-annotation`), so scoped rules match the DOM and match native ESM `<link>` loading.
 - `ConfigurationWidget` Annotations section works with the split API (`getToolbar`, `getLayerUI`, `addAnnotationLayout`) without deprecated `addAnnotationUI()`. Toolkit owns viewer file button and integration methods; deprecated `addAnnotationUI()` uses the same layout path.
 
 ### Changed

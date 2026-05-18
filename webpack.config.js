@@ -73,7 +73,20 @@ module.exports = {
                 },
             },
             {
+                test: /annotationui\.css$/,
+                use: [
+                    {
+                        loader: 'style-loader',
+                        options: {
+                            attributes: { 'data-osd-paperjs-annotation': 'true' },
+                        },
+                    },
+                    'css-loader',
+                ],
+            },
+            {
                 test: /\.css$/,
+                exclude: /annotationui\.css$/,
                 use: [
                     {
                         loader: 'style-loader',

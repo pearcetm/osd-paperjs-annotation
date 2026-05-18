@@ -50,7 +50,7 @@ Wrap the outlet (or a parent) with `osd-paperjs-annotation` before moving `tool.
 
 - **Edit:** [`src/css/annotationui.unscoped.css`](../src/css/annotationui.unscoped.css)
 - **Generated:** [`src/css/annotationui.css`](../src/css/annotationui.css) via `npm run scope-css`
-- **Webpack bundle:** same scoped rules, injected with `data-osd-paperjs-annotation` on `<style>` tags
+- **Webpack bundle:** `annotationui.css` is injected as-is (already scoped by `npm run scope-css`); other CSS (e.g. `editablecontent.css`) is prefixed once at bundle time. Styles use `data-osd-paperjs-annotation` on `<style>` tags.
 - **ES modules:** `ensureAnnotationUIStyles()` / `addCSS()` loads scoped CSS with `data-osd-paperjs-annotation` on `<link>` tags. Do not import `importcss.mjs` in application code (webpack-only; browsers cannot load `.css` as modules).
 
 `editablecontent.css` is loaded together with annotation UI styles. The configuration widget uses inline `.config-dialog` styles.

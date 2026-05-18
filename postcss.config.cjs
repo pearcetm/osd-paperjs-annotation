@@ -8,6 +8,9 @@ module.exports = {
                 if (selector === '.annotation-ui-noselect') {
                     return 'body.annotation-ui-noselect';
                 }
+                if (selector.includes('.osd-paperjs-annotation')) {
+                    return selector;
+                }
                 return prefixedSelector;
             },
         }),

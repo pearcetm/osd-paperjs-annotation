@@ -11,7 +11,7 @@
     "test": "node test/geojsonGeometryShape.test.mjs && node test/emptyGeometryExport.test.mjs && node test/paperItemShapeContractCore.test.mjs && node test/mpp.test.mjs && node test/rulerPhysicalScale.test.mjs",
     "generate-docs": "jsdoc -c ./jsdoc-config.json",
     "scope-css": "node scripts/scope-css.mjs",
-    "build": "npm run scope-css && webpack && ! grep -q 'import\\.meta' dist/main.js || (echo 'dist/main.js must not contain import.meta' && exit 1)",
+    "build": "npm run scope-css && webpack && ! grep -q 'import\\.meta' dist/main.js || (echo 'dist/main.js must not contain import.meta' && exit 1) && ! grep -q '\\.osd-paperjs-annotation \\.osd-paperjs-annotation' dist/main.js || (echo 'dist/main.js: double scope prefix detected' && exit 1)",
     "prepublishOnly": "npm run build"
   },
   "repository": {
