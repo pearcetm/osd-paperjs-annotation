@@ -39,6 +39,11 @@
 import { PaperOverlay } from '../../paper-overlay.mjs';
 import { domObjectFromHTML } from '../../utils/domObjectFromHTML.mjs';
 import { makeFaIcon } from '../../utils/faIcon.mjs';
+import {
+    ensureOverlayDialogStyles,
+    OVERLAY_DIALOG_CARD_CLASS,
+    OVERLAY_DIALOG_CLASS,
+} from '../../utils/overlayDialog.mjs';
 
 /** Schema version for {@link ConfigurationWidget} toolbar visibility JSON in localStorage. */
 const CONFIG_TOOLBAR_PERSIST_VERSION = 1;
@@ -274,24 +279,8 @@ export class ConfigurationWidget {
     _makeDialog() {
         const css = `<style data-type="osd-configuration-widget">
 .config-dialog {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
     width: min(380px, calc(100% - 24px));
-    max-height: calc(100% - 24px);
-    overflow-y: auto;
-    background: white;
-    border-radius: 10px;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.18);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    font-size: 14px;
-    z-index: 10000;
     padding: 0;
-    color: #222;
-}
-.config-dialog.hidden {
-    display: none;
 }
 .config-dialog-header {
     display: flex;
@@ -468,10 +457,10 @@ export class ConfigurationWidget {
 }
 </style>`;
 
-        const html = `<div class="config-dialog hidden">
-    <div class="config-dialog-header">
+        const html = `<div class="config-dialog ${OVERLAY_DIALOG_CLASS} ${OVERLAY_DIALOG_CARD_CLASS} hidden">
+    <div class="config-dialog-header osd-overlay-dialog-header">
         <h3>Configuration</h3>
-        <button class="config-dialog-close" title="Close">&times;</button>
+        <button class="config-dialog-close osd-overlay-dialog-close" title="Close">&times;</button>
     </div>
     <div class="config-dialog-body">
         <div class="config-empty-message">No configurable options have been set up for this viewer.</div>
@@ -480,6 +469,7 @@ export class ConfigurationWidget {
     </div>
 </div>`;
 
+        ensureOverlayDialogStyles();
         if (!document.querySelector('style[data-type="osd-configuration-widget"]')) {
             document.querySelector('head')?.appendChild(domObjectFromHTML(css));
         }

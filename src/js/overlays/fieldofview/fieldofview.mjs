@@ -17,6 +17,12 @@ import {
 import { FieldOfViewTool } from './fieldofview-tool.mjs';
 import { ViewerOverlayBase } from '../base.mjs';
 import {
+    ensureOverlayDialogStyles,
+    OVERLAY_DIALOG_CARD_CLASS,
+    OVERLAY_DIALOG_CLASS,
+} from '../../utils/overlayDialog.mjs';
+import { dismissOverlayContextMenu, openOverlayContextMenu } from '../../utils/overlayContextMenu.mjs';
+import {
     getOverlayPointerRouter,
     OVERLAY_POINTER_CLAIM,
     OVERLAY_POINTER_MISS,
@@ -61,23 +67,6 @@ class FieldOfViewOverlay extends ViewerOverlayBase {
         this._mouseNavEnabledAtActivation = true;
         this._state = 'inactive';
         this._saveSettingsTimeout = null;
-        /** @type {HTMLElement | null} */
-        this._fovContextMenuEl = null;
-        this._fovContextMenuPointerDismiss = (e) => {
-            if (!this._fovContextMenuEl || this._fovContextMenuEl.contains(e.target)) return;
-            this._dismissFovContextMenu();
-        };
-        this._fovContextMenuKeyDismiss = (e) => {
-            if (e.key === 'Escape') {
-                this._dismissFovContextMenu();
-            }
-        };
-        this._fovContextMenuBlurDismiss = () => {
-            this._dismissFovContextMenu();
-        };
-        this._fovContextMenuScrollDismiss = () => {
-            this._dismissFovContextMenu();
-        };
 
         this.settings = loadFieldOfViewSettings();
 
@@ -114,7 +103,7 @@ class FieldOfViewOverlay extends ViewerOverlayBase {
         this.viewer.addOnceHandler('destroy', () => {
             this._unregisterContextMenu?.();
             this._unregisterContextMenu = null;
-            this._dismissFovContextMenu();
+            dismissOverlayContextMenu();
         });
 
         this._autoRegister();
@@ -248,53 +237,18 @@ class FieldOfViewOverlay extends ViewerOverlayBase {
         return 5 / scale / view.getZoom();
     }
 
-    _dismissFovContextMenu() {
-        if (this._fovContextMenuEl) {
-            this._fovContextMenuEl.remove();
-            this._fovContextMenuEl = null;
-        }
-        document.removeEventListener('pointerdown', this._fovContextMenuPointerDismiss, true);
-        window.removeEventListener('keydown', this._fovContextMenuKeyDismiss, true);
-        window.removeEventListener('blur', this._fovContextMenuBlurDismiss);
-        this.viewer.container?.removeEventListener('scroll', this._fovContextMenuScrollDismiss, true);
-    }
-
     /**
      * @param {number} clientX
      * @param {number} clientY
      * @param {paper.Item} ringGroup
      */
     _openFovContextMenu(clientX, clientY, ringGroup) {
-        this._dismissFovContextMenu();
-
-        const wrap = document.createElement('div');
-        wrap.className = 'fov-context-menu';
-        wrap.setAttribute('role', 'menu');
-        wrap.style.cssText =
-            'position:fixed;z-index:100000;background:#fff;border:1px solid rgba(0,0,0,0.15);' +
-            'border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,0.18);min-width:12rem;padding:4px 0;' +
-            'font:13px system-ui,-apple-system,sans-serif;';
-
-        const rowStyle =
-            'display:block;width:100%;text-align:left;padding:8px 12px;border:none;background:transparent;' +
-            'cursor:pointer;font:inherit;color:#111;';
-        const hoverOn = (b) => {
-            b.style.background = 'rgba(0,0,0,0.06)';
-        };
-        const hoverOff = (b) => {
-            b.style.background = 'transparent';
-        };
-
         const fmt = (n, digits = 6) => {
             const x = Number(n);
             if (!Number.isFinite(x)) return '';
             const s = x.toFixed(digits);
             return s.replace(/(\.\d*?[1-9])0+$/, '$1').replace(/\.0+$/, '');
         };
-
-        const info = document.createElement('div');
-        info.style.cssText =
-            'padding:8px 12px 6px 12px;color:rgba(0,0,0,0.70);font:12px system-ui,-apple-system,sans-serif;line-height:1.25;';
 
         const dPx = Number(ringGroup?.data?.diameterPx);
         const dPhys = Number(ringGroup?.data?.diameterPhysical);
@@ -311,72 +265,34 @@ class FieldOfViewOverlay extends ViewerOverlayBase {
             lines.push(`Diameter: ${fmt(dPx, 2)} px`);
         }
 
-        if (lines.length) {
-            info.textContent = lines.join('\n');
-            info.style.whiteSpace = 'pre-line';
-            const sep = document.createElement('div');
-            sep.style.cssText = 'height:1px;background:rgba(0,0,0,0.08);margin:4px 0;';
-            wrap.append(info, sep);
-        }
-
-        const btnThis = document.createElement('button');
-        btnThis.type = 'button';
-        btnThis.textContent = 'Delete this field of view';
-        btnThis.style.cssText = rowStyle;
-        btnThis.addEventListener('mouseenter', () => hoverOn(btnThis));
-        btnThis.addEventListener('mouseleave', () => hoverOff(btnThis));
-        btnThis.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            ringGroup.remove();
-            this.notifyFovRingGeometryChanged();
-            this._dismissFovContextMenu();
+        openOverlayContextMenu({
+            clientX,
+            clientY,
+            viewer: this.viewer,
+            header: lines.length ? lines.join('\n') : null,
+            items: [
+                {
+                    label: 'Delete this field of view',
+                    onClick: () => {
+                        ringGroup.remove();
+                        this.notifyFovRingGeometryChanged();
+                    },
+                },
+                {
+                    label: 'Delete all',
+                    onClick: () => {
+                        this.clearAllDroppedFieldOfViews();
+                    },
+                },
+            ],
         });
-
-        const btnAll = document.createElement('button');
-        btnAll.type = 'button';
-        btnAll.textContent = 'Delete all';
-        btnAll.style.cssText = rowStyle;
-        btnAll.addEventListener('mouseenter', () => hoverOn(btnAll));
-        btnAll.addEventListener('mouseleave', () => hoverOff(btnAll));
-        btnAll.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            this.clearAllDroppedFieldOfViews();
-            this._dismissFovContextMenu();
-        });
-
-        wrap.append(btnThis, btnAll);
-        document.body.appendChild(wrap);
-
-        const rect = wrap.getBoundingClientRect();
-        const vw = window.innerWidth;
-        const vh = window.innerHeight;
-        let left = clientX;
-        let top = clientY;
-        if (left + rect.width > vw - 8) left = vw - rect.width - 8;
-        if (top + rect.height > vh - 8) top = vh - rect.height - 8;
-        if (left < 8) left = 8;
-        if (top < 8) top = 8;
-        wrap.style.left = `${left}px`;
-        wrap.style.top = `${top}px`;
-
-        this._fovContextMenuEl = wrap;
-
-        const arm = () => {
-            document.addEventListener('pointerdown', this._fovContextMenuPointerDismiss, true);
-            window.addEventListener('keydown', this._fovContextMenuKeyDismiss, true);
-            window.addEventListener('blur', this._fovContextMenuBlurDismiss);
-            this.viewer.container?.addEventListener('scroll', this._fovContextMenuScrollDismiss, true);
-        };
-        setTimeout(arm, 0);
     }
 
     /**
      * @param {MouseEvent} ev
      */
     _offerFovContextMenu(ev) {
-        this._dismissFovContextMenu();
+        dismissOverlayContextMenu();
 
         const view = this.overlay.paperScope.view;
         const viewEl = view.element;
@@ -595,11 +511,11 @@ class FieldOfViewOverlay extends ViewerOverlayBase {
     }
 
     _makeDialog() {
-        const html = `<div class="fov-dialog hidden">
+        const html = `<div class="fov-dialog ${OVERLAY_DIALOG_CLASS} ${OVERLAY_DIALOG_CARD_CLASS} hidden">
             <div class="fov-dialog-full">
-                <div class="fov-header">
-                    <div class="fov-title">Field of view</div>
-                    <button class="close fov-close" type="button" aria-label="Close">×</button>
+                <div class="fov-header osd-overlay-dialog-header">
+                    <div class="fov-title osd-overlay-dialog-title">Field of view</div>
+                    <button class="close fov-close osd-overlay-dialog-close" type="button" aria-label="Close">×</button>
                 </div>
                 <div class="fov-body">
                     <div class="fov-row">
@@ -634,24 +550,8 @@ class FieldOfViewOverlay extends ViewerOverlayBase {
 
         const css = `<style data-type="fieldofview-overlay">
             .fov-dialog{
-                position: absolute;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                box-sizing: border-box;
                 width: min(360px, calc(100% - 24px));
-                max-height: calc(100% - 24px);
-                overflow: auto;
-                background: #fff;
-                color: #111;
-                border: 1px solid rgba(0,0,0,0.14);
-                border-radius: 10px;
-                box-shadow: 0 14px 40px rgba(0,0,0,0.22);
-                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-                font-size: 13px;
-                line-height: 1.25;
             }
-            .fov-dialog.hidden{ display:none; }
             .hidden{ display:none !important; }
             .fov-dialog.fov-dialog--compact{
                 position: fixed;
@@ -663,7 +563,6 @@ class FieldOfViewOverlay extends ViewerOverlayBase {
                 max-width: min(480px, calc(100% - 24px));
                 max-height: none;
                 overflow: visible;
-                z-index: 50;
             }
             .fov-dialog.fov-dialog--compact .fov-dialog-full{ display: none !important; }
             .fov-dialog:not(.fov-dialog--compact) .fov-compact-bar{ display: none !important; }
@@ -679,28 +578,6 @@ class FieldOfViewOverlay extends ViewerOverlayBase {
                 white-space: nowrap;
             }
             .fov-compact-spacer{ flex: 1 1 auto; min-width: 8px; }
-            .fov-header{
-                display:flex;
-                align-items:center;
-                justify-content:space-between;
-                padding: 10px 12px;
-                border-bottom: 1px solid rgba(0,0,0,0.08);
-                position: sticky;
-                top: 0;
-                background: #fff;
-                z-index: 1;
-            }
-            .fov-title{ font-weight: 600; font-size: 14px; }
-            .fov-close{
-                border: none;
-                background: transparent;
-                font-size: 18px;
-                line-height: 1;
-                padding: 2px 6px;
-                cursor: pointer;
-                color: rgba(0,0,0,0.6);
-            }
-            .fov-close:hover{ color: rgba(0,0,0,0.9); }
             .fov-body{ padding: 10px 12px; }
             .fov-row{
                 display:flex;
@@ -743,6 +620,7 @@ class FieldOfViewOverlay extends ViewerOverlayBase {
             }
         </style>`;
 
+        ensureOverlayDialogStyles();
         if (!document.querySelector('style[data-type="fieldofview-overlay"]')) {
             document.querySelector('head')?.appendChild(domObjectFromHTML(css));
         }

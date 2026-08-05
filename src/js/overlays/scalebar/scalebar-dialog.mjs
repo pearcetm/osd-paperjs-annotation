@@ -1,16 +1,21 @@
 import { domObjectFromHTML } from '../../utils/domObjectFromHTML.mjs';
 import { syncNumericInputStep } from '../../utils/numericInputStep.mjs';
+import {
+    ensureOverlayDialogStyles,
+    OVERLAY_DIALOG_CARD_CLASS,
+    OVERLAY_DIALOG_CLASS,
+} from '../../utils/overlayDialog.mjs';
 
 /**
  * @returns {string}
  */
 export function buildScalebarDialogHTML() {
-    return `<div class="scalebar-dialog hidden">
-        <div class="sb-header">
-            <div class="sb-title">Scalebar settings</div>
-            <button class="sb-close" type="button" aria-label="Close">×</button>
+    return `<div class="scalebar-dialog ${OVERLAY_DIALOG_CLASS} ${OVERLAY_DIALOG_CARD_CLASS} hidden">
+        <div class="sb-header osd-overlay-dialog-header">
+            <div class="sb-title osd-overlay-dialog-title">Scalebar settings</div>
+            <button class="sb-close osd-overlay-dialog-close" type="button" aria-label="Close">×</button>
         </div>
-        <div class="sb-body">
+        <div class="sb-body osd-overlay-dialog-body">
             <div class="sb-mpp-warning hidden">Physical scale unavailable: tile source needs mpp (µm/px) metadata.</div>
             <div class="sb-row">
                 <label class="sb-label" for="sb-height">Bar height</label>
@@ -44,37 +49,9 @@ export function createScalebarDialogElement() {
 
 const DIALOG_CSS = `
 .scalebar-dialog {
-    position: absolute;
-    z-index: 100;
-    top: 48px;
-    right: 12px;
-    width: min(280px, calc(100% - 24px));
-    background: #fff;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.18);
-    font: 13px/1.4 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-    color: #222;
+    width: min(320px, calc(100% - 24px));
 }
-.scalebar-dialog.hidden { display: none; }
-.scalebar-dialog .sb-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 10px;
-    background: #eee;
-    border-bottom: 1px solid #ddd;
-}
-.scalebar-dialog .sb-title { flex: 1; font-weight: 600; }
-.scalebar-dialog .sb-close {
-    border: none;
-    background: transparent;
-    font-size: 18px;
-    line-height: 1;
-    cursor: pointer;
-    padding: 0 4px;
-}
-.scalebar-dialog .sb-body { padding: 10px; display: grid; gap: 8px; }
+.scalebar-dialog .sb-body { display: grid; gap: 8px; }
 .scalebar-dialog .sb-row { display: flex; align-items: center; gap: 8px; }
 .scalebar-dialog .sb-label { min-width: 72px; }
 .scalebar-dialog .sb-height,
@@ -99,6 +76,7 @@ const DIALOG_CSS = `
 let cssInjected = false;
 
 export function ensureScalebarDialogStyles() {
+    ensureOverlayDialogStyles();
     if (cssInjected || typeof document === 'undefined') return;
     const existing = document.querySelector('style[data-osd-paperjs-scalebar-dialog]');
     if (existing) {

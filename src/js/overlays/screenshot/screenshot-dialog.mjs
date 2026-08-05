@@ -1,14 +1,19 @@
 import { domObjectFromHTML } from '../../utils/domObjectFromHTML.mjs';
+import {
+    ensureOverlayDialogStyles,
+    OVERLAY_DIALOG_CARD_CLASS,
+    OVERLAY_DIALOG_CLASS,
+} from '../../utils/overlayDialog.mjs';
 
 /**
  * Returns the HTML string for the screenshot dialog.
  * @returns {string}
  */
 export function buildScreenshotDialogHTML(){
-    return `<div class="screenshot-dialog hidden">
-        <div class="ss-header">
-            <div class="ss-title">Screenshot</div>
-            <button class="close ss-close" type="button" aria-label="Close">×</button>
+    return `<div class="screenshot-dialog ${OVERLAY_DIALOG_CLASS} ${OVERLAY_DIALOG_CARD_CLASS} hidden">
+        <div class="ss-header osd-overlay-dialog-header">
+            <div class="ss-title osd-overlay-dialog-title">Screenshot</div>
+            <button class="close ss-close osd-overlay-dialog-close" type="button" aria-label="Close">×</button>
         </div>
 
         <div class="screenshot-setup">
@@ -168,53 +173,11 @@ export function buildScreenshotDialogHTML(){
 export function buildScreenshotDialogCSS(){
     return `<style data-type="screenshot-tool">
         .screenshot-dialog{
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            box-sizing: border-box;
             width: min(400px, calc(100% - 24px));
-            max-height: calc(100% - 24px);
-            overflow: auto;
-            background: #fff;
-            color: #111;
-            border: 1px solid rgba(0,0,0,0.14);
-            border-radius: 10px;
-            box-shadow: 0 14px 40px rgba(0,0,0,0.22);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            font-size: 13px;
-            line-height: 1.25;
         }
-        .screenshot-dialog.hidden{ display:none; }
         .screenshot-dialog .hidden{ display:none !important; }
         .screenshot-dialog .screenshot-after.hidden,
         .screenshot-dialog .screenshot-setup.hidden{ display:none; }
-
-        .ss-header{
-            display:flex;
-            align-items:center;
-            justify-content:space-between;
-            padding: 10px 12px;
-            border-bottom: 1px solid rgba(0,0,0,0.08);
-            position: sticky;
-            top: 0;
-            background: #fff;
-            z-index: 1;
-        }
-        .ss-title{
-            font-weight: 600;
-            font-size: 14px;
-        }
-        .ss-close{
-            border: none;
-            background: transparent;
-            font-size: 18px;
-            line-height: 1;
-            padding: 2px 6px;
-            cursor: pointer;
-            color: rgba(0,0,0,0.6);
-        }
-        .ss-close:hover{ color: rgba(0,0,0,0.9); }
 
         .screenshot-setup{ padding: 10px 12px; }
         .screenshot-after{ padding: 0 12px; }
@@ -340,6 +303,7 @@ export function buildScreenshotDialogCSS(){
  * @returns {HTMLElement} The dialog element
  */
 export function createScreenshotDialogElement(){
+    ensureOverlayDialogStyles();
     if(!document.querySelector('style[data-type="screenshot-tool"]')){
         document.querySelector('head').appendChild(domObjectFromHTML(buildScreenshotDialogCSS()));
     }

@@ -13,6 +13,7 @@ import { OpenSeadragon } from '../../osd-loader.mjs';
 import { PaperOverlay } from '../../paper-overlay.mjs';
 import { paper } from '../../paperjs.mjs';
 import { mppFromActiveViewerImage } from '../../utils/mpp.mjs';
+import { dismissOverlayContextMenu, openOverlayContextMenu } from '../../utils/overlayContextMenu.mjs';
 import { ViewerOverlayBase } from '../base.mjs';
 import {
     getOverlayPointerRouter,
@@ -126,6 +127,7 @@ class ScalebarOverlay extends ViewerOverlayBase {
      * Hide bar and dialog.
      */
     deactivate() {
+        dismissOverlayContextMenu();
         this._setActive(false);
         this._setState('inactive');
     }
@@ -139,7 +141,7 @@ class ScalebarOverlay extends ViewerOverlayBase {
     }
 
     /**
-     * Open settings when the right-click lands on the bar; otherwise ignore the event.
+     * Open a cursor-local menu when the right-click lands on the bar; otherwise ignore.
      * @param {MouseEvent} ev
      */
     _offerContextMenu(ev) {
@@ -154,7 +156,26 @@ class ScalebarOverlay extends ViewerOverlayBase {
         const hit = this._group.hitTest(point, { fill: true, stroke: true, tolerance: 4 });
         if (!hit) return OVERLAY_POINTER_MISS;
 
-        this._setState('config');
+        const settingsOpen = this._state === 'config';
+        openOverlayContextMenu({
+            clientX: ev.clientX,
+            clientY: ev.clientY,
+            viewer: this.viewer,
+            items: [
+                {
+                    label: settingsOpen ? 'Close Settings' : 'Open Settings',
+                    onClick: () => {
+                        this._setState(settingsOpen ? 'showing' : 'config');
+                    },
+                },
+                {
+                    label: 'Hide Scalebar',
+                    onClick: () => {
+                        this.deactivate();
+                    },
+                },
+            ],
+        });
         return OVERLAY_POINTER_CLAIM;
     }
 
@@ -201,6 +222,7 @@ class ScalebarOverlay extends ViewerOverlayBase {
         document.removeEventListener('keydown', this._onEscKey);
         this._unregisterContextMenu?.();
         this._unregisterContextMenu = null;
+        dismissOverlayContextMenu();
 
         this.dialog?.remove();
         this.dialog = null;

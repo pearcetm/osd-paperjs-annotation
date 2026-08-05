@@ -39,6 +39,7 @@
 import {ToolBase} from './base.mjs';
 import { OpenSeadragon } from '../osd-loader.mjs';
 import { SimplifyJS } from '../utils/simplify.mjs';
+import { isOverlayDialogElement, nextCanvasZIndex } from '../utils/overlayDialog.mjs';
 
 /**
  * Paper.js tool/mouse events expose the native DOM event as `event`.
@@ -175,12 +176,10 @@ class AnnotationUITool extends ToolBase{
         const viewer = this.project.paperScope.overlay.viewer;
         const canvas = viewer.canvas;
         this._canvasPriorZIndex = window.getComputedStyle(canvas)['z-index'];
-        const siblings = Array.from(viewer.canvas.parentElement.children).filter(c => c!==canvas);
-        const maxZ = Math.max(...siblings.map(el => {
-            const z = window.getComputedStyle(el)['z-index'];
-            return z === 'auto' ? 0 : parseInt(z);
-        }));
-        canvas.style['z-index'] = maxZ + 1;
+        // Overlay dialogs are excluded: raising above them would swallow clicks on their controls.
+        const siblings = Array.from(viewer.canvas.parentElement.children)
+            .filter(c => c!==canvas && !isOverlayDialogElement(c));
+        canvas.style['z-index'] = nextCanvasZIndex(siblings.map(el => window.getComputedStyle(el)['z-index']));
     }
 
     /**
