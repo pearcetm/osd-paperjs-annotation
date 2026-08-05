@@ -49,6 +49,7 @@ import { PaperOverlay } from './paper-overlay.mjs';
 import { RotationControlOverlay } from './rotationcontrol.mjs';
 import { ScreenshotOverlay } from './overlays/screenshot/screenshot.mjs';
 import { FieldOfViewOverlay } from './overlays/fieldofview/fieldofview.mjs';
+import { ScalebarOverlay } from './overlays/scalebar/scalebar.mjs';
 import {
     ANNOTATION_TOOLBAR_PERSIST_ID_FILE,
     ANNOTATION_TOOLBAR_PERSIST_ID_PENCIL,
@@ -56,6 +57,13 @@ import {
 } from './overlays/configuration/configuration.mjs';
 import { attachAnnotationToolkitConfigurationWidget } from './overlays/annotations/index.mjs';
 import { ViewerOverlayBase } from './overlays/base.mjs';
+import {
+    getOverlayPointerRouter,
+    OVERLAY_POINTER_CLAIM,
+    OVERLAY_POINTER_DECLINE,
+    OVERLAY_POINTER_MISS,
+    OverlayPointerRouter,
+} from './overlays/overlay-pointer-router.mjs';
 import { AnnotationUITool } from './papertools/annotationUITool.mjs';
 import { ToolBase } from './papertools/base.mjs';
 import { BrushTool } from './papertools/brush.mjs';
@@ -97,6 +105,11 @@ export const OSDPaperjsAnnotation = {
     ANNOTATION_TOOLBAR_PERSIST_ID_FILE: ANNOTATION_TOOLBAR_PERSIST_ID_FILE,
     attachAnnotationToolkitConfigurationWidget: attachAnnotationToolkitConfigurationWidget,
     ViewerOverlayBase: ViewerOverlayBase,
+    OverlayPointerRouter,
+    getOverlayPointerRouter,
+    OVERLAY_POINTER_CLAIM,
+    OVERLAY_POINTER_DECLINE,
+    OVERLAY_POINTER_MISS,
     FeatureCollectionUI :FeatureCollectionUI,
     FeatureUI:FeatureUI,
     FileDialog:FileDialog,
@@ -106,6 +119,7 @@ export const OSDPaperjsAnnotation = {
     RotationControlOverlay: RotationControlOverlay,
     ScreenshotOverlay: ScreenshotOverlay,
     FieldOfViewOverlay: FieldOfViewOverlay,
+    ScalebarOverlay: ScalebarOverlay,
     AnnotationUITool: AnnotationUITool,
     ToolBase:ToolBase,
     BrushTool: BrushTool,
@@ -142,6 +156,11 @@ export {
     ANNOTATION_TOOLBAR_PERSIST_ID_FILE,
     attachAnnotationToolkitConfigurationWidget,
     ViewerOverlayBase,
+    OverlayPointerRouter,
+    getOverlayPointerRouter,
+    OVERLAY_POINTER_CLAIM,
+    OVERLAY_POINTER_DECLINE,
+    OVERLAY_POINTER_MISS,
     FeatureCollectionUI,
     FeatureUI,
     FileDialog,
@@ -151,6 +170,7 @@ export {
     RotationControlOverlay,
     ScreenshotOverlay,
     FieldOfViewOverlay,
+    ScalebarOverlay,
     AnnotationUITool,
     ToolBase,
     BrushTool,

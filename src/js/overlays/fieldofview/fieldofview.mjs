@@ -16,6 +16,11 @@ import {
 } from './fieldofview-geometry.mjs';
 import { FieldOfViewTool } from './fieldofview-tool.mjs';
 import { ViewerOverlayBase } from '../base.mjs';
+import {
+    getOverlayPointerRouter,
+    OVERLAY_POINTER_CLAIM,
+    OVERLAY_POINTER_MISS,
+} from '../overlay-pointer-router.mjs';
 
 /**
  * @param {paper.PaperScope} paperScope
@@ -43,6 +48,7 @@ class FieldOfViewOverlay extends ViewerOverlayBase {
     constructor(viewer, opts = {}) {
         super(viewer, opts);
         this.overlay = new PaperOverlay(viewer, { overlayType: 'image' });
+        this.overlay.setPointerEventsEnabled(false);
         ensureNamedToolLayer(this.overlay.paperScope);
 
         // Same wiring as AnnotationToolkit: zoom-driven rescale for items with a `rescale` map.
@@ -57,7 +63,6 @@ class FieldOfViewOverlay extends ViewerOverlayBase {
         this._saveSettingsTimeout = null;
         /** @type {HTMLElement | null} */
         this._fovContextMenuEl = null;
-        this._boundFovContextMenu = (ev) => this._onFovCanvasContextMenu(ev);
         this._fovContextMenuPointerDismiss = (e) => {
             if (!this._fovContextMenuEl || this._fovContextMenuEl.contains(e.target)) return;
             this._dismissFovContextMenu();
@@ -101,12 +106,14 @@ class FieldOfViewOverlay extends ViewerOverlayBase {
 
         this._makeDialog();
 
-        // Context menu for dropped FOV rings: only this overlay's canvas receives the event; if another
-        // PaperOverlay is stacked above, it captures pointer events first (same as any stacked canvas).
-        const viewEl = this.overlay.paperScope.view.element;
-        viewEl.addEventListener('contextmenu', this._boundFovContextMenu);
+        this._unregisterContextMenu = getOverlayPointerRouter(viewer).register(
+            this.overlay,
+            'contextmenu',
+            (ev) => this._offerFovContextMenu(ev),
+        );
         this.viewer.addOnceHandler('destroy', () => {
-            viewEl.removeEventListener('contextmenu', this._boundFovContextMenu);
+            this._unregisterContextMenu?.();
+            this._unregisterContextMenu = null;
             this._dismissFovContextMenu();
         });
 
@@ -116,6 +123,7 @@ class FieldOfViewOverlay extends ViewerOverlayBase {
     activate() {
         const reactivate = this.overlay.setOSDMouseNavEnabled(false);
         this._mouseNavEnabledAtActivation = this._mouseNavEnabledAtActivation || reactivate;
+        this.overlay.setPointerEventsEnabled(true);
         this.overlay.bringToFront();
         this._setActive(true);
         this.tool.activate();
@@ -131,6 +139,7 @@ class FieldOfViewOverlay extends ViewerOverlayBase {
         this.dummyTool.activate();
         this.overlay.setOSDMouseNavEnabled(this._mouseNavEnabledAtActivation);
         this._mouseNavEnabledAtActivation = false;
+        this.overlay.setPointerEventsEnabled(false);
         this.overlay.sendToBack();
     }
 
@@ -366,32 +375,20 @@ class FieldOfViewOverlay extends ViewerOverlayBase {
     /**
      * @param {MouseEvent} ev
      */
-    _onFovCanvasContextMenu(ev) {
+    _offerFovContextMenu(ev) {
         this._dismissFovContextMenu();
 
         const view = this.overlay.paperScope.view;
-        const layer = this.getDropTargetLayer();
         const viewEl = view.element;
-        if (!layer || !viewEl.contains(ev.target)) return;
-
         const br = viewEl.getBoundingClientRect();
         const ox = ev.clientX - br.left;
         const oy = ev.clientY - br.top;
         const pt = view.viewToProject(new paper.Point(ox, oy));
-        const tolerance = this._fovHitTolerance(view, layer);
-        const hit = layer.hitTest(pt, {
-            fill: true,
-            stroke: true,
-            segments: true,
-            tolerance,
-            match: (hr) => Boolean(this._findFovDroppedRingGroup(hr.item)),
-        });
-        const ring = hit ? this._findFovDroppedRingGroup(hit.item) : null;
-        if (!ring) return;
+        const ring = this.hitTestFovRingAtProjectPoint(pt);
+        if (!ring) return OVERLAY_POINTER_MISS;
 
-        ev.preventDefault();
-        ev.stopPropagation();
         this._openFovContextMenu(ev.clientX, ev.clientY, ring);
+        return OVERLAY_POINTER_CLAIM;
     }
 
     /**

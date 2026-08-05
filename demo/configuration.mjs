@@ -6,6 +6,7 @@ import {
 import { RotationControlOverlay } from '../src/js/rotationcontrol.mjs';
 import { ScreenshotOverlay } from '../src/js/overlays/screenshot/screenshot.mjs';
 import { FieldOfViewOverlay } from '../src/js/overlays/fieldofview/fieldofview.mjs';
+import { ScalebarOverlay } from '../src/js/overlays/scalebar/scalebar.mjs';
 import { AnnotationToolkit } from '../src/js/annotationtoolkit.mjs';
 
 const osdOpts = (element) => ({
@@ -41,6 +42,7 @@ function seedDemoLocalStorage() {
                 RotationControlOverlay: { showButton: true },
                 ScreenshotOverlay: { showButton: false },
                 FieldOfViewOverlay: { showButton: true },
+                ScalebarOverlay: { showButton: true },
             },
         }));
     }
@@ -52,6 +54,7 @@ function seedDemoLocalStorage() {
                 RotationControlOverlay: { showButton: true },
                 ScreenshotOverlay: { showButton: true },
                 FieldOfViewOverlay: { showButton: true },
+                ScalebarOverlay: { showButton: true },
                 [ANNOTATION_TOOLBAR_PERSIST_ID_PENCIL]: { showButton: false },
                 [ANNOTATION_TOOLBAR_PERSIST_ID_FILE]: { showButton: true },
             },
@@ -104,6 +107,7 @@ viewer.addHandler('open', () => {
     new RotationControlOverlay(viewer);
     new ScreenshotOverlay(viewer);
     new FieldOfViewOverlay(viewer);
+    new ScalebarOverlay(viewer);
 
     const customEl = document.createElement('div');
     customEl.innerHTML = '<p style="margin:0;font-size:13px;color:#555;">This section was injected via <code>addSection()</code>. Toolbar toggles are not saved (no <code>storageKey</code>).</p>';
@@ -132,6 +136,7 @@ viewer4.addHandler('open', () => {
     new RotationControlOverlay(viewer4, { showButton: false });
     new ScreenshotOverlay(viewer4, { showButton: false });
     new FieldOfViewOverlay(viewer4, { showButton: false });
+    new ScalebarOverlay(viewer4, { showButton: false });
 });
 
 // Scenario 5: Overlays + AnnotationToolkit, persistence off
@@ -141,6 +146,7 @@ viewer5.addHandler('open', () => {
     new RotationControlOverlay(viewer5);
     new ScreenshotOverlay(viewer5);
     new FieldOfViewOverlay(viewer5);
+    new ScalebarOverlay(viewer5);
     wireAnnotationScenario(viewer5, configWidget);
 });
 
@@ -153,6 +159,7 @@ viewer6.addHandler('open', () => {
     new RotationControlOverlay(viewer6);
     new ScreenshotOverlay(viewer6);
     new FieldOfViewOverlay(viewer6);
+    new ScalebarOverlay(viewer6);
 });
 
 // Scenario 7: Persistence on, pre-seeded (screenshot toolbar button hidden on first visit)
@@ -164,6 +171,7 @@ viewer7.addHandler('open', () => {
     new RotationControlOverlay(viewer7);
     new ScreenshotOverlay(viewer7);
     new FieldOfViewOverlay(viewer7);
+    new ScalebarOverlay(viewer7);
 });
 
 // Scenario 8: Annotations + persistence on (pre-seeded: pencil hidden, others on)
@@ -175,6 +183,7 @@ viewer8.addHandler('open', () => {
     new RotationControlOverlay(viewer8);
     new ScreenshotOverlay(viewer8);
     new FieldOfViewOverlay(viewer8);
+    new ScalebarOverlay(viewer8);
     wireAnnotationScenario(viewer8, configWidget);
 });
 

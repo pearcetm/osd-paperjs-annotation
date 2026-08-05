@@ -297,6 +297,17 @@ class PaperOverlay extends OpenSeadragon.EventSource{
         return button;
     }
   /**
+   * Enables or disables DOM pointer targeting for this overlay's full-size canvas.
+   * Passive chrome should disable pointer events and use OverlayPointerRouter for
+   * sparse interactions instead of moving its PaperScope to the front.
+   * @param {boolean} [enabled=true]
+   */
+    setPointerEventsEnabled(enabled=true){
+        if (this._canvasdiv) {
+            this._canvasdiv.style.pointerEvents = enabled ? 'auto' : 'none';
+        }
+    }
+  /**
    * Brings the overlay to the front, making it appear on top of other overlays.
    * This method changes the z-index of the overlay to bring it forward.
    * The overlay will appear on top of any other overlays that are currently on the viewer.
@@ -348,7 +359,15 @@ class PaperOverlay extends OpenSeadragon.EventSource{
             }
 
             this._viewerButtons.forEach(button=>{
+                // Buttons are registered in viewer.buttonGroup.buttons by addViewerButton; leaving stale
+                // entries makes OpenSeadragon's ButtonGroup.destroy call removeChild on detached elements.
+                const buttons = this.viewer.buttonGroup && this.viewer.buttonGroup.buttons;
+                if(buttons){
+                    const idx = buttons.indexOf(button);
+                    if(idx > -1) buttons.splice(idx, 1);
+                }
                 button.element.remove();
+                button.destroy && button.destroy();
             });
             this._viewerButtons = [];
 

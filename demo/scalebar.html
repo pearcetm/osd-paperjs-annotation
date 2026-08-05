@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Scalebar Overlay Demo</title>
+    <script type="text/javascript" src="./openseadragon/openseadragon.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/paper.js/0.12.17/paper-full.js"></script>
+    <script type="module" src="./scalebar.mjs"></script>
+    <link rel="stylesheet" href="./demo.css">
+</head>
+<body>
+    <div class="content">
+        <div class="demo">
+            <h3>Scalebar overlay demo</h3>
+
+            <div class="demo-section">
+                <h4>How to use</h4>
+                <ul>
+                    <li>Loads a public DSA slide with mpp metadata when the network allows.</li>
+                    <li>Click the scalebar toolbar button to activate: shows the bar and opens settings (height / font / units).</li>
+                    <li>Close the settings dialog (× or Esc) to keep the bar on without the panel; click the button again to reopen settings.</li>
+                    <li>Right-click directly on the bar to reopen settings; right-clicking elsewhere leaves navigation untouched.</li>
+                    <li>While the settings dialog is open, click the toolbar button to deactivate and hide the bar.</li>
+                    <li>Zoom in/out — bar length updates to a nice physical length.</li>
+                    <li>Hosts can call <code>show()</code> or pass <code>{ startIn: 'showing' }</code> for default-on chrome without opening the dialog.</li>
+                </ul>
+                <p id="sb-dsa-network-notice" class="demo-notice" hidden>
+                    Could not fetch DSA tile metadata; scalebar needs <code>source.mpp</code> and will stay hidden until mpp is available.
+                </p>
+            </div>
+
+            <div class="demo-section">
+                <h4>Debug controls</h4>
+                <div class="btn-group btn-group-sm" style="margin-bottom: 0.5em;">
+                    <button type="button" id="sb-reset-settings" class="btn btn-sm">Reset scalebar settings</button>
+                    <button type="button" id="sb-refresh-settings" class="btn btn-sm">Refresh settings JSON</button>
+                </div>
+                <div class="code-snippet">
+                    <pre><code id="sb-settings-json"></code></pre>
+                </div>
+            </div>
+
+            <div id="scalebar-viewer" class="viewer"></div>
+        </div>
+    </div>
+</body>
+</html>
