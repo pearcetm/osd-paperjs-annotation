@@ -7,6 +7,8 @@
  * (dialog × → showing). FoV/screenshot deactivate on dialog close because they are session tools.
  *
  * States: inactive | config | showing
+ *
+ * Headless mode (`opts.headless`): no toolbar button/dialog/Esc — driven by MeasurementsOverlay.
  */
 
 import { OpenSeadragon } from '../../osd-loader.mjs';
@@ -52,10 +54,19 @@ class ScalebarOverlay extends ViewerOverlayBase {
      * @param {Object} [opts]
      * @param {boolean} [opts.registerWithConfig=true]
      * @param {boolean} [opts.showButton=true]
+     * @param {boolean} [opts.headless=false] No button/dialog/Esc; for MeasurementsOverlay composition
      * @param {'showing'} [opts.startIn] Host default-on chrome without opening the dialog (e.g. BDSA).
+     * @param {Object} [opts.host] Facade callbacks when headless
+     * @param {() => boolean} [opts.host.isPanelOpen]
+     * @param {(opts?: { expandSettings?: boolean }) => void} [opts.host.openPanel]
+     * @param {() => void} [opts.host.closePanel]
+     * @param {() => void} [opts.host.onScalebarVisibilityChange]
      */
     constructor(viewer, opts = {}) {
         super(viewer, opts);
+
+        this._headless = !!opts.headless;
+        this._host = opts.host || null;
 
         this.overlay = new PaperOverlay(viewer, { overlayType: 'viewer' });
         this.overlay.setPointerEventsEnabled(false);
@@ -66,26 +77,33 @@ class ScalebarOverlay extends ViewerOverlayBase {
         this._group = null;
         this._destroyed = false;
         this._state = 'inactive';
+        this.dialog = null;
+        this.button = null;
+
         this._onEscKey = (ev) => {
+            if (this._headless) return;
             if (ev.key === 'Escape' && this._state === 'config') {
                 this._setState('showing');
             }
         };
-        this.button = this.overlay.addViewerButton({
-            faIconClass: 'fa-ruler-horizontal',
-            tooltip: 'Scalebar',
-            onClick: () => {
-                // inactive → config; showing → config (reopen settings); config → inactive
-                if (this._state === 'config') {
-                    this.deactivate();
-                } else {
-                    this.activate();
-                }
-            },
-        });
-        this.button.element.querySelector('svg.icon')?.style.setProperty('width', '1em');
 
-        this._makeDialog();
+        if (!this._headless) {
+            this.button = this.overlay.addViewerButton({
+                faIconClass: 'fa-ruler-horizontal',
+                tooltip: 'Scalebar',
+                onClick: () => {
+                    // inactive → config; showing → config (reopen settings); config → inactive
+                    if (this._state === 'config') {
+                        this.deactivate();
+                    } else {
+                        this.activate();
+                    }
+                },
+            });
+            this.button.element.querySelector('svg.icon')?.style.setProperty('width', '1em');
+            this._makeDialog();
+        }
+
         this._ensurePaperItems();
         this._setBarVisible(false);
 
@@ -100,7 +118,9 @@ class ScalebarOverlay extends ViewerOverlayBase {
         viewer.addHandler('page', this._onOpen);
         viewer.world?.addHandler?.('add-item', this._onWorldChange);
         viewer.world?.addHandler?.('remove-item', this._onWorldChange);
-        document.addEventListener('keydown', this._onEscKey);
+        if (!this._headless) {
+            document.addEventListener('keydown', this._onEscKey);
+        }
 
         this._unregisterContextMenu = getOverlayPointerRouter(viewer).register(
             this.overlay,
@@ -120,7 +140,7 @@ class ScalebarOverlay extends ViewerOverlayBase {
      */
     activate() {
         this._setActive(true);
-        this._setState('config');
+        this._setState(this._headless ? 'showing' : 'config');
     }
 
     /**
@@ -130,6 +150,7 @@ class ScalebarOverlay extends ViewerOverlayBase {
         dismissOverlayContextMenu();
         this._setActive(false);
         this._setState('inactive');
+        this._host?.onScalebarVisibilityChange?.();
     }
 
     /**
@@ -138,6 +159,40 @@ class ScalebarOverlay extends ViewerOverlayBase {
     show() {
         this._setActive(true);
         this._setState('showing');
+        this._host?.onScalebarVisibilityChange?.();
+    }
+
+    /** @returns {boolean} Whether the scalebar is intended to be shown (may be temporarily hidden without mpp). */
+    isVisible() {
+        return this._active && this._state !== 'inactive';
+    }
+
+    /**
+     * @param {boolean} visible
+     */
+    setVisible(visible) {
+        if (visible) this.show();
+        else this.deactivate();
+    }
+
+    /** @returns {{ heightPx: number, fontPx: number, unit: string }} */
+    getSettings() {
+        return { ...this.settings };
+    }
+
+    /**
+     * @param {Object} partial
+     */
+    applySettings(partial) {
+        this.settings = normalizeScalebarSettings({ ...this.settings, ...partial }, this.settings);
+        this._scheduleSaveSettings();
+        if (!this._headless) this._syncDialogFromSettings();
+        this._redraw();
+    }
+
+    /** @returns {boolean} */
+    hasMpp() {
+        return Boolean(mppFromActiveViewerImage(this.viewer));
     }
 
     /**
@@ -155,6 +210,29 @@ class ScalebarOverlay extends ViewerOverlayBase {
         const point = view.viewToProject(new paper.Point(ev.clientX - rect.left, ev.clientY - rect.top));
         const hit = this._group.hitTest(point, { fill: true, stroke: true, tolerance: 4 });
         if (!hit) return OVERLAY_POINTER_MISS;
+
+        if (this._headless && this._host) {
+            const panelOpen = !!this._host.isPanelOpen?.();
+            openOverlayContextMenu({
+                clientX: ev.clientX,
+                clientY: ev.clientY,
+                viewer: this.viewer,
+                items: [
+                    {
+                        label: panelOpen ? 'Close Measurements' : 'Open Measurements',
+                        onClick: () => {
+                            if (panelOpen) this._host.closePanel?.();
+                            else this._host.openPanel?.({ expandSettings: true });
+                        },
+                    },
+                    {
+                        label: 'Hide Scalebar',
+                        onClick: () => this.setVisible(false),
+                    },
+                ],
+            });
+            return OVERLAY_POINTER_CLAIM;
+        }
 
         const settingsOpen = this._state === 'config';
         openOverlayContextMenu({
@@ -184,21 +262,22 @@ class ScalebarOverlay extends ViewerOverlayBase {
      */
     _setState(next) {
         this._state = next;
-        if (!this.dialog) return;
 
         if (next === 'inactive') {
-            this.dialog.classList.add('hidden');
+            this.dialog?.classList.add('hidden');
             this._setBarVisible(false);
             return;
         }
 
         // config | showing — bar on
         this._setBarVisible(true);
-        if (next === 'config') {
-            this._syncDialogFromSettings();
-            this.dialog.classList.remove('hidden');
-        } else {
-            this.dialog.classList.add('hidden');
+        if (this.dialog) {
+            if (next === 'config') {
+                this._syncDialogFromSettings();
+                this.dialog.classList.remove('hidden');
+            } else {
+                this.dialog.classList.add('hidden');
+            }
         }
         this._redraw();
     }
@@ -219,7 +298,9 @@ class ScalebarOverlay extends ViewerOverlayBase {
         this.viewer.removeHandler('page', this._onOpen);
         this.viewer.world?.removeHandler?.('add-item', this._onWorldChange);
         this.viewer.world?.removeHandler?.('remove-item', this._onWorldChange);
-        document.removeEventListener('keydown', this._onEscKey);
+        if (!this._headless) {
+            document.removeEventListener('keydown', this._onEscKey);
+        }
         this._unregisterContextMenu?.();
         this._unregisterContextMenu = null;
         dismissOverlayContextMenu();
@@ -292,8 +373,7 @@ class ScalebarOverlay extends ViewerOverlayBase {
     _updateMppWarning() {
         const warn = this.dialog?.querySelector('.sb-mpp-warning');
         if (!warn) return;
-        const mpp = mppFromActiveViewerImage(this.viewer);
-        warn.classList.toggle('hidden', Boolean(mpp));
+        warn.classList.toggle('hidden', this.hasMpp());
     }
 
     _scheduleSaveSettings() {
