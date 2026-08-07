@@ -13,10 +13,10 @@ export function buildMeasurementsDialogHTML() {
         <div class="mo-row mo-ruler-row">
             <span class="mo-section-label">Ruler</span>
             <button type="button" class="mo-primary mo-new">New</button>
+            <button type="button" class="mo-primary mo-cancel hidden">Cancel</button>
             <button type="button" class="mo-primary mo-done hidden">Done</button>
             <button type="button" class="mo-clear" disabled>Clear</button>
             <span class="mo-spacer"></span>
-            <button type="button" class="mo-icon-btn mo-settings-toggle" aria-label="Settings" aria-expanded="false" title="Settings"></button>
             <button type="button" class="mo-icon-btn mo-close" aria-label="Close" title="Close">×</button>
         </div>
         <div class="mo-row mo-scalebar-row">
@@ -31,19 +31,20 @@ export function buildMeasurementsDialogHTML() {
                 <option value="mm">mm</option>
                 <option value="um">µm</option>
             </select>
+            <button type="button" class="mo-icon-btn mo-settings-toggle" aria-label="Settings" aria-expanded="false" title="Settings"></button>
         </div>
         <div class="mo-settings hidden">
             <div class="mo-mpp-warning hidden">Physical scale unavailable: tile source needs mpp (µm/px) metadata.</div>
-            <div class="mo-settings-row">
+            <div class="mo-settings-row mo-settings-row-decimals">
                 <label class="mo-label" for="mo-decimals">Decimals</label>
                 <input id="mo-decimals" class="mo-decimals" type="number" min="0" max="6" step="1" inputmode="numeric" title="Max decimal places for ruler labels">
             </div>
-            <div class="mo-settings-row">
+            <div class="mo-settings-row mo-settings-row-height">
                 <label class="mo-label" for="mo-height">Bar height</label>
                 <input id="mo-height" class="mo-height" type="number" min="4" max="64" step="1" inputmode="numeric">
                 <span class="mo-unit">px</span>
             </div>
-            <div class="mo-settings-row">
+            <div class="mo-settings-row mo-settings-row-font">
                 <label class="mo-label" for="mo-font">Font size</label>
                 <input id="mo-font" class="mo-font" type="number" min="8" max="48" step="1" inputmode="numeric">
                 <span class="mo-unit">px</span>
@@ -55,6 +56,36 @@ export function buildMeasurementsDialogHTML() {
 
 export function createMeasurementsDialogElement() {
     return domObjectFromHTML(buildMeasurementsDialogHTML());
+}
+
+/**
+ * Show/hide feature sections and keep unit, gear, and close reachable.
+ * @param {HTMLElement} dialog
+ * @param {{ scalebar: boolean, ruler: boolean }} features
+ */
+export function applyMeasurementsDialogFeatures(dialog, features) {
+    if (!dialog || !features) return;
+    const { scalebar, ruler } = features;
+    const rulerRow = dialog.querySelector('.mo-ruler-row');
+    const scalebarRow = dialog.querySelector('.mo-scalebar-row');
+    const unit = dialog.querySelector('.mo-unit-select');
+    const gear = dialog.querySelector('.mo-settings-toggle');
+    const close = dialog.querySelector('.mo-close');
+
+    rulerRow?.classList.toggle('hidden', !ruler);
+    scalebarRow?.classList.toggle('hidden', !scalebar);
+
+    if (ruler && !scalebar && rulerRow && close) {
+        if (unit) close.before(unit);
+        if (gear) close.before(gear);
+    } else if (scalebar && !ruler && scalebarRow && close) {
+        scalebarRow.appendChild(close);
+    }
+
+    dialog.querySelector('.mo-settings-row-decimals')?.classList.toggle('hidden', !ruler);
+    dialog.querySelector('.mo-settings-row-height')?.classList.toggle('hidden', !scalebar);
+    dialog.querySelector('.mo-settings-row-font')?.classList.toggle('hidden', !scalebar);
+    dialog.querySelector('.mo-hint')?.classList.toggle('hidden', !scalebar);
 }
 
 const DIALOG_CSS = `
@@ -112,8 +143,10 @@ const DIALOG_CSS = `
     border-color: #111;
 }
 .measurements-overlay-dialog .mo-new,
+.measurements-overlay-dialog .mo-cancel,
 .measurements-overlay-dialog .mo-done {
-    min-width: 3.75rem;
+    width: 4.75rem;
+    min-width: 4.75rem;
     box-sizing: border-box;
     text-align: center;
 }

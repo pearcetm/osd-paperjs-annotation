@@ -1,5 +1,5 @@
 import { ConfigurationWidget } from '../src/js/overlays/configuration/configuration.mjs';
-import { ScalebarOverlay } from '../src/js/overlays/scalebar/scalebar.mjs';
+import { MeasurementsOverlay } from '../src/js/overlays/measurements/measurements.mjs';
 import { SCALEBAR_SETTINGS_STORAGE_KEY } from '../src/js/overlays/scalebar/scalebar-settings.mjs';
 import {
     attachMppToViewerItem,
@@ -51,7 +51,10 @@ async function setup() {
         new ConfigurationWidget(viewer, {
             storageKey: 'osd-paperjs-demo-scalebar-config',
         });
-        overlay = window.scalebarOverlay = new ScalebarOverlay(viewer);
+        overlay = window.measurementsOverlay = new MeasurementsOverlay(viewer, {
+            features: { scalebar: true, ruler: false },
+            scalebarStartIn: 'showing',
+        });
         writeSettingsView();
     });
 }

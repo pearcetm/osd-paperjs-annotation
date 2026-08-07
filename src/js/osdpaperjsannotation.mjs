@@ -49,8 +49,6 @@ import { PaperOverlay } from './paper-overlay.mjs';
 import { RotationControlOverlay } from './rotationcontrol.mjs';
 import { ScreenshotOverlay } from './overlays/screenshot/screenshot.mjs';
 import { FieldOfViewOverlay } from './overlays/fieldofview/fieldofview.mjs';
-import { ScalebarOverlay } from './overlays/scalebar/scalebar.mjs';
-import { RulerOverlay } from './overlays/ruler/ruler.mjs';
 import { MeasurementsOverlay } from './overlays/measurements/measurements.mjs';
 import {
     ANNOTATION_TOOLBAR_PERSIST_ID_FILE,
@@ -121,8 +119,6 @@ export const OSDPaperjsAnnotation = {
     RotationControlOverlay: RotationControlOverlay,
     ScreenshotOverlay: ScreenshotOverlay,
     FieldOfViewOverlay: FieldOfViewOverlay,
-    ScalebarOverlay: ScalebarOverlay,
-    RulerOverlay: RulerOverlay,
     MeasurementsOverlay: MeasurementsOverlay,
     AnnotationUITool: AnnotationUITool,
     ToolBase:ToolBase,
@@ -174,8 +170,6 @@ export {
     RotationControlOverlay,
     ScreenshotOverlay,
     FieldOfViewOverlay,
-    ScalebarOverlay,
-    RulerOverlay,
     MeasurementsOverlay,
     AnnotationUITool,
     ToolBase,

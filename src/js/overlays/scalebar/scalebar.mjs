@@ -1,14 +1,9 @@
 /**
- * Live viewer-fixed scalebar overlay.
+ * Viewer-fixed scalebar engine (chrome only).
  * Black bar + white length label, bottom-right; length tracks zoom via nice-length policy.
  *
- * Lifecycle mirrors Field of View / Screenshot (one toolbar button + activate/deactivate),
- * with an extra `showing` state: persistent chrome can stay on after dismissing settings
- * (dialog × → showing). FoV/screenshot deactivate on dialog close because they are session tools.
- *
- * States: inactive | config | showing
- *
- * Headless mode (`opts.headless`): no toolbar button/dialog/Esc — driven by MeasurementsOverlay.
+ * Driven by MeasurementsOverlay — no toolbar button or settings dialog of its own.
+ * States: inactive | showing
  */
 
 import { OpenSeadragon } from '../../osd-loader.mjs';
@@ -22,11 +17,6 @@ import {
     OVERLAY_POINTER_CLAIM,
     OVERLAY_POINTER_MISS,
 } from '../overlay-pointer-router.mjs';
-import {
-    createScalebarDialogElement,
-    ensureScalebarDialogStyles,
-    syncScalebarDialogSteps,
-} from './scalebar-dialog.mjs';
 import {
     bottomRightBarRect,
     computeSmartScalebarLengthUm,
@@ -52,20 +42,16 @@ class ScalebarOverlay extends ViewerOverlayBase {
     /**
      * @param {OpenSeadragon.Viewer} viewer
      * @param {Object} [opts]
-     * @param {boolean} [opts.registerWithConfig=true]
-     * @param {boolean} [opts.showButton=true]
-     * @param {boolean} [opts.headless=false] No button/dialog/Esc; for MeasurementsOverlay composition
-     * @param {'showing'} [opts.startIn] Host default-on chrome without opening the dialog (e.g. BDSA).
-     * @param {Object} [opts.host] Facade callbacks when headless
+     * @param {'showing'} [opts.startIn] Host default-on chrome without opening the panel
+     * @param {Object} [opts.host] Facade callbacks from MeasurementsOverlay
      * @param {() => boolean} [opts.host.isPanelOpen]
      * @param {(opts?: { expandSettings?: boolean }) => void} [opts.host.openPanel]
      * @param {() => void} [opts.host.closePanel]
      * @param {() => void} [opts.host.onScalebarVisibilityChange]
      */
     constructor(viewer, opts = {}) {
-        super(viewer, opts);
+        super(viewer, { ...opts, registerWithConfig: false, showButton: false });
 
-        this._headless = !!opts.headless;
         this._host = opts.host || null;
 
         this.overlay = new PaperOverlay(viewer, { overlayType: 'viewer' });
@@ -77,32 +63,6 @@ class ScalebarOverlay extends ViewerOverlayBase {
         this._group = null;
         this._destroyed = false;
         this._state = 'inactive';
-        this.dialog = null;
-        this.button = null;
-
-        this._onEscKey = (ev) => {
-            if (this._headless) return;
-            if (ev.key === 'Escape' && this._state === 'config') {
-                this._setState('showing');
-            }
-        };
-
-        if (!this._headless) {
-            this.button = this.overlay.addViewerButton({
-                faIconClass: 'fa-ruler-horizontal',
-                tooltip: 'Scalebar',
-                onClick: () => {
-                    // inactive → config; showing → config (reopen settings); config → inactive
-                    if (this._state === 'config') {
-                        this.deactivate();
-                    } else {
-                        this.activate();
-                    }
-                },
-            });
-            this.button.element.querySelector('svg.icon')?.style.setProperty('width', '1em');
-            this._makeDialog();
-        }
 
         this._ensurePaperItems();
         this._setBarVisible(false);
@@ -118,9 +78,6 @@ class ScalebarOverlay extends ViewerOverlayBase {
         viewer.addHandler('page', this._onOpen);
         viewer.world?.addHandler?.('add-item', this._onWorldChange);
         viewer.world?.addHandler?.('remove-item', this._onWorldChange);
-        if (!this._headless) {
-            document.addEventListener('keydown', this._onEscKey);
-        }
 
         this._unregisterContextMenu = getOverlayPointerRouter(viewer).register(
             this.overlay,
@@ -128,23 +85,20 @@ class ScalebarOverlay extends ViewerOverlayBase {
             (ev) => this._offerContextMenu(ev),
         );
 
-        this._autoRegister();
-
         if (opts.startIn === 'showing') {
             this.show();
         }
     }
 
     /**
-     * Toolbar / ConfigurationWidget entry: show bar and open settings dialog.
+     * Show the scalebar chrome (same as show for the engine).
      */
     activate() {
-        this._setActive(true);
-        this._setState(this._headless ? 'showing' : 'config');
+        this.show();
     }
 
     /**
-     * Hide bar and dialog.
+     * Hide the scalebar chrome.
      */
     deactivate() {
         dismissOverlayContextMenu();
@@ -154,7 +108,7 @@ class ScalebarOverlay extends ViewerOverlayBase {
     }
 
     /**
-     * Host helper: show bar without opening the settings dialog (default-on chrome).
+     * Host helper: show bar without opening the measurements panel.
      */
     show() {
         this._setActive(true);
@@ -186,7 +140,6 @@ class ScalebarOverlay extends ViewerOverlayBase {
     applySettings(partial) {
         this.settings = normalizeScalebarSettings({ ...this.settings, ...partial }, this.settings);
         this._scheduleSaveSettings();
-        if (!this._headless) this._syncDialogFromSettings();
         this._redraw();
     }
 
@@ -200,7 +153,7 @@ class ScalebarOverlay extends ViewerOverlayBase {
      * @param {MouseEvent} ev
      */
     _offerContextMenu(ev) {
-        if (this._destroyed || !this._active || !this._group?.visible) {
+        if (this._destroyed || !this._active || !this._group?.visible || !this._host) {
             return OVERLAY_POINTER_MISS;
         }
 
@@ -211,46 +164,22 @@ class ScalebarOverlay extends ViewerOverlayBase {
         const hit = this._group.hitTest(point, { fill: true, stroke: true, tolerance: 4 });
         if (!hit) return OVERLAY_POINTER_MISS;
 
-        if (this._headless && this._host) {
-            const panelOpen = !!this._host.isPanelOpen?.();
-            openOverlayContextMenu({
-                clientX: ev.clientX,
-                clientY: ev.clientY,
-                viewer: this.viewer,
-                items: [
-                    {
-                        label: panelOpen ? 'Close Measurements' : 'Open Measurements',
-                        onClick: () => {
-                            if (panelOpen) this._host.closePanel?.();
-                            else this._host.openPanel?.({ expandSettings: true });
-                        },
-                    },
-                    {
-                        label: 'Hide Scalebar',
-                        onClick: () => this.setVisible(false),
-                    },
-                ],
-            });
-            return OVERLAY_POINTER_CLAIM;
-        }
-
-        const settingsOpen = this._state === 'config';
+        const panelOpen = !!this._host.isPanelOpen?.();
         openOverlayContextMenu({
             clientX: ev.clientX,
             clientY: ev.clientY,
             viewer: this.viewer,
             items: [
                 {
-                    label: settingsOpen ? 'Close Settings' : 'Open Settings',
+                    label: panelOpen ? 'Close Measurements' : 'Open Measurements',
                     onClick: () => {
-                        this._setState(settingsOpen ? 'showing' : 'config');
+                        if (panelOpen) this._host.closePanel?.();
+                        else this._host.openPanel?.({ expandSettings: true });
                     },
                 },
                 {
                     label: 'Hide Scalebar',
-                    onClick: () => {
-                        this.deactivate();
-                    },
+                    onClick: () => this.setVisible(false),
                 },
             ],
         });
@@ -258,27 +187,17 @@ class ScalebarOverlay extends ViewerOverlayBase {
     }
 
     /**
-     * @param {'inactive'|'config'|'showing'} next
+     * @param {'inactive'|'showing'} next
      */
     _setState(next) {
         this._state = next;
 
         if (next === 'inactive') {
-            this.dialog?.classList.add('hidden');
             this._setBarVisible(false);
             return;
         }
 
-        // config | showing — bar on
         this._setBarVisible(true);
-        if (this.dialog) {
-            if (next === 'config') {
-                this._syncDialogFromSettings();
-                this.dialog.classList.remove('hidden');
-            } else {
-                this.dialog.classList.add('hidden');
-            }
-        }
         this._redraw();
     }
 
@@ -298,15 +217,9 @@ class ScalebarOverlay extends ViewerOverlayBase {
         this.viewer.removeHandler('page', this._onOpen);
         this.viewer.world?.removeHandler?.('add-item', this._onWorldChange);
         this.viewer.world?.removeHandler?.('remove-item', this._onWorldChange);
-        if (!this._headless) {
-            document.removeEventListener('keydown', this._onEscKey);
-        }
         this._unregisterContextMenu?.();
         this._unregisterContextMenu = null;
         dismissOverlayContextMenu();
-
-        this.dialog?.remove();
-        this.dialog = null;
 
         if (this._group) {
             this._group.remove();
@@ -322,58 +235,6 @@ class ScalebarOverlay extends ViewerOverlayBase {
         }
 
         super.destroy();
-    }
-
-    _makeDialog() {
-        ensureScalebarDialogStyles();
-        const el = createScalebarDialogElement();
-        this.viewer.container.appendChild(el);
-        this.dialog = el;
-
-        // Scalebar chrome stays on when dismissing settings (→ showing), unlike FoV/screenshot.
-        el.querySelector('.sb-close')?.addEventListener('click', () => this._setState('showing'));
-
-        const heightInput = el.querySelector('.sb-height');
-        const fontInput = el.querySelector('.sb-font');
-        const unitSelect = el.querySelector('.sb-unit-select');
-
-        const onChange = () => {
-            const next = normalizeScalebarSettings({
-                heightPx: heightInput?.value,
-                fontPx: fontInput?.value,
-                unit: unitSelect?.value,
-            }, this.settings);
-            this.settings = next;
-            this._scheduleSaveSettings();
-            this._redraw();
-        };
-
-        heightInput?.addEventListener('input', onChange);
-        heightInput?.addEventListener('change', onChange);
-        fontInput?.addEventListener('input', onChange);
-        fontInput?.addEventListener('change', onChange);
-        unitSelect?.addEventListener('change', onChange);
-
-        this._syncDialogFromSettings();
-        el.classList.add('hidden');
-    }
-
-    _syncDialogFromSettings() {
-        if (!this.dialog) return;
-        const heightInput = this.dialog.querySelector('.sb-height');
-        const fontInput = this.dialog.querySelector('.sb-font');
-        const unitSelect = this.dialog.querySelector('.sb-unit-select');
-        if (heightInput) heightInput.value = String(this.settings.heightPx);
-        if (fontInput) fontInput.value = String(this.settings.fontPx);
-        if (unitSelect) unitSelect.value = this.settings.unit === 'um' ? 'um' : 'mm';
-        syncScalebarDialogSteps(this.dialog);
-        this._updateMppWarning();
-    }
-
-    _updateMppWarning() {
-        const warn = this.dialog?.querySelector('.sb-mpp-warning');
-        if (!warn) return;
-        warn.classList.toggle('hidden', this.hasMpp());
     }
 
     _scheduleSaveSettings() {
@@ -433,7 +294,6 @@ class ScalebarOverlay extends ViewerOverlayBase {
     _redraw() {
         if (this._destroyed || !this._active) return;
         this._ensurePaperItems();
-        this._updateMppWarning();
 
         const mpp = mppFromActiveViewerImage(this.viewer);
         const scope = this.overlay.paperScope;

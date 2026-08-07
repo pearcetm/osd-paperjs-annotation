@@ -299,10 +299,10 @@ export class RulerOverlayTool extends ToolBase {
         refreshSegmentLabel(segmentGroup, this._scale);
 
         this._clearPlacementState();
-        this._currentMeasurement = measurement;
-        this._mode = 'modifying';
+        this._currentMeasurement = null;
+        this._mode = 'idle';
         this._crosshair.visible = false;
-        this._setMeasurementSelected(measurement, true);
+        this._clearCursorClasses();
         this._overlay.notifyMeasurementCommitted?.(measurement);
         return measurement;
     }
@@ -331,6 +331,18 @@ export class RulerOverlayTool extends ToolBase {
                 this._mode = 'line-drag';
                 this._lineDragLastImg = local.clone();
                 return;
+            }
+            // Click elsewhere: deselect and return to idle
+            this.finishMeasuring();
+            this._overlay.notifyToolIdle?.();
+            return;
+        }
+
+        if (this._mode === 'idle') {
+            const hit = this._hitViewerRuler(ev.point);
+            if (hit) {
+                this.setMode('modifying', hit);
+                this._overlay.notifyEnteredModify?.();
             }
             return;
         }

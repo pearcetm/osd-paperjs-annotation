@@ -1,8 +1,9 @@
 /**
- * Convenience ruler overlay: FOV-style session with under-toolbar compact dialog.
- * States: inactive | config | measuring
+ * Convenience ruler engine: create/modify two-point image measurements.
+ * Soft panel open keeps OSD mouse nav on; create/modify takes interaction capture.
  *
- * Headless mode (`opts.headless`): no toolbar button/dialog/Esc — driven by MeasurementsOverlay.
+ * Driven by MeasurementsOverlay — no toolbar button or dialog of its own.
+ * States: inactive | config | measuring
  */
 
 import { PaperOverlay } from '../../paper-overlay.mjs';
@@ -15,10 +16,6 @@ import {
     OVERLAY_POINTER_CLAIM,
     OVERLAY_POINTER_MISS,
 } from '../overlay-pointer-router.mjs';
-import {
-    createRulerOverlayDialogElement,
-    ensureRulerOverlayDialogStyles,
-} from './ruler-dialog.mjs';
 import { findViewerRulerRoot, refreshSegmentLabel, VIEWER_RULER_KIND } from './ruler-segment.mjs';
 import { RulerOverlayTool } from './ruler-tool.mjs';
 
@@ -42,17 +39,13 @@ class RulerOverlay extends ViewerOverlayBase {
     /**
      * @param {OpenSeadragon.Viewer} viewer
      * @param {Object} [opts]
-     * @param {boolean} [opts.registerWithConfig=true]
-     * @param {boolean} [opts.showButton=true]
-     * @param {boolean} [opts.headless=false]
      * @param {Object} [opts.host]
      * @param {() => void} [opts.host.openPanel]
      * @param {(state: string) => void} [opts.host.onRulerStateChange]
      * @param {() => void} [opts.host.onRulerCountChange]
      */
     constructor(viewer, opts = {}) {
-        super(viewer, opts);
-        this._headless = !!opts.headless;
+        super(viewer, { ...opts, registerWithConfig: false, showButton: false });
         this._host = opts.host || null;
 
         this.overlay = new PaperOverlay(viewer, { overlayType: 'image' });
@@ -65,34 +58,26 @@ class RulerOverlay extends ViewerOverlayBase {
         this.dummyTool.activate();
 
         this._mouseNavEnabledAtActivation = true;
+        /** True while create/modify owns pointer + OSD mouse nav. */
+        this._interactionCapture = false;
         this._state = 'inactive';
         this._destroyed = false;
         /** @type {'mm'|'um'} Display unit when mpp is available */
         this._displayUnit = 'mm';
         /** @type {number} Max decimal places for ruler labels */
         this._decimals = 2;
-        this.dialog = null;
-        this.button = null;
 
-        this._onEscKey = (ev) => this._handleEscape(ev);
-        this._onReposition = () => this._positionDialog();
-
-        if (!this._headless) {
-            this.button = this.overlay.addViewerButton({
-                faIconClass: 'fa-ruler',
-                tooltip: 'Measurements',
-                onClick: () => {
-                    this._active ? this.deactivate() : this.activate();
-                },
-            });
-            this.button.element.querySelector('svg.icon')?.style.setProperty('width', '1em');
-            this._makeDialog();
-        }
-
-        this._unregisterContextMenu = getOverlayPointerRouter(viewer).register(
+        const pointerRouter = getOverlayPointerRouter(viewer);
+        this._unregisterContextMenu = pointerRouter.register(
             this.overlay,
             'contextmenu',
             (ev) => this._offerContextMenu(ev),
+        );
+        // Idle + panel open: pointer-events are off so pan/zoom works; hit-to-edit via router.
+        this._unregisterIdleSelect = pointerRouter.register(
+            this.overlay,
+            'mousedown',
+            (ev) => this._offerIdleSelect(ev),
         );
 
         this._onWorldItemCount = () => {
@@ -104,28 +89,17 @@ class RulerOverlay extends ViewerOverlayBase {
         this.viewer.world?.addHandler?.('add-item', this._onWorldItemCount);
         this.viewer.world?.addHandler?.('remove-item', this._onWorldItemCount);
 
-        if (!this._headless) {
-            document.addEventListener('keydown', this._onEscKey);
-            window.addEventListener('resize', this._onReposition);
-            this.viewer.addHandler?.('resize', this._onReposition);
-            this.viewer.addHandler?.('animation', this._onReposition);
-            this.viewer.addHandler?.('animation-finish', this._onReposition);
-        }
-
         this.viewer.addOnceHandler('destroy', () => {
             this.destroy();
         });
-
-        this._autoRegister();
     }
 
+    /**
+     * Soft panel open: keep OSD mouse nav on. Capture starts on New / Modify.
+     */
     activate() {
-        const reactivate = this.overlay.setOSDMouseNavEnabled(false);
-        this._mouseNavEnabledAtActivation = this._mouseNavEnabledAtActivation || reactivate;
-        this.overlay.setPointerEventsEnabled(true);
         this.overlay.bringToFront();
         this._setActive(true);
-        this.tool.activate();
         this.tool.setMode('idle');
         this._syncScaleFromMpp();
         this._setState('config');
@@ -136,15 +110,36 @@ class RulerOverlay extends ViewerOverlayBase {
             this.finishMeasuring();
         }
         dismissOverlayContextMenu();
+        this._endInteractionCapture();
         this._setActive(false);
         this._setState('inactive');
         this.tool.setMode('idle');
+        this.overlay.sendToBack();
+    }
+
+    /** Disable mouse nav and take pointer events for create/modify. */
+    _beginInteractionCapture() {
+        if (this._interactionCapture) return;
+        const wasEnabled = this.overlay.setOSDMouseNavEnabled(false);
+        this._mouseNavEnabledAtActivation = wasEnabled;
+        this.overlay.setPointerEventsEnabled(true);
+        this.overlay.bringToFront();
+        this.tool.activate();
+        this._interactionCapture = true;
+    }
+
+    /** Restore mouse nav after create/modify; panel may stay open. */
+    _endInteractionCapture() {
+        if (!this._interactionCapture) {
+            this.overlay.setPointerEventsEnabled(false);
+            return;
+        }
         this.tool.deactivate(true);
         this.dummyTool.activate();
         this.overlay.setOSDMouseNavEnabled(this._mouseNavEnabledAtActivation);
-        this._mouseNavEnabledAtActivation = false;
+        this._mouseNavEnabledAtActivation = true;
         this.overlay.setPointerEventsEnabled(false);
-        this.overlay.sendToBack();
+        this._interactionCapture = false;
     }
 
     getDropTargetLayer() {
@@ -189,15 +184,32 @@ class RulerOverlay extends ViewerOverlayBase {
         return this._state === 'measuring';
     }
 
+    /**
+     * @returns {'idle'|'creating'|'modifying'}
+     */
+    getSessionKind() {
+        const m = this.tool?.getMode?.() || 'idle';
+        if (m === 'creating') return 'creating';
+        if (m === 'modifying' || m === 'endpoint-drag' || m === 'line-drag') return 'modifying';
+        return 'idle';
+    }
+
     startNew() {
         if (!this._active) this.activate();
+        if (this.tool.getMode() === 'modifying'
+            || this.tool.getMode() === 'endpoint-drag'
+            || this.tool.getMode() === 'line-drag') {
+            this.tool.finishMeasuring();
+        }
         this._syncScaleFromMpp();
+        this._beginInteractionCapture();
         this.tool.setMode('creating');
         this._setState('measuring');
     }
 
     finishMeasuring() {
         this.tool.finishMeasuring();
+        this._endInteractionCapture();
         this._setState(this._active ? 'config' : 'inactive');
         this._notifyCountChange();
     }
@@ -208,14 +220,28 @@ class RulerOverlay extends ViewerOverlayBase {
     beginModify(measurement) {
         if (!measurement) return;
         if (!this._active) this.activate();
-        this.tool.activate();
+        this._beginInteractionCapture();
         this.tool.setMode('modifying', measurement);
         this._setState('measuring');
     }
 
+    /** After a successful draw: keep item, stay idle (not editing). */
     notifyMeasurementCommitted() {
-        this._setState('measuring');
+        this._endInteractionCapture();
+        this._setState(this._active ? 'config' : 'inactive');
         this._notifyCountChange();
+    }
+
+    /** Canvas click-elsewhere or equivalent: left edit, stay in panel idle. */
+    notifyToolIdle() {
+        this._endInteractionCapture();
+        this._setState(this._active ? 'config' : 'inactive');
+    }
+
+    /** Entered modify via canvas hit (tool already set mode). */
+    notifyEnteredModify() {
+        this._beginInteractionCapture();
+        this._setState('measuring');
     }
 
     /**
@@ -276,24 +302,7 @@ class RulerOverlay extends ViewerOverlayBase {
     }
 
     _notifyCountChange() {
-        this._updateClearEnabled();
         this._host?.onRulerCountChange?.();
-    }
-
-    _handleEscape(ev) {
-        if (this._headless) return;
-        if (ev.key !== 'Escape' || this._destroyed || !this._active) return;
-        if (this._state === 'measuring') {
-            ev.preventDefault();
-            ev.stopPropagation();
-            this.finishMeasuring();
-            return;
-        }
-        if (this._state === 'config') {
-            ev.preventDefault();
-            ev.stopPropagation();
-            this.deactivate();
-        }
     }
 
     /**
@@ -302,92 +311,40 @@ class RulerOverlay extends ViewerOverlayBase {
     _setState(next) {
         this._state = next;
         this._host?.onRulerStateChange?.(next);
-
-        if (!this.dialog) return;
-
-        if (next === 'inactive') {
-            this.dialog.classList.add('hidden');
-            return;
-        }
-
-        this.dialog.classList.remove('hidden');
-        const newBtn = this.dialog.querySelector('.ro-new');
-        const doneBtn = this.dialog.querySelector('.ro-done');
-        if (next === 'measuring') {
-            newBtn?.classList.add('hidden');
-            doneBtn?.classList.remove('hidden');
-        } else {
-            newBtn?.classList.remove('hidden');
-            doneBtn?.classList.add('hidden');
-        }
-        this._updateClearEnabled();
-        this._positionDialog();
     }
 
-    _updateClearEnabled() {
-        const clearBtn = this.dialog?.querySelector('.ro-clear');
-        if (!clearBtn) return;
-        clearBtn.disabled = this.countViewerRulers() === 0;
+    _projectPointFromClientEvent(ev) {
+        const view = this.overlay.paperScope.view;
+        const viewEl = view.element;
+        const br = viewEl.getBoundingClientRect();
+        return view.viewToProject(new paper.Point(ev.clientX - br.left, ev.clientY - br.top));
     }
 
-    _positionDialog() {
-        if (!this.dialog || this.dialog.classList.contains('hidden')) return;
-        const btnEl = this.button?.element;
-        if (!btnEl) return;
-        const rect = btnEl.getBoundingClientRect();
-        const gap = 6;
-        this.dialog.style.left = `${Math.max(8, rect.left)}px`;
-        this.dialog.style.top = `${rect.bottom + gap}px`;
-
-        const dr = this.dialog.getBoundingClientRect();
-        let left = dr.left;
-        if (left + dr.width > window.innerWidth - 8) {
-            left = window.innerWidth - dr.width - 8;
+    /**
+     * Panel open + idle: select a measurement without blocking pan (capture off).
+     * @param {MouseEvent} ev
+     */
+    _offerIdleSelect(ev) {
+        if (this._destroyed || !this._active || this._interactionCapture) {
+            return OVERLAY_POINTER_MISS;
         }
-        if (left < 8) left = 8;
-        this.dialog.style.left = `${left}px`;
-    }
+        if (typeof ev.button === 'number' && ev.button !== 0) {
+            return OVERLAY_POINTER_MISS;
+        }
 
-    _makeDialog() {
-        ensureRulerOverlayDialogStyles();
-        const el = createRulerOverlayDialogElement();
-        document.body.appendChild(el);
-        this.dialog = el;
+        const pt = this._projectPointFromClientEvent(ev);
+        const measurement = this.tool.hitTestMeasurementAtProjectPoint(pt)
+            || this._hitTestMeasurementOnLayer(pt);
+        if (!measurement) return OVERLAY_POINTER_MISS;
 
-        el.querySelector('.ro-new')?.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            this.startNew();
-        });
-        el.querySelector('.ro-done')?.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            this.finishMeasuring();
-        });
-        el.querySelector('.ro-clear')?.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            if (this._state === 'measuring') this.finishMeasuring();
-            this.clearAllViewerRulers();
-            this._setState('config');
-        });
-        el.querySelector('.ro-close')?.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            this.deactivate();
-        });
-
-        el.addEventListener('mousemove', (ev) => ev.stopPropagation());
-        el.classList.add('hidden');
+        this.beginModify(measurement);
+        return OVERLAY_POINTER_CLAIM;
     }
 
     _offerContextMenu(ev) {
         if (this._destroyed) return OVERLAY_POINTER_MISS;
 
-        const view = this.overlay.paperScope.view;
-        const viewEl = view.element;
-        const br = viewEl.getBoundingClientRect();
-        const pt = view.viewToProject(new paper.Point(ev.clientX - br.left, ev.clientY - br.top));
+        const pt = this._projectPointFromClientEvent(ev);
         const measurement = this.tool.hitTestMeasurementAtProjectPoint(pt)
             || this._hitTestMeasurementOnLayer(pt);
         if (!measurement) return OVERLAY_POINTER_MISS;
@@ -400,12 +357,7 @@ class RulerOverlay extends ViewerOverlayBase {
                 {
                     label: 'Modify',
                     onClick: () => {
-                        if (this._headless) {
-                            this._host?.openPanel?.();
-                            this.beginModify(measurement);
-                            return;
-                        }
-                        if (!this._active) this.activate();
+                        this._host?.openPanel?.();
                         this.beginModify(measurement);
                     },
                 },
@@ -413,8 +365,7 @@ class RulerOverlay extends ViewerOverlayBase {
                     label: 'Delete',
                     onClick: () => {
                         if (this.tool.getCurrentMeasurement() === measurement) {
-                            this.tool.finishMeasuring();
-                            this._setState(this._active ? 'config' : 'inactive');
+                            this.finishMeasuring();
                         }
                         measurement.remove();
                         this._notifyCountChange();
@@ -442,22 +393,15 @@ class RulerOverlay extends ViewerOverlayBase {
         if (this._destroyed) return;
         this._destroyed = true;
 
-        if (!this._headless) {
-            document.removeEventListener('keydown', this._onEscKey);
-            window.removeEventListener('resize', this._onReposition);
-            this.viewer.removeHandler?.('resize', this._onReposition);
-            this.viewer.removeHandler?.('animation', this._onReposition);
-            this.viewer.removeHandler?.('animation-finish', this._onReposition);
-        }
         this.viewer.world?.removeHandler?.('add-item', this._onWorldItemCount);
         this.viewer.world?.removeHandler?.('remove-item', this._onWorldItemCount);
 
         this._unregisterContextMenu?.();
         this._unregisterContextMenu = null;
+        this._unregisterIdleSelect?.();
+        this._unregisterIdleSelect = null;
         dismissOverlayContextMenu();
-
-        this.dialog?.remove();
-        this.dialog = null;
+        this._endInteractionCapture();
 
         try {
             this.tool?.deactivate?.(true);

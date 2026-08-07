@@ -1,6 +1,6 @@
 /**
  * Unified Measurements overlay: one toolbar button + under-button dialog composing
- * headless ScalebarOverlay (viewer chrome) and RulerOverlay (image measurements).
+ * ScalebarOverlay (viewer chrome) and/or RulerOverlay (image measurements) engines.
  *
  * Panel open/close is activate/deactivate. Scalebar visibility is independent.
  */
@@ -12,6 +12,7 @@ import { ViewerOverlayBase } from '../base.mjs';
 import { RulerOverlay } from '../ruler/ruler.mjs';
 import { ScalebarOverlay } from '../scalebar/scalebar.mjs';
 import {
+    applyMeasurementsDialogFeatures,
     createMeasurementsDialogElement,
     ensureMeasurementsDialogStyles,
     syncMeasurementsDialogSteps,
@@ -21,6 +22,17 @@ import {
     normalizeMeasurementsSettings,
     saveMeasurementsSettings,
 } from './measurements-settings.mjs';
+
+/**
+ * @param {Object} [input]
+ * @returns {{ scalebar: boolean, ruler: boolean }}
+ */
+function normalizeFeatures(input) {
+    const scalebar = input?.scalebar !== false;
+    const ruler = input?.ruler !== false;
+    if (!scalebar && !ruler) return { scalebar: true, ruler: true };
+    return { scalebar, ruler };
+}
 
 /**
  * @class
@@ -35,6 +47,7 @@ class MeasurementsOverlay extends ViewerOverlayBase {
      * @param {Object} [opts]
      * @param {boolean} [opts.registerWithConfig=true]
      * @param {boolean} [opts.showButton=true]
+     * @param {{ scalebar?: boolean, ruler?: boolean }} [opts.features] Default both; if both false, both enabled
      * @param {'showing'} [opts.scalebarStartIn] Default-on scalebar chrome without opening the panel
      */
     constructor(viewer, opts = {}) {
@@ -45,6 +58,7 @@ class MeasurementsOverlay extends ViewerOverlayBase {
         /** @type {'closed'|'openIdle'|'openMeasuring'} */
         this._panelState = 'closed';
         this._saveMeasurementsSettingsTimeout = null;
+        this._features = normalizeFeatures(opts.features);
 
         // Thin overlay solely for the shared toolbar button.
         this.overlay = new PaperOverlay(viewer, { overlayType: 'viewer' });
@@ -59,21 +73,26 @@ class MeasurementsOverlay extends ViewerOverlayBase {
             onRulerCountChange: () => this._syncClearEnabled(),
         };
 
-        this.scalebar = new ScalebarOverlay(viewer, {
-            headless: true,
-            registerWithConfig: false,
-            host,
-            startIn: opts.scalebarStartIn === 'showing' ? 'showing' : undefined,
-        });
+        this.scalebar = this._features.scalebar
+            ? new ScalebarOverlay(viewer, {
+                registerWithConfig: false,
+                host,
+                startIn: opts.scalebarStartIn === 'showing' ? 'showing' : undefined,
+            })
+            : null;
 
-        this.ruler = new RulerOverlay(viewer, {
-            headless: true,
-            registerWithConfig: false,
-            host,
-        });
-        // Match initial display unit / decimals to settings.
-        this.ruler.setDisplayUnit(this.scalebar.getSettings().unit);
-        this.ruler.setDecimals(this._measurementsSettings.decimals);
+        this.ruler = this._features.ruler
+            ? new RulerOverlay(viewer, {
+                registerWithConfig: false,
+                host,
+            })
+            : null;
+
+        if (this.ruler) {
+            const unit = this.scalebar?.getSettings?.().unit || 'mm';
+            this.ruler.setDisplayUnit(unit);
+            this.ruler.setDecimals(this._measurementsSettings.decimals);
+        }
 
         this.button = this.overlay.addViewerButton({
             faIconClass: 'fa-ruler',
@@ -126,9 +145,9 @@ class MeasurementsOverlay extends ViewerOverlayBase {
         if (opts.expandSettings) this._setSettingsExpanded(true);
 
         this._setActive(true);
-        if (!this.ruler._active) this.ruler.activate();
+        if (this.ruler && !this.ruler._active) this.ruler.activate();
 
-        const measuring = this.ruler.isMeasuring();
+        const measuring = !!this.ruler?.isMeasuring?.();
         this._panelState = measuring ? 'openMeasuring' : 'openIdle';
         this._syncDialogChrome();
         this.dialog?.classList.remove('hidden');
@@ -137,7 +156,7 @@ class MeasurementsOverlay extends ViewerOverlayBase {
 
     closePanel() {
         if (this._destroyed) return;
-        if (this.ruler._active) {
+        if (this.ruler?._active) {
             this.ruler.deactivate();
         }
         this._panelState = 'closed';
@@ -153,7 +172,7 @@ class MeasurementsOverlay extends ViewerOverlayBase {
 
     _handleEscape(ev) {
         if (ev.key !== 'Escape' || this._destroyed || this._panelState === 'closed') return;
-        if (this._panelState === 'openMeasuring') {
+        if (this._panelState === 'openMeasuring' && this.ruler) {
             ev.preventDefault();
             ev.stopPropagation();
             this.ruler.finishMeasuring();
@@ -169,6 +188,7 @@ class MeasurementsOverlay extends ViewerOverlayBase {
     _makeDialog() {
         ensureMeasurementsDialogStyles();
         const el = createMeasurementsDialogElement();
+        applyMeasurementsDialogFeatures(el, this._features);
         document.body.appendChild(el);
         this.dialog = el;
 
@@ -180,22 +200,29 @@ class MeasurementsOverlay extends ViewerOverlayBase {
         el.querySelector('.mo-new')?.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
-            this.ruler.startNew();
+            this.ruler?.startNew();
             this._panelState = 'openMeasuring';
+            this._syncDialogChrome();
+        });
+        el.querySelector('.mo-cancel')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.ruler?.finishMeasuring();
+            this._panelState = 'openIdle';
             this._syncDialogChrome();
         });
         el.querySelector('.mo-done')?.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
-            this.ruler.finishMeasuring();
+            this.ruler?.finishMeasuring();
             this._panelState = 'openIdle';
             this._syncDialogChrome();
         });
         el.querySelector('.mo-clear')?.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
-            if (this.ruler.isMeasuring()) this.ruler.finishMeasuring();
-            this.ruler.clearAllViewerRulers();
+            if (this.ruler?.isMeasuring()) this.ruler.finishMeasuring();
+            this.ruler?.clearAllViewerRulers();
             this._panelState = 'openIdle';
             this._syncDialogChrome();
         });
@@ -207,7 +234,7 @@ class MeasurementsOverlay extends ViewerOverlayBase {
 
         const toggle = el.querySelector('.mo-scalebar-visible');
         toggle?.addEventListener('change', () => {
-            this.scalebar.setVisible(!!toggle.checked);
+            this.scalebar?.setVisible(!!toggle.checked);
         });
 
         gearBtn?.addEventListener('click', (e) => {
@@ -218,12 +245,12 @@ class MeasurementsOverlay extends ViewerOverlayBase {
 
         const onScalebarChromeChange = () => {
             const unit = el.querySelector('.mo-unit-select')?.value;
-            this.scalebar.applySettings({
+            this.scalebar?.applySettings({
                 heightPx: el.querySelector('.mo-height')?.value,
                 fontPx: el.querySelector('.mo-font')?.value,
                 unit,
             });
-            this.ruler.setDisplayUnit(unit);
+            this.ruler?.setDisplayUnit(unit);
             this._syncSettingsFields();
         };
         const onDecimalsChange = () => {
@@ -231,7 +258,7 @@ class MeasurementsOverlay extends ViewerOverlayBase {
                 decimals: el.querySelector('.mo-decimals')?.value,
             }, this._measurementsSettings);
             this._measurementsSettings = next;
-            this.ruler.setDecimals(next.decimals);
+            this.ruler?.setDecimals(next.decimals);
             this._scheduleSaveMeasurementsSettings();
             this._syncSettingsFields();
         };
@@ -262,9 +289,11 @@ class MeasurementsOverlay extends ViewerOverlayBase {
 
     _syncDialogChrome() {
         if (!this.dialog) return;
-        const measuring = this._panelState === 'openMeasuring';
-        this.dialog.querySelector('.mo-new')?.classList.toggle('hidden', measuring);
-        this.dialog.querySelector('.mo-done')?.classList.toggle('hidden', !measuring);
+        const kind = this.ruler?.getSessionKind?.() || 'idle';
+        // Single primary slot: New | Cancel (creating) | Done (modifying)
+        this.dialog.querySelector('.mo-new')?.classList.toggle('hidden', kind !== 'idle');
+        this.dialog.querySelector('.mo-cancel')?.classList.toggle('hidden', kind !== 'creating');
+        this.dialog.querySelector('.mo-done')?.classList.toggle('hidden', kind !== 'modifying');
         this._syncClearEnabled();
         this._syncScalebarToggle();
         this._syncMppWarning();
@@ -273,26 +302,32 @@ class MeasurementsOverlay extends ViewerOverlayBase {
     _syncClearEnabled() {
         const clearBtn = this.dialog?.querySelector('.mo-clear');
         if (!clearBtn) return;
-        clearBtn.disabled = this.ruler.countViewerRulers() === 0;
+        clearBtn.disabled = !this.ruler || this.ruler.countViewerRulers() === 0;
     }
 
     _syncScalebarToggle() {
         const toggle = this.dialog?.querySelector('.mo-scalebar-visible');
-        if (!toggle) return;
+        if (!toggle || !this.scalebar) return;
         toggle.checked = this.scalebar.isVisible();
     }
 
     _syncSettingsFields() {
         if (!this.dialog) return;
-        const s = this.scalebar.getSettings();
         const heightInput = this.dialog.querySelector('.mo-height');
         const fontInput = this.dialog.querySelector('.mo-font');
         const unitSelect = this.dialog.querySelector('.mo-unit-select');
         const decimalsInput = this.dialog.querySelector('.mo-decimals');
-        if (heightInput) heightInput.value = String(s.heightPx);
-        if (fontInput) fontInput.value = String(s.fontPx);
-        if (unitSelect) unitSelect.value = s.unit === 'um' ? 'um' : 'mm';
-        if (decimalsInput) decimalsInput.value = String(this.ruler.getDecimals());
+        if (this.scalebar) {
+            const s = this.scalebar.getSettings();
+            if (heightInput) heightInput.value = String(s.heightPx);
+            if (fontInput) fontInput.value = String(s.fontPx);
+            if (unitSelect) unitSelect.value = s.unit === 'um' ? 'um' : 'mm';
+        } else if (unitSelect && this.ruler) {
+            unitSelect.value = this.ruler.getDisplayUnit() === 'um' ? 'um' : 'mm';
+        }
+        if (decimalsInput && this.ruler) {
+            decimalsInput.value = String(this.ruler.getDecimals());
+        }
         syncMeasurementsDialogSteps(this.dialog);
         this._syncMppWarning();
     }
