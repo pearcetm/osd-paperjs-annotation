@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.7.7] - 2026-10-14
+
+### Added
+
+- Scalebar overlay with settings and right-click context menu.
+- Consolidated measurements overlay (ruler integration and related improvements).
+- Improved overlay event / pointer dispatching shared by overlays.
+
 ## [0.7.6] - 2026-05-15
 
 ### Fixed
