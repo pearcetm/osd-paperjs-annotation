@@ -6,12 +6,15 @@
 class Dialog{
     constructor({innerHTML, title}){
         const div = document.createElement('div');
+        div.classList.add('osd-paperjs-body-dialog');
         document.querySelector('body').appendChild(div);
         div.style.position='fixed';
         div.style.width = '100vw';
         div.style.height = '100vh';
         div.style.left = 0;
         div.style.top = 0;
+        // Portal/modal band (viewer.css --z-modal); keep above app chrome.
+        div.style.zIndex = 'var(--z-modal, 1000)';
 
         const bg = document.createElement('div');
         div.appendChild(bg);

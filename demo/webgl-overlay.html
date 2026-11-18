@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebGL Feature Overlay Demo</title>
+    <script type="text/javascript" src="./openseadragon/openseadragon.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/paper.js/0.12.17/paper-full.js"></script>
+    <link rel="stylesheet" href="./demo.css">
+    <style>
+        .controls { margin: 0.5rem 0; display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; }
+        .controls label { display: flex; gap: 0.35rem; align-items: center; }
+        .controls fieldset {
+            border: 1px solid #ccc;
+            margin: 0;
+            padding: 0.25rem 0.5rem;
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .controls legend { padding: 0 0.25rem; }
+        #status { color: #555; font-size: 0.9rem; }
+        .demo-nav { margin-top: 1rem; font-size: 0.95rem; }
+        .demo-nav a { margin-right: 0.75rem; }
+    </style>
+    <script type="module" src="./webgl-overlay.mjs"></script>
+</head>
+<body>
+    <div class="content">
+        <div class="demo">
+            <h3>WebGL Feature Overlay Demo</h3>
+            <p>
+                Dense MultiPolygon rendering via <code>WebglFeatureOverlay</code>, with an optional
+                Paper.js comparison on the same synthetic data. Pan, zoom, rotate, and flip to verify camera sync
+                (viewport flip via the OSD control or <kbd>F</kbd>; tiled-image flip via the button below).
+            </p>
+
+            <div class="demo-section">
+                <h4>What this shows</h4>
+                <ul>
+                    <li>Loading thousands of polygons into a WebGL overlay locked to the image.</li>
+                    <li>Side-by-side comparison with the same geometry drawn in Paper.js.</li>
+                    <li>Camera sync under pan, zoom, rotate, viewport flip, and tiled-image flip.</li>
+                    <li>Debug triangle fill + stroke: stroke width with Paper-style <code>rescale</code> (screen px) vs image units.</li>
+                    <li>Labels via Paper <code>PointText</code> (always on; WebGL-only still shows labels over WebGL geometry).</li>
+                </ul>
+                <h4>What this does not show</h4>
+                <ul>
+                    <li>AnnotationToolkit <code>properties.renderer: 'webgl'</code> wiring.</li>
+                    <li>Hit-testing or promote-to-Paper editing (those live on the toolkit path).</li>
+                    <li>WebGL text rendering — use Paper for labels.</li>
+                </ul>
+            </div>
+
+            <div class="controls">
+                <fieldset>
+                    <legend>Renderer</legend>
+                    <label><input type="radio" name="renderer-mode" value="webgl" checked> WebGL</label>
+                    <label><input type="radio" name="renderer-mode" value="paper"> Paper (comparison)</label>
+                    <label><input type="radio" name="renderer-mode" value="both"> Both</label>
+                </fieldset>
+                <fieldset>
+                    <legend>Debug triangle</legend>
+                    <label><input type="checkbox" id="show-triangle"> Show</label>
+                    <label>Stroke: <input type="number" id="stroke-width" value="3" min="0" max="40" step="0.5"></label>
+                    <label><input type="checkbox" id="stroke-rescale" checked> Rescale (screen px)</label>
+                </fieldset>
+                <button type="button" id="toggle-item-flip">Toggle tiled-image flip</button>
+                <label>Polygons: <input type="number" id="poly-count" value="2000" min="10" max="20000" step="100"></label>
+                <button id="reload">Reload</button>
+                <span id="status"></span>
+            </div>
+            <div id="viewer" class="viewer"></div>
+
+            <nav class="demo-nav">
+                <a href="./index.html">All demos</a>
+                <a href="./webgl-overlay.html">WebGL overlay</a>
+                <a href="./webgl-heatmap-overlay.html">WebGL heatmap</a>
+            </nav>
+        </div>
+    </div>
+</body>
+</html>

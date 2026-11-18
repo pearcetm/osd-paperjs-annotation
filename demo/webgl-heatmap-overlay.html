@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebGL Heatmap Overlay Demo</title>
+    <script type="text/javascript" src="./openseadragon/openseadragon.min.js"></script>
+    <link rel="stylesheet" href="./demo.css">
+    <style>
+        .controls { margin: 0.5rem 0; display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; }
+        .controls label { display: flex; gap: 0.35rem; align-items: center; }
+        #status { color: #555; font-size: 0.9rem; }
+        .demo-nav { margin-top: 1rem; font-size: 0.95rem; }
+        .demo-nav a { margin-right: 0.75rem; }
+    </style>
+    <script type="module" src="./webgl-heatmap-overlay.mjs"></script>
+</head>
+<body>
+    <div class="content">
+        <div class="demo">
+            <h3>WebGL Heatmap Overlay Demo</h3>
+            <p>
+                Continuous density via <code>WebglHeatmapOverlay</code>: GPU additive splats into a
+                density buffer, then a LUT colorize pass every viewport frame. Home-zoom radius clamp
+                keeps kernels from engulfing the slide when zoomed out.
+            </p>
+
+            <div class="demo-section">
+                <h4>What this shows</h4>
+                <ul>
+                    <li>WebGL splat + colorize redrawn on every pan/zoom/rotate/flip (no settle debounce).</li>
+                    <li>Screen-constant kernel size when zoomed in; radius shrinks past home zoom.</li>
+                    <li>Three centroids (upper-left, upper-right, lower-left) for transform checks.</li>
+                    <li>Viewport flip (OSD control / <kbd>F</kbd>), tiled-image flip, and rotation.</li>
+                </ul>
+                <h4>What this does not show</h4>
+                <ul>
+                    <li>Toolkit FeatureCollection integration.</li>
+                </ul>
+            </div>
+
+            <div class="controls">
+                <button type="button" id="toggle-item-flip">Toggle tiled-image flip</button>
+                <label>Points: <input type="number" id="point-count" value="50000" min="1000" max="500000" step="1000"></label>
+                <label>Radius: <input type="number" id="radius" value="25" min="5" max="80"></label>
+                <label>Blur: <input type="number" id="blur" value="15" min="0" max="80"></label>
+                <button id="reload">Reload</button>
+                <span id="status"></span>
+            </div>
+            <div id="viewer" class="viewer"></div>
+
+            <nav class="demo-nav">
+                <a href="./index.html">All demos</a>
+                <a href="./webgl-overlay.html">WebGL feature overlay</a>
+                <a href="./webgl-heatmap-overlay.html">WebGL heatmap</a>
+            </nav>
+        </div>
+    </div>
+</body>
+</html>

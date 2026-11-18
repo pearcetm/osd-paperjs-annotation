@@ -46,6 +46,8 @@ import { FileDialog } from './filedialog.mjs';
 import { LayerUI } from './layerui.mjs';
 import { PaperOffset } from './paper-offset.mjs';
 import { PaperOverlay } from './paper-overlay.mjs';
+import { WebglFeatureOverlay } from './webgl/webgl-feature-overlay.mjs';
+import { WebglHeatmapOverlay } from './overlays/heatmap/webgl-heatmap.mjs';
 import { RotationControlOverlay } from './rotationcontrol.mjs';
 import { ScreenshotOverlay } from './overlays/screenshot/screenshot.mjs';
 import { FieldOfViewOverlay } from './overlays/fieldofview/fieldofview.mjs';
@@ -116,6 +118,8 @@ export const OSDPaperjsAnnotation = {
     LayerUI:LayerUI,
     PaperOffset: PaperOffset,
     PaperOverlay: PaperOverlay,
+    WebglFeatureOverlay: WebglFeatureOverlay,
+    WebglHeatmapOverlay: WebglHeatmapOverlay,
     RotationControlOverlay: RotationControlOverlay,
     ScreenshotOverlay: ScreenshotOverlay,
     FieldOfViewOverlay: FieldOfViewOverlay,
@@ -167,6 +171,8 @@ export {
     LayerUI,
     PaperOffset,
     PaperOverlay,
+    WebglFeatureOverlay,
+    WebglHeatmapOverlay,
     RotationControlOverlay,
     ScreenshotOverlay,
     FieldOfViewOverlay,

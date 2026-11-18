@@ -143,12 +143,14 @@ class TransformTool extends AnnotationUITool{
              ctrl.anchor=c[0];
              ctrl.opposite=c[1];
              ctrl.onMouseDown = function(ev){
+                if (self.project.overlay?.isMultiTouchNavigating?.()) return;
                 if (!annotationToolPrimaryButtonDownOrUp(ev)) return;
                 ev.stopPropagation();
              }
 
              // scaling operations
              ctrl.onMouseDrag = function(ev){
+                if (self.project.overlay?.isMultiTouchNavigating?.()) return;
                 if (!annotationToolPrimaryButtonActiveDrag(ev)) return;
                 // first handle the bounding box
                 let layerAngle = self.targetLayer.getRotation();
@@ -190,10 +192,12 @@ class TransformTool extends AnnotationUITool{
         this._transformTool.rotationHandle.set({fillColor:'red',strokeColor:'black',rescale:{radius:cSize}});
         this._transformTool.addChild(this._transformTool.rotationHandle);
         this._transformTool.rotationHandle.onMouseDown = function(ev){
+            if (self.project.overlay?.isMultiTouchNavigating?.()) return;
             if (!annotationToolPrimaryButtonDownOrUp(ev)) return;
             ev.stopPropagation();
         }
         this._transformTool.rotationHandle.onMouseDrag = function(ev){
+            if (self.project.overlay?.isMultiTouchNavigating?.()) return;
             if (!annotationToolPrimaryButtonActiveDrag(ev)) return;
             let parentMatrix=this.parent.matrix;
             let center=parentMatrix.transform(this.parent.boundingRect.position);

@@ -113,6 +113,7 @@ class FieldOfViewOverlay extends ViewerOverlayBase {
         const reactivate = this.overlay.setOSDMouseNavEnabled(false);
         this._mouseNavEnabledAtActivation = this._mouseNavEnabledAtActivation || reactivate;
         this.overlay.setPointerEventsEnabled(true);
+        this.overlay.setToolInputCapture(true);
         this.overlay.bringToFront();
         this._setActive(true);
         this.tool.activate();
@@ -126,6 +127,7 @@ class FieldOfViewOverlay extends ViewerOverlayBase {
         this.tool.setMode('idle');
         this.tool.deactivate(true);
         this.dummyTool.activate();
+        this.overlay.setToolInputCapture(false);
         this.overlay.setOSDMouseNavEnabled(this._mouseNavEnabledAtActivation);
         this._mouseNavEnabledAtActivation = false;
         this.overlay.setPointerEventsEnabled(false);

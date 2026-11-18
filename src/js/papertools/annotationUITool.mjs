@@ -40,28 +40,17 @@ import {ToolBase} from './base.mjs';
 import { OpenSeadragon } from '../osd-loader.mjs';
 import { SimplifyJS } from '../utils/simplify.mjs';
 import { isOverlayDialogElement, nextCanvasZIndex } from '../utils/overlayDialog.mjs';
+import {
+    annotationToolPrimaryButtonActiveDrag,
+    annotationToolPrimaryButtonDownOrUp,
+} from './primaryContact.mjs';
 
-/**
- * Paper.js tool/mouse events expose the native DOM event as `event`.
- * Use for gating so only the primary button drives annotation tools (right/middle clicks do not draw).
- *
- * @param {Object} ev - Paper ToolEvent or compatible; may include `event` (MouseEvent).
- * @returns {boolean} True if this is a primary-button mousedown or mouseup (`button === 0`).
- */
-export function annotationToolPrimaryButtonDownOrUp(ev) {
-    const d = ev && ev.event;
-    return !!(d && d.button === 0);
-}
-
-/**
- * @param {Object} ev - Paper ToolEvent or compatible; may include `event` (MouseEvent).
- * @returns {boolean} True while the primary mouse button is still held during move/drag (`buttons & 1`).
- */
-export function annotationToolPrimaryButtonActiveDrag(ev) {
-    const d = ev && ev.event;
-    if (!d) return false;
-    return (d.buttons & 1) === 1;
-}
+export {
+    annotationToolPrimaryButtonActiveDrag,
+    annotationToolPrimaryButtonDownOrUp,
+    nativeEventIsPrimaryActiveDrag,
+    nativeEventIsPrimaryDownOrUp,
+} from './primaryContact.mjs';
 
 /**
  * Base class for annotation tools, extending the ToolBase class.
@@ -92,17 +81,21 @@ class AnnotationUITool extends ToolBase{
         this.simplifier = new SimplifyJS();
 
         this.tool.onMouseDown = ev => {
+            if (this.project.overlay?.isMultiTouchNavigating?.()) return;
             if (!annotationToolPrimaryButtonDownOrUp(ev)) return;
             this.onMouseDown(this._transformEvent(ev));
         }
         this.tool.onMouseDrag = ev => {
+            if (this.project.overlay?.isMultiTouchNavigating?.()) return;
             if (!annotationToolPrimaryButtonActiveDrag(ev)) return;
             this.onMouseDrag(this._transformEvent(ev));
         }
         this.tool.onMouseMove = ev => {
+            if (this.project.overlay?.isMultiTouchNavigating?.()) return;
             this.onMouseMove(this._transformEvent(ev));
         }
         this.tool.onMouseUp = ev => {
+            if (this.project.overlay?.isMultiTouchNavigating?.()) return;
             if (!annotationToolPrimaryButtonDownOrUp(ev)) return;
             this.onMouseUp(this._transformEvent(ev));
         }

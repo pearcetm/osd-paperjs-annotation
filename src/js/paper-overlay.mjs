@@ -131,6 +131,17 @@ class PaperOverlay extends OpenSeadragon.EventSource{
         this._canvas = document.createElement('canvas');
         this._canvas.setAttribute('id', this._id);
         this._canvasdiv.appendChild(this._canvas);
+
+        /** @type {boolean} Tool is capturing input (draw); enables multi-touch navigator. */
+        this._toolInputCapture = false;
+        /** @type {boolean} Second+ finger: OSD owns pan/pinch; tools suppressed. */
+        this._multiTouchNavigating = false;
+        /** @type {Set<number>} */
+        this._activePointers = new Set();
+        this._touchActionBeforeCapture = null;
+        this._pointerEventsBeforeMultiTouch = null;
+        this._onCapturePointerDown = (ev) => this._handleCapturePointerDown(ev);
+        this._onCapturePointerUp = (ev) => this._handleCapturePointerUp(ev);
         
         viewer.canvas.appendChild(this._canvasdiv);
         
@@ -307,6 +318,143 @@ class PaperOverlay extends OpenSeadragon.EventSource{
             this._canvasdiv.style.pointerEvents = enabled ? 'auto' : 'none';
         }
     }
+
+    /**
+     * True while a multi-touch navigate gesture is active (tools must ignore pointer input).
+     * @returns {boolean}
+     */
+    isMultiTouchNavigating() {
+        return !!this._multiTouchNavigating;
+    }
+
+    /**
+     * Enable/disable tool input capture chrome: touch-action and two-finger pan navigator.
+     * Call alongside setOSDMouseNavEnabled(!capture) from ToolBase.captureUserInput or overlay tools.
+     * @param {boolean} [enabled=true]
+     */
+    setToolInputCapture(enabled = true) {
+        if (!this._canvasdiv) return;
+        if (enabled) {
+            if (this._toolInputCapture) return;
+            this._toolInputCapture = true;
+            this._touchActionBeforeCapture = this._canvas.style.touchAction || '';
+            this._canvas.style.touchAction = 'none';
+            this._canvasdiv.style.touchAction = 'none';
+            this._bindMultiTouchNavigator();
+            return;
+        }
+        if (!this._toolInputCapture) return;
+        this._toolInputCapture = false;
+        this._exitMultiTouchNavigate();
+        this._unbindMultiTouchNavigator();
+        this._activePointers.clear();
+        if (this._canvas) {
+            this._canvas.style.touchAction = this._touchActionBeforeCapture || '';
+        }
+        if (this._canvasdiv) {
+            this._canvasdiv.style.touchAction = this._touchActionBeforeCapture || '';
+        }
+        this._touchActionBeforeCapture = null;
+    }
+
+    _bindMultiTouchNavigator() {
+        if (!this._canvasdiv || this._multiTouchBound) return;
+        this._multiTouchBound = true;
+        const el = this._canvasdiv;
+        el.addEventListener('pointerdown', this._onCapturePointerDown, true);
+        el.addEventListener('pointerup', this._onCapturePointerUp, true);
+        el.addEventListener('pointercancel', this._onCapturePointerUp, true);
+        // Paper 0.17 mobile uses TouchEvents only; keep a parallel touch count path.
+        el.addEventListener('touchstart', this._onCaptureTouchStart = (ev) => {
+            if (!this._toolInputCapture) return;
+            if (ev.touches && ev.touches.length >= 2 && !this._multiTouchNavigating) {
+                this._enterMultiTouchNavigate();
+            }
+        }, { capture: true, passive: true });
+        el.addEventListener('touchend', this._onCaptureTouchEnd = (ev) => {
+            if (!this._multiTouchNavigating) return;
+            if (!ev.touches || ev.touches.length === 0) {
+                this._activePointers.clear();
+                this._exitMultiTouchNavigate();
+            }
+        }, { capture: true, passive: true });
+        el.addEventListener('touchcancel', this._onCaptureTouchEnd, { capture: true, passive: true });
+    }
+
+    _unbindMultiTouchNavigator() {
+        if (!this._canvasdiv || !this._multiTouchBound) return;
+        this._multiTouchBound = false;
+        const el = this._canvasdiv;
+        el.removeEventListener('pointerdown', this._onCapturePointerDown, true);
+        el.removeEventListener('pointerup', this._onCapturePointerUp, true);
+        el.removeEventListener('pointercancel', this._onCapturePointerUp, true);
+        if (this._onCaptureTouchStart) {
+            el.removeEventListener('touchstart', this._onCaptureTouchStart, true);
+            this._onCaptureTouchStart = null;
+        }
+        if (this._onCaptureTouchEnd) {
+            el.removeEventListener('touchend', this._onCaptureTouchEnd, true);
+            el.removeEventListener('touchcancel', this._onCaptureTouchEnd, true);
+            this._onCaptureTouchEnd = null;
+        }
+    }
+
+    _handleCapturePointerDown(ev) {
+        if (!this._toolInputCapture) return;
+        if (typeof ev.pointerId !== 'number') return;
+        this._activePointers.add(ev.pointerId);
+        if (this._activePointers.size >= 2 && !this._multiTouchNavigating) {
+            this._enterMultiTouchNavigate();
+        }
+    }
+
+    _handleCapturePointerUp(ev) {
+        if (typeof ev.pointerId === 'number') {
+            this._activePointers.delete(ev.pointerId);
+        }
+        if (this._multiTouchNavigating && this._activePointers.size === 0) {
+            this._exitMultiTouchNavigate();
+        }
+    }
+
+    _enterMultiTouchNavigate() {
+        if (this._multiTouchNavigating || !this._canvasdiv) return;
+        // Cancel stroke before setting the suppress flag so tool mouseup still runs.
+        this._cancelActiveToolStroke();
+        this._multiTouchNavigating = true;
+        this._pointerEventsBeforeMultiTouch = this._canvasdiv.style.pointerEvents;
+        this.setOSDMouseNavEnabled(true);
+        this._canvasdiv.style.pointerEvents = 'none';
+    }
+
+    _exitMultiTouchNavigate() {
+        if (!this._multiTouchNavigating) return;
+        this._multiTouchNavigating = false;
+        if (this._canvasdiv) {
+            this._canvasdiv.style.pointerEvents =
+                this._pointerEventsBeforeMultiTouch != null
+                    ? this._pointerEventsBeforeMultiTouch
+                    : (this._toolInputCapture ? 'auto' : 'none');
+        }
+        this._pointerEventsBeforeMultiTouch = null;
+        if (this._toolInputCapture) {
+            this.setOSDMouseNavEnabled(false);
+        }
+    }
+
+    _cancelActiveToolStroke() {
+        const scope = this.paperScope;
+        const toolObj = scope?.getActiveTool?.() || scope?.tool?._toolObject;
+        if (!toolObj) return;
+        try {
+            if (typeof toolObj.cancelActivePointerGesture === 'function') {
+                toolObj.cancelActivePointerGesture();
+            }
+        } catch (err) {
+            console.warn('[PaperOverlay] cancelActivePointerGesture failed', err);
+        }
+    }
+
   /**
    * Brings the overlay to the front, making it appear on top of other overlays.
    * This method changes the z-index of the overlay to bring it forward.
@@ -356,6 +504,7 @@ class PaperOverlay extends OpenSeadragon.EventSource{
                     this.viewer.world.removeHandler('remove-item', this.onRemoveItem);
                 }
                 this.setOSDMouseNavEnabled(true);
+                this.setToolInputCapture(false);
             }
 
             this._viewerButtons.forEach(button=>{
