@@ -102,6 +102,7 @@ class SelectTool extends AnnotationUITool{
         this.tool.onMouseUp=function(ev){
             selectionRectangle.visible=false;
             sr2.visible=false;
+            if (self.project.overlay?.isMultiTouchNavigating?.()) return;
             if (!annotationToolPrimaryButtonDownOrUp(ev)) return;
             if(ev.downPoint.subtract(ev.point).length==0){
                 //not a click-and-drag, do element selection
@@ -128,6 +129,7 @@ class SelectTool extends AnnotationUITool{
          * @property {Rectangle} r - The bounding rectangle of the selection area.
          */
         this.tool.onMouseDrag = function(ev){
+            if (self.project.overlay?.isMultiTouchNavigating?.()) return;
             if (!annotationToolPrimaryButtonActiveDrag(ev)) return;
             selectionRectangle.visible=true;
             sr2.visible=true;

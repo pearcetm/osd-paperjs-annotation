@@ -1,0 +1,20 @@
+osd-paperjs-annotation
+Copyright (c) 2022-2026, Thomas Pearce
+
+This product includes software developed by third parties:
+
+GeoJS (Apache License 2.0)
+  Portions of the WebGL polygon shaders in src/js/webgl/programs/polygon.mjs
+  are adapted from GeoJS (OpenGeoscience/geojs), specifically
+  src/webgl/polygonFeature.vert and polygonFeature.frag.
+
+  Copyright Kitware Inc. and contributors.
+  Licensed under the Apache License, Version 2.0.
+
+Heatmap rendering (Apache License 2.0 / algorithm attribution)
+  The canvas heatmap implementation in src/js/overlays/heatmap/ is inspired by
+  GeoJS src/canvas/heatmapFeature.js and Vladimir Agafonkin's simpleheat.
+
+earcut (ISC License)
+  Polygon triangulation vendored from earcut v3.2.3 at src/js/utils/earcut.mjs.
+  Copyright (c) 2016, Mapbox

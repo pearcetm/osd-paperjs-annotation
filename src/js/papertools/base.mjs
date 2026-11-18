@@ -101,15 +101,19 @@ class ToolBase{
         }
 
         this.tool.onMouseDown = ev => {
+            if (this.project.overlay?.isMultiTouchNavigating?.()) return;
             this.onMouseDown(ev);
         }
         this.tool.onMouseDrag = ev => {
+            if (this.project.overlay?.isMultiTouchNavigating?.()) return;
             this.onMouseDrag(ev);
         }
         this.tool.onMouseMove = ev => {
+            if (this.project.overlay?.isMultiTouchNavigating?.()) return;
             this.onMouseMove(ev);
         }
         this.tool.onMouseUp = ev => {
+            if (this.project.overlay?.isMultiTouchNavigating?.()) return;
             this.onMouseUp(ev);
         }
         this.listeners = {}
@@ -238,9 +242,31 @@ class ToolBase{
      * @inner
      * @param {boolean} [capture=true] - Set to true to capture user input, false to release it.
      */    
-    captureUserInput(capture = true) { 
-        this.project.overlay.setOSDMouseNavEnabled(!capture);
+    captureUserInput(capture = true) {
+        const overlay = this.project.overlay;
+        overlay.setOSDMouseNavEnabled(!capture);
+        overlay.setToolInputCapture?.(capture);
     };
+
+    /**
+     * Finish an in-progress pointer gesture (e.g. second finger starts pan).
+     * Subclasses may override; default synthesizes a primary mouseup if the tool is mid-gesture.
+     */
+    cancelActivePointerGesture() {
+        if (typeof this.onMouseUp !== 'function') return;
+        const tool = this.tool;
+        const pt = tool?._point || tool?._downPoint;
+        if (!pt) return;
+        this.onMouseUp({
+            point: pt,
+            downPoint: tool._downPoint || pt,
+            lastPoint: tool._lastPoint || pt,
+            middlePoint: tool._middlePoint || pt,
+            delta: pt.subtract(tool._lastPoint || pt),
+            event: { button: 0, buttons: 0 },
+            modifiers: {},
+        });
+    }
 
     // default no-op implementations of tool event handlers
     onMouseDown(){}

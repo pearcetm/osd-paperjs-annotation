@@ -118,6 +118,7 @@ class ScreenshotOverlay extends ViewerOverlayBase {
     activate(){
         let reactivate = this.overlay.setOSDMouseNavEnabled(false);
         this._mouseNavEnabledAtActivation = this._mouseNavEnabledAtActivation || reactivate;
+        this.overlay.setToolInputCapture(true);
         this.overlay.bringToFront();
         this._setActive(true);
         this.tool.activate();
@@ -133,6 +134,7 @@ class ScreenshotOverlay extends ViewerOverlayBase {
         this.tool.setMode('idle');
         this.tool.deactivate(true);
         this.dummyTool.activate();
+        this.overlay.setToolInputCapture(false);
         this.overlay.setOSDMouseNavEnabled(this._mouseNavEnabledAtActivation);
         this._mouseNavEnabledAtActivation = false;
         this.overlay.sendToBack();

@@ -285,6 +285,8 @@ class FeatureCollectionUI{
     toggleVisibility(){
         this.element.classList.toggle('annotation-hidden');
         this.group.visible = !this.element.classList.contains('annotation-hidden');
+        const toolkit = this.group.project?.overlay?.viewer?.annotationToolkit;
+        toolkit?.syncWebglFeatureCollectionVisibility?.(this.group);
     }
     /**
      * Remove the paper layer associated with the feature collection.

@@ -1,9 +1,11 @@
 /**
- * Routes sparse pointer interactions through stacked PaperOverlays.
+ * Routes sparse pointer interactions through stacked viewer overlays.
  *
  * Offers are evaluated in visual front-to-back order. Returning `claim` consumes
  * the DOM event; `decline` and `miss` both allow lower overlays to inspect it.
  */
+
+import { getViewerOverlayStack } from './overlay-dom.mjs';
 
 export const OVERLAY_POINTER_CLAIM = 'claim';
 export const OVERLAY_POINTER_DECLINE = 'decline';
@@ -68,7 +70,7 @@ export class OverlayPointerRouter {
     _dispatch(eventType, event) {
         if (this._destroyed || !this.viewer.canvas?.contains(event.target)) return;
 
-        const overlays = this.viewer.PaperOverlays || [];
+        const overlays = getViewerOverlayStack(this.viewer);
         const offers = this._registrations
             .filter((registration) => registration.eventType === eventType)
             .map((registration, order) => ({

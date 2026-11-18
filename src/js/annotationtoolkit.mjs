@@ -47,6 +47,12 @@ import { AnnotationLayout } from './annotationlayout.mjs';
 import { attachAnnotationToolkitConfigurationWidget } from './overlays/annotations/index.mjs';
 import { FileDialog } from './filedialog.mjs';
 import { PaperOverlay } from './paper-overlay.mjs';
+import { WebglFeatureOverlay } from './webgl/webgl-feature-overlay.mjs';
+import {
+    getOverlayPointerRouter,
+    OVERLAY_POINTER_MISS,
+} from './overlays/overlay-pointer-router.mjs';
+import { nativeEventIsPrimaryDownOrUp } from './papertools/primaryContact.mjs';
 import { AnnotationItemFactory } from './paperitems/annotationitem.mjs';
 import { MultiPolygon } from './paperitems/multipolygon.mjs';
 import { Placeholder } from './paperitems/placeholder.mjs';
@@ -138,6 +144,7 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
             layerUI: false,
             layout: false,
             overlay: null,
+            webglOverlay: null,
             destroyOnViewerClose: false,
             cacheAnnotations: false,
             strictGeometry: false,
@@ -176,6 +183,12 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
         } else {
             this.overlay = new PaperOverlay(this.viewer, { overlayType: 'image' });
         }
+        if (this.options.webglOverlay instanceof WebglFeatureOverlay) {
+            this._webglOverlay = this.options.webglOverlay;
+        } else {
+            this._webglOverlay = null;
+        }
+        this._webglPointerUnregister = null;
         this.paperScope.project.defaultStyle = new paper.Style();
         this.paperScope.project.defaultStyle.set(this.defaultStyle);
 
@@ -691,7 +704,17 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
         const parent = options.layer || this.paperScope.project;
         //find all featureCollection items and convert to GeoJSON compatible structures
         return parent.getItems({match:i=>i.isGeoJSONFeatureCollection}).map(grp=>{
-            
+            if (grp.data?.renderer === 'webgl' && grp.data?.webglCollectionId) {
+                const fc = this.getWebglOverlay().getFeatureCollectionGeoJSON(grp.data.webglCollectionId);
+                if (fc) {
+                    fc.label = grp.displayName;
+                    fc.properties = fc.properties || {};
+                    fc.properties.defaultStyle = grp.defaultStyle?.toJSON?.() || fc.properties.defaultStyle;
+                    fc.properties.userdata = grp.data.userdata;
+                    fc.properties.renderer = 'webgl';
+                    return fc;
+                }
+            }
             let geoJSON = {
                 type:'FeatureCollection',
                 features: grp.descendants.filter(d=>d.annotationItem).map(d=>d.annotationItem.toGeoJSONFeature()),
@@ -725,6 +748,9 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
     loadGeoJSON(geoJSON, replaceCurrent, parentImage){
         let parentLayer = parentImage ? this.overlay.getPaperLayer(parentImage) : false;
         if(replaceCurrent){
+            if (this._webglOverlay) {
+                this._webglOverlay.clear();
+            }
             this.getFeatureCollectionGroups(parentImage).forEach(grp=>grp.remove());
         }
         if(!Array.isArray(geoJSON)){
@@ -733,6 +759,11 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
         
         geoJSON.forEach(obj=>{
             if(obj.type=='FeatureCollection'){
+                const renderer = obj.properties?.renderer;
+                if (renderer === 'webgl') {
+                    this._loadWebglFeatureCollection(obj, parentLayer);
+                    return;
+                }
                 let group = this._createFeatureCollectionGroup({label: obj.label, parent: parentLayer});
                 let props = (obj.properties || {});
                 group.data.userdata = Object.assign({},props.userdata);
@@ -754,6 +785,113 @@ class AnnotationToolkit extends OpenSeadragon.EventSource{
      */
     addEmptyFeatureCollectionGroup(){
         return this._createFeatureCollectionGroup();
+    }
+
+    /**
+     * Lazy WebGL display overlay for renderer:'webgl' feature collections.
+     * @returns {WebglFeatureOverlay}
+     */
+    getWebglOverlay() {
+        if (!this._webglOverlay) {
+            this._webglOverlay = new WebglFeatureOverlay(this.viewer);
+            this._setupWebglPointerRouter();
+        }
+        return this._webglOverlay;
+    }
+
+    /**
+     * Sync WebGL collection visibility when a webgl-backed paper group visibility changes.
+     * @param {paper.Group} group
+     */
+    syncWebglFeatureCollectionVisibility(group) {
+        if (group.data?.renderer !== 'webgl' || !group.data.webglCollectionId) {
+            return;
+        }
+        this.getWebglOverlay().setFeatureCollectionVisible(
+            group.data.webglCollectionId,
+            group.visible
+        );
+    }
+
+    /**
+     * Move one webgl-backed feature into Paper for editing.
+     * @param {string} collectionId
+     * @param {number} featureIndex
+     * @returns {paper.Item|null}
+     */
+    promoteWebglFeatureToPaper(collectionId, featureIndex) {
+        const feature = this.getWebglOverlay().getFeatureForEdit(collectionId, featureIndex);
+        if (!feature) {
+            return null;
+        }
+        const group = this.getFeatureCollectionGroups().find(
+            (g) => g.data?.webglCollectionId === collectionId
+        );
+        if (!group) {
+            return null;
+        }
+        const item = paper.Item.fromGeoJSON(feature);
+        if (!item) {
+            return null;
+        }
+        group.addChild(item);
+        AnnotationToolkit.registerFeature(item);
+        this.getWebglOverlay().removeFeatureAt(collectionId, featureIndex);
+        return item;
+    }
+
+    /**
+     * @private
+     * @param {object} obj
+     * @param {paper.Layer} parentLayer
+     */
+    _loadWebglFeatureCollection(obj, parentLayer) {
+        const collectionId = obj.properties?.id || obj.label || `webgl-fc-${Date.now()}`;
+        const fc = JSON.parse(JSON.stringify(obj));
+        fc.properties = fc.properties || {};
+        fc.properties.id = collectionId;
+        fc.properties.renderer = 'webgl';
+
+        const group = this._createFeatureCollectionGroup({ label: obj.label, parent: parentLayer });
+        group.data.renderer = 'webgl';
+        group.data.webglCollectionId = collectionId;
+        group.data.userdata = Object.assign({}, fc.properties.userdata);
+        group.removeChildren();
+
+        const webgl = this.getWebglOverlay();
+        webgl.replaceFeatureCollection(collectionId, fc);
+
+        group.on('removed', () => {
+            webgl.removeFeatureCollection(collectionId);
+        });
+    }
+
+    /**
+     * @private
+     */
+    _setupWebglPointerRouter() {
+        if (this._webglPointerUnregister) {
+            return;
+        }
+        const router = getOverlayPointerRouter(this.viewer);
+        this._webglPointerUnregister = router.register(
+            this._webglOverlay,
+            'pointerdown',
+            (event) => {
+                if (!nativeEventIsPrimaryDownOrUp(event)) {
+                    return OVERLAY_POINTER_MISS;
+                }
+                const rect = this.viewer.canvas.getBoundingClientRect();
+                const x = event.clientX - rect.left;
+                const y = event.clientY - rect.top;
+                const hit = this._webglOverlay.hitTest(x, y);
+                if (hit) {
+                    this._emitIntegrationEvent('webgl-feature-hit', hit);
+                    return OVERLAY_POINTER_MISS;
+                }
+                return OVERLAY_POINTER_MISS;
+            }
+        );
     }
     
     /**

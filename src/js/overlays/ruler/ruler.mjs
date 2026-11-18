@@ -8,6 +8,7 @@
 
 import { PaperOverlay } from '../../paper-overlay.mjs';
 import { paper } from '../../paperjs.mjs';
+import { nativeEventIsPrimaryDownOrUp } from '../../papertools/primaryContact.mjs';
 import { mppFromActiveViewerImage } from '../../utils/mpp.mjs';
 import { dismissOverlayContextMenu, openOverlayContextMenu } from '../../utils/overlayContextMenu.mjs';
 import { ViewerOverlayBase } from '../base.mjs';
@@ -76,7 +77,7 @@ class RulerOverlay extends ViewerOverlayBase {
         // Idle + panel open: pointer-events are off so pan/zoom works; hit-to-edit via router.
         this._unregisterIdleSelect = pointerRouter.register(
             this.overlay,
-            'mousedown',
+            'pointerdown',
             (ev) => this._offerIdleSelect(ev),
         );
 
@@ -123,6 +124,7 @@ class RulerOverlay extends ViewerOverlayBase {
         const wasEnabled = this.overlay.setOSDMouseNavEnabled(false);
         this._mouseNavEnabledAtActivation = wasEnabled;
         this.overlay.setPointerEventsEnabled(true);
+        this.overlay.setToolInputCapture(true);
         this.overlay.bringToFront();
         this.tool.activate();
         this._interactionCapture = true;
@@ -136,6 +138,7 @@ class RulerOverlay extends ViewerOverlayBase {
         }
         this.tool.deactivate(true);
         this.dummyTool.activate();
+        this.overlay.setToolInputCapture(false);
         this.overlay.setOSDMouseNavEnabled(this._mouseNavEnabledAtActivation);
         this._mouseNavEnabledAtActivation = true;
         this.overlay.setPointerEventsEnabled(false);
@@ -322,13 +325,13 @@ class RulerOverlay extends ViewerOverlayBase {
 
     /**
      * Panel open + idle: select a measurement without blocking pan (capture off).
-     * @param {MouseEvent} ev
+     * @param {PointerEvent|MouseEvent} ev
      */
     _offerIdleSelect(ev) {
         if (this._destroyed || !this._active || this._interactionCapture) {
             return OVERLAY_POINTER_MISS;
         }
-        if (typeof ev.button === 'number' && ev.button !== 0) {
+        if (!nativeEventIsPrimaryDownOrUp(ev)) {
             return OVERLAY_POINTER_MISS;
         }
 
