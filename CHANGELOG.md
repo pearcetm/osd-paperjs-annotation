@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.7.8] - 2026-11-18
+
+### Added
+
+- WebGL feature overlay for high-performance GeoJSON vector display (`WebglFeatureOverlay`), with optional toolkit `renderer: 'webgl'` loading.
+- WebGL continuous heatmap overlay (`WebglHeatmapOverlay`) via additive splat + LUT colorize; replaces the canvas/Paper heatmap path.
+- Touch-friendly tool input: Pointer Events–aware primary-contact gating, `touch-action` while capturing, and two-finger pan / one-finger draw while a tool is active.
+
+### Changed
+
+- Ruler idle-select and WebGL hit routing use `pointerdown` instead of `mousedown`.
+
 ## [0.7.7] - 2026-10-14
 
 ### Added
